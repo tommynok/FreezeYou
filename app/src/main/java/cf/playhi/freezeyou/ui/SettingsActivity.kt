@@ -92,7 +92,7 @@ class SettingsActivity : FreezeYouBaseActivity(),
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, s: String) {
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
         if (languagePref.name == s
             || uiStyleSelection.name == s

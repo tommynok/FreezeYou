@@ -3,7 +3,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'kotlin-parcelize'
 
 android {
-    compileSdk 32
+    compileSdk 37
     buildToolsVersion '32.0.0'
     defaultConfig {
         applicationId "cf.playhi.freezeyou"
@@ -24,6 +24,14 @@ android {
     productFlavors {
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
     buildFeatures {
         viewBinding true
