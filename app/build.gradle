@@ -24,9 +24,6 @@ android {
     productFlavors {
     }
 
-    lintOptions {
-        abortOnError false
-    }
 
     buildFeatures {
         viewBinding true
@@ -38,6 +35,9 @@ android {
         }
     }
     namespace 'cf.playhi.freezeyou'
+    lint {
+        abortOnError false
+    }
 }
 
 dependencies {
