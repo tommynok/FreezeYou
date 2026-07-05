@@ -277,8 +277,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             value = process.waitFor()
             destroyProcess(outputStream, process)
         } catch (e: Exception) {
-            if (e.message!!.toLowerCase().contains("permission denied")
-                || e.message!!.toLowerCase().contains("not found")
+            if (e.message!!.lowercase().contains("permission denied")
+                || e.message!!.lowercase().contains("not found")
             ) {
                 hasPermission = false
             }
