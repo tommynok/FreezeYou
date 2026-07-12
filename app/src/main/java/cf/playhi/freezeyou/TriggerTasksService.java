@@ -13,6 +13,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.IBinder;
 
+import androidx.core.content.ContextCompat;
+
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
@@ -145,7 +147,7 @@ class TriggerScreenLockListener {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
-        mContext.registerReceiver(mScreenLockReceiver, filter);
+        ContextCompat.registerReceiver(mContext, mScreenLockReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     void unregisterListener() {

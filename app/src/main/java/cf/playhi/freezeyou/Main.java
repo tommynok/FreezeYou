@@ -42,6 +42,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -1209,7 +1210,7 @@ public class Main extends FreezeYouBaseActivity {
             };
             IntentFilter filter = new IntentFilter("cf.playhi.freezeyou.action.packageStatusChanged");
             filter.addAction("cf.playhi.freezeyou.action.packageStatusChanged");
-            this.registerReceiver(updateFrozenStatusBroadcastReceiver, filter);
+            ContextCompat.registerReceiver(this, updateFrozenStatusBroadcastReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         }
 
         TasksUtils.checkTimeTasks(this);

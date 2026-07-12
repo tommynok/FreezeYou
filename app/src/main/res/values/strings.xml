@@ -377,6 +377,7 @@
     <string name="lastUpdate">Recently Updated</string>
     <string name="alphabetical">Alphabetical</string>
     <string name="refresh">Refresh</string>
+    <string name="cannotScheduleExactAlarms">Cannot schedule exact alarms</string>
     <string name="themeOfAutoSwitchDarkMode">Interface style of auto switch dark mode</string>
     <string name="bluetoothPermissionIsNotGranted">Related Bluetooth permission is not granted</string>
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">May cannot use the scheduled task to enable or disable Bluetooth</string>

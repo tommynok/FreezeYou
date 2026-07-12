@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.viewmodel
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.Application
 import android.app.NotificationManager
 import android.content.Context.*
@@ -68,6 +69,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
 
                 checkBlueToothPermission()
                 loadingProgress.postValue(35)
+
+                checkExactAlarmPermission()
+                loadingProgress.postValue(40)
 
                 checkIsDeviceOwner()
                 loadingProgress.postValue(50)
@@ -201,7 +205,18 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     private fun checkNotifyPermission() {
         val notificationManager =
             getApplication<Application>().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= 24 && !notificationManager.areNotificationsEnabled()) {
+        val isNotifyingEnabled =
+            if (Build.VERSION.SDK_INT >= 33) {
+                ActivityCompat.checkSelfPermission(
+                    getApplication(),
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else if (Build.VERSION.SDK_INT >= 24) {
+                notificationManager.areNotificationsEnabled()
+            } else {
+                true
+            }
+        if (!isNotifyingEnabled) {
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noNotifyPermission),
@@ -378,6 +393,36 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     R.drawable.ic_done
                 )
             )
+        }
+    }
+
+    private fun checkExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager =
+                getApplication<Application>().getSystemService(ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                problemsList.value!!.add(
+                    generateHashMap(
+                        getApplication<Application>().getString(R.string.cannotScheduleExactAlarms),
+                        getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
+                            R.string.scheduledTasks
+                        ),
+                        "8",
+                        R.drawable.ic_warning
+                    )
+                )
+            } else {
+                problemsList.value!!.add(
+                    generateHashMap(
+                        getApplication<Application>().getString(R.string.cannotScheduleExactAlarms),
+                        getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
+                            R.string.scheduledTasks
+                        ),
+                        "8",
+                        R.drawable.ic_done
+                    )
+                )
+            }
         }
     }
 

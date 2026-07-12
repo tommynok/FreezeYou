@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import androidx.core.content.ContextCompat;
+
 import cf.playhi.freezeyou.service.OneKeyFreezeService;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 
@@ -44,7 +46,7 @@ public class ScreenLockListener {
     public void registerListener() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
-        mContext.registerReceiver(mScreenLockReceiver, filter);
+        ContextCompat.registerReceiver(mContext, mScreenLockReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     public void unregisterListener() {

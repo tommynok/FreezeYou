@@ -100,11 +100,19 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                                 startActivity(intent)
                             }
                         }
-                        "6" -> startAppNotificationSettingsSystemActivity(
-                            this@AutoDiagnosisActivity,
-                            "cf.play" + "hi.free" + "zeyou",
-                            applicationInfo.uid
-                        )
+                        "6" -> if (Build.VERSION.SDK_INT >= 33) {
+                            ActivityCompat.requestPermissions(
+                                this@AutoDiagnosisActivity,
+                                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                                0
+                            )
+                        } else {
+                            startAppNotificationSettingsSystemActivity(
+                                this@AutoDiagnosisActivity,
+                                "cf.play" + "hi.free" + "zeyou",
+                                applicationInfo.uid
+                            )
+                        }
                         "7" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                             && ActivityCompat
                                 .checkSelfPermission(
@@ -118,6 +126,13 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                                 arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
                                 0
                             )
+                        }
+                        "8" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            intent.data = Uri.parse("package:$packageName")
+                            if (intent.resolveActivity(packageManager) != null) {
+                                startActivity(intent)
+                            }
                         }
                     }
                 }
