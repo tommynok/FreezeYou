@@ -82,16 +82,11 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
 //        int wh = (int) (width * 0.6);
 //        int padding = (width - wh) / 2;
 //
-//        int frontColor;
-//        if (Build.VERSION.SDK_INT < 21) {
-//            frontColor = Color.BLACK;
-//        } else {
-//            // https://stackoverflow.com/questions/27611173/how-to-get-accent-color-programmatically
-//            TypedValue typedValue = new TypedValue();
-//            TypedArray a = obtainStyledAttributes(typedValue.data, new int[]{android.R.attr.colorAccent});
-//            frontColor = a.getColor(0, 0);
-//            a.recycle();
-//        }
+//        // https://stackoverflow.com/questions/27611173/how-to-get-accent-color-programmatically
+//        TypedValue typedValue = new TypedValue();
+//        TypedArray a = obtainStyledAttributes(typedValue.data, new int[]{android.R.attr.colorAccent});
+//        int frontColor = a.getColor(0, 0);
+//        a.recycle();
 //
 //        final Bitmap qrCode = QRCodeUtil.createQRCodeBitmap(
 //                qrContent == null ? "" : qrContent,

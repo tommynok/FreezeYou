@@ -69,13 +69,11 @@ public final class DevicePolicyManagerUtils {
     }
 
     public static boolean isDeviceOwner(Context context) {
-        return Build.VERSION.SDK_INT >= 18
-                && getDevicePolicyManager(context).isDeviceOwnerApp(context.getPackageName());
+        return getDevicePolicyManager(context).isDeviceOwnerApp(context.getPackageName());
     }
 
     public static boolean isProfileOwner(Context context) {
-        return Build.VERSION.SDK_INT >= 21
-                && getDevicePolicyManager(context).isProfileOwnerApp(context.getPackageName());
+        return getDevicePolicyManager(context).isProfileOwnerApp(context.getPackageName());
     }
 
     public static void checkAndSetOrganizationName(Context context, @Nullable String name) {

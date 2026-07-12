@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -221,7 +220,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
 
     private void prepareSaveButton(final int id) {
         final ImageButton saveButton = findViewById(R.id.staa_saveButton);
-        saveButton.setBackgroundResource(Build.VERSION.SDK_INT < 21 ? getThemeFabDotBackground(ScheduledTasksAddActivity.this) : R.drawable.oval_ripple);
+        saveButton.setBackgroundResource(R.drawable.oval_ripple);
         saveButton.setOnClickListener(view -> {
             SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             if (isTimeTask) {

@@ -118,7 +118,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     checkAutoAndPrepareInstallDialog(install, packageUri, apkFilePath);
                 }
             } else {
-                apkFilePath = packageUri.getEncodedPath();
+                apkFilePath = packageUri.getPath();
                 checkAutoAndPrepareInstallDialog(install, packageUri, apkFilePath);
             }
         } else {

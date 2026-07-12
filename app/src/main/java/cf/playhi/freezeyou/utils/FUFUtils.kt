@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.utils
 
-import android.annotation.TargetApi
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
@@ -126,7 +125,6 @@ object FUFUtils {
     }
 
     @JvmStatic
-    @TargetApi(21)
     fun processMRootAction(
         context: Context, pkgName: String, target: String?, tasks: String?, hidden: Boolean,
         askRun: Boolean, runImmediately: Boolean, activity: Activity?,
@@ -327,7 +325,6 @@ object FUFUtils {
     }
 
     @JvmStatic
-    @TargetApi(21)
     @Deprecated(
         "DEPRECATED", ReplaceWith(
             "oneKeyAction(context, freeze, pkgNameList, FUFSinglePackage.API_FREEZEYOU_MROOT_DPM)",
@@ -395,7 +392,6 @@ object FUFUtils {
         context.sendBroadcast(intent)
     }
 
-    @TargetApi(21)
     private fun isAppStillNotifying(pkgName: String?): Boolean {
         if (pkgName != null) {
             val statusBarNotifications = MyNotificationListenerService.getStatusBarNotifications()
@@ -412,12 +408,8 @@ object FUFUtils {
 
     @JvmStatic
     fun isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(pkgName: String?): Boolean {
-        return if (Build.VERSION.SDK_INT >= 21) {
-            DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeNotifyingApplications.getValue()
-                    && isAppStillNotifying(pkgName)
-        } else {
-            false
-        }
+        return DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeNotifyingApplications.getValue()
+                && isAppStillNotifying(pkgName)
     }
 
     @JvmStatic
@@ -501,9 +493,7 @@ object FUFUtils {
     @JvmStatic
     fun checkMRootFrozen(context: Context?, pkgName: String): Boolean {
         return try {
-            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && (DevicePolicyManagerUtils.isDeviceOwner(
-                context
-            ) || DevicePolicyManagerUtils.isProfileOwner(context))
+            ((DevicePolicyManagerUtils.isDeviceOwner(context) || DevicePolicyManagerUtils.isProfileOwner(context))
                     && DevicePolicyManagerUtils.getDevicePolicyManager(context)
                 .isApplicationHidden(DeviceAdminReceiver.getComponentName(context), pkgName))
         } catch (e: Exception) {

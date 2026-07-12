@@ -90,20 +90,18 @@ object SettingsUtils {
                     showToast(context, R.string.failed)
                 }
             avoidFreezeNotifyingApplications -> {
-                if (Build.VERSION.SDK_INT >= 21) {
-                    val enabledNotificationListeners = Settings.Secure.getString(
-                        context.contentResolver, "enabled_notification_listeners"
-                    )
-                    if (enabledNotificationListeners != null
-                        && !enabledNotificationListeners.contains("cf." + "playhi." + "freezeyou")
-                    ) {
-                        try {
-                            activity.startActivity(
-                                Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
-                            )
-                        } catch (e: Exception) {
-                            showToast(activity, R.string.failed)
-                        }
+                val enabledNotificationListeners = Settings.Secure.getString(
+                    context.contentResolver, "enabled_notification_listeners"
+                )
+                if (enabledNotificationListeners != null
+                    && !enabledNotificationListeners.contains("cf." + "playhi." + "freezeyou")
+                ) {
+                    try {
+                        activity.startActivity(
+                            Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                        )
+                    } catch (e: Exception) {
+                        showToast(activity, R.string.failed)
                     }
                 }
             }

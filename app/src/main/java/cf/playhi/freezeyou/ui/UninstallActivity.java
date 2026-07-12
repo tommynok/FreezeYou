@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.ui;
 
-import android.os.Build;
 import android.os.Bundle;
 
 import cf.playhi.freezeyou.R;
@@ -25,15 +24,11 @@ public class UninstallActivity extends FreezeYouBaseActivity {
                 .setPositiveButton(R.string.yes, (dialog, which) -> {
                     if (DevicePolicyManagerUtils.isDeviceOwner(getApplicationContext())) {
                         try {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                DevicePolicyManagerUtils
-                                        .getDevicePolicyManager(
-                                                getApplicationContext())
-                                        .clearDeviceOwnerApp("cf.playhi.freezeyou");
-                                showToast(getApplicationContext(), R.string.success);
-                            } else {
-                                showToast(getApplicationContext(), R.string.noRootNotActivated);
-                            }
+                            DevicePolicyManagerUtils
+                                    .getDevicePolicyManager(
+                                            getApplicationContext())
+                                    .clearDeviceOwnerApp("cf.playhi.freezeyou");
+                            showToast(getApplicationContext(), R.string.success);
                         } catch (Exception e) {
                             showToast(getApplicationContext(), R.string.failed);
                         }

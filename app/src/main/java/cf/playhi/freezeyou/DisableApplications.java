@@ -2,7 +2,6 @@ package cf.playhi.freezeyou;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -33,7 +32,7 @@ public class DisableApplications extends AppCompatActivity {
 
             if (packages != null) {
                 setResult(Activity.RESULT_OK);
-                if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(DisableApplications.this)) {
+                if (isDeviceOwner(DisableApplications.this)) {
                     oneKeyActionMRoot(DisableApplications.this, true, packages);
                     finish();
                 } else {

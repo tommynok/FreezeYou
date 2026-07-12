@@ -3,7 +3,6 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -191,13 +190,9 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
         final ImageButton addTimeButton = findViewById(R.id.stma_addTimeButton);
         final ImageButton addTriggerButton = findViewById(R.id.stma_addTriggerButton);
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            addButton.setBackgroundResource(R.drawable.oval_ripple);
-            addTriggerButton.setBackgroundResource(R.drawable.oval_ripple_almost_white);
-            addTimeButton.setBackgroundResource(R.drawable.oval_ripple_almost_white);
-        } else {
-            addButton.setBackgroundResource(getThemeFabDotBackground(this));
-        }
+        addButton.setBackgroundResource(R.drawable.oval_ripple);
+        addTriggerButton.setBackgroundResource(R.drawable.oval_ripple_almost_white);
+        addTimeButton.setBackgroundResource(R.drawable.oval_ripple_almost_white);
 
         addButton.setOnClickListener(view ->
                 changeFloatButtonsStatus(addTimeButton.getVisibility() != View.VISIBLE)

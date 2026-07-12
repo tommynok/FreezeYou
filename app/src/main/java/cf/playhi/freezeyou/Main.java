@@ -250,14 +250,6 @@ public class Main extends FreezeYouBaseActivity {
     public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            String cTheme = getUiTheme(this);
-            if ("white".equals(cTheme) || "default".equals(cTheme)) {
-                menu.findItem(R.id.menu_timedTasks).setIcon(R.drawable.ic_action_alarm_light);
-                menu.findItem(R.id.menu_viewMode).setIcon(R.drawable.ic_action_filter_light);
-                menu.findItem(R.id.menu_sortBy).setIcon(R.drawable.ic_action_sort_light);
-            }
-        }
         return true;
     }
 
@@ -342,9 +334,7 @@ public class Main extends FreezeYouBaseActivity {
 
         runOnUiThread(() -> {
 
-            moreSettingsImageButton.setBackgroundResource(
-                    Build.VERSION.SDK_INT >= 21 ?
-                            R.drawable.oval_ripple : getThemeFabDotBackground(Main.this));
+            moreSettingsImageButton.setBackgroundResource(R.drawable.oval_ripple);
 
             linearLayout.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.VISIBLE);
@@ -2211,7 +2201,7 @@ public class Main extends FreezeYouBaseActivity {
 
     @Override
     public void finish() {
-        if (Build.VERSION.SDK_INT >= 21 && !showInRecents.getValue(null)) {
+        if (!showInRecents.getValue(null)) {
             finishAndRemoveTask();
         }
         super.finish();

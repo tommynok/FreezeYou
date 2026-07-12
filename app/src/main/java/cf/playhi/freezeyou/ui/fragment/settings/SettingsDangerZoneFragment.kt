@@ -41,7 +41,7 @@ class SettingsDangerZoneFragment : PreferenceFragmentCompat() {
                 .setPositiveButton(R.string.yes) { _, _ ->
                     val activityManager =
                         requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-                    if (activityManager != null && Build.VERSION.SDK_INT >= 19) {
+                    if (activityManager != null) {
                         try {
                             showToast(
                                 requireActivity(),
@@ -55,7 +55,7 @@ class SettingsDangerZoneFragment : PreferenceFragmentCompat() {
                             showToast(requireActivity(), R.string.failed)
                         }
                     } else {
-                        showToast(requireActivity(), R.string.sysVerLow)
+                        showToast(requireActivity(), R.string.failed)
                     }
                 }
                 .setNegativeButton(R.string.no, null)

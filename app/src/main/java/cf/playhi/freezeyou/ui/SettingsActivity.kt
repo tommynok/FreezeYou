@@ -1,7 +1,6 @@
 package cf.playhi.freezeyou.ui
 
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.preference.Preference
@@ -35,7 +34,7 @@ class SettingsActivity : FreezeYouBaseActivity(),
     }
 
     override fun finish() {
-        if (Build.VERSION.SDK_INT >= 21 && !showInRecents.getValue()) {
+        if (!showInRecents.getValue()) {
             finishAndRemoveTask()
         }
         super.finish()

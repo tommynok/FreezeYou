@@ -7,15 +7,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 import android.util.Base64;
-import android.util.DisplayMetrics;
 import android.view.SubMenu;
 import android.view.View;
 import android.widget.EditText;
@@ -27,7 +23,6 @@ import androidx.appcompat.widget.PopupMenu;
 import net.grandcentrix.tray.AppPreferences;
 
 import java.util.HashMap;
-import java.util.Locale;
 
 import cf.playhi.freezeyou.ForceStop;
 import cf.playhi.freezeyou.Freeze;
@@ -313,20 +308,6 @@ public final class Support {
         return popup;
     }
 
-    public static void checkLanguage(Context context) {
-        Resources resources = context.getResources();
-        DisplayMetrics dm = resources.getDisplayMetrics();
-        Configuration config = resources.getConfiguration();
-
-        config.locale = getLocal(context);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            config.setLayoutDirection(config.locale);
-        }
-
-        resources.updateConfiguration(config, dm);
-    }
-
     @NonNull
     public static String getLocalString(Context context) {
         String s = DefaultMultiProcessMMKVStorageStringKeys.languagePref.getValue(context);
@@ -336,26 +317,6 @@ public final class Support {
         }
 
         return s;
-    }
-
-    private static Locale getLocal(Context context) {
-        switch (getLocalString(context)) {
-            case "en":
-                return new Locale("en");
-            case "en-US":
-                return new Locale("en", "US");
-            case "ru-RU":
-                return new Locale("ru", "RU");
-            case "uk-UA":
-                return new Locale("uk", "UA");
-            case "zh-CN":
-                return new Locale("zh", "CN");
-            case "zh-TW":
-                return new Locale("zh", "TW");
-            case "Default":
-            default:
-                return Locale.getDefault();
-        }
     }
 
 }

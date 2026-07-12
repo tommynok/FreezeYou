@@ -46,9 +46,7 @@ public final class NotificationUtils {
             Intent intent = new Intent(context, NotificationDeletedReceiver.class).putExtra("pkgName", pkgName);
             PendingIntent pendingIntent =
                     PendingIntent.getBroadcast(context, mId, intent,
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                    ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                    : PendingIntent.FLAG_UPDATE_CURRENT);
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             mBuilder.setDeleteIntent(pendingIntent);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -74,17 +72,13 @@ public final class NotificationUtils {
                 resultPendingIntent =
                         PendingIntent.getService(
                                 context, mId, resultIntent,
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                        : PendingIntent.FLAG_UPDATE_CURRENT);
+                                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             } else {
                 resultIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
                 resultPendingIntent =
                         PendingIntent.getActivity(
                                 context, mId, resultIntent,
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                        : PendingIntent.FLAG_UPDATE_CURRENT);
+                                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             }
             mBuilder.setContentIntent(resultPendingIntent);
             NotificationManager mNotificationManager =
@@ -116,17 +110,10 @@ public final class NotificationUtils {
     }
 
     public static void startAppNotificationSettingsSystemActivity(Activity activity, String pkgName, int pkgUid) {
-        final Intent intent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            intent = new Intent("android.settings.APP_NOTIFICATION_SETTINGS");
-            intent.putExtra("app_package", pkgName);
-            intent.putExtra("app_uid", pkgUid);
-            intent.putExtra("android.provider.extra.APP_PACKAGE", pkgName);
-        } else {
-            intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            Uri uri = Uri.parse("package:" + pkgName);
-            intent.setData(uri);
-        }
+        final Intent intent = new Intent("android.settings.APP_NOTIFICATION_SETTINGS");
+        intent.putExtra("app_package", pkgName);
+        intent.putExtra("app_uid", pkgUid);
+        intent.putExtra("android.provider.extra.APP_PACKAGE", pkgName);
         try {
             activity.startActivity(intent);
         } catch (Exception e) {

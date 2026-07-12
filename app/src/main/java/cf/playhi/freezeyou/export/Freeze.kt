@@ -67,10 +67,7 @@ class Freeze : ContentProvider() {
                 if (ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context) == null) {
                     bundle.putInt("result", 998)
                 } else {
-                    if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(
-                            context
-                        )
-                    ) {
+                    if (DevicePolicyManagerUtils.isDeviceOwner(context)) {
                         if (FUFUtils.checkMRootFrozen(context, pkgName)) {
                             bundle.putInt("result", 999)
                         } else {

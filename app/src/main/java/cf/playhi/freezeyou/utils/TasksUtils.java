@@ -58,9 +58,7 @@ public final class TasksUtils {
         PendingIntent alarmIntent =
                 PendingIntent.getBroadcast(
                         context, id, intent,
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                : PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
                 );
 
         Calendar calendar = Calendar.getInstance();
@@ -125,10 +123,8 @@ public final class TasksUtils {
         try {
             if (Build.VERSION.SDK_INT >= 23) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
-            } else if (Build.VERSION.SDK_INT >= 19) {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
             } else {
-                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
             }
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -144,10 +140,8 @@ public final class TasksUtils {
         try {
             if (Build.VERSION.SDK_INT >= 23) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
-            } else if (Build.VERSION.SDK_INT >= 19) {
-                alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
             } else {
-                alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
+                alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
             }
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -285,9 +279,7 @@ public final class TasksUtils {
                         new Intent(context, ShowSimpleDialogActivity.class)
                                 .putExtra("title", title)
                                 .putExtra("text", text),
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                : PendingIntent.FLAG_UPDATE_CURRENT)
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)
         );
         builder.setAutoCancel(true);
 
@@ -376,10 +368,8 @@ public final class TasksUtils {
                                         context,
                                         requestCode,
                                         intent,
-                                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                                ? PendingIntent.FLAG_UPDATE_CURRENT
-                                                | PendingIntent.FLAG_IMMUTABLE
-                                                : PendingIntent.FLAG_UPDATE_CURRENT);
+                                        PendingIntent.FLAG_UPDATE_CURRENT
+                                                | PendingIntent.FLAG_IMMUTABLE);
                         createDelayTasks(alarmMgr, delayAtSeconds, pendingIntent);
                         if (taskTrigger != null) {//定时或无撤回判断能力或目前不计划实现撤销的任务直接null
                             AppPreferences appPreferences = new AppPreferences(context);
@@ -516,9 +506,7 @@ public final class TasksUtils {
                     PendingIntent alarmIntent =
                             PendingIntent.getBroadcast(
                                     context, Integer.parseInt(id), intent,
-                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                            ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                            : PendingIntent.FLAG_CANCEL_CURRENT);
+                                    PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                     if (alarmMgr != null) {
                         alarmMgr.cancel(alarmIntent);
                     }
@@ -535,9 +523,7 @@ public final class TasksUtils {
         PendingIntent alarmIntent =
                 PendingIntent.getBroadcast(
                         context, id, intent,
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                : PendingIntent.FLAG_CANCEL_CURRENT);
+                        PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         if (alarmMgr != null) {
             alarmMgr.cancel(alarmIntent);
         }

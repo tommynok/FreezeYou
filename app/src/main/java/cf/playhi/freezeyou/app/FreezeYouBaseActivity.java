@@ -3,7 +3,6 @@ package cf.playhi.freezeyou.app;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -21,7 +20,6 @@ import cf.playhi.freezeyou.ui.AppLockActivity;
 
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
-import static cf.playhi.freezeyou.utils.Support.checkLanguage;
 import static cf.playhi.freezeyou.utils.Support.getLocalString;
 
 public class FreezeYouBaseActivity extends AppCompatActivity {
@@ -33,26 +31,19 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     @Override
     @CallSuper
     protected void attachBaseContext(Context newBase) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            String locale = getLocalString(newBase);
-            Configuration configuration = new Configuration();
-            configuration.setLocale(
-                    DefaultMultiProcessMMKVStorageStringKeys.languagePref.defaultValue().equalsIgnoreCase(locale)
-                            ? Locale.getDefault() : Locale.forLanguageTag(locale)
-            );
-            Context context = newBase.createConfigurationContext(configuration);
-            super.attachBaseContext(context);
-        } else {
-            super.attachBaseContext(newBase);
-        }
+        String locale = getLocalString(newBase);
+        Configuration configuration = new Configuration();
+        configuration.setLocale(
+                DefaultMultiProcessMMKVStorageStringKeys.languagePref.defaultValue().equalsIgnoreCase(locale)
+                        ? Locale.getDefault() : Locale.forLanguageTag(locale)
+        );
+        Context context = newBase.createConfigurationContext(configuration);
+        super.attachBaseContext(context);
     }
 
     @Override
     @CallSuper
     protected void onCreate(Bundle savedInstanceState) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            checkLanguage(this);
-        }
         super.onCreate(savedInstanceState);
     }
 

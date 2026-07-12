@@ -155,7 +155,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     builder.build()
             );
 
-            if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
+            if (DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 getPackageManager().getPackageInstaller().uninstall(packageName,
                         PendingIntent.getBroadcast(this, packageName.hashCode(),
                                         new Intent(
@@ -242,7 +242,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     builder.build()
             );
 
-            if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
+            if (DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 PackageInstaller packageInstaller = pm.getPackageInstaller();
                 PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
                         PackageInstaller.SessionParams.MODE_FULL_INSTALL);

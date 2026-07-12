@@ -59,7 +59,7 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIAutoAction(): Int {
         return if (actionMode == ACTION_MODE_FREEZE) {
-            if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+            if (isDeviceOwner(context)) {
                 pureExecuteAPIDPMAction()
             } else {
                 pureExecuteAPIRootAction()
@@ -75,7 +75,6 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIDPMAction(): Int {
 
-        if (Build.VERSION.SDK_INT < 21) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isDeviceOwner(context)) return ERROR_NOT_DEVICE_POLICY_MANAGER
 
         val hidden = actionMode == ACTION_MODE_FREEZE
@@ -137,7 +136,6 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPISystemAppDisabledUntilUsedAction(): Int {
 
-        if (Build.VERSION.SDK_INT < 18) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
         val freeze = actionMode == ACTION_MODE_FREEZE
         context.packageManager.setApplicationEnabledSetting(
@@ -183,7 +181,6 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIProfileOwnerAction(): Int {
 
-        if (Build.VERSION.SDK_INT < 21) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isProfileOwner(context)) return ERROR_NOT_PROFILE_OWNER
 
         val hidden = actionMode == ACTION_MODE_FREEZE

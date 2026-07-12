@@ -41,7 +41,7 @@ public class FUFService extends FreezeYouBaseService {
             boolean runImmediately = intent.getBooleanExtra("runImmediately", false);
             if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
                 if (freeze) {
-                    if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+                    if (isDeviceOwner(context)) {
                         processMRootAction(
                                 context, pkgName, target, tasks, true, askRun,
                                 false, null, false,
@@ -77,7 +77,7 @@ public class FUFService extends FreezeYouBaseService {
 
             if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
                 if (freeze) {
-                    if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+                    if (isDeviceOwner(context)) {
                         decidedApiMode = API_FREEZEYOU_MROOT_DPM;
                     } else {
                         decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;

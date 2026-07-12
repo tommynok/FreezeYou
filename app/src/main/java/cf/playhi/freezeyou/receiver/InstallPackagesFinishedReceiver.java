@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.receiver;
 
-import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -14,7 +13,6 @@ import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
 
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {

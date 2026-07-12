@@ -6,7 +6,6 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.view.Window
-import android.view.WindowManager
 import androidx.annotation.NonNull
 import androidx.appcompat.app.ActionBar
 import cf.playhi.freezeyou.R
@@ -18,49 +17,17 @@ internal object ThemeUtils {
 
     @JvmStatic
     fun getThemeDot(@NonNull context: Context): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return R.drawable.shapedot_coloraccent
-        }
-
-        val string = getUiTheme(context)
-        return if (string != null) {
-            when (string) {
-                "blue" -> R.drawable.shapedotblue
-                "orange" -> R.drawable.shapedotorange
-                "green" -> R.drawable.shapedotgreen
-                "pink" -> R.drawable.shapedotpink
-                "yellow" -> R.drawable.shapedotyellow
-                "red" -> R.drawable.shapedotred
-                "black", "deepBlack" -> R.drawable.shapedotwhite
-                "white" -> R.drawable.shapedotblack
-                else -> R.drawable.shapedotblack
-            }
-        } else {
-            R.drawable.shapedotblack
-        }
+        return R.drawable.shapedot_coloraccent
     }
 
     /**
      * 主要用于各点的 getThemeDot 的另一（相对/相反）状态
      *
-     * @param context Context
      * @return 资源 Id
      */
     @JvmStatic
     fun getThemeSecondDot(@NonNull context: Context): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return R.drawable.shapedot_colorbackground
-        }
-        val string = getUiTheme(context)
-        return if (string != null) {
-            when (string) {
-                "black", "deepBlack" -> R.drawable.shapedotblack
-                "blue", "orange", "green", "pink", "yellow", "white", "red" -> R.drawable.shapedotwhite
-                else -> R.drawable.shapedotwhite
-            }
-        } else {
-            R.drawable.shapedotwhite
-        }
+        return R.drawable.shapedot_colorbackground
     }
 
     @JvmStatic
@@ -114,18 +81,8 @@ internal object ThemeUtils {
         if (window != null) {
             window.requestFeature(Window.FEATURE_NO_TITLE)
             window.setBackgroundDrawableResource(R.color.realTranslucent)
-            when {
-                Build.VERSION.SDK_INT >= 21 -> {
-                    window.navigationBarColor = Color.TRANSPARENT
-                    window.statusBarColor = Color.TRANSPARENT
-                }
-                Build.VERSION.SDK_INT >= 19 -> {
-                    @Suppress("DEPRECATION")
-                    window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-                    @Suppress("DEPRECATION")
-                    window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-                }
-            }
+            window.navigationBarColor = Color.TRANSPARENT
+            window.statusBarColor = Color.TRANSPARENT
         }
     }
 

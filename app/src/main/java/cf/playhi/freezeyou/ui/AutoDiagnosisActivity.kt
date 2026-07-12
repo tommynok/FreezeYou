@@ -18,7 +18,6 @@ import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import cf.playhi.freezeyou.viewmodel.AutoDiagnosisViewModel
 import cf.playhi.freezeyou.R
-import cf.playhi.freezeyou.utils.ThemeUtils.getUiTheme
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity
@@ -147,15 +146,6 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.autodiagnosis_menu, menu)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            val cTheme = getUiTheme(this@AutoDiagnosisActivity)
-            if ("white" == cTheme || "default" == cTheme) {
-                menu.findItem(R.id.menu_autoDiagnosis_refresh)
-                    .setIcon(R.drawable.ic_action_refresh_light)
-                menu.findItem(R.id.menu_autoDiagnosis_help)
-                    .setIcon(R.drawable.ic_action_help_outline_light)
-            }
-        }
         return true
     }
 

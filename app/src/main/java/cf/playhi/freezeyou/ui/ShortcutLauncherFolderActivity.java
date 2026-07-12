@@ -176,8 +176,6 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
         final TextView slf_folderName_textView = findViewById(R.id.slf_folderName_textView);
 
         slf_apps_gridView.setColumnWidth((int) (getResources().getDimension(android.R.dimen.app_icon_size) * 1.8));
-//            if (Build.VERSION.SDK_INT>=16)
-//                slf_apps_gridView.setVerticalSpacing(slf_apps_gridView.getRequestedColumnWidth()/slf_apps_gridView.getNumColumns());
 
         final ArrayList<Map<String, Object>> folderItems = new ArrayList<>();
 

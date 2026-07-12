@@ -7,7 +7,6 @@ import android.app.ActivityManager;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,31 +94,29 @@ public class Freeze extends FreezeYouBaseActivity {
     }
 
     private void updateTaskDescription(String pkgName) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            setTaskDescription(
-                    new ActivityManager.TaskDescription(
-                            getApplicationLabel(
-                                    this,
-                                    null,
-                                    null,
-                                    pkgName
-                            )
-                                    + " - "
-                                    + getString(R.string.app_name),
-                            getBitmapFromDrawable(
-                                    getApplicationIcon(
-                                            this,
-                                            pkgName,
-                                            getApplicationInfoFromPkgName(
-                                                    pkgName,
-                                                    this
-                                            ),
-                                            false
-                                    )
-                            )
-                    )
-            );
-        }
+        setTaskDescription(
+                new ActivityManager.TaskDescription(
+                        getApplicationLabel(
+                                this,
+                                null,
+                                null,
+                                pkgName
+                        )
+                                + " - "
+                                + getString(R.string.app_name),
+                        getBitmapFromDrawable(
+                                getApplicationIcon(
+                                        this,
+                                        pkgName,
+                                        getApplicationInfoFromPkgName(
+                                                pkgName,
+                                                this
+                                        ),
+                                        false
+                                )
+                        )
+                )
+        );
     }
 
     private void initApplicationIconImageView() {
@@ -147,20 +144,16 @@ public class Freeze extends FreezeYouBaseActivity {
         scaleYAnim.setDuration(animDuration);
         scaleYAnim.setInterpolator(new AccelerateDecelerateInterpolator());
         AnimatorSet animatorSet = new AnimatorSet();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            ValueAnimator greyAnim = ValueAnimator.ofFloat(0f, 1f);
-            greyAnim.addUpdateListener(animation -> {
-                float animatedValue = (float) animation.getAnimatedValue();
-                ColorMatrix matrix = new ColorMatrix();
-                matrix.setSaturation(animatedValue);
-                applicationIconImageView.setColorFilter(new ColorMatrixColorFilter(matrix));
-            });
-            greyAnim.setDuration(animDuration);
-            greyAnim.setInterpolator(new AccelerateDecelerateInterpolator());
-            animatorSet.play(greyAnim).with(fadeAnim).with(scaleXAnim).with(scaleYAnim);
-        } else {
-            animatorSet.play(fadeAnim).with(scaleXAnim).with(scaleYAnim);
-        }
+        ValueAnimator greyAnim = ValueAnimator.ofFloat(0f, 1f);
+        greyAnim.addUpdateListener(animation -> {
+            float animatedValue = (float) animation.getAnimatedValue();
+            ColorMatrix matrix = new ColorMatrix();
+            matrix.setSaturation(animatedValue);
+            applicationIconImageView.setColorFilter(new ColorMatrixColorFilter(matrix));
+        });
+        greyAnim.setDuration(animDuration);
+        greyAnim.setInterpolator(new AccelerateDecelerateInterpolator());
+        animatorSet.play(greyAnim).with(fadeAnim).with(scaleXAnim).with(scaleYAnim);
         animatorSet.start();
     }
 
@@ -179,20 +172,16 @@ public class Freeze extends FreezeYouBaseActivity {
         scaleYAnim.setDuration(animDuration);
         scaleYAnim.setInterpolator(new AccelerateDecelerateInterpolator());
         AnimatorSet animatorSet = new AnimatorSet();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            ValueAnimator greyAnim = ValueAnimator.ofFloat(1f, 0f);
-            greyAnim.addUpdateListener(animation -> {
-                float animatedValue = (float) animation.getAnimatedValue();
-                ColorMatrix matrix = new ColorMatrix();
-                matrix.setSaturation(animatedValue);
-                applicationIconImageView.setColorFilter(new ColorMatrixColorFilter(matrix));
-            });
-            greyAnim.setDuration(animDuration);
-            greyAnim.setInterpolator(new AccelerateDecelerateInterpolator());
-            animatorSet.play(greyAnim).with(fadeAnim).with(scaleXAnim).with(scaleYAnim);
-        } else {
-            animatorSet.play(fadeAnim).with(scaleXAnim).with(scaleYAnim);
-        }
+        ValueAnimator greyAnim = ValueAnimator.ofFloat(1f, 0f);
+        greyAnim.addUpdateListener(animation -> {
+            float animatedValue = (float) animation.getAnimatedValue();
+            ColorMatrix matrix = new ColorMatrix();
+            matrix.setSaturation(animatedValue);
+            applicationIconImageView.setColorFilter(new ColorMatrixColorFilter(matrix));
+        });
+        greyAnim.setDuration(animDuration);
+        greyAnim.setInterpolator(new AccelerateDecelerateInterpolator());
+        animatorSet.play(greyAnim).with(fadeAnim).with(scaleXAnim).with(scaleYAnim);
         animatorSet.start();
     }
 
@@ -210,10 +199,8 @@ public class Freeze extends FreezeYouBaseActivity {
 
     @Override
     public void finish() {
-        if (Build.VERSION.SDK_INT >= 21
-                &&
-                (!showInRecents.getValue(null)
-                        || !includeFUFActivityInRecents.getValue(null))) {
+        if (!showInRecents.getValue(null)
+                || !includeFUFActivityInRecents.getValue(null)) {
             finishAndRemoveTask();
         } else {
             super.finish();
