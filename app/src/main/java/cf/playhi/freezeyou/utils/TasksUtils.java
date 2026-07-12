@@ -121,35 +121,19 @@ public final class TasksUtils {
 
     private static void setTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {//RTC
         try {
-            if (Build.VERSION.SDK_INT >= 23) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
-            }
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
         } catch (SecurityException e) {
             e.printStackTrace();
-            if (Build.VERSION.SDK_INT >= 23) {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
-            } else {
-                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
-            }
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
         }
     }
 
     private static void setRealTimeTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {
         try {
-            if (Build.VERSION.SDK_INT >= 23) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
-            } else {
-                alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
-            }
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
         } catch (SecurityException e) {
             e.printStackTrace();
-            if (Build.VERSION.SDK_INT >= 23) {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
-            } else {
-                alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
-            }
+            alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
         }
     }
 

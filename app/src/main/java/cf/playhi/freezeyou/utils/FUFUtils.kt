@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import cf.playhi.freezeyou.DeviceAdminReceiver
 import cf.playhi.freezeyou.MainApplication
 import cf.playhi.freezeyou.MyNotificationListenerService
@@ -798,10 +797,9 @@ object FUFUtils {
     }
 
     fun checkAndEnableShizukuMultiProcessSupport(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-            && ("10" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
-                    || "9" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
-                    || "8" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue())
+        if ("10" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
+            || "9" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
+            || "8" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
         ) {
             ShizukuProvider.enableMultiProcessSupport(false)
             ShizukuProvider.requestBinderForNonProviderProcess(context)

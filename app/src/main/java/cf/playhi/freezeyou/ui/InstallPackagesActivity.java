@@ -93,29 +93,24 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         if (ContentResolver.SCHEME_FILE.equals(scheme)) {
             // Check Storage Permission
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    AlertDialog.Builder b = AlertDialogUtils
-                            .buildAlertDialog(
-                                    this,
-                                    R.drawable.ic_warning,
-                                    R.string.needStoragePermission,
-                                    R.string.notice)
-                            .setOnCancelListener(dialog -> finish())
-                            .setPositiveButton(R.string.okay, (dialog, which) ->
-                                    requestPermissions(
-                                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                                            301
-                                    )
-                            )
-                            .setNegativeButton(R.string.cancel, (dialog, which) -> finish());
-                    if (!isFinishing()) {
-                        b.show();
-                    }
-                } else {
-                    apkFilePath = packageUri.getPath();
-                    checkAutoAndPrepareInstallDialog(install, packageUri, apkFilePath);
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                AlertDialog.Builder b = AlertDialogUtils
+                        .buildAlertDialog(
+                                this,
+                                R.drawable.ic_warning,
+                                R.string.needStoragePermission,
+                                R.string.notice)
+                        .setOnCancelListener(dialog -> finish())
+                        .setPositiveButton(R.string.okay, (dialog, which) ->
+                                requestPermissions(
+                                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                                        301
+                                )
+                        )
+                        .setNegativeButton(R.string.cancel, (dialog, which) -> finish());
+                if (!isFinishing()) {
+                    b.show();
                 }
             } else {
                 apkFilePath = packageUri.getPath();
@@ -134,28 +129,23 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         final String fromPkgLabel;
         final String fromPkgName;
-        if (Build.VERSION.SDK_INT >= 22) {
-            Uri referrerUri = getReferrer();
-            if (referrerUri == null || !"android-app".equals(referrerUri.getScheme())) {
-                fromPkgLabel = ILLEGALPKGNAME;
-                fromPkgName = ILLEGALPKGNAME;
-            } else {
-                fromPkgName = referrerUri.getEncodedSchemeSpecificPart().substring(2);
-                String refererPackageLabel =
-                        getApplicationLabel(
-                                InstallPackagesActivity.this,
-                                null, null,
-                                fromPkgName
-                        );
-                if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
-                    fromPkgLabel = ILLEGALPKGNAME;
-                } else {
-                    fromPkgLabel = refererPackageLabel;
-                }
-            }
-        } else {
+        Uri referrerUri = getReferrer();
+        if (referrerUri == null || !"android-app".equals(referrerUri.getScheme())) {
             fromPkgLabel = ILLEGALPKGNAME;
             fromPkgName = ILLEGALPKGNAME;
+        } else {
+            fromPkgName = referrerUri.getEncodedSchemeSpecificPart().substring(2);
+            String refererPackageLabel =
+                    getApplicationLabel(
+                            InstallPackagesActivity.this,
+                            null, null,
+                            fromPkgName
+                    );
+            if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
+                fromPkgLabel = ILLEGALPKGNAME;
+            } else {
+                fromPkgLabel = refererPackageLabel;
+            }
         }
 
         prepareInstallDialog(install, packageUri, apkFilePath, fromPkgLabel, fromPkgName);

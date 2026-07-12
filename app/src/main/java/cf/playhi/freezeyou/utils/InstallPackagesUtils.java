@@ -66,9 +66,7 @@ public final class InstallPackagesUtils {
                                             context,
                                             (beOperatedPackageName + "@InstallPackagesNotification").hashCode(),
                                             resultIntent,
-                                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                                    ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                                    : PendingIntent.FLAG_UPDATE_CURRENT);
+                                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                     builder.setContentIntent(resultPendingIntent);
                     builder.setAutoCancel(true);
 
@@ -86,9 +84,7 @@ public final class InstallPackagesUtils {
                                         new Intent(context, ShowSimpleDialogActivity.class)
                                                 .putExtra("title", title)
                                                 .putExtra("text", text),
-                                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                                : PendingIntent.FLAG_UPDATE_CURRENT);
+                                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 builder.setContentIntent(resultPendingIntent);
             }
 
@@ -108,9 +104,7 @@ public final class InstallPackagesUtils {
                                     new Intent(context, ShowSimpleDialogActivity.class)
                                             .putExtra("title", title)
                                             .putExtra("text", text),
-                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                            : PendingIntent.FLAG_UPDATE_CURRENT);
+                                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             builder.setContentIntent(resultPendingIntent);
 
         }

@@ -3,7 +3,6 @@ package cf.playhi.freezeyou.ui;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
@@ -105,8 +104,7 @@ public class UriFreezeActivity extends FreezeYouBaseActivity {
 
         String refererPackageLabel;
         final String refererPackage;
-        if (Build.VERSION.SDK_INT >= 22
-                && intent.getParcelableExtra(Intent.EXTRA_REFERRER) == null
+        if (intent.getParcelableExtra(Intent.EXTRA_REFERRER) == null
                 && intent.getStringExtra(Intent.EXTRA_REFERRER_NAME) == null) {
             Uri referrerUri = getReferrer();
             if (referrerUri != null && "android-app".equals(referrerUri.getScheme())) {

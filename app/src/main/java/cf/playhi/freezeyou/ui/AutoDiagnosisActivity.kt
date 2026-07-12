@@ -76,13 +76,13 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                     when (s) {
                         "-30" -> checkUpdate(this@AutoDiagnosisActivity)
                         "1" -> openAccessibilitySettings(this@AutoDiagnosisActivity)
-                        "2" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                        "2" -> {
                             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                             if (intent.resolveActivity(packageManager) != null) {
                                 startActivity(intent)
                             }
                         }
-                        "4" -> if (Build.VERSION.SDK_INT >= 23) {
+                        "4" -> {
                             val intent =
                                 if ((getSystemService(POWER_SERVICE) as PowerManager)
                                         .isIgnoringBatteryOptimizations(packageName)

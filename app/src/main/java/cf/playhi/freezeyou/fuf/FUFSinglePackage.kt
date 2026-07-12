@@ -3,7 +3,6 @@ package cf.playhi.freezeyou.fuf
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.IBinder
 import android.system.Os
 import cf.playhi.freezeyou.DeviceAdminReceiver.getComponentName
@@ -205,8 +204,6 @@ open class FUFSinglePackage(
     }
 
     private fun pureExecuteAPIShizukuAction(): Int {
-
-        if (Build.VERSION.SDK_INT < 23) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
 
         try {
             ShizukuProvider.requestBinderForNonProviderProcess(context)

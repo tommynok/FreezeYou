@@ -1,7 +1,6 @@
 package cf.playhi.freezeyou.ui;
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -64,10 +63,8 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
         unlockButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
         logoImageView.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ImageButton fingerprintImageButton = findViewById(R.id.app_lock_main_fingerprint_imageButton);
-            fingerprintImageButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
-        }
+        ImageButton fingerprintImageButton = findViewById(R.id.app_lock_main_fingerprint_imageButton);
+        fingerprintImageButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
         String logoPkgName = getIntent().getStringExtra("unlockLogoPkgName");
         if (logoPkgName != null) {
             logoImageView.setImageBitmap(
