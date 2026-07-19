@@ -14,7 +14,7 @@ class SettingsAdvanceFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.spr_advance, rootKey)
 
         findPreference<Preference?>("configureAccessibilityService")?.setOnPreferenceClickListener {
-            openAccessibilitySettings(activity)
+            openAccessibilitySettings(requireContext())
             true
         }
 

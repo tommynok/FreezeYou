@@ -393,12 +393,10 @@ object FUFUtils {
 
     private fun isAppStillNotifying(pkgName: String?): Boolean {
         if (pkgName != null) {
-            val statusBarNotifications = MyNotificationListenerService.getStatusBarNotifications()
-            if (statusBarNotifications != null) {
-                for (aStatusBarNotifications in statusBarNotifications) {
-                    if (pkgName == aStatusBarNotifications.packageName) {
-                        return true
-                    }
+            val statusBarNotifications = MyNotificationListenerService.statusBarNotifications
+            for (aStatusBarNotifications in statusBarNotifications) {
+                if (pkgName == aStatusBarNotifications.packageName) {
+                    return true
                 }
             }
         }
@@ -445,7 +443,7 @@ object FUFUtils {
 
     @JvmStatic
     fun processUnfreezeAction(
-        context: Context?,
+        context: Context,
         pkgName: String?,
         target: String?,
         tasks: String?,
@@ -469,7 +467,7 @@ object FUFUtils {
 
     @JvmStatic
     fun processFreezeAction(
-        context: Context?,
+        context: Context,
         pkgName: String?,
         target: String?,
         tasks: String?,
@@ -490,7 +488,7 @@ object FUFUtils {
     }
 
     @JvmStatic
-    fun checkMRootFrozen(context: Context?, pkgName: String): Boolean {
+    fun checkMRootFrozen(context: Context, pkgName: String): Boolean {
         return try {
             ((DevicePolicyManagerUtils.isDeviceOwner(context) || DevicePolicyManagerUtils.isProfileOwner(context))
                     && DevicePolicyManagerUtils.getDevicePolicyManager(context)
@@ -587,14 +585,14 @@ object FUFUtils {
     }
 
     @JvmStatic
-    fun checkAndCreateFUFQuickNotification(context: Context?, pkgName: String?) {
+    fun checkAndCreateFUFQuickNotification(context: Context, pkgName: String) {
         if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
             NotificationUtils.createFUFQuickNotification(
                 context, pkgName, R.drawable.ic_notification,
                 ApplicationIconUtils.getBitmapFromDrawable(
                     ApplicationIconUtils.getApplicationIcon(
-                        context!!,
-                        pkgName!!,
+                        context,
+                        pkgName,
                         ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context),
                         false
                     )

@@ -15,7 +15,7 @@ import cf.playhi.freezeyou.utils.FUFUtils.isAvoidFreezeNotifyingApplicationsEnab
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import cf.playhi.freezeyou.utils.FUFUtils.sendStatusChangedBroadcast
 import cf.playhi.freezeyou.utils.NotificationUtils.deleteNotification
-import cf.playhi.freezeyou.utils.TasksUtils.*
+import cf.playhi.freezeyou.utils.TasksUtils
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -60,13 +60,13 @@ class FreezeYouFUFSinglePackage(
                 when (actionMode) {
                     ACTION_MODE_FREEZE -> {
                         withContext(Dispatchers.Main) {
-                            onFApplications(context, singlePackageName)
+                            TasksUtils.onFApplications(context, singlePackageName)
                         }
                         deleteNotification(context, singlePackageName)
                     }
                     ACTION_MODE_UNFREEZE -> {
                         withContext(Dispatchers.Main) {
-                            onUFApplications(context, singlePackageName)
+                            TasksUtils.onUFApplications(context, singlePackageName)
                         }
                         checkAndCreateFUFQuickNotification(context, singlePackageName)
                     }
@@ -89,7 +89,7 @@ class FreezeYouFUFSinglePackage(
         }
 
         if (tasks != null) {
-            runTask(tasks, context, null)
+            TasksUtils.runTask(tasks, context, null)
         }
 
         if (needAskRun && context.getString(R.string.onlyUnfreeze) != target) {
@@ -130,7 +130,7 @@ class FreezeYouFUFSinglePackage(
         ): Int {
 
             if (tasks != null) {
-                runTask(tasks, context, null)
+                TasksUtils.runTask(tasks, context, null)
             }
 
             if (target != null) {

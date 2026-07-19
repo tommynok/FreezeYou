@@ -23,51 +23,51 @@ class SettingsManageSpaceFragment : PreferenceFragmentCompat() {
 
         findPreference<Preference?>("clearUninstalledPkgsInOKFFList")?.setOnPreferenceClickListener {
             if (removeUninstalledFromOneKeyList(
-                    activity,
+                    requireContext(),
                     getString(R.string.sAutoFreezeApplicationList)
                 )
             ) {
-                showToast(activity, R.string.success)
+                showToast(requireContext(), R.string.success)
             } else {
-                showToast(activity, R.string.failed)
+                showToast(requireContext(), R.string.failed)
             }
             true
         }
         findPreference<Preference?>("clearUninstalledPkgsInOKUFList")?.setOnPreferenceClickListener {
             if (removeUninstalledFromOneKeyList(
-                    activity,
+                    requireContext(),
                     getString(R.string.sOneKeyUFApplicationList)
                 )
             ) {
-                showToast(activity, R.string.success)
+                showToast(requireContext(), R.string.success)
             } else {
-                showToast(activity, R.string.failed)
+                showToast(requireContext(), R.string.failed)
             }
             true
         }
         findPreference<Preference?>("clearUninstalledPkgsInFOQList")?.setOnPreferenceClickListener {
             if (removeUninstalledFromOneKeyList(
-                    activity,
+                    requireContext(),
                     getString(R.string.sFreezeOnceQuit)
                 )
             ) {
-                showToast(activity, R.string.success)
+                showToast(requireContext(), R.string.success)
             } else {
-                showToast(activity, R.string.failed)
+                showToast(requireContext(), R.string.failed)
             }
             true
         }
         findPreference<Preference?>("clearIconCache")?.setOnPreferenceClickListener {
             showToast(
-                activity,
-                if (clearIconCache(activity)) R.string.success else R.string.failed
+                requireContext(),
+                if (clearIconCache(requireContext())) R.string.success else R.string.failed
             )
             true
         }
         findPreference<Preference?>("clearNameCache")?.setOnPreferenceClickListener {
             requireContext().getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                 .edit().clear().apply()
-            showToast(activity, R.string.success)
+            showToast(requireContext(), R.string.success)
             true
         }
         findPreference<Preference?>("clearAllCache")?.setOnPreferenceClickListener {
@@ -80,10 +80,10 @@ class SettingsManageSpaceFragment : PreferenceFragmentCompat() {
                     File(requireContext().filesDir.toString() + "/icon"),
                     false
                 )
-                showToast(activity, R.string.success)
+                showToast(requireContext(), R.string.success)
             } catch (e: Exception) {
                 e.printStackTrace()
-                showToast(activity, R.string.failed)
+                showToast(requireContext(), R.string.failed)
             }
             true
         }
@@ -101,7 +101,7 @@ class SettingsManageSpaceFragment : PreferenceFragmentCompat() {
         }
         findPreference<Preference?>("deleteAllScheduledTasks")?.setOnPreferenceClickListener {
             buildAlertDialog(
-                activity,
+                requireActivity(),
                 R.drawable.ic_warning,
                 R.string.askIfDel,
                 R.string.caution

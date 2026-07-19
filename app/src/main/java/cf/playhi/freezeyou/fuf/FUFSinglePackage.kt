@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.system.Os
-import cf.playhi.freezeyou.DeviceAdminReceiver.getComponentName
-import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.*
+import cf.playhi.freezeyou.DeviceAdminReceiver
+import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
@@ -58,7 +58,7 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIAutoAction(): Int {
         return if (actionMode == ACTION_MODE_FREEZE) {
-            if (isDeviceOwner(context)) {
+            if (DevicePolicyManagerUtils.isDeviceOwner(context)) {
                 pureExecuteAPIDPMAction()
             } else {
                 pureExecuteAPIRootAction()
@@ -74,18 +74,18 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIDPMAction(): Int {
 
-        if (!isDeviceOwner(context)) return ERROR_NOT_DEVICE_POLICY_MANAGER
+        if (!DevicePolicyManagerUtils.isDeviceOwner(context)) return ERROR_NOT_DEVICE_POLICY_MANAGER
 
         val hidden = actionMode == ACTION_MODE_FREEZE
         if (!hidden &&
-            !getDevicePolicyManager(context)
-                .isApplicationHidden(getComponentName(context), singlePackageName)
+            !DevicePolicyManagerUtils.getDevicePolicyManager(context)
+                .isApplicationHidden(DeviceAdminReceiver.getComponentName(context), singlePackageName)
         ) {
             return ERROR_NO_ERROR_SUCCESS
         }
 
-        return if (getDevicePolicyManager(context).setApplicationHidden(
-                getComponentName(context),
+        return if (DevicePolicyManagerUtils.getDevicePolicyManager(context).setApplicationHidden(
+                DeviceAdminReceiver.getComponentName(context),
                 singlePackageName,
                 hidden
             )
@@ -180,18 +180,18 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIProfileOwnerAction(): Int {
 
-        if (!isProfileOwner(context)) return ERROR_NOT_PROFILE_OWNER
+        if (!DevicePolicyManagerUtils.isProfileOwner(context)) return ERROR_NOT_PROFILE_OWNER
 
         val hidden = actionMode == ACTION_MODE_FREEZE
         if (!hidden &&
-            !getDevicePolicyManager(context)
-                .isApplicationHidden(getComponentName(context), singlePackageName)
+            !DevicePolicyManagerUtils.getDevicePolicyManager(context)
+                .isApplicationHidden(DeviceAdminReceiver.getComponentName(context), singlePackageName)
         ) {
             return ERROR_NO_ERROR_SUCCESS
         }
 
-        return if (getDevicePolicyManager(context).setApplicationHidden(
-                getComponentName(context),
+        return if (DevicePolicyManagerUtils.getDevicePolicyManager(context).setApplicationHidden(
+                DeviceAdminReceiver.getComponentName(context),
                 singlePackageName,
                 hidden
             )

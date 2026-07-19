@@ -17,7 +17,7 @@ import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
-import cf.playhi.freezeyou.utils.VersionUtils.*
+import cf.playhi.freezeyou.utils.VersionUtils
 
 class AboutActivity : FreezeYouBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +43,7 @@ class AboutActivity : FreezeYouBaseActivity() {
                     resources.getString(R.string.contactUs),
                     resources.getString(R.string.update),
                     resources.getString(R.string.thirdPartyOpenSourceLicenses),
-                    "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})"
+                    "V${VersionUtils.getVersionName(applicationContext)}(${VersionUtils.getVersionCode(applicationContext)})"
                 )
             )
 
@@ -107,21 +107,21 @@ class AboutActivity : FreezeYouBaseActivity() {
                             }
                             .show()
                     }
-                    6 -> checkUpdate(this@AboutActivity)
+                    6 -> VersionUtils.checkUpdate(this@AboutActivity)
                     7 -> requestOpenWebSite(
                         this@AboutActivity,
                         "https://freezeyou.playhi.net/ThirdPartyOpenSourceLicenses.html"
                     )
                     8 -> showToast(
                         this@AboutActivity,
-                        "V" + getVersionName(this@AboutActivity) + "(" + getVersionCode(
+                        "V" + VersionUtils.getVersionName(this@AboutActivity) + "(" + VersionUtils.getVersionCode(
                             this@AboutActivity
                         ) + ")"
                     )
                 }
             }
 
-        aboutSlogan.text = String.format("V %s", getVersionCode(this@AboutActivity))
+        aboutSlogan.text = String.format("V %s", VersionUtils.getVersionCode(this@AboutActivity))
         aboutSlogan.setOnClickListener {
             requestOpenWebSite(
                 this@AboutActivity, String.format(
