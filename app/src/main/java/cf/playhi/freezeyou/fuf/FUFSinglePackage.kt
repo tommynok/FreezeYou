@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.ShizukuProvider
 import rikka.shizuku.SystemServiceHelper
+import rikka.shizuku.Shizuku
 import java.lang.reflect.InvocationTargetException
 
 open class FUFSinglePackage(
@@ -208,13 +209,20 @@ open class FUFSinglePackage(
     }
 
     private fun pureExecuteAPIShizukuAction(): Int {
-
         if (Build.VERSION.SDK_INT < 23) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
-
         try {
             ShizukuProvider.requestBinderForNonProviderProcess(context)
-            val freeze = actionMode == ACTION_MODE_FREEZE
 
+            var waited = 0
+            while (!Shizuku.pingBinder() && waited < 3000) {
+                Thread.sleep(50)
+                waited += 50
+            }
+            if (!Shizuku.pingBinder()) {
+                return ERROR_INSUFFICIENT_PERMISSION
+            }
+
+            val freeze = actionMode == ACTION_MODE_FREEZE
             @SuppressLint("PrivateApi")
             val cls = Class.forName("android.content.pm.IPackageManager\$Stub")
                 .getMethod("asInterface", IBinder::class.java)
