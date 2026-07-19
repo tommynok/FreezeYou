@@ -10,13 +10,16 @@ jobs:
       JAVA_TOOL_OPTIONS: -XX:-UseContainerSupport
     steps:
     - uses: actions/checkout@v4
+
     - name: set up JDK 21
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '21'
+
     - name: Grant Permission
       run: chmod +x ./gradlew
+
     - name: Generate debug keystore
       run: |
         mkdir -p ~/.android
@@ -24,5 +27,12 @@ jobs:
           -storepass android -alias androiddebugkey -keypass android \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android Debug,O=Android,C=US"
+
     - name: Build with Gradle
       run: ./gradlew build --stacktrace
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/*.apk
