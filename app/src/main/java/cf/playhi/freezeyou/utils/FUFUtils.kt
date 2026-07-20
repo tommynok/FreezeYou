@@ -820,3 +820,4 @@ object FUFUtils {
             ShizukuProvider.requestBinderForNonProviderProcess(context)
         }
     }
+}
