@@ -20,6 +20,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.ui.AskRunActivity
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import rikka.sui.Sui
 import rikka.shizuku.ShizukuProvider
 import java.io.DataOutputStream
 import java.util.*
@@ -808,13 +809,14 @@ object FUFUtils {
     }
 
     fun checkAndEnableShizukuMultiProcessSupport(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-            && ("10" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
-                    || "9" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
-                    || "8" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue())
+        if ("10" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
+            || "9" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
+            || "8" == DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue()
         ) {
             ShizukuProvider.enableMultiProcessSupport(false)
+            if (!Sui.isSui()) {
+                Sui.init(context.packageName)
+            }
             ShizukuProvider.requestBinderForNonProviderProcess(context)
         }
     }
-}
