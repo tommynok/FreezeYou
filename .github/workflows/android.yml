@@ -29,10 +29,10 @@ jobs:
           -dname "CN=Android Debug,O=Android,C=US"
 
     - name: Build with Gradle
-      run: ./gradlew build --stacktrace
+      run: ./gradlew assembleRelease --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/*.apk
+        name: app-release
+        path: app/build/outputs/apk/release/*.apk
