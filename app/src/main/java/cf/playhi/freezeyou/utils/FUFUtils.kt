@@ -18,7 +18,6 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.ui.AskRunActivity
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import rikka.sui.Sui
 import rikka.shizuku.ShizukuProvider
@@ -170,10 +169,7 @@ object FUFUtils {
                 checkAndShowAppIsForegroundApplicationToast(context, pkgName)
             } else {
                 runBlocking {
-                    launch {
-                        returnValue =
-                            FUFSinglePackage(context, pkgName, actionMode, apiMode).commit()
-                    }.join()
+                    returnValue = FUFSinglePackage(context, pkgName, actionMode, apiMode).commit()
                 }
             }
         }
@@ -356,6 +352,7 @@ object FUFUtils {
                 false
             )
             else -> if (pkgNameList != null) {
+                val failedPkgNames = mutableListOf<String>()
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
@@ -365,28 +362,41 @@ object FUFUtils {
                             !freeze || !checkMRootFrozen(context, aPkgName)
                         ) {
                             if (!processAction(context, aPkgName, apiMode, !freeze, false)) {
-                                ToastUtils.showToast(
-                                    context,
-                                    aPkgName + " " + context.getString(R.string.failed) + " " + context.getString(
-                                        R.string.mayUnrootedOrOtherEx
-                                    )
-                                )
+                                failedPkgNames.add(aPkgName)
                             }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        ToastUtils.showToast(
-                            context,
-                            context.getString(R.string.exceptionHC) + e.localizedMessage
-                        )
+                        failedPkgNames.add(aPkgName)
                     }
                 }
                 sendStatusChangedBroadcast(context)
-                if (!lesserToast.getValue()) {
+                if (failedPkgNames.isNotEmpty()) {
+                    showFailedApplicationsToast(context, failedPkgNames)
+                } else if (!lesserToast.getValue()) {
                     ToastUtils.showToast(context, R.string.executed)
                 }
             }
         }
+    }
+
+    /**
+     * Android's system Toast has no built-in scrolling/scaling for long content — extra
+     * toasts just queue up (or get silently dropped for background apps on Android 11+),
+     * so a batch failure is summarized into a single, length-capped toast instead of one
+     * toast per failed package.
+     */
+    private const val MAX_FAILED_APPS_SHOWN_IN_TOAST = 5
+
+    private fun showFailedApplicationsToast(context: Context, failedPkgNames: List<String>) {
+        val shownNames = failedPkgNames.take(MAX_FAILED_APPS_SHOWN_IN_TOAST).joinToString(", ") {
+            ApplicationLabelUtils.getApplicationLabel(context, null, null, it) ?: it
+        }
+        val remaining = failedPkgNames.size - MAX_FAILED_APPS_SHOWN_IN_TOAST
+        val message = context.getString(
+            R.string.nApplicationsFailedColonList, failedPkgNames.size, shownNames
+        ) + if (remaining > 0) context.getString(R.string.andNMoreApplications, remaining) else ""
+        ToastUtils.showToast(context, message)
     }
 
     fun sendStatusChangedBroadcast(context: Context) {
