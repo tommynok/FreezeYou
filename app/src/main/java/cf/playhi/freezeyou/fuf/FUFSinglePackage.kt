@@ -211,55 +211,44 @@ open class FUFSinglePackage(
     private fun pureExecuteAPIShizukuAction(): Int {
         if (Build.VERSION.SDK_INT < 23) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         try {
-            ShizukuProvider.requestBinderForNonProviderProcess(context)
-
-            var waited = 0
-            while (!Shizuku.pingBinder() && waited < 3000) {
-                Thread.sleep(50)
-                waited += 50
-            }
-            if (!Shizuku.pingBinder()) {
-                return ERROR_INSUFFICIENT_PERMISSION
-            }
+            ensureBinderAlive()?.let { return it }
 
             val freeze = actionMode == ACTION_MODE_FREEZE
-            @SuppressLint("PrivateApi")
-            val cls = Class.forName("android.content.pm.IPackageManager\$Stub")
-                .getMethod("asInterface", IBinder::class.java)
-                .invoke(null, ShizukuBinderWrapper(SystemServiceHelper.getSystemService("package")))
-            cls::class.java.getMethod(
-                "setApplicationEnabledSetting",
-                String::class.java, // packageName
-                Int::class.java, // newState
-                Int::class.java, // flags
-                Int::class.java, // userId
-                String::class.java // callingPackage
-            ).invoke(
-                cls,
-                singlePackageName,
-                if (freeze) {
-                    when (apiMode) {
-                        API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
-                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-                        API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
-                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                        API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
-                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                        else ->
-                            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                    }
-                } else {
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                },
-                0,
-                /**
-                 * .../private/android_filesystem_config.h
-                 * #define AID_USER 100000        /* \T\O\D\O: switch users over to AID_USER_OFFSET */
-                 * #define AID_USER_OFFSET 100000 /* offset for uid ranges for each user */
-                 */
-                Os.getuid() / 100000,
-                "cf.playhi.freezeyou"
-            )
+            val (pm, method) = obtainCachedPackageManagerProxyAndMethod()
+
+            try {
+                method.invoke(
+                    pm,
+                    singlePackageName,
+                    if (freeze) {
+                        when (apiMode) {
+                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                            else ->
+                                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                        }
+                    } else {
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    },
+                    0,
+                    /**
+                     * .../private/android_filesystem_config.h
+                     * #define AID_USER 100000        /* \T\O\D\O: switch users over to AID_USER_OFFSET */
+                     * #define AID_USER_OFFSET 100000 /* offset for uid ranges for each user */
+                     */
+                    Os.getuid() / 100000,
+                    "cf.playhi.freezeyou"
+                )
+            } catch (e: InvocationTargetException) {
+                if (e.cause is android.os.DeadObjectException) {
+                    invalidateCachedPackageManagerProxy()
+                }
+                throw e
+            }
             return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
         } catch (e: InvocationTargetException) {
             e.printStackTrace()
@@ -275,7 +264,73 @@ open class FUFSinglePackage(
         return ERROR_OTHER
     }
 
+    /**
+     * Avoids re-running the binder-ready poll loop for every single package in a batch:
+     * once confirmed alive, subsequent calls within [BINDER_ALIVE_CACHE_MS] skip straight through.
+     */
+    private fun ensureBinderAlive(): Int? {
+        val now = System.currentTimeMillis()
+        if (now - lastBinderAliveCheckMs < BINDER_ALIVE_CACHE_MS && Shizuku.pingBinder()) {
+            return null
+        }
+
+        ShizukuProvider.requestBinderForNonProviderProcess(context)
+
+        var waited = 0
+        while (!Shizuku.pingBinder() && waited < 3000) {
+            Thread.sleep(50)
+            waited += 50
+        }
+        if (!Shizuku.pingBinder()) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
+
+        invalidateCachedPackageManagerProxy()
+        lastBinderAliveCheckMs = now
+        return null
+    }
+
+    @SuppressLint("PrivateApi")
+    private fun obtainCachedPackageManagerProxyAndMethod(): Pair<Any, java.lang.reflect.Method> {
+        cachedPackageManagerProxy?.let { pm ->
+            cachedSetApplicationEnabledSettingMethod?.let { method ->
+                return pm to method
+            }
+        }
+
+        val pm = Class.forName("android.content.pm.IPackageManager\$Stub")
+            .getMethod("asInterface", IBinder::class.java)
+            .invoke(null, ShizukuBinderWrapper(SystemServiceHelper.getSystemService("package")))
+        val method = pm::class.java.getMethod(
+            "setApplicationEnabledSetting",
+            String::class.java, // packageName
+            Int::class.java, // newState
+            Int::class.java, // flags
+            Int::class.java, // userId
+            String::class.java // callingPackage
+        )
+        cachedPackageManagerProxy = pm
+        cachedSetApplicationEnabledSettingMethod = method
+        return pm to method
+    }
+
+    private fun invalidateCachedPackageManagerProxy() {
+        cachedPackageManagerProxy = null
+        cachedSetApplicationEnabledSettingMethod = null
+    }
+
     companion object {
+        private const val BINDER_ALIVE_CACHE_MS = 5000L
+
+        @Volatile
+        private var lastBinderAliveCheckMs: Long = 0L
+
+        @Volatile
+        private var cachedPackageManagerProxy: Any? = null
+
+        @Volatile
+        private var cachedSetApplicationEnabledSettingMethod: java.lang.reflect.Method? = null
+
         const val ACTION_MODE_FREEZE = 0
         const val ACTION_MODE_UNFREEZE = 1
         const val ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT = 1
