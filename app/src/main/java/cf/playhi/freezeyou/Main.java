@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -41,6 +42,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -145,6 +147,8 @@ public class Main extends FreezeYouBaseActivity {
     private final static int SORT_BY_ALPHABETICAL = 8;
     private final static int SORT_BY_LAST_INSTALLED = 9;
     private final static int SORT_BY_LAST_UPDATED = 10;
+
+    private final static int REQUEST_CODE_POST_NOTIFICATIONS = 401;
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private int appListViewOnClickMode = APPListViewOnClickMode_chooseAction;
@@ -1199,7 +1203,21 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
+    private void checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    REQUEST_CODE_POST_NOTIFICATIONS
+            );
+        }
+    }
+
     private void go() {
+        checkAndRequestNotificationPermission();
+
         if (updateFrozenStatusBroadcastReceiver == null) {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
