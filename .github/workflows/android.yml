@@ -33,7 +33,12 @@ jobs:
       run: ./gradlew assembleRelease --stacktrace
 
     - name: Upload APK
+      id: upload-apk
       uses: actions/upload-artifact@v4
       with:
         name: app-release
         path: app/build/outputs/apk/release/*.apk
+
+    - name: Add download link to job summary
+      run: |
+        echo "### 📦 [Download app-release.apk](${{ steps.upload-apk.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
