@@ -1,6 +1,8 @@
 package cf.playhi.freezeyou;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -171,12 +173,14 @@ public class Main extends FreezeYouBaseActivity {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        try {
-            manageCrashLog();
-        } catch (Exception e) {
-            e.printStackTrace();
-            checkIfNeedAskFirstTimeSetupAndShowDialog();
-        }
+        checkAndAskNotificationPermissionOnce(() -> {
+            try {
+                manageCrashLog();
+            } catch (Exception e) {
+                e.printStackTrace();
+                checkIfNeedAskFirstTimeSetupAndShowDialog();
+            }
+        });
 //        throw new RuntimeException("自定义异常：仅于异常上报测试中使用");//发版前务必注释
     }
 
@@ -1203,7 +1207,49 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
-    private void checkAndRequestNotificationPermission() {
+    /**
+     * Shows a one-time rationale dialog before the welcome/first-run dialogs, then triggers the
+     * notification permission prompt. On API 26-32 there's no real runtime permission to grant,
+     * but creating the notification channel here is what makes Android's own legacy compatibility
+     * dialog (for apps targeting API 32 or lower) fire now instead of mid-way through a freeze.
+     */
+    private void checkAndAskNotificationPermissionOnce(Runnable onDone) {
+        SharedPreferences verPrefs = getSharedPreferences("Ver", MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                || verPrefs.getBoolean("AskedNotificationPermission", false)) {
+            onDone.run();
+            return;
+        }
+        verPrefs.edit().putBoolean("AskedNotificationPermission", true).apply();
+        buildAlertDialog(
+                Main.this, R.mipmap.ic_launcher_new_round,
+                R.string.notificationPermissionRationaleMessage,
+                R.string.notificationPermissionRationaleTitle
+        )
+                .setPositiveButton(R.string.okay, (dialogInterface, i) -> {
+                    requestNotificationPermission();
+                    onDone.run();
+                })
+                .setOnCancelListener(dialogInterface -> {
+                    requestNotificationPermission();
+                    onDone.run();
+                })
+                .create()
+                .show();
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "OneKeyFreeze",
+                    getString(R.string.oneKeyFreeze),
+                    NotificationManager.IMPORTANCE_NONE
+            );
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -1216,8 +1262,6 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void go() {
-        checkAndRequestNotificationPermission();
-
         if (updateFrozenStatusBroadcastReceiver == null) {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
