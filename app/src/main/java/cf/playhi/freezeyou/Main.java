@@ -154,6 +154,8 @@ public class Main extends FreezeYouBaseActivity {
     private final static int REQUEST_CODE_POST_NOTIFICATIONS = 401;
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
+    private ActionMode currentSelectionActionMode;
+    private AbsListView.MultiChoiceModeListener currentMultiChoiceModeListener;
     private int appListViewOnClickMode = APPListViewOnClickMode_chooseAction;
     private int customThemeDisabledDot = R.drawable.shapedotblue;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
@@ -300,6 +302,7 @@ public class Main extends FreezeYouBaseActivity {
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
         final EditText search_editText = findViewById(R.id.search_editText);
         final ImageButton moreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
+        final ImageButton selectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
 
         final Context applicationContext = getApplicationContext();
 
@@ -351,6 +354,9 @@ public class Main extends FreezeYouBaseActivity {
         runOnUiThread(() -> {
 
             moreSettingsImageButton.setBackgroundResource(
+                    Build.VERSION.SDK_INT >= 21 ?
+                            R.drawable.oval_ripple : getThemeFabDotBackground(Main.this));
+            selectionActionsImageButton.setBackgroundResource(
                     Build.VERSION.SDK_INT >= 21 ?
                             R.drawable.oval_ripple : getThemeFabDotBackground(Main.this));
 
@@ -779,7 +785,7 @@ public class Main extends FreezeYouBaseActivity {
                 linearLayout.setVisibility(View.GONE);
                 appListFragmentContainer.setVisibility(View.VISIBLE);
 
-                mMainActivityAppListFragment.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+                currentMultiChoiceModeListener = new AbsListView.MultiChoiceModeListener() {
                     @Override
                     public void onItemCheckedStateChanged(ActionMode actionMode, int i, long l, boolean b) {
                         final String pkgName =
@@ -803,6 +809,8 @@ public class Main extends FreezeYouBaseActivity {
 
                     @Override
                     public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+                        currentSelectionActionMode = actionMode;
+                        selectionActionsImageButton.setVisibility(View.VISIBLE);
                         Main.this.getMenuInflater().inflate(R.menu.multichoicemenu, menu);
                         return true;
                     }
@@ -1031,7 +1039,22 @@ public class Main extends FreezeYouBaseActivity {
                     @Override
                     public void onDestroyActionMode(ActionMode actionMode) {
                         selectedPackages.clear();
+                        currentSelectionActionMode = null;
+                        selectionActionsImageButton.setVisibility(View.GONE);
                     }
+                };
+                mMainActivityAppListFragment.setMultiChoiceModeListener(currentMultiChoiceModeListener);
+
+                selectionActionsImageButton.setOnClickListener(v -> {
+                    if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
+                        return;
+                    }
+                    PopupMenu popupMenu = new PopupMenu(Main.this, v);
+                    popupMenu.inflate(R.menu.multichoicemenu);
+                    currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
+                    popupMenu.setOnMenuItemClickListener(item ->
+                            currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
+                    popupMenu.show();
                 });
 
             }
