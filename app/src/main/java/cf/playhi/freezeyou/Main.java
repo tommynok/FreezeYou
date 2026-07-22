@@ -1209,11 +1209,13 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * Shows a one-time rationale dialog before the welcome/first-run dialogs. Android's legacy
-     * compatibility POST_NOTIFICATIONS dialog (targetSdk <= 32) is evaluated when this activity
-     * starts (onStart, right after onCreate returns) and needs the channel to already exist by
-     * then — so the actual trigger must run synchronously here, not from a dialog button
-     * callback (which fires after onStart already passed and missed the check).
+     * Shows a one-time rationale dialog before the welcome/first-run dialogs, then triggers the
+     * notification channel and restarts the activity. Android's legacy compatibility
+     * POST_NOTIFICATIONS dialog (targetSdk <= 32) is evaluated when the activity starts (onStart)
+     * and needs the channel to already exist by then — since our own dialog can't be dismissed
+     * before this activity's first onStart already happened, recreate() forces a fresh onStart
+     * where the channel is in place, so the system dialog fires right after our rationale one
+     * instead of before it (or not at all).
      */
     private void checkAndAskNotificationPermissionOnce(Runnable onDone) {
         SharedPreferences verPrefs = getSharedPreferences("Ver", MODE_PRIVATE);
@@ -1222,17 +1224,22 @@ public class Main extends FreezeYouBaseActivity {
             onDone.run();
             return;
         }
-        verPrefs.edit().putBoolean("AskedNotificationPermission", true).apply();
-        requestNotificationPermission();
         buildAlertDialog(
                 Main.this, R.mipmap.ic_launcher_new_round,
                 R.string.notificationPermissionRationaleMessage,
                 R.string.notificationPermissionRationaleTitle
         )
-                .setPositiveButton(R.string.okay, (dialogInterface, i) -> onDone.run())
-                .setOnCancelListener(dialogInterface -> onDone.run())
+                .setPositiveButton(R.string.okay, (dialogInterface, i) -> markAskedAndTriggerNotificationPermission())
+                .setOnCancelListener(dialogInterface -> markAskedAndTriggerNotificationPermission())
                 .create()
                 .show();
+    }
+
+    private void markAskedAndTriggerNotificationPermission() {
+        getSharedPreferences("Ver", MODE_PRIVATE).edit()
+                .putBoolean("AskedNotificationPermission", true).apply();
+        requestNotificationPermission();
+        recreate();
     }
 
     private void requestNotificationPermission() {
