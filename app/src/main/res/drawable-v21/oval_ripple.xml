@@ -2,8 +2,23 @@
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="?android:colorPrimary">
     <item>
-        <shape android:shape="oval">
-            <solid android:color="?android:colorAccent"/>
-        </shape>
+        <layer-list>
+            <!-- Translucent halo so the button reads against busy/colorful backgrounds
+                 (e.g. grid-mode app icons behind it), regardless of theme. -->
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="#66000000" />
+                </shape>
+            </item>
+            <item
+                android:top="6dp"
+                android:bottom="6dp"
+                android:left="6dp"
+                android:right="6dp">
+                <shape android:shape="oval">
+                    <solid android:color="?android:colorAccent" />
+                </shape>
+            </item>
+        </layer-list>
     </item>
 </ripple>
