@@ -34,8 +34,6 @@
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и ещё %1$d</string>
-    <string name="notificationPermissionRationaleTitle">Уведомления</string>
-    <string name="notificationPermissionRationaleMessage">Рекомендуется разрешить уведомления для полнофункциональной работы — например, быстрой повторной заморозки из шторки и статуса фоновых операций.</string>
     <string name="unfreeze">Разморозка</string>
     <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за недостаточного разрешения.</string>

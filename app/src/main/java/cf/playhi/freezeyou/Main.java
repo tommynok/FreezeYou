@@ -1,9 +1,5 @@
 package cf.playhi.freezeyou;
 
-import android.Manifest;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -45,7 +41,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -151,8 +146,6 @@ public class Main extends FreezeYouBaseActivity {
     private final static int SORT_BY_LAST_INSTALLED = 9;
     private final static int SORT_BY_LAST_UPDATED = 10;
 
-    private final static int REQUEST_CODE_POST_NOTIFICATIONS = 401;
-
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private ActionMode currentSelectionActionMode;
     private AbsListView.MultiChoiceModeListener currentMultiChoiceModeListener;
@@ -176,14 +169,12 @@ public class Main extends FreezeYouBaseActivity {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        checkAndAskNotificationPermissionOnce(() -> {
-            try {
-                manageCrashLog();
-            } catch (Exception e) {
-                e.printStackTrace();
-                checkIfNeedAskFirstTimeSetupAndShowDialog();
-            }
-        });
+        try {
+            manageCrashLog();
+        } catch (Exception e) {
+            e.printStackTrace();
+            checkIfNeedAskFirstTimeSetupAndShowDialog();
+        }
 //        throw new RuntimeException("自定义异常：仅于异常上报测试中使用");//发版前务必注释
     }
 
@@ -1054,18 +1045,6 @@ public class Main extends FreezeYouBaseActivity {
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
                             currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
-                    popupMenu.setOnDismissListener(menu -> {
-                        RotateAnimation dismissAnimation =
-                                new RotateAnimation(20, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                        dismissAnimation.setDuration(300);
-                        dismissAnimation.setFillAfter(true);
-                        selectionActionsImageButton.startAnimation(dismissAnimation);
-                    });
-                    RotateAnimation openAnimation =
-                            new RotateAnimation(0, 20, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                    openAnimation.setDuration(300);
-                    openAnimation.setFillAfter(true);
-                    selectionActionsImageButton.startAnimation(openAnimation);
                     popupMenu.show();
                 });
 
@@ -1240,76 +1219,6 @@ public class Main extends FreezeYouBaseActivity {
             crashCheck.delete();
         } else {
             checkIfNeedAskFirstTimeSetupAndShowDialog();
-        }
-    }
-
-    /**
-     * Shows a one-time rationale dialog before the welcome/first-run dialogs, then triggers the
-     * notification channel and restarts the activity. Android's legacy compatibility
-     * POST_NOTIFICATIONS dialog (targetSdk <= 32) is evaluated when the activity starts (onStart)
-     * and needs the channel to already exist by then — since our own dialog can't be dismissed
-     * before this activity's first onStart already happened, recreate() forces a fresh onStart
-     * where the channel is in place, so the system dialog fires right after our rationale one
-     * instead of before it (or not at all).
-     */
-    private void checkAndAskNotificationPermissionOnce(Runnable onDone) {
-        SharedPreferences verPrefs = getSharedPreferences("Ver", MODE_PRIVATE);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
-                || verPrefs.getBoolean("AskedNotificationPermission", false)) {
-            onDone.run();
-            return;
-        }
-        buildAlertDialog(
-                Main.this, R.mipmap.ic_launcher_new_round,
-                R.string.notificationPermissionRationaleMessage,
-                R.string.notificationPermissionRationaleTitle
-        )
-                .setPositiveButton(R.string.okay, (dialogInterface, i) -> markAskedAndTriggerNotificationPermission())
-                .setOnCancelListener(dialogInterface -> markAskedAndTriggerNotificationPermission())
-                .create()
-                .show();
-    }
-
-    private void markAskedAndTriggerNotificationPermission() {
-        getSharedPreferences("Ver", MODE_PRIVATE).edit()
-                .putBoolean("AskedNotificationPermission", true).apply();
-        requestNotificationPermission();
-        recreate();
-    }
-
-    private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Merely creating a channel doesn't trigger Android's legacy compatibility
-            // permission prompt (targetSdk <= 32) — it fires only when a notification is
-            // actually posted. Post-and-immediately-cancel a throwaway one on the same
-            // channel used by the real quick-freeze notification ("FAUf") to force it now.
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                String channelId = "FAUf";
-                notificationManager.createNotificationChannel(
-                        new NotificationChannel(
-                                channelId,
-                                getString(R.string.disableAEnable),
-                                NotificationManager.IMPORTANCE_LOW
-                        )
-                );
-                int warmupNotificationId = 900001;
-                Notification warmupNotification = new Notification.Builder(this, channelId)
-                        .setSmallIcon(R.drawable.ic_notification)
-                        .setContentText(getString(R.string.app_name))
-                        .build();
-                notificationManager.notify(warmupNotificationId, warmupNotification);
-                notificationManager.cancel(warmupNotificationId);
-            }
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    REQUEST_CODE_POST_NOTIFICATIONS
-            );
         }
     }
 

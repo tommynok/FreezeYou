@@ -34,8 +34,6 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
-    <string name="notificationPermissionRationaleTitle">Notifications</string>
-    <string name="notificationPermissionRationaleMessage">Allowing notifications is recommended for full-featured operation — for example, quick re-freeze from the notification shade and background operation status.</string>
     <string name="unfreeze">Unfreeze</string>
     <string name="unfreezedAndAskLaunch">Requested unfreeze, try running now?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Unfreeze succeeded but unable to find the entrance of this application, or unfreeze failed due to the insufficient permission.</string>

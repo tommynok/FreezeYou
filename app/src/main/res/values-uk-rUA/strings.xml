@@ -34,8 +34,6 @@
     <string name="mayUnrootedOrOtherEx">Не надані дозволи, цілі були видалені або виникли інші винятки</string>
     <string name="nApplicationsFailedColonList">Не вдалося (%1$d): %2$s</string>
     <string name="andNMoreApplications">, і ще %1$d</string>
-    <string name="notificationPermissionRationaleTitle">Сповіщення</string>
-    <string name="notificationPermissionRationaleMessage">Рекомендується дозволити сповіщення для повнофункціональної роботи — наприклад, швидкого повторного заморожування зі шторки та статусу фонових операцій.</string>
     <string name="unfreeze">Розморозка</string>
     <string name="unfreezedAndAskLaunch">Запит на розморозку, спробувати відразу запустити?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через відсутніть дозволу.</string>
