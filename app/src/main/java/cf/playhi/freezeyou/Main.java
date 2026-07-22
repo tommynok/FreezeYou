@@ -1054,6 +1054,18 @@ public class Main extends FreezeYouBaseActivity {
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
                             currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
+                    popupMenu.setOnDismissListener(menu -> {
+                        RotateAnimation dismissAnimation =
+                                new RotateAnimation(20, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                        dismissAnimation.setDuration(300);
+                        dismissAnimation.setFillAfter(true);
+                        selectionActionsImageButton.startAnimation(dismissAnimation);
+                    });
+                    RotateAnimation openAnimation =
+                            new RotateAnimation(0, 20, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                    openAnimation.setDuration(300);
+                    openAnimation.setFillAfter(true);
+                    selectionActionsImageButton.startAnimation(openAnimation);
                     popupMenu.show();
                 });
 

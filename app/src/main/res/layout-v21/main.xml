@@ -94,7 +94,7 @@
         android:contentDescription="@string/chooseAction"
         android:elevation="6dp"
         android:visibility="gone"
-        app:srcCompat="@drawable/ic_action_more"
+        app:srcCompat="@drawable/ic_action_flash"
         android:stateListAnimator="@animator/fab_animator" />
 
 </merge>

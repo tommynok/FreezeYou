@@ -83,6 +83,6 @@
         android:background="@drawable/shapedotblack"
         android:contentDescription="@string/chooseAction"
         android:visibility="gone"
-        app:srcCompat="@drawable/ic_action_more" />
+        app:srcCompat="@drawable/ic_action_flash" />
 
 </merge>
