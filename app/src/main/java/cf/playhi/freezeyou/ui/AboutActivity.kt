@@ -19,6 +19,8 @@ import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import cf.playhi.freezeyou.utils.VersionUtils.*
 
+private class AboutMenuItem(val title: String, val enabled: Boolean, val action: () -> Unit)
+
 class AboutActivity : FreezeYouBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         processSetTheme(this)
@@ -30,95 +32,108 @@ class AboutActivity : FreezeYouBaseActivity() {
         val aboutListView = findViewById<ListView>(R.id.about_listView)
         val aboutAppName = findViewById<TextView>(R.id.about_appName)
 
+        val aboutMenuItems = listOf(
+            AboutMenuItem(resources.getString(R.string.hToUse), true) {
+                requestOpenWebSite(
+                    this@AboutActivity,
+                    "https://www.zidon.net/${getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)}/guide/how-to-use.html"
+                )
+            },
+            AboutMenuItem(resources.getString(R.string.faq), true) {
+                requestOpenWebSite(
+                    this@AboutActivity, String.format(
+                        "https://www.zidon.net/%1\$s/faq/",
+                        getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
+                    )
+                )
+            },
+            AboutMenuItem(resources.getString(R.string.helpTranslate), true) {
+                requestOpenWebSite(
+                    this@AboutActivity,
+                    "https://github.com/FreezeYou/FreezeYou/blob/master/README_Translation.md"
+                )
+            },
+            AboutMenuItem(resources.getString(R.string.thanksList), true) {
+                requestOpenWebSite(
+                    this@AboutActivity, String.format(
+                        "https://www.zidon.net/%1\$s/thanks/",
+                        getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
+                    )
+                )
+            },
+            AboutMenuItem(resources.getString(R.string.visitWebsite), true) {
+                requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
+            },
+            // Fork has no Telegram/QQ support group — set enabled to true to restore.
+            AboutMenuItem(resources.getString(R.string.contactUs), false) {
+                FreezeYouAlertDialogBuilder(this@AboutActivity)
+                    .setMessage(
+                        String.format(
+                            getString(R.string.email_colon),
+                            "contact@zidon.net"
+                        ) + System.getProperty("line.separator")
+                                + String.format(
+                            getString(R.string.telegramGroup_colon),
+                            "t.me/FreezeYou"
+                        ) + System.getProperty("line.separator")
+                                + String.format(
+                            getString(R.string.qqGroup_colon),
+                            "704086494"
+                        )
+                    )
+                    .setTitle(R.string.contactUs)
+                    .setPositiveButton(R.string.okay, null)
+                    .setNegativeButton(
+                        R.string.addQQGroup
+                    ) { _: DialogInterface?, _: Int ->
+                        joinQQGroup(this@AboutActivity)
+                    }
+                    .setNeutralButton(
+                        R.string.more
+                    ) { _: DialogInterface?, _: Int ->
+                        requestOpenWebSite(
+                            this@AboutActivity,
+                            String.format(
+                                "https://www.zidon.net/%1\$s/about/contactUs.html",
+                                getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
+                            )
+                        )
+                    }
+                    .show()
+            },
+            // Fork has no update server — set enabled to true to restore.
+            AboutMenuItem(resources.getString(R.string.update), false) {
+                checkUpdate(this@AboutActivity)
+            },
+            AboutMenuItem(resources.getString(R.string.thirdPartyOpenSourceLicenses), true) {
+                requestOpenWebSite(
+                    this@AboutActivity,
+                    "https://freezeyou.playhi.net/ThirdPartyOpenSourceLicenses.html"
+                )
+            },
+            AboutMenuItem(
+                "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})",
+                true
+            ) {
+                showToast(
+                    this@AboutActivity,
+                    "V" + getVersionName(this@AboutActivity) + "(" + getVersionCode(
+                        this@AboutActivity
+                    ) + ")"
+                )
+            }
+        ).filter { it.enabled }
+
         aboutListView.adapter =
             ArrayAdapter(
                 this@AboutActivity,
                 android.R.layout.simple_list_item_1,
-                arrayOf(
-                    resources.getString(R.string.hToUse),
-                    resources.getString(R.string.faq),
-                    resources.getString(R.string.helpTranslate),
-                    resources.getString(R.string.thanksList),
-                    resources.getString(R.string.visitWebsite),
-                    resources.getString(R.string.contactUs),
-                    resources.getString(R.string.update),
-                    resources.getString(R.string.thirdPartyOpenSourceLicenses),
-                    "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})"
-                )
+                aboutMenuItems.map { it.title }.toTypedArray()
             )
 
         aboutListView.onItemClickListener =
             OnItemClickListener { _: AdapterView<*>?, _: View?, position: Int, _: Long ->
-                when (position) {
-                    0 -> requestOpenWebSite(
-                        this@AboutActivity,
-                        "https://www.zidon.net/${getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)}/guide/how-to-use.html"
-                    )
-                    1 -> requestOpenWebSite(
-                        this@AboutActivity, String.format(
-                            "https://www.zidon.net/%1\$s/faq/",
-                            getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                        )
-                    )
-                    2 -> requestOpenWebSite(
-                        this@AboutActivity,
-                        "https://github.com/FreezeYou/FreezeYou/blob/master/README_Translation.md"
-                    )
-                    3 -> requestOpenWebSite(
-                        this@AboutActivity, String.format(
-                            "https://www.zidon.net/%1\$s/thanks/",
-                            getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                        )
-                    )
-                    4 -> requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
-                    5 -> {
-                        FreezeYouAlertDialogBuilder(this@AboutActivity)
-                            .setMessage(
-                                String.format(
-                                    getString(R.string.email_colon),
-                                    "contact@zidon.net"
-                                ) + System.getProperty("line.separator")
-                                        + String.format(
-                                    getString(R.string.telegramGroup_colon),
-                                    "t.me/FreezeYou"
-                                ) + System.getProperty("line.separator")
-                                        + String.format(
-                                    getString(R.string.qqGroup_colon),
-                                    "704086494"
-                                )
-                            )
-                            .setTitle(R.string.contactUs)
-                            .setPositiveButton(R.string.okay, null)
-                            .setNegativeButton(
-                                R.string.addQQGroup
-                            ) { _: DialogInterface?, _: Int ->
-                                joinQQGroup(this@AboutActivity)
-                            }
-                            .setNeutralButton(
-                                R.string.more
-                            ) { _: DialogInterface?, _: Int ->
-                                requestOpenWebSite(
-                                    this@AboutActivity,
-                                    String.format(
-                                        "https://www.zidon.net/%1\$s/about/contactUs.html",
-                                        getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                                    )
-                                )
-                            }
-                            .show()
-                    }
-                    6 -> checkUpdate(this@AboutActivity)
-                    7 -> requestOpenWebSite(
-                        this@AboutActivity,
-                        "https://freezeyou.playhi.net/ThirdPartyOpenSourceLicenses.html"
-                    )
-                    8 -> showToast(
-                        this@AboutActivity,
-                        "V" + getVersionName(this@AboutActivity) + "(" + getVersionCode(
-                            this@AboutActivity
-                        ) + ")"
-                    )
-                }
+                aboutMenuItems[position].action()
             }
 
         aboutSlogan.text = String.format("V %s", getVersionCode(this@AboutActivity))
