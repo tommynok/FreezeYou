@@ -26,12 +26,6 @@
         app:singleLineTitle="false"
         app:title="@string/saveSortMethodStatus" />
     <CheckBoxPreference
-        app:defaultValue="false"
-        app:iconSpaceReserved="false"
-        app:key="cacheApplicationsIcons"
-        app:singleLineTitle="false"
-        app:title="@string/cacheApplicationsIcons" />
-    <CheckBoxPreference
         app:defaultValue="true"
         app:iconSpaceReserved="false"
         app:key="showInRecents"

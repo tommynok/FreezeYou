@@ -37,9 +37,13 @@ enum class DefaultSharedPreferenceStorageBooleanKeys : AbstractKey<Boolean> {
     },
 
     cacheApplicationsIcons {
-        override fun defaultValue(): Boolean = false
+        // Always on: icon caching meaningfully speeds up app-list loading, and there's no
+        // real reason for a user to disable it — locked on regardless of any previously
+        // stored value, not just defaulted, so existing installs pick this up too.
+        override fun defaultValue(): Boolean = true
         override fun titleTextStringId(): Int = R.string.cacheApplicationsIcons
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_COMMON
+        override fun getValue(context: Context?): Boolean = true
     },
 
     firstIconEnabled {
