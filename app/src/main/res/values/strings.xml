@@ -43,6 +43,15 @@
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
+    <string name="summary_manageMyCustomization">Create, rename, or delete your own custom app groups</string>
+    <string name="summary_clearUninstalledPkgsInList">Only removes entries for apps you\'ve since uninstalled — the rest of the list is untouched</string>
+    <string name="summary_clearIconCache">Frees up storage used by cached app icons; they\'ll be reloaded as needed</string>
+    <string name="summary_clearNameCache">Frees up storage used by cached app names; they\'ll be reloaded as needed</string>
+    <string name="summary_clearAllCache">Clears both the icon cache and the name cache at once</string>
+    <string name="summary_resetFreezeTimes">Sets the per-app freeze counter shown in the app list back to zero</string>
+    <string name="summary_resetUFTimes">Sets the per-app unfreeze counter shown in the app list back to zero</string>
+    <string name="summary_resetUseTimes">Sets the per-app usage counter shown in the app list back to zero</string>
+    <string name="summary_deleteAllScheduledTasks">Permanently removes every scheduled task you\'ve created — this can\'t be undone</string>
     <string name="unfreeze">Unfreeze</string>
     <string name="unfreezedAndAskLaunch">Requested unfreeze, try running now?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Unfreeze succeeded but unable to find the entrance of this application, or unfreeze failed due to the insufficient permission.</string>

@@ -47,7 +47,8 @@ class AboutActivity : FreezeYouBaseActivity() {
                     )
                 )
             },
-            AboutMenuItem(resources.getString(R.string.helpTranslate), true) {
+            // This fork's translations are maintained directly — set enabled to true to restore.
+            AboutMenuItem(resources.getString(R.string.helpTranslate), false) {
                 requestOpenWebSite(
                     this@AboutActivity,
                     "https://github.com/FreezeYou/FreezeYou/blob/master/README_Translation.md"

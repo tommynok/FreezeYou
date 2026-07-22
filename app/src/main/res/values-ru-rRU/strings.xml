@@ -43,6 +43,15 @@
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
+    <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте свои собственные группы приложений</string>
+    <string name="summary_clearUninstalledPkgsInList">Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
+    <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
+    <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
+    <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>
+    <string name="summary_resetFreezeTimes">Обнуляет счётчик заморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUFTimes">Обнуляет счётчик разморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUseTimes">Обнуляет счётчик использования для каждого приложения, отображаемый в списке</string>
+    <string name="summary_deleteAllScheduledTasks">Безвозвратно удаляет все созданные вами запланированные задачи</string>
     <string name="unfreeze">Разморозка</string>
     <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за недостаточного разрешения.</string>
