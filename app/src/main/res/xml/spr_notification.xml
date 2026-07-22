@@ -6,11 +6,13 @@
         app:iconSpaceReserved="false"
         app:key="spr_notification_fuf"
         app:singleLineTitle="false"
+        app:summary="@string/summary_notificationBar_fuf"
         app:title="@string/freezeAUF" />
     <Preference
         app:iconSpaceReserved="false"
         app:key="notificationBar_more"
         app:singleLineTitle="false"
+        app:summary="@string/summary_notificationBar_more"
         app:title="@string/more" />
 
 </PreferenceScreen>

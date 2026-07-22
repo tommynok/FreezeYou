@@ -34,6 +34,15 @@
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и ещё %1$d</string>
+    <string name="summary_notificationBar_fuf">Настройки быстрого уведомления, которое появляется после разморозки приложения</string>
+    <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
+    <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
+    <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
+    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы через встроенный установщик</string>
+    <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
+    <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
+    <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
+    <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="unfreeze">Разморозка</string>
     <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за недостаточного разрешения.</string>

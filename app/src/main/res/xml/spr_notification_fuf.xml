@@ -7,7 +7,7 @@
         app:iconSpaceReserved="false"
         app:key="createQuickFUFNotiAfterUnfrozen"
         app:singleLineTitle="false"
-        app:summary="@string/effectNextCreate"
+        app:summary="@string/summary_createQuickFUFNotiAfterUnfrozen"
         app:title="@string/createQuickFUFNotiAfterUnfrozen" />
     <CheckBoxPreference
         app:defaultValue="true"

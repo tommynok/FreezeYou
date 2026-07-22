@@ -34,6 +34,15 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
+    <string name="summary_notificationBar_fuf">Settings for the quick notification shown after unfreezing an app</string>
+    <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
+    <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
+    <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
+    <string name="summary_enableInstallPkgFunc">Allows installing APK files using the app\'s built-in installer</string>
+    <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
+    <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
+    <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
+    <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="unfreeze">Unfreeze</string>
     <string name="unfreezedAndAskLaunch">Requested unfreeze, try running now?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Unfreeze succeeded but unable to find the entrance of this application, or unfreeze failed due to the insufficient permission.</string>

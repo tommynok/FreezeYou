@@ -6,29 +6,34 @@
         app:iconSpaceReserved="false"
         app:key="enableInstallPkgFunc"
         app:singleLineTitle="false"
+        app:summary="@string/summary_enableInstallPkgFunc"
         app:title="@string/enableInstallPkgFunc" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
         app:key="tryDelApkAfterInstalled"
         app:singleLineTitle="false"
+        app:summary="@string/summary_tryDelApkAfterInstalled"
         app:title="@string/tryDelApkAfterInstalled" />
     <CheckBoxPreference
         app:defaultValue="true"
         app:iconSpaceReserved="false"
         app:key="notAllowInstallWhenIsObsd"
         app:singleLineTitle="false"
+        app:summary="@string/summary_notAllowWhenIsObsd"
         app:title="@string/notAllowWhenIsObsd" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
         app:key="tryToAvoidUpdateWhenUsing"
         app:singleLineTitle="false"
+        app:summary="@string/summary_tryToAvoidUpdateWhenUsing"
         app:title="@string/tryToAvoidUpdateWhenUsing" />
     <Preference
         app:iconSpaceReserved="false"
         app:key="manageIpaAutoAllow"
         app:singleLineTitle="false"
+        app:summary="@string/summary_manageIpaAutoAllow"
         app:title="@string/manageIpaAutoAllow" />
 
 </PreferenceScreen>

@@ -34,6 +34,15 @@
     <string name="mayUnrootedOrOtherEx">Не надані дозволи, цілі були видалені або виникли інші винятки</string>
     <string name="nApplicationsFailedColonList">Не вдалося (%1$d): %2$s</string>
     <string name="andNMoreApplications">, і ще %1$d</string>
+    <string name="summary_notificationBar_fuf">Налаштування швидкого сповіщення, яке з\'являється після розморожування застосунку</string>
+    <string name="summary_notificationBar_more">Системні налаштування сповіщень FreezeYou — канали та дозвіл на показ сповіщень</string>
+    <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
+    <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
+    <string name="summary_enableInstallPkgFunc">Дозволяє встановлювати APK-файли через вбудований інсталятор</string>
+    <string name="summary_tryDelApkAfterInstalled">Видаляє файл APK після успішного встановлення, щоб звільнити місце</string>
+    <string name="summary_notAllowWhenIsObsd">Блокує встановлення/видалення, якщо екран перекрито вікном іншого застосунку (захист від підміни натискань)</string>
+    <string name="summary_tryToAvoidUpdateWhenUsing">Відкладає оновлення застосунку, поки ви ним користуєтесь, і встановлює його, коли ви виходите</string>
+    <string name="summary_manageIpaAutoAllow">Список застосунків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="unfreeze">Розморозка</string>
     <string name="unfreezedAndAskLaunch">Запит на розморозку, спробувати відразу запустити?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через відсутніть дозволу.</string>

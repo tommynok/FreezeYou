@@ -6,6 +6,7 @@
         app:iconSpaceReserved="false"
         app:key="enableAuthentication"
         app:singleLineTitle="false"
+        app:summary="@string/summary_enableAuthentication"
         app:title="@string/enableAuthentication" />
 
 </PreferenceScreen>
