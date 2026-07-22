@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou;
 
 import android.Manifest;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -1240,14 +1241,27 @@ public class Main extends FreezeYouBaseActivity {
 
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "OneKeyFreeze",
-                    getString(R.string.oneKeyFreeze),
-                    NotificationManager.IMPORTANCE_NONE
-            );
+            // Merely creating a channel doesn't trigger Android's legacy compatibility
+            // permission prompt (targetSdk <= 32) — it fires only when a notification is
+            // actually posted. Post-and-immediately-cancel a throwaway one on the same
+            // channel used by the real quick-freeze notification ("FAUf") to force it now.
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
+                String channelId = "FAUf";
+                notificationManager.createNotificationChannel(
+                        new NotificationChannel(
+                                channelId,
+                                getString(R.string.disableAEnable),
+                                NotificationManager.IMPORTANCE_LOW
+                        )
+                );
+                int warmupNotificationId = 900001;
+                Notification warmupNotification = new Notification.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentText(getString(R.string.app_name))
+                        .build();
+                notificationManager.notify(warmupNotificationId, warmupNotification);
+                notificationManager.cancel(warmupNotificationId);
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
