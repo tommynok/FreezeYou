@@ -10,6 +10,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/menu_toggleGridListMode"
+        android:contentDescription="@string/toggleGridListMode"
+        android:icon="@drawable/ic_action_view_grid"
+        android:title="@string/toggleGridListMode"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/menu_viewMode"
         android:contentDescription="@string/viewMode"
         android:icon="@drawable/ic_action_filter"

@@ -1719,6 +1719,18 @@ public class Main extends FreezeYouBaseActivity {
 
     private void onPrepareMainOptionsMenu(Menu menu) {
         try {
+            boolean useLightIcon = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+                    && ("white".equals(getUiTheme(this)) || "default".equals(getUiTheme(this)));
+            // Icon shows the mode a tap will switch TO, not the current one.
+            menu.findItem(R.id.menu_toggleGridListMode).setIcon(
+                    isGridMode
+                            ? (useLightIcon ? R.drawable.ic_action_view_list_light : R.drawable.ic_action_view_list)
+                            : (useLightIcon ? R.drawable.ic_action_view_grid_light : R.drawable.ic_action_view_grid)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
             SubMenu vmUserDefinedSubMenu = menu.findItem(R.id.menu_vM_userDefined).getSubMenu();
             SubMenu createUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_createUserDefinedShortcut).getSubMenu();
             SubMenu forceStopUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_forceStopUserDefinedShortcut).getSubMenu();
@@ -1927,6 +1939,12 @@ public class Main extends FreezeYouBaseActivity {
                         return true;
                     case R.id.menu_timedTasks:
                         startActivity(new Intent(this, ScheduledTasksManageActivity.class));
+                        return true;
+                    case R.id.menu_toggleGridListMode:
+                        isGridMode = !isGridMode;
+                        mainActivityPattern.setValue(this, isGridMode ? "grid" : "list");
+                        mMainActivityAppListFragment.setUseGridMode(isGridMode);
+                        invalidateOptionsMenu();
                         return true;
                     case R.id.menu_about:
                         startActivity(new Intent(this, AboutActivity.class));

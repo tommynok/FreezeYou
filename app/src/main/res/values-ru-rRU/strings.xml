@@ -417,6 +417,7 @@
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
     <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>
+    <string name="toggleGridListMode">Переключить вид список/сетка</string>
     <string-array name="launchModeSelection">
         <item>Показать все</item>
         <item>Замороженые</item>
