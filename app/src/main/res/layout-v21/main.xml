@@ -83,4 +83,18 @@
         app:srcCompat="@drawable/ic_action_add"
         android:stateListAnimator="@animator/fab_animator" />
 
+    <ImageButton
+        android:id="@+id/main_selectionActions_button"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="25dp"
+        android:layout_marginBottom="92dp"
+        android:background="@drawable/shapedotblack"
+        android:contentDescription="@string/chooseAction"
+        android:elevation="6dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_action_more"
+        android:stateListAnimator="@animator/fab_animator" />
+
 </merge>
