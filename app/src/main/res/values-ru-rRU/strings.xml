@@ -44,7 +44,10 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте свои собственные группы приложений</string>
-    <string name="summary_clearUninstalledPkgsInList">Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
+    <string name="summary_clearUninstalledPkgsInList">* Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">Убрать удаленные приложения из OneKEY заморозка *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">Убрать удаленные приложения из OneKEY разморозка *</string>
+    <string name="clearUninstalledPkgsInFOQListAsterisk">Убрать удаленные приложения из \"Заморозка после выхода\" *</string>
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>

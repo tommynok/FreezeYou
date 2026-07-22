@@ -44,7 +44,10 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="summary_manageMyCustomization">Create, rename, or delete your own custom app groups</string>
-    <string name="summary_clearUninstalledPkgsInList">Only removes entries for apps you\'ve since uninstalled — the rest of the list is untouched</string>
+    <string name="summary_clearUninstalledPkgsInList">* Only removes entries for apps you\'ve since uninstalled — the rest of the list is untouched</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">Remove uninstalled applications from the Onekey Freeze list *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">Remove uninstalled applications from the Onekey Unfreeze list *</string>
+    <string name="clearUninstalledPkgsInFOQListAsterisk">Remove uninstalled applications from the Freeze Once Quit list *</string>
     <string name="summary_clearIconCache">Frees up storage used by cached app icons; they\'ll be reloaded as needed</string>
     <string name="summary_clearNameCache">Frees up storage used by cached app names; they\'ll be reloaded as needed</string>
     <string name="summary_clearAllCache">Clears both the icon cache and the name cache at once</string>

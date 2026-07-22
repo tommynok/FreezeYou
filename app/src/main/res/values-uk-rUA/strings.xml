@@ -44,7 +44,10 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Відкладає оновлення застосунку, поки ви ним користуєтесь, і встановлює його, коли ви виходите</string>
     <string name="summary_manageIpaAutoAllow">Список застосунків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи застосунків</string>
-    <string name="summary_clearUninstalledPkgsInList">Видаляє зі списку лише ті застосунки, які ви вже видалили з пристрою — решта пунктів списку не змінюється</string>
+    <string name="summary_clearUninstalledPkgsInList">* Видаляє зі списку лише ті застосунки, які ви вже видалили з пристрою — решта пунктів списку не змінюється</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">Прибрати видалені додатки з OneKEY заморозка *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">Прибрати видалені додатки з OneKEY розморозка *</string>
+    <string name="clearUninstalledPkgsInFOQListAsterisk">Прибрати видалені додатки з Заморозки після виходу *</string>
     <string name="summary_clearIconCache">Звільняє місце, зайняте кешем іконок застосунків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearNameCache">Звільняє місце, зайняте кешем назв застосунків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearAllCache">Очищає одразу обидва кеші — іконок і назв</string>
