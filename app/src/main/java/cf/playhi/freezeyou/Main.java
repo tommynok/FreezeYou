@@ -1730,10 +1730,13 @@ public class Main extends FreezeYouBaseActivity {
                     this, isGridMode ? R.drawable.ic_action_view_list : R.drawable.ic_action_view_grid
             );
             if (toggleIcon != null) {
-                toggleIcon = DrawableCompat.wrap(toggleIcon.mutate());
                 TypedValue typedValue = new TypedValue();
-                getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true);
-                DrawableCompat.setTint(toggleIcon, typedValue.data);
+                // If the attribute can't be resolved, leave the icon untinted (as authored)
+                // rather than risk tinting it to color 0 (fully transparent = invisible).
+                if (getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true)) {
+                    toggleIcon = DrawableCompat.wrap(toggleIcon.mutate());
+                    DrawableCompat.setTint(toggleIcon, typedValue.data);
+                }
             }
             // Icon shows the mode a tap will switch TO, not the current one.
             menu.findItem(R.id.menu_toggleGridListMode).setIcon(toggleIcon);
