@@ -451,13 +451,6 @@
         <item>За замовчуванням</item>
         <item>Темна</item>
         <item>Чорна</item>
-        <item>Синя</item>
-        <item>Рожева</item>
-        <item>Зелена</item>
-        <item>Жовта</item>
-        <item>Помаранчева</item>
-        <item>Біла</item>
-        <item>Червона</item>
     </string-array>
     <string-array name="sevenDays">
         <item>В понеділок</item>

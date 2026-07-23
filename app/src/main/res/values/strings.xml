@@ -475,25 +475,11 @@
         <item>Default</item>
         <item>Dark</item>
         <item>Black</item>
-        <item>Blue</item>
-        <item>Pink</item>
-        <item>Green</item>
-        <item>Yellow</item>
-        <item>Orange</item>
-        <item>White</item>
-        <item>Red</item>
     </string-array>
     <string-array name="uiStyleSelectionValues" translatable="false">
         <item>default</item>
         <item>black</item>
         <item>deepBlack</item>
-        <item>blue</item>
-        <item>pink</item>
-        <item>green</item>
-        <item>yellow</item>
-        <item>orange</item>
-        <item>white</item>
-        <item>red</item>
     </string-array>
     <string-array name="sevenDays">
         <item>Monday</item>

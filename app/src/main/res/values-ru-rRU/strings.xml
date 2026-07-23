@@ -454,13 +454,6 @@
         <item>По умолчанию</item>
         <item>Темная</item>
         <item>Черная</item>
-        <item>Синяя</item>
-        <item>Розовая</item>
-        <item>Зеленая</item>
-        <item>Желтая</item>
-        <item>Оранжевая</item>
-        <item>Белая</item>
-        <item>Красная</item>
     </string-array>
     <string-array name="sevenDays">
         <item>В понедельник</item>
