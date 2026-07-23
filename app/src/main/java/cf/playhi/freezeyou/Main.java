@@ -344,12 +344,11 @@ public class Main extends FreezeYouBaseActivity {
 
         runOnUiThread(() -> {
 
-            moreSettingsImageButton.setBackgroundResource(
-                    Build.VERSION.SDK_INT >= 21 ?
-                            R.drawable.oval_ripple : getThemeFabDotBackground(Main.this));
-            selectionActionsImageButton.setBackgroundResource(
-                    Build.VERSION.SDK_INT >= 21 ?
-                            R.drawable.oval_ripple : getThemeFabDotBackground(Main.this));
+            int floatingButtonBackground = Build.VERSION.SDK_INT >= 21 ?
+                    (isGridMode ? R.drawable.oval_ripple_grid : R.drawable.oval_ripple) :
+                    getThemeFabDotBackground(Main.this);
+            moreSettingsImageButton.setBackgroundResource(floatingButtonBackground);
+            selectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
 
             linearLayout.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.VISIBLE);
