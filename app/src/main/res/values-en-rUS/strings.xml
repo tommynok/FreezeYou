@@ -217,7 +217,7 @@
     <string name="clearAllUserData">Clear all data</string>
     <string name="packageNotFound">The application was not found</string>
     <string name="id">Id</string>
-    <string name="simulate">Simulate</string>
+    <string name="simulate">Test</string>
     <string name="insufficientPermission">Insufficient permissions</string>
     <string name="onlyUnfreeze">Only Unfreeze</string>
     <string name="unknown">Unknown</string>

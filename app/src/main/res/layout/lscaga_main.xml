@@ -52,10 +52,20 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/lscaga_package_hint_textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/lscaga_package_linearLayout"
+                android:layout_marginTop="2dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:text="@string/shortcutPackageFieldHint" />
+
+            <TextView
                 android:id="@+id/lscaga_displayName_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/lscaga_package_linearLayout"
+                android:layout_below="@id/lscaga_package_hint_textView"
                 android:layout_marginTop="20dp"
                 android:text="@string/name" />
 
@@ -123,10 +133,20 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/lscaga_target_hint_textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/lscaga_target_linearLayout"
+                android:layout_marginTop="2dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:text="@string/shortcutTargetFieldHint" />
+
+            <TextView
                 android:id="@+id/lscaga_task_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/lscaga_target_linearLayout"
+                android:layout_below="@id/lscaga_target_hint_textView"
                 android:layout_marginTop="20dp"
                 android:text="@string/task" />
 
@@ -179,21 +199,21 @@
         <Button
             android:id="@+id/lscaga_cancel_button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="64dp"
             android:layout_weight="1"
             android:text="@string/cancel" />
 
         <Button
             android:id="@+id/lscaga_generate_button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="64dp"
             android:layout_weight="1"
             android:text="@string/generate" />
 
         <Button
             android:id="@+id/lscaga_simulate_button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="64dp"
             android:layout_weight="1"
             android:text="@string/simulate" />
 
