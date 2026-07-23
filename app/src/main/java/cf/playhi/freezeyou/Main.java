@@ -23,7 +23,6 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Base64;
-import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -42,9 +41,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -1722,24 +1719,18 @@ public class Main extends FreezeYouBaseActivity {
 
     private void onPrepareMainOptionsMenu(Menu menu) {
         try {
-            // Icons set dynamically via setIcon() don't get the automatic toolbar icon
-            // tinting that statically-declared XML menu icons get from the active theme, so
-            // tint it explicitly to colorControlNormal — matches every custom theme (not just
-            // light/dark), unlike a fixed pair of light/dark drawable variants.
-            Drawable toggleIcon = AppCompatResources.getDrawable(
-                    this, isGridMode ? R.drawable.ic_action_view_list : R.drawable.ic_action_view_grid
-            );
-            if (toggleIcon != null) {
-                TypedValue typedValue = new TypedValue();
-                // If the attribute can't be resolved, leave the icon untinted (as authored)
-                // rather than risk tinting it to color 0 (fully transparent = invisible).
-                if (getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true)) {
-                    toggleIcon = DrawableCompat.wrap(toggleIcon.mutate());
-                    DrawableCompat.setTint(toggleIcon, typedValue.data);
-                }
-            }
+            // Dynamic theme-attribute tinting turned out unreliable in practice (rendered fully
+            // transparent on the test device). Fall back to the same static light/dark drawable
+            // swap already used for the other toolbar icons (see onCreateOptionsMenu), just
+            // without restricting it to pre-Lollipop — that restriction was never the actual
+            // reason the other icons render correctly; the theme name check is what matters.
+            boolean isLightTheme = "white".equals(getUiTheme(this)) || "default".equals(getUiTheme(this));
             // Icon shows the mode a tap will switch TO, not the current one.
-            menu.findItem(R.id.menu_toggleGridListMode).setIcon(toggleIcon);
+            menu.findItem(R.id.menu_toggleGridListMode).setIcon(
+                    isGridMode
+                            ? (isLightTheme ? R.drawable.ic_action_view_list_light : R.drawable.ic_action_view_list)
+                            : (isLightTheme ? R.drawable.ic_action_view_grid_light : R.drawable.ic_action_view_grid)
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }
