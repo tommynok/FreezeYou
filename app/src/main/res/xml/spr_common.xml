@@ -31,7 +31,7 @@
         app:key="showInRecents"
         app:disableDependentsState="false"
         app:singleLineTitle="false"
-        app:summary="@string/mayHaveNoEffectsL"
+        app:summary="@string/showInRecentsSummary"
         app:title="@string/showInRecents" />
     <CheckBoxPreference
         app:dependency="showInRecents"
@@ -39,7 +39,7 @@
         app:iconSpaceReserved="false"
         app:key="includeFUFActivityInRecents"
         app:singleLineTitle="false"
-        app:summary="@string/mayHaveNoEffectsL"
+        app:summary="@string/includeFUFActivityInRecentsSummary"
         app:title="@string/includeFUFActivityInRecents" />
     <CheckBoxPreference
         app:defaultValue="false"

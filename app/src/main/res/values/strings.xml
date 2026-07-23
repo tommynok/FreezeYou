@@ -102,7 +102,7 @@
     <string name="createDisEnableShortCut">Create a freeze and unfreeze shortcut</string>
     <string name="iconAEntry">Icons and Entrances</string>
     <string name="dialEntry">Use the dial pad to enter</string>
-    <string name="dialEntry_Ex">*#*#373393968#*#* (*#*#FreezeYou#*#*) (Most Android devices support)</string>
+    <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>
     <string name="ciFinishedToast">Submitted, please wait for the launcher to refresh or restart the launcher.</string>
     <string name="ifUploadCrashLog">Detected an exception log that has occurred but has not been committed, do you want to upload this log?</string>
     <string name="search">Search</string>
@@ -136,6 +136,7 @@
     <string name="thanksList">Thanks List</string>
     <string name="automation">Automation</string>
     <string name="freezeAfterScreenLock">Onekey freeze after screen locked</string>
+    <string name="freezeAfterScreenLockSummary">Automatically freezes your one-key freeze list whenever the screen locks.</string>
     <string name="backgroundService">Background Services</string>
     <string name="useForegroundService">Use the foreground service</string>
     <string name="serviceLongerEx">Reduce the probability of failure of the background function</string>
@@ -149,6 +150,7 @@
     <string name="accessibility_service_description">Listen to the foreground application changes. \nUsed to active the functions to avoid freezing foreground applications when automatic freezing, automatically freeze applications when they are not the foreground applications, etc.</string>
     <string name="configureAccessibilityService">Configure Accessibility Service</string>
     <string name="freezeOnceQuit">Leave Freeze</string>
+    <string name="freezeOnceQuitSummary">Enables the "Leave Freeze" list: apps added to it are frozen automatically once you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
     <string name="invalidArguments">Invalid parameters</string>
     <string name="exceptionHC">An exception has occurred but the operation will continue: </string>
@@ -178,9 +180,11 @@
     <string name="delete">Delete</string>
     <string name="copyAfterBeingFormatted">Copy After Being Formatted</string>
     <string name="showInRecents">Show in recents</string>
+    <string name="showInRecentsSummary">Keeps FreezeYou visible in the recent apps (multitasking) list.</string>
     <string name="mayHaveNoEffectsL">May have no effects on Android 4.4 and below</string>
     <string name="lesserToast">Fewer Toast Tips</string>
     <string name="avoidFreezeForegroundApplications">Avoid Freezing Foreground Applications</string>
+    <string name="avoidFreezeForegroundApplicationsSummary">Skips freezing an app while it\'s currently in the foreground, so active use isn\'t interrupted. Requires enabling Accessibility Service.</string>
     <string name="suggestUseTasksInstead">Recommend to use scheduled tasks instead</string>
     <string name="thirdPartyOpenSourceLicenses">Third-party Open Source Licenses</string>
     <string name="delAllScheduledTasks">Delete All Scheduled Tasks</string>
@@ -190,6 +194,7 @@
     <string name="onlyMROOTModeUse">Only used in No-Root mode</string>
     <string name="organizationName">Organization Name</string>
     <string name="avoidFreezeNotifyingApplications">Avoid freezing notifying applications</string>
+    <string name="avoidFreezeNotifyingApplicationsSummary">Skips freezing an app while it has an active notification (e.g. music playback, downloads), so it keeps running.</string>
     <string name="needL">Requires Android 5.0 and newer</string>
     <string name="autoDiagnosis">Diagnosis</string>
     <string name="sysVerLow">Low system version</string>
@@ -222,11 +227,14 @@
     <string name="restore">Restore</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
+    <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
     <string name="showLogcat">View Logs</string>
     <string name="freezeOrLaunch">Freeze/Run</string>
     <string name="askIfSave">Save?</string>
     <string name="mainActivityPattern">Home pattern</string>
     <string name="workWithShortcutAutoFUF">Effective when \"Shortcut auto freeze or unfreeze\" is enabled</string>
+    <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">Shows a confirmation prompt before freezing an app when triggered via a shortcut\'s auto freeze.</string>
+    <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">Automatically opens the app right after it\'s unfrozen via a shortcut\'s auto unfreeze.</string>
     <string name="needCfmWhenFreeze">Extra confirmation when freeze</string>
     <string name="openImmediatelyAfterUF">Run immediately after unfreezing</string>
     <string name="createLauncherShortcut">Create Launcher Shortcut</string>
@@ -238,6 +246,7 @@
     <string name="application">Application</string>
     <string name="allowEditWhCreateShortcut">Allow editing when creating shortcuts</string>
     <string name="clearAllUserData">Clear all data</string>
+    <string name="clearAllUserDataSummary">Permanently deletes all app settings, custom groups, scheduled tasks and shortcut data. This cannot be undone.</string>
     <string name="packageNotFound">The application was not found</string>
     <string name="id">Id</string>
     <string name="simulate">Simulate</string>
@@ -363,6 +372,7 @@
     <string name="wechatMp_colon">WeChat Official Account: %1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">Try to avoid update when using</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
+    <string name="selectFUFModeGuide">Pick based on what access your device has: No-root modes use Android\'s built-in Device Admin/Profile Owner permissions; ROOT modes need root (Hide fully hides the app, Disable only disables it); Shizuku modes need the Shizuku app running, without full root; System App modes are for apps installed as system apps. See FAQ (Menu → FAQ) for a full comparison.</string>
     <string name="enable_Root_unhide">Unfreeze - ROOT(Unhide)</string>
     <string name="disable_Root_hide">Freeze - ROOT(Hide)</string>
     <string name="enable_Root_enable">Unfreeze - ROOT(Enable)</string>
@@ -405,7 +415,8 @@
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">May cannot use the scheduled task to enable or disable Bluetooth</string>
     <string name="gotoStore">Go to the store</string>
     <string name="selfRevokeProfileOwner">Release profile owner permission</string>
-    <string name="selfRevokeProfileOwnerSummary">If the profile owner is set, we need to release it before uninstalling the application.</string>
+    <string name="selfRevokeProfileOwnerSummary">Only needed if you used No-root (Profile Owner) mode. Releases the Profile Owner permission; otherwise uninstalling FreezeYou may fail.</string>
+    <string name="uninstallSummary">Uninstalls FreezeYou. If you used No-root (Profile Owner) mode, release it above first, or the uninstall may fail.</string>
     <string name="isNotProfileOwner">Is not profile owner</string>
     <string name="getBackupData">Get backup data</string>
     <string name="theAppHasNotificationInTheNotificationBar">The application has notifications in the notification bar</string>
@@ -414,6 +425,7 @@
     <string name="shizukuVersionIsTooLow">Shizuku version is too low</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku is not installed or other exceptions</string>
     <string name="includeFUFActivityInRecents">Include freeze and unfreeze activity in recents</string>
+    <string name="includeFUFActivityInRecentsSummary">Also shows the freeze/unfreeze progress screen as a separate entry in recent apps.</string>
     <string name="playFUFAnimations">Play freeze and unfreeze animations</string>
     <string name="toggleGridListMode">Switch list/grid view</string>
     <string name="sFreezeOnceQuit" translatable="false">New_FreezeOnceQuit</string>

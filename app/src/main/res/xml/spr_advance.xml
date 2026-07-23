@@ -7,6 +7,7 @@
         app:iconSpaceReserved="false"
         app:key="DebugModeEnabled"
         app:singleLineTitle="false"
+        app:summary="@string/debugModeSummary"
         app:title="@string/debugMode" />
     <EditTextPreference
         app:defaultValue="@string/app_name"

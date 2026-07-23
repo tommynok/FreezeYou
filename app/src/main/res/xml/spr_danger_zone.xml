@@ -6,7 +6,7 @@
         app:iconSpaceReserved="false"
         app:key="clearAllUserData"
         app:singleLineTitle="false"
-        app:summary="@string/app_name"
+        app:summary="@string/clearAllUserDataSummary"
         app:title="@string/clearAllUserData" />
     <Preference
         app:iconSpaceReserved="false"
@@ -28,6 +28,7 @@
         app:iconSpaceReserved="false"
         app:key="uninstall"
         app:singleLineTitle="false"
+        app:summary="@string/uninstallSummary"
         app:title="@string/uninstall" />
 
 </PreferenceScreen>

@@ -19,19 +19,24 @@
         app:singleLineTitle="false"
         app:title="@string/selectFUFMode"
         app:useSimpleSummaryProvider="true" />
+    <Preference
+        android:selectable="false"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:summary="@string/selectFUFModeGuide" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
         app:key="avoidFreezeForegroundApplications"
         app:singleLineTitle="false"
-        app:summary="@string/needActiveAccessibilityService"
+        app:summary="@string/avoidFreezeForegroundApplicationsSummary"
         app:title="@string/avoidFreezeForegroundApplications" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
         app:key="avoidFreezeNotifyingApplications"
         app:singleLineTitle="false"
-        app:summary="@string/needL"
+        app:summary="@string/avoidFreezeNotifyingApplicationsSummary"
         app:title="@string/avoidFreezeNotifyingApplications" />
     <CheckBoxPreference
         app:defaultValue="false"
@@ -61,7 +66,7 @@
         app:iconSpaceReserved="false"
         app:key="needConfirmWhenFreezeUseShortcutAutoFUF"
         app:singleLineTitle="false"
-        app:summary="@string/workWithShortcutAutoFUF"
+        app:summary="@string/needConfirmWhenFreezeUseShortcutAutoFUFSummary"
         app:title="@string/needCfmWhenFreeze" />
     <CheckBoxPreference
         app:defaultValue="true"
@@ -69,7 +74,7 @@
         app:iconSpaceReserved="false"
         app:key="openImmediatelyAfterUnfreezeUseShortcutAutoFUF"
         app:singleLineTitle="false"
-        app:summary="@string/workWithShortcutAutoFUF"
+        app:summary="@string/openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary"
         app:title="@string/openImmediatelyAfterUF" />
     <ListPreference
         app:defaultValue="nothing"
