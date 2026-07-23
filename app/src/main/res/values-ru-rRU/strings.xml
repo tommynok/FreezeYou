@@ -102,7 +102,7 @@
     <string name="createDisEnableShortCut">Создать ярлык заморозка/разморозка</string>
     <string name="iconAEntry">Иконки и вход</string>
     <string name="dialEntry">Используйте клавиатуру для ввода</string>
-    <string name="dialEntry_Ex">*#*#373393968#*#* (*#*#FreezeYou#*#*) (поддерживается на большинстве Android устройств)</string>
+    <string name="dialEntry_Ex">Если ярлыки на экране скрыты, откройте FreezeYou, набрав код *#*#373393968#*#* (*#*#FreezeYou#*#*) в номеронабирателе телефона. Поддерживается на большинстве Android-устройств.</string>
     <string name="ciFinishedToast">Отправлено, пожалуйста, дождитесь обновления лаунчера, или перезапустите его.</string>
     <string name="ifUploadCrashLog">Обнаружен log произошедшего сбоя. Вы хотите отправить этот лог разработчику приложения ?</string>
     <string name="search">Поиск</string>
@@ -136,6 +136,7 @@
     <string name="thanksList">Благодарности</string>
     <string name="automation">Автоматизация</string>
     <string name="freezeAfterScreenLock">Запуск OneKEY заморозка после блокировки экрана</string>
+    <string name="freezeAfterScreenLockSummary">Автоматически замораживает список одним нажатием при блокировке экрана.</string>
     <string name="backgroundService">Фоновый сервис</string>
     <string name="useForegroundService">Использовать сервис переднего плана</string>
     <string name="serviceLongerEx">Снизит вероятность сбоя фонового сервиса</string>
@@ -150,6 +151,7 @@
 Используется для работы функции, которая предотвращает заморозку приложений переднего плана при авто-заморозке, и для автозаморозки приложений, когда они не являются приложениями переднего плана, и т.д.\"</string>
     <string name="configureAccessibilityService">Настройка службы специальных возможностей</string>
     <string name="freezeOnceQuit">Заморозка после выхода</string>
+    <string name="freezeOnceQuitSummary">Включает список «Заморозка при выходе»: добавленные в него приложения замораживаются автоматически, как только вы их закрываете.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="exceptionHC">Произошло исключение, но операция продолжится:</string>
@@ -180,9 +182,11 @@
     <string name="delete">Удалить</string>
     <string name="copyAfterBeingFormatted">Копировать имена пакетов</string>
     <string name="showInRecents">Показать в недавних</string>
+    <string name="showInRecentsSummary">Оставляет FreezeYou видимым в списке недавних приложений (многозадачность).</string>
     <string name="mayHaveNoEffectsL">Может не иметь никакого эффекта на Android 4.4 и ниже</string>
     <string name="lesserToast">Реже показывать всплывающие подсказки</string>
     <string name="avoidFreezeForegroundApplications">Предотвращение заморозки приложений переднего плана</string>
+    <string name="avoidFreezeForegroundApplicationsSummary">Пропускает заморозку приложения, пока оно находится на переднем плане, чтобы не прерывать активное использование. Требует включения Специальных возможностей (Accessibility Service).</string>
     <string name="suggestUseTasksInstead">Рекомендуется вместо этого использовать запланированные задачи</string>
     <string name="thirdPartyOpenSourceLicenses">Сторонние лицензии с открытым исходным кодом</string>
     <string name="delAllScheduledTasks">Удалить все запланированные задачи</string>
@@ -192,6 +196,7 @@
     <string name="onlyMROOTModeUse">Используется только в режиме без-Root</string>
     <string name="organizationName">Название организации</string>
     <string name="avoidFreezeNotifyingApplications">Предотвращение заморозки приложений с уведомлениями</string>
+    <string name="avoidFreezeNotifyingApplicationsSummary">Пропускает заморозку приложения, пока у него есть активное уведомление (например, воспроизведение музыки, загрузки), чтобы оно продолжало работать.</string>
     <string name="needL">Требуется Android 5.0 и новее</string>
     <string name="autoDiagnosis">Диагностика</string>
     <string name="sysVerLow">Устаревшая версия Android</string>
@@ -224,11 +229,14 @@
     <string name="restore">Восстановить</string>
     <string name="status">Состояние</string>
     <string name="debugMode">Режим отладки</string>
+    <string name="debugModeSummary">Записывает в журнал внутренние действия приложения (попытки заморозки/разморозки, вызовы Shizuku/root) для диагностики проблем. Может немного снизить производительность.</string>
     <string name="showLogcat">Просмотреть log</string>
     <string name="freezeOrLaunch">Заморозка/запуск</string>
     <string name="askIfSave">Сохранить?</string>
     <string name="mainActivityPattern">Вид стартовой страницы</string>
     <string name="workWithShortcutAutoFUF">Действует, если включен ярлык \"Автозаморозка или разморозка\"</string>
+    <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">Показывает запрос подтверждения перед заморозкой приложения, если она запущена через автозаморозку по ярлыку.</string>
+    <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">Автоматически открывает приложение сразу после разморозки через авторазморозку по ярлыку.</string>
     <string name="needCfmWhenFreeze">Дополнительное подтверждение при заморозке</string>
     <string name="openImmediatelyAfterUF">Запуск сразу после разморозки</string>
     <string name="createLauncherShortcut">Создать ярлык на рабочем столе</string>
@@ -240,6 +248,7 @@
     <string name="application">Приложения</string>
     <string name="allowEditWhCreateShortcut">Разрешить редактирование при создании ярлыков</string>
     <string name="clearAllUserData">Очистить все данные</string>
+    <string name="clearAllUserDataSummary">Безвозвратно удаляет все настройки приложения, пользовательские группы, запланированные задачи и данные ярлыков. Действие нельзя отменить.</string>
     <string name="packageNotFound">Приложение не найдено</string>
     <string name="id">ID</string>
     <string name="simulate">Симуляция</string>
@@ -365,6 +374,7 @@
     <string name="wechatMp_colon">WeChat официальный аккаунт: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Пробовать избегать обновления при использовании</string>
     <string name="selectFUFMode">Выберите режим заморозки и разморозки</string>
+    <string name="selectFUFModeGuide">Выбирайте исходя из доступных прав на устройстве: режимы Без root используют встроенные в Android права Администратора устройства/Владельца профиля; режимы ROOT требуют root (Hide полностью скрывает приложение, Disable — только отключает); режимы Shizuku требуют запущенного приложения Shizuku, без полного root; режимы Системное приложение — для приложений, установленных как системные. Полное сравнение — в разделе FAQ (Меню → FAQ).</string>
     <string name="enable_Root_unhide">Разморозка - ROOT (показать)</string>
     <string name="disable_Root_hide">Заморозка - ROOT(скрыть)</string>
     <string name="enable_Root_enable">Разморозка - ROOT (включить)</string>
@@ -407,7 +417,8 @@
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Возможно, не удастся использовать запланированные задачи для включения или отключения Bluetooth</string>
     <string name="gotoStore">Перейти в магазин приложений</string>
     <string name="selfRevokeProfileOwner">Отключить режим владелец устройства</string>
-    <string name="selfRevokeProfileOwnerSummary">Если вы включили режим владелец устройства, вам необходимо отключить его перед удалением FreezeYou.</string>
+    <string name="selfRevokeProfileOwnerSummary">Нужно только если вы использовали режим Без root (Владелец профиля). Отзывает право владельца профиля — иначе удаление FreezeYou может не сработать.</string>
+    <string name="uninstallSummary">Удаляет FreezeYou. Если вы использовали режим Без root (Владелец профиля), сначала отзовите его выше — иначе удаление может не сработать.</string>
     <string name="isNotProfileOwner">Это не профиль владельца устройства</string>
     <string name="getBackupData">Получить резервные данные</string>
     <string name="theAppHasNotificationInTheNotificationBar">Приложение имеет уведомления в панели уведомлений</string>
@@ -416,6 +427,7 @@
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
+    <string name="includeFUFActivityInRecentsSummary">Также отображает экран процесса заморозки/разморозки отдельным пунктом в списке недавних приложений.</string>
     <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>
     <string name="toggleGridListMode">Переключить вид список/сетка</string>
     <string-array name="launchModeSelection">
