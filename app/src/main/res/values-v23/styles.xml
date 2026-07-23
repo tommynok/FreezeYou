@@ -4,6 +4,7 @@
     <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Black" parent="Base.V23.AppTheme.Dark.Black" />

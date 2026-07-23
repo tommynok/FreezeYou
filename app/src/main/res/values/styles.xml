@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Tighter than the AppCompat default so 4 toolbar action icons can fit on more screens
+         without shrinking below the ~40dp accessibility-friendly touch target. -->
+    <style name="FreezeYou.ActionButton" parent="Widget.AppCompat.ActionButton">
+        <item name="android:minWidth">40dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+    </style>
+
     <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.AppCompat.NoActionBar" />
 
     <style name="AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar">
@@ -8,7 +16,9 @@
         <item name="android:windowIsTranslucent">true</item>
     </style>
 
-    <style name="Base.AppTheme.Dark" parent="Theme.AppCompat" />
+    <style name="Base.AppTheme.Dark" parent="Theme.AppCompat">
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+    </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
         <item name="colorPrimaryDark">#000000</item>
@@ -27,9 +37,13 @@
         <item name="android:colorBackground">@android:color/black</item>
     </style>
 
-    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar" />
+    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+    </style>
 
-    <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light" />
+    <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+    </style>
 
     <style name="AppTheme.Light.Blue" parent="Base.AppTheme.Light.DarkActionBar">
         <item name="colorPrimaryDark">#026FDE</item>

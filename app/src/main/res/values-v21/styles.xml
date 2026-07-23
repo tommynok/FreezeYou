@@ -12,14 +12,17 @@
 
     <style name="Base.V21.AppTheme.Dark" parent="Theme.AppCompat">
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <!--    <style name="AppTheme.Default" parent="Theme.AppCompat">-->

@@ -12,7 +12,9 @@
 
     <style name="Base.AppTheme.SplashScreen" parent="Base.V31.AppTheme.SplashScreen" />
 
-    <style name="AppTheme.Default" parent="Theme.Material3.DynamicColors.DayNight" />
+    <style name="AppTheme.Default" parent="Theme.Material3.DynamicColors.DayNight">
+        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+    </style>
 
     <style name="AppTheme.Default.Dialog" parent="Theme.Material3.DynamicColors.DayNight">
         <item name="windowNoTitle">true</item>
