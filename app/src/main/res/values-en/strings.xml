@@ -210,7 +210,7 @@
     <string name="name">Name</string>
     <string name="icon">Icon</string>
     <string name="target">Target</string>
-    <string name="generate">Generate</string>
+    <string name="generate">Create</string>
     <string name="plsSelect">Please select</string>
     <string name="application">Application</string>
     <string name="allowEditWhCreateShortcut">Allow editing when creating shortcuts</string>

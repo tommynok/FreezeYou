@@ -241,8 +241,8 @@
     <string name="name">Назва</string>
     <string name="icon">Значок</string>
     <string name="target">Ціль</string>
-    <string name="shortcutTargetFieldHint">За замовчуванням ярлик просто відкриває застосунок («Запуск»). Натисніть «...», щоб вказати конкретний екран усередині застосунку.</string>
-    <string name="generate">Генерувати</string>
+    <string name="shortcutTargetFieldHint">За замовчуванням ярлик запускає застосунок. Натисніть «...», щоб вибрати інше активіті (екран) зі списку доступних для запуску.</string>
+    <string name="generate">Створити</string>
     <string name="plsSelect">Будь ласка, оберіть</string>
     <string name="application">Додатки</string>
     <string name="shortcutPackageFieldHint">Натисніть «...», щоб вибрати будь-який застосунок з повного списку, а не лише той, з якого ви почали.</string>

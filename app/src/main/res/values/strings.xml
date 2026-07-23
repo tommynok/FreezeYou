@@ -241,8 +241,8 @@
     <string name="name">Name</string>
     <string name="icon">Icon</string>
     <string name="target">Target</string>
-    <string name="shortcutTargetFieldHint">By default the shortcut just opens the app ("Run"). Tap … to point it at a specific screen inside the app instead.</string>
-    <string name="generate">Generate</string>
+    <string name="shortcutTargetFieldHint">By default the shortcut launches the app. Tap … to pick a different activity (screen) from the list of ones available to launch.</string>
+    <string name="generate">Create</string>
     <string name="plsSelect">Please select</string>
     <string name="application">Application</string>
     <string name="shortcutPackageFieldHint">Tap … to pick any app from the full list, not just the one you started from.</string>

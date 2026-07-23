@@ -243,8 +243,8 @@
     <string name="name">Название</string>
     <string name="icon">Значок</string>
     <string name="target">Цель</string>
-    <string name="shortcutTargetFieldHint">По умолчанию ярлык просто открывает приложение («Запуск»). Нажмите «...», чтобы указать конкретный экран внутри приложения.</string>
-    <string name="generate">Генерировать</string>
+    <string name="shortcutTargetFieldHint">По умолчанию ярлык запускает приложение. Нажмите «...», чтобы выбрать другое активити (экран) из списка доступных к запуску.</string>
+    <string name="generate">Создать</string>
     <string name="plsSelect">Пожалуйста выберите</string>
     <string name="application">Приложения</string>
     <string name="shortcutPackageFieldHint">Нажмите «...», чтобы выбрать любое приложение из полного списка, а не только то, с которого вы начали.</string>
