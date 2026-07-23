@@ -372,7 +372,7 @@
     <string name="wechatMp_colon">WeChat Official Account: %1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">Try to avoid update when using</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
-    <string name="selectFUFModeGuide">Pick based on what access your device has: No-root modes use Android\'s built-in Device Admin/Profile Owner permissions; ROOT modes need root (Hide fully hides the app, Disable only disables it); Shizuku modes need the Shizuku app running, without full root; System App modes are for apps installed as system apps. See FAQ (Menu → FAQ) for a full comparison.</string>
+    <string name="selectFUFModeGuide">Two different mechanisms: Hide (No-root DPM/Profile Owner, or ROOT Hide) makes the app disappear entirely from the launcher and app list. Disable / Disable_User / Disable_Until_Used (ROOT, System App or Shizuku) just mark it disabled — Disable_User lets you re-enable it from system Settings, Disable_Until_Used re-enables it automatically when opened via a shortcut or notification. ROOT modes need root; System App modes need FreezeYou installed as a system app; Shizuku modes need the Shizuku app running. See FAQ (Menu → FAQ) for details.</string>
     <string name="enable_Root_unhide">Unfreeze - ROOT(Unhide)</string>
     <string name="disable_Root_hide">Freeze - ROOT(Hide)</string>
     <string name="enable_Root_enable">Unfreeze - ROOT(Enable)</string>
