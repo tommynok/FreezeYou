@@ -23,6 +23,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -41,7 +42,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -1719,14 +1722,21 @@ public class Main extends FreezeYouBaseActivity {
 
     private void onPrepareMainOptionsMenu(Menu menu) {
         try {
-            boolean useLightIcon = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-                    && ("white".equals(getUiTheme(this)) || "default".equals(getUiTheme(this)));
-            // Icon shows the mode a tap will switch TO, not the current one.
-            menu.findItem(R.id.menu_toggleGridListMode).setIcon(
-                    isGridMode
-                            ? (useLightIcon ? R.drawable.ic_action_view_list_light : R.drawable.ic_action_view_list)
-                            : (useLightIcon ? R.drawable.ic_action_view_grid_light : R.drawable.ic_action_view_grid)
+            // Icons set dynamically via setIcon() don't get the automatic toolbar icon
+            // tinting that statically-declared XML menu icons get from the active theme, so
+            // tint it explicitly to colorControlNormal — matches every custom theme (not just
+            // light/dark), unlike a fixed pair of light/dark drawable variants.
+            Drawable toggleIcon = AppCompatResources.getDrawable(
+                    this, isGridMode ? R.drawable.ic_action_view_list : R.drawable.ic_action_view_grid
             );
+            if (toggleIcon != null) {
+                toggleIcon = DrawableCompat.wrap(toggleIcon.mutate());
+                TypedValue typedValue = new TypedValue();
+                getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true);
+                DrawableCompat.setTint(toggleIcon, typedValue.data);
+            }
+            // Icon shows the mode a tap will switch TO, not the current one.
+            menu.findItem(R.id.menu_toggleGridListMode).setIcon(toggleIcon);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1941,10 +1951,13 @@ public class Main extends FreezeYouBaseActivity {
                         startActivity(new Intent(this, ScheduledTasksManageActivity.class));
                         return true;
                     case R.id.menu_toggleGridListMode:
-                        isGridMode = !isGridMode;
-                        mainActivityPattern.setValue(this, isGridMode ? "grid" : "list");
-                        mMainActivityAppListFragment.setUseGridMode(isGridMode);
-                        invalidateOptionsMenu();
+                        // The List/Grid widget choice is only decided once, in the app-list
+                        // fragment's onCreateView — setUseGridMode() alone doesn't swap it on an
+                        // already-created fragment. Persist the choice, then recreate() so the
+                        // fragment (and everything else) is rebuilt fresh with the new mode,
+                        // same pattern already used for theme switching in SettingsActivity.
+                        mainActivityPattern.setValue(this, isGridMode ? "list" : "grid");
+                        recreate();
                         return true;
                     case R.id.menu_about:
                         startActivity(new Intent(this, AboutActivity.class));

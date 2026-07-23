@@ -6,6 +6,7 @@
         android:id="@+id/menu_timedTasks"
         android:contentDescription="@string/scheduledTasks"
         android:icon="@drawable/ic_action_alarm"
+        android:orderInCategory="10"
         android:title="@string/scheduledTasks"
         app:showAsAction="ifRoom" />
 
@@ -13,6 +14,7 @@
         android:id="@+id/menu_toggleGridListMode"
         android:contentDescription="@string/toggleGridListMode"
         android:icon="@drawable/ic_action_view_grid"
+        android:orderInCategory="40"
         android:title="@string/toggleGridListMode"
         app:showAsAction="ifRoom" />
 
@@ -20,6 +22,7 @@
         android:id="@+id/menu_viewMode"
         android:contentDescription="@string/viewMode"
         android:icon="@drawable/ic_action_filter"
+        android:orderInCategory="20"
         android:title="@string/viewMode"
         app:showAsAction="ifRoom">
         <menu>
@@ -71,6 +74,7 @@
         android:id="@+id/menu_sortBy"
         android:contentDescription="@string/sortBy"
         android:icon="@drawable/ic_action_sort"
+        android:orderInCategory="30"
         android:title="@string/sortBy"
         app:showAsAction="ifRoom">
         <menu>
