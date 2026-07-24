@@ -289,7 +289,10 @@ public class Main extends FreezeYouBaseActivity {
         final int titleResId;
         switch (filter) {
             case "all":
-                titleResId = R.string.displayAll;
+                // No subtitle for the unfiltered state: "Show all" reads oddly as a status
+                // label, and it's the common case, so an always-on subtitle would just compete
+                // with the app name for no benefit.
+                titleResId = 0;
                 break;
             case "OF":
                 titleResId = R.string.onlyFrozen;
