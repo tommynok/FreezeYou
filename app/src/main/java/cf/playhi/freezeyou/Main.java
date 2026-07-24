@@ -281,12 +281,62 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
+     * Shows which filter produced the current list in the toolbar subtitle — with 9+ items
+     * in the filter menu it's easy to lose track after switching a few times. Left blank for
+     * custom categories/shortcut package lists, since there's no short label to show for those.
+     */
+    private void updateFilterSubtitle(String filter) {
+        final int titleResId;
+        switch (filter) {
+            case "all":
+                titleResId = R.string.displayAll;
+                break;
+            case "OF":
+                titleResId = R.string.onlyFrozen;
+                break;
+            case "UF":
+                titleResId = R.string.onlyUF;
+                break;
+            case "OO":
+                titleResId = R.string.onlyOnekey;
+                break;
+            case "OOU":
+                titleResId = R.string.oneKeyUF;
+                break;
+            case "FOQ":
+                titleResId = R.string.freezeOnceQuit;
+                break;
+            case "OS":
+                titleResId = R.string.onlySA;
+                break;
+            case "OU":
+                titleResId = R.string.onlyUA;
+                break;
+            case "UFU":
+                titleResId = R.string.unfrozenUA;
+                break;
+            case "RUN":
+                titleResId = R.string.onlyRunning;
+                break;
+            default:
+                titleResId = 0;
+                break;
+        }
+        runOnUiThread(() -> {
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setSubtitle(titleResId == 0 ? null : getString(titleResId));
+            }
+        });
+    }
+
+    /**
      * @param filter   筛选规则 或 所有需要显示的软件包包名（以“,”分割）
      * @param sortRule 排序规则
      */
     private void generateList(String filter, int sortRule) {
         currentFilter = filter;
         currentSortRule = sortRule;
+        updateFilterSubtitle(filter);
         final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
         final ProgressBar progressBar = findViewById(R.id.progressBar);
         final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
