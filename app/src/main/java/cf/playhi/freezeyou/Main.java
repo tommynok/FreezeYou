@@ -61,6 +61,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
@@ -76,6 +77,7 @@ import cf.playhi.freezeyou.ui.ShortcutLauncherFolderActivity;
 import cf.playhi.freezeyou.ui.fragment.MainActivityAppListFragment;
 import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.LauncherShortcutUtils;
+import cf.playhi.freezeyou.utils.RunningAppsUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
@@ -487,6 +489,25 @@ public class Main extends FreezeYouBaseActivity {
                                 saveIconCache
                         );
                         if (keyValuePair != null && customThemeEnabledDot == (int) keyValuePair.get("isFrozen")) {
+                            AppList.add(keyValuePair);
+                        }
+                    }
+                }
+                checkAndAddNotAvailablePair(AppList);
+                break;
+            case "RUN":
+                Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
+                for (int i = 0; i < size; i++) {
+                    packageInfo1 = packageInfo.get(i);
+                    if (runningPackages.contains(packageInfo1.packageName)) {
+                        Map<String, Object> keyValuePair = processAppStatus(
+                                getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
+                                packageInfo1.packageName,
+                                packageInfo1,
+                                packageManager,
+                                saveIconCache
+                        );
+                        if (keyValuePair != null) {
                             AppList.add(keyValuePair);
                         }
                     }
@@ -1734,6 +1755,13 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
         }
         try {
+            // Android hides other apps' running processes from unprivileged callers since
+            // API 21 — only offer this filter in modes that already have elevated access.
+            menu.findItem(R.id.menu_vM_onlyRunning).setVisible(RunningAppsUtils.isRunningFilterAvailable());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
             SubMenu vmUserDefinedSubMenu = menu.findItem(R.id.menu_vM_userDefined).getSubMenu();
             SubMenu createUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_createUserDefinedShortcut).getSubMenu();
             SubMenu forceStopUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_forceStopUserDefinedShortcut).getSubMenu();
@@ -2030,6 +2058,14 @@ public class Main extends FreezeYouBaseActivity {
                             @Override
                             public void run() {
                                 generateList("UFU");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_onlyRunning:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("RUN");
                             }
                         }).start();
                         return true;

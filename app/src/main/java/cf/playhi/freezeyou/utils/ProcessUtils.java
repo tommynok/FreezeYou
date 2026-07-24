@@ -6,7 +6,11 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class ProcessUtils {
 
@@ -36,6 +40,39 @@ public final class ProcessUtils {
         int i = process.waitFor();
         destroyProcess(outputStream, process);
         return i;
+    }
+
+    /**
+     * @return package names of currently running processes, as seen by a root shell's
+     * "ps -A -o NAME". Requires root; returns an empty set on any failure instead of throwing,
+     * since the caller treats "no matches" and "unavailable" the same way.
+     */
+    public static Set<String> getRootRunningPackages() {
+        Set<String> packages = new HashSet<>();
+        Process process = null;
+        DataOutputStream outputStream = null;
+        try {
+            process = Runtime.getRuntime().exec("su");
+            outputStream = new DataOutputStream(process.getOutputStream());
+            outputStream.writeBytes("ps -A -o NAME\n");
+            outputStream.writeBytes("exit\n");
+            outputStream.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || "NAME".equals(line)) continue;
+                int colonIndex = line.indexOf(':');
+                packages.add(colonIndex > 0 ? line.substring(0, colonIndex) : line);
+            }
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            destroyProcess(outputStream, process);
+        }
+        return packages;
     }
 
     /**

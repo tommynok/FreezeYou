@@ -65,6 +65,9 @@
                 android:id="@+id/menu_vM_unfrozenUA"
                 android:title="@string/unfrozenUA" />
             <item
+                android:id="@+id/menu_vM_onlyRunning"
+                android:title="@string/onlyRunning" />
+            <item
                 android:id="@+id/menu_vM_all"
                 android:title="@string/displayAll" />
         </menu>

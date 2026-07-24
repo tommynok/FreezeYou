@@ -410,6 +410,7 @@
     <string name="correspondingAndAvailableWebsiteUrlLanguageCode">ru-RU</string>
     <string name="forceStop">Принудительная остановка</string>
     <string name="unfrozenUA">Незамороженые пользовательские</string>
+    <string name="onlyRunning">Работающие</string>
     <string name="lastInstall">Недавно установленные</string>
     <string name="lastUpdate">Недавно обновленные</string>
     <string name="alphabetical">В алфавитном порядке</string>
