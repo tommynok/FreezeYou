@@ -281,17 +281,19 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * Shows which filter produced the current list in the toolbar subtitle — with 9+ items
-     * in the filter menu it's easy to lose track after switching a few times. Left blank for
-     * custom categories/shortcut package lists, since there's no short label to show for those.
+     * Shows which filter produced the current list — with 9+ items in the filter menu it's easy
+     * to lose track after switching a few times. Swaps the toolbar title itself (filter name
+     * instead of "FreezeYou") rather than adding a subtitle line: a subtitle sat right under the
+     * app name and read as two headlines competing for attention. Reverts to the app name for
+     * the unfiltered state and for custom categories/shortcut package lists, since there's no
+     * short label to show for those.
      */
-    private void updateFilterSubtitle(String filter) {
+    private void updateFilterTitle(String filter) {
         final int titleResId;
         switch (filter) {
             case "all":
-                // No subtitle for the unfiltered state: "Show all" reads oddly as a status
-                // label, and it's the common case, so an always-on subtitle would just compete
-                // with the app name for no benefit.
+                // Keep the app name for the unfiltered state: "Show all" reads oddly as a
+                // status label, and it's the common case anyway.
                 titleResId = 0;
                 break;
             case "OF":
@@ -327,7 +329,7 @@ public class Main extends FreezeYouBaseActivity {
         }
         runOnUiThread(() -> {
             if (getSupportActionBar() != null) {
-                getSupportActionBar().setSubtitle(titleResId == 0 ? null : getString(titleResId));
+                getSupportActionBar().setTitle(titleResId == 0 ? getString(R.string.app_name) : getString(titleResId));
             }
         });
     }
@@ -339,7 +341,7 @@ public class Main extends FreezeYouBaseActivity {
     private void generateList(String filter, int sortRule) {
         currentFilter = filter;
         currentSortRule = sortRule;
-        updateFilterSubtitle(filter);
+        updateFilterTitle(filter);
         final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
         final ProgressBar progressBar = findViewById(R.id.progressBar);
         final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
