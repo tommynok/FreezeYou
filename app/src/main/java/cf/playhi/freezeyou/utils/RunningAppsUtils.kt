@@ -4,7 +4,9 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.ShizukuProvider
@@ -49,6 +51,7 @@ object RunningAppsUtils {
 
     @Suppress("UNCHECKED_CAST")
     private fun getShizukuRunningPackages(context: Context): Set<String> {
+        val debug = isDebugModeEnabled()
         try {
             if (Build.VERSION.SDK_INT < 23) return emptySet()
 
@@ -59,7 +62,10 @@ object RunningAppsUtils {
                     Thread.sleep(50)
                     waited += 50
                 }
-                if (!Shizuku.pingBinder()) return emptySet()
+                if (!Shizuku.pingBinder()) {
+                    if (debug) Log.e("DebugModeLogcat", "getShizukuRunningPackages: binder never came alive")
+                    return emptySet()
+                }
             }
 
             val am = Class.forName("android.app.IActivityManager\$Stub")
@@ -74,9 +80,16 @@ object RunningAppsUtils {
             for (process in processes) {
                 process.pkgList?.let { packages.addAll(it) }
             }
+            if (debug) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "getShizukuRunningPackages: processes=${processes.size} packages=${packages.size}"
+                )
+            }
             return packages
         } catch (e: Exception) {
             e.printStackTrace()
+            if (debug) Log.e("DebugModeLogcat", "getShizukuRunningPackages failed: $e")
             return emptySet()
         }
     }
