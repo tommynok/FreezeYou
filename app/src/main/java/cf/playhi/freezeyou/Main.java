@@ -1302,7 +1302,14 @@ public class Main extends FreezeYouBaseActivity {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    updateFrozenStatus();
+                    if ("RUN".equals(currentFilter)) {
+                        // Freezing or force-stopping an app can remove it from the
+                        // Running list; a plain icon-status patch wouldn't drop it,
+                        // so re-run the filter to re-query the running package set.
+                        new Thread(() -> generateList(currentFilter)).start();
+                    } else {
+                        updateFrozenStatus();
+                    }
                 }
             };
             IntentFilter filter = new IntentFilter("cf.playhi.freezeyou.action.packageStatusChanged");

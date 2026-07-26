@@ -399,6 +399,7 @@ object FUFUtils {
         ToastUtils.showToast(context, message)
     }
 
+    @JvmStatic
     fun sendStatusChangedBroadcast(context: Context) {
         val intent = Intent()
         intent.action = "cf.playhi.freezeyou.action.packageStatusChanged"

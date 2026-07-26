@@ -53,6 +53,7 @@ public final class ForceStopUtils {
                     if (!lesserToast.getValue(null)) {
                         showToast(context, R.string.executed);
                     }
+                    FUFUtils.sendStatusChangedBroadcast(context);
                 } else {
                     showToast(context, R.string.mayUnrootedOrOtherEx);
                 }
