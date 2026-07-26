@@ -1795,11 +1795,15 @@ public class Main extends FreezeYouBaseActivity {
     private void onPrepareMainOptionsMenu(Menu menu) {
         try {
             // Dynamic theme-attribute tinting turned out unreliable in practice (rendered fully
-            // transparent on the test device). Fall back to the same static light/dark drawable
-            // swap already used for the other toolbar icons (see onCreateOptionsMenu), just
-            // without restricting it to pre-Lollipop — that restriction was never the actual
-            // reason the other icons render correctly; the theme name check is what matters.
-            boolean isLightTheme = "white".equals(getUiTheme(this)) || "default".equals(getUiTheme(this));
+            // transparent on the test device). Fall back to a static light/dark drawable swap,
+            // but read it from the resolved theme's isLightTheme attribute rather than the
+            // getUiTheme() name string: "default" is returned both for the actual light theme
+            // and for Material3 dynamic color following the system into dark mode (Android 12+),
+            // so a name-based check picked the light-background icon variant on a dark background.
+            android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
+            boolean isLightTheme =
+                    getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue)
+                            && isLightThemeValue.data != 0;
             // Icon shows the mode a tap will switch TO, not the current one.
             menu.findItem(R.id.menu_toggleGridListMode).setIcon(
                     isGridMode
