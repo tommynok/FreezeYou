@@ -54,6 +54,14 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
             checkLanguage(this);
         }
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // The app already picks its own light/dark theme manually (see ThemeUtils).
+            // Some OEM skins (MIUI, EMUI, One UI, ...) additionally apply their own
+            // system-wide dark-mode color inversion on top of that, which can leave
+            // individual views (e.g. preference dialog text/icons) unreadable
+            // against the app's own dark background. Opt this window out of it.
+            getWindow().getDecorView().setForceDarkAllowed(false);
+        }
     }
 
     @Override
