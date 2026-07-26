@@ -1802,7 +1802,7 @@ public class Main extends FreezeYouBaseActivity {
             // so a name-based check picked the light-background icon variant on a dark background.
             android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
             boolean isLightTheme =
-                    getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue)
+                    getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue, true)
                             && isLightThemeValue.data != 0;
             // Icon shows the mode a tap will switch TO, not the current one.
             menu.findItem(R.id.menu_toggleGridListMode).setIcon(
