@@ -374,7 +374,7 @@
     <string name="wechatMp_colon">WeChat офіційний акаунт: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Пробувати уникати оновлення при використанні</string>
     <string name="selectFUFMode">Виберіть режим заморозки і розморозки</string>
-    <string name="selectFUFModeGuide">Два різні механізми: Hide (No-root DPM/Власник профілю або ROOT Hide) повністю прибирає застосунок із лаунчера та списку застосунків. Disable / Disable_User / Disable_Until_Used (ROOT, Системний застосунок або Shizuku) лише позначають його вимкненим — Disable_User дозволяє ввімкнути його назад із налаштувань системи, Disable_Until_Used вмикає його автоматично при відкритті через ярлик або сповіщення. Режимам ROOT потрібен root; Системний застосунок — FreezeYou має бути встановлений як системний застосунок; Shizuku — запущений застосунок Shizuku. Подробиці — у розділі FAQ (Меню → FAQ).</string>
+    <string name="selectFUFModeGuide">Режими Hide повністю прибирають застосунок із лаунчера; режими Disable лише позначають його вимкненим. Подробиці — у розділі FAQ (Меню → FAQ).</string>
     <string name="enable_Root_unhide">Розморозка - ROOT (показати)</string>
     <string name="disable_Root_hide">Заморозка - ROOT (приховати)</string>
     <string name="enable_Root_enable">Розморозка - ROOT (включити)</string>
