@@ -45,15 +45,20 @@ public final class ProcessUtils {
         return i;
     }
 
+    private static final String PS_PRIMARY_MARKER = "---PS-PRIMARY---";
+    private static final String PS_FALLBACK_MARKER = "---PS-FALLBACK---";
+
     /**
      * @return package names of currently running processes, as seen by a root shell. Requires
      * root; returns an empty set on any failure instead of throwing, since the caller treats
      * "no matches" and "unavailable" the same way.
      * <p>
-     * "-o NAME=" (empty header name) suppresses the header line without relying on matching the
-     * literal word "NAME", which some ps implementations may not use. As a fallback for ps
-     * builds that don't support "-o" at all, also runs plain "ps -A" and takes the last
-     * whitespace-separated column of each line (the process name in every common ps layout).
+     * Reads every /proc/PID/cmdline directly as the primary source: it's what "ps" itself reads
+     * under the hood, so it sidesteps quirks of whichever ps binary/toolbox happens to be on the
+     * device (missing "-o" support, different column layouts, etc). "ps -A -o NAME=" and plain
+     * "ps -A" (last whitespace-separated column) are kept as supplementary sources in case some
+     * process' cmdline was unreadable but ps still resolved it another way; results from all
+     * three are merged into one set.
      */
     public static Set<String> getRootRunningPackages() {
         Set<String> packages = new HashSet<>();
@@ -62,27 +67,33 @@ public final class ProcessUtils {
         try {
             process = Runtime.getRuntime().exec("su");
             outputStream = new DataOutputStream(process.getOutputStream());
+            outputStream.writeBytes("for f in /proc/[0-9]*/cmdline; do tr '\\0' '\\n' < \"$f\" 2>/dev/null | head -n1; done\n");
+            outputStream.writeBytes("echo " + PS_PRIMARY_MARKER + "\n");
             outputStream.writeBytes("ps -A -o NAME= 2>/dev/null\n");
-            outputStream.writeBytes("echo ---FALLBACK---\n");
+            outputStream.writeBytes("echo " + PS_FALLBACK_MARKER + "\n");
             outputStream.writeBytes("ps -A 2>/dev/null\n");
             outputStream.writeBytes("exit\n");
             outputStream.flush();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            boolean inFallback = false;
+            int section = 0; // 0 = /proc, 1 = ps -o NAME=, 2 = plain ps -A
             boolean fallbackHeaderSkipped = false;
             int rawLineCount = 0;
             while ((line = reader.readLine()) != null) {
                 rawLineCount++;
                 line = line.trim();
                 if (line.isEmpty()) continue;
-                if ("---FALLBACK---".equals(line)) {
-                    inFallback = true;
+                if (PS_PRIMARY_MARKER.equals(line)) {
+                    section = 1;
                     continue;
                 }
-                if (inFallback) {
-                    // First non-empty fallback line is the "ps -A" column header (USER PID ... NAME).
+                if (PS_FALLBACK_MARKER.equals(line)) {
+                    section = 2;
+                    continue;
+                }
+                if (section == 2) {
+                    // First non-empty line of plain "ps -A" is its column header (USER PID ... NAME).
                     if (!fallbackHeaderSkipped) {
                         fallbackHeaderSkipped = true;
                         continue;
