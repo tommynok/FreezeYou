@@ -65,8 +65,20 @@
                 android:id="@+id/menu_vM_unfrozenUA"
                 android:title="@string/unfrozenUA" />
             <item
-                android:id="@+id/menu_vM_onlyRunning"
-                android:title="@string/onlyRunning" />
+                android:id="@+id/menu_vM_onlyRunning_submenu"
+                android:title="@string/onlyRunning">
+                <menu>
+                    <item
+                        android:id="@+id/menu_vM_onlyRunning"
+                        android:title="@string/displayAll" />
+                    <item
+                        android:id="@+id/menu_vM_onlyRunningSys"
+                        android:title="@string/onlySA" />
+                    <item
+                        android:id="@+id/menu_vM_onlyRunningUser"
+                        android:title="@string/onlyUA" />
+                </menu>
+            </item>
             <item
                 android:id="@+id/menu_vM_all"
                 android:title="@string/displayAll" />

@@ -323,6 +323,12 @@ public class Main extends FreezeYouBaseActivity {
             case "RUN":
                 titleResId = R.string.onlyRunning;
                 break;
+            case "RUN_SYS":
+                titleResId = R.string.onlyRunningSys;
+                break;
+            case "RUN_USER":
+                titleResId = R.string.onlyRunningUser;
+                break;
             default:
                 titleResId = 0;
                 break;
@@ -551,9 +557,15 @@ public class Main extends FreezeYouBaseActivity {
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "RUN":
+            case "RUN_SYS":
+            case "RUN_USER":
                 Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    boolean isSystemApp = (packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM;
+                    if (("RUN_SYS".equals(filter) && !isSystemApp) || ("RUN_USER".equals(filter) && isSystemApp)) {
+                        continue;
+                    }
                     if (runningPackages.contains(packageInfo1.packageName)) {
                         Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
@@ -1302,7 +1314,7 @@ public class Main extends FreezeYouBaseActivity {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    if ("RUN".equals(currentFilter)) {
+                    if (currentFilter != null && currentFilter.startsWith("RUN")) {
                         // Freezing or force-stopping an app can remove it from the
                         // Running list; a plain icon-status patch wouldn't drop it,
                         // so re-run the filter to re-query the running package set.
@@ -1823,7 +1835,7 @@ public class Main extends FreezeYouBaseActivity {
         try {
             // Android hides other apps' running processes from unprivileged callers since
             // API 21 — only offer this filter in modes that already have elevated access.
-            menu.findItem(R.id.menu_vM_onlyRunning).setVisible(RunningAppsUtils.isRunningFilterAvailable());
+            menu.findItem(R.id.menu_vM_onlyRunning_submenu).setVisible(RunningAppsUtils.isRunningFilterAvailable());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -2132,6 +2144,22 @@ public class Main extends FreezeYouBaseActivity {
                             @Override
                             public void run() {
                                 generateList("RUN");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_onlyRunningSys:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("RUN_SYS");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_onlyRunningUser:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("RUN_USER");
                             }
                         }).start();
                         return true;

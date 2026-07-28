@@ -409,6 +409,8 @@
     <string name="forceStop">Force Stop</string>
     <string name="unfrozenUA">Unfrozen User App</string>
     <string name="onlyRunning">Running</string>
+    <string name="onlyRunningSys">Running: System</string>
+    <string name="onlyRunningUser">Running: User</string>
     <string name="lastInstall">Recently Installed</string>
     <string name="lastUpdate">Recently Updated</string>
     <string name="alphabetical">Alphabetical</string>
