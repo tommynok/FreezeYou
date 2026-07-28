@@ -70,8 +70,8 @@
     <string name="displayAll">Показать все</string>
     <string name="onlyOnekey">OneKEY заморозка</string>
     <string name="uninstalled">Удаленный</string>
-    <string name="onlySA">Системные приложения</string>
-    <string name="onlyUA">Пользовательские приложения</string>
+    <string name="onlySA">Системные</string>
+    <string name="onlyUA">Пользовательские</string>
     <string name="moreSettings">Настройки</string>
     <string name="visitWebsite">Посетить вебсайт FreezeYou!</string>
     <string name="addQQGroup">Присоединиться к QQ группе</string>

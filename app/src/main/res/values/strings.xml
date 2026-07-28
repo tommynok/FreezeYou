@@ -70,8 +70,8 @@
     <string name="displayAll">Show All</string>
     <string name="onlyOnekey">Onekey Freeze</string>
     <string name="uninstalled">Uninstalled</string>
-    <string name="onlySA">System pre-installed</string>
-    <string name="onlyUA">User Application</string>
+    <string name="onlySA">System</string>
+    <string name="onlyUA">User</string>
     <string name="moreSettings">Settings</string>
     <string name="visitWebsite">Visit Website</string>
     <string name="addQQGroup">Join QQ Group</string>
