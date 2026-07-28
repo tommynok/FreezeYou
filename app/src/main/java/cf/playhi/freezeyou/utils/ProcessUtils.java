@@ -55,10 +55,13 @@ public final class ProcessUtils {
      * <p>
      * Reads every /proc/PID/cmdline directly as the primary source: it's what "ps" itself reads
      * under the hood, so it sidesteps quirks of whichever ps binary/toolbox happens to be on the
-     * device (missing "-o" support, different column layouts, etc). "ps -A -o NAME=" and plain
-     * "ps -A" (last whitespace-separated column) are kept as supplementary sources in case some
-     * process' cmdline was unreadable but ps still resolved it another way; results from all
-     * three are merged into one set.
+     * device (missing "-o" support, different column layouts, etc). The loop reads each cmdline
+     * file with the shell's "read" builtin rather than piping through "tr"/"head" — those spawn
+     * a process per PID, which on a device with a couple hundred processes turned "list running
+     * apps" into a many-hundred-fork operation and a many-second wait. "read" runs in the su
+     * shell itself, no forking. "ps -A -o NAME=" and plain "ps -A" (last whitespace-separated
+     * column) are kept as supplementary sources in case some process' cmdline was unreadable but
+     * ps still resolved it another way; results from all three are merged into one set.
      */
     public static Set<String> getRootRunningPackages() {
         Set<String> packages = new HashSet<>();
@@ -67,7 +70,7 @@ public final class ProcessUtils {
         try {
             process = Runtime.getRuntime().exec("su");
             outputStream = new DataOutputStream(process.getOutputStream());
-            outputStream.writeBytes("for f in /proc/[0-9]*/cmdline; do tr '\\0' '\\n' < \"$f\" 2>/dev/null | head -n1; done\n");
+            outputStream.writeBytes("for f in /proc/[0-9]*/cmdline; do read -r line < \"$f\" 2>/dev/null && [ -n \"$line\" ] && echo \"$line\"; done\n");
             outputStream.writeBytes("echo " + PS_PRIMARY_MARKER + "\n");
             outputStream.writeBytes("ps -A -o NAME= 2>/dev/null\n");
             outputStream.writeBytes("echo " + PS_FALLBACK_MARKER + "\n");
