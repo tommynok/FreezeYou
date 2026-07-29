@@ -375,7 +375,6 @@
     <string name="wechatMp_colon">WeChat официальный аккаунт: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Пробовать избегать обновления при использовании</string>
     <string name="selectFUFMode">Выберите режим заморозки и разморозки</string>
-    <string name="selectFUFModeGuide">Оба варианта останавливают запуск приложения. Hide дополнительно убирает его из списка приложений в системных настройках; Disable оставляет его там (помеченным «отключено») — так его проще найти и включить обратно.</string>
     <string name="enable_Root_unhide">Разморозка - ROOT (показать)</string>
     <string name="disable_Root_hide">Заморозка - ROOT(скрыть)</string>
     <string name="enable_Root_enable">Разморозка - ROOT (включить)</string>

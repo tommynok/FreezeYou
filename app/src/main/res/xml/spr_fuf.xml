@@ -19,11 +19,6 @@
         app:singleLineTitle="false"
         app:title="@string/selectFUFMode"
         app:useSimpleSummaryProvider="true" />
-    <Preference
-        android:selectable="false"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:summary="@string/selectFUFModeGuide" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
