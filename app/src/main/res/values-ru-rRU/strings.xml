@@ -414,6 +414,7 @@
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
     <string name="scheduledTaskCommandsSyntax">Настройка заданий (справка)</string>
+    <string name="offlineHelpAssetLanguageCode" translatable="false">ru</string>
     <string name="lastInstall">Недавно установленные</string>
     <string name="lastUpdate">Недавно обновленные</string>
     <string name="alphabetical">В алфавитном порядке</string>

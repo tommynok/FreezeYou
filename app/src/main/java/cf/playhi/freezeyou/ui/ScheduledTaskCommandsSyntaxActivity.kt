@@ -14,7 +14,9 @@ class ScheduledTaskCommandsSyntaxActivity : FreezeYouBaseActivity() {
         setContentView(R.layout.scheduled_task_commands_syntax_activity)
         processActionBar(supportActionBar)
 
-        findViewById<WebView>(R.id.stcsa_webView)
-            .loadUrl("file:///android_asset/help/scheduled_task_commands.html")
+        findViewById<WebView>(R.id.stcsa_webView).loadUrl(
+            "file:///android_asset/help/scheduled_task_commands_" +
+                    getString(R.string.offlineHelpAssetLanguageCode) + ".html"
+        )
     }
 }

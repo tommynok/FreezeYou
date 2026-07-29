@@ -410,6 +410,8 @@
     <string name="onlyRunning">Активні</string>
     <string name="onlyRunningSys">Активні: системні</string>
     <string name="onlyRunningUser">Активні: користувацькі</string>
+    <string name="scheduledTaskCommandsSyntax">Налаштування завдань (довідка)</string>
+    <string name="offlineHelpAssetLanguageCode" translatable="false">uk</string>
     <string name="lastInstall">Нещодавно встановлені</string>
     <string name="lastUpdate">Нещодавно оновлені</string>
     <string name="alphabetical">За алфавітом</string>

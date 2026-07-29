@@ -1841,14 +1841,6 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
         }
         try {
-            // Offline help content only exists in Russian so far — hide it for other locales
-            // rather than show an English label pointing at Russian text.
-            menu.findItem(R.id.menu_scheduledTaskCommandsSyntax).setVisible(
-                    "ru-RU".equals(getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
             SubMenu vmUserDefinedSubMenu = menu.findItem(R.id.menu_vM_userDefined).getSubMenu();
             SubMenu createUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_createUserDefinedShortcut).getSubMenu();
             SubMenu forceStopUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_forceStopUserDefinedShortcut).getSubMenu();

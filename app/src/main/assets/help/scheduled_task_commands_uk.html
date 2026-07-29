@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Налаштування завдань — довідка</title>
+<style>
+    :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1a1a1a;
+        --muted: #555555;
+        --code-bg: rgba(128, 128, 128, 0.18);
+        --rule: rgba(128, 128, 128, 0.35);
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #121212;
+            --fg: #e6e6e6;
+            --muted: #aaaaaa;
+        }
+    }
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+    }
+    body {
+        padding: 16px 20px 32px;
+        font-family: sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    h2 {
+        margin: 28px 0 8px;
+        font-size: 19px;
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 6px;
+    }
+    h2:first-child {
+        margin-top: 4px;
+    }
+    h3 {
+        margin: 18px 0 6px;
+        font-size: 16px;
+    }
+    p.lead {
+        margin: 0 0 8px;
+        color: var(--muted);
+    }
+    ul {
+        margin: 6px 0 6px;
+        padding-left: 22px;
+    }
+    li {
+        margin-bottom: 8px;
+    }
+    code {
+        font-family: monospace;
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+    }
+</style>
+</head>
+<body>
+
+<h2>Доступні команди</h2>
+<ul>
+    <li><code>okff</code> — OneKEY заморозка.</li>
+    <li><code>okuf</code> — OneKEY розморозка.</li>
+    <li><code>ff</code> — заморозка.</li>
+    <li><code>uf</code> — розморозка.</li>
+    <li><code>es</code> — увімкнути параметр: <code>wifi</code> (з 6.2), <code>cd</code> — мобільна передача даних (з 7.1), <code>bluetooth</code> (з 7.3).</li>
+    <li><code>ds</code> — вимкнути параметр (ті самі значення та версії, що й у <code>es</code>).</li>
+    <li><code>st</code> — показати спливаюче повідомлення (Toast).</li>
+    <li><code>sn</code> (8.6+) — показати сповіщення в шторці.</li>
+    <li><code>sp</code> — відкрити вказаний додаток.</li>
+    <li><code>su</code> — відкрити додаток за Uri.</li>
+    <li><code>lg</code> (7.2+) — записати в лог рядок рівня ERROR; зазвичай не потрібно.</li>
+    <li><code>ls</code> (8.7+) — заблокувати екран.</li>
+</ul>
+
+<h2>Внутрішні змінні</h2>
+<p class="lead">Необов'язкові додаткові параметри.</p>
+<ul>
+    <li><code>[ppkgn]</code> (7.4+) — пакет попереднього додатку. Тільки для тригерів «При виході з додатків» і «Коли відкриваються додатки». Перед використанням у реальному завданні перевірте значення через <code>st [ppkgn]</code>, щоб не заморозити випадково не той додаток.</li>
+    <li><code>[cpkgn]</code> (7.4+) — пакет поточного додатку. Для тригерів «Коли відкриваються додатки», «При виході з додатків», «При розморозці додатків», «При заморозці додатків». Так само спершу перевірте через <code>st [cpkgn]</code>.</li>
+</ul>
+
+<h2>Приклади команд</h2>
+
+<h3>okuf</h3>
+<ul>
+    <li><code>okuf</code> — виконати OneKEY розморозку негайно.</li>
+    <li><code>okuf -d 10</code> — із затримкою 10 сек.</li>
+</ul>
+
+<h3>ff</h3>
+<ul>
+    <li><code>ff com.tencent.mobileqq</code> — заморозити додаток з пакетом <code>com.tencent.mobileqq</code> (QQ).</li>
+    <li><code>ff com.tencent.mobileqq,@5oiR55qE5YiX6KGo</code> — заморозити QQ і всі додатки з «Моєї підбірки» з alias <code>5oiR55qE5YiX6KGo</code>.</li>
+    <li><code>ff com.tencent.mobileqq,com.tencent.mm</code> — заморозити QQ і WeChat (<code>com.tencent.mm</code>).</li>
+    <li><code>ff com.tencent.mobileqq,com.tencent.mm,com.taobao.taobao</code> — заморозити QQ, WeChat і Taobao.</li>
+    <li><code>ff -d 3600 com.tencent.mobileqq</code> — заморозити QQ із затримкою 3600 сек.</li>
+</ul>
+
+<h3>uf</h3>
+<ul>
+    <li><code>uf com.tencent.mobileqq</code> — розморозити QQ.</li>
+    <li><code>uf com.tencent.mobileqq,com.tencent.mm</code> — розморозити QQ і WeChat.</li>
+    <li><code>uf com.tencent.mobileqq,@5oiR55qE5YiX6KGo</code> — розморозити QQ і всі додатки з «Моєї підбірки» з alias <code>5oiR55qE5YiX6KGo</code>.</li>
+    <li><code>uf com.tencent.mobileqq,com.tencent.mm,com.taobao.taobao</code> — розморозити QQ, WeChat і Taobao.</li>
+</ul>
+
+<h3>es</h3>
+<ul>
+    <li><code>es wifi</code> — увімкнути Wi-Fi.</li>
+    <li><code>es -d 20 wifi</code> — увімкнути Wi-Fi із затримкою 20 сек.</li>
+    <li><code>es wifi,cd</code> — увімкнути Wi-Fi і мобільну передачу даних.</li>
+    <li><code>es wifi;okuf;uf com.tencent.mobileqq</code> — кілька команд через <code>;</code>: увімкнути Wi-Fi, виконати OneKEY розморозку, розморозити QQ.</li>
+</ul>
+
+<h3>ds</h3>
+<ul>
+    <li><code>ds wifi</code> — вимкнути Wi-Fi.</li>
+    <li><code>ds cd</code> — вимкнути мобільну передачу даних.</li>
+    <li><code>ds wifi;okff</code> — вимкнути Wi-Fi і виконати OneKEY заморозку.</li>
+    <li><code>ds -d 15 wifi;okff</code> — те саме із затримкою 15 сек.</li>
+</ul>
+
+<h3>st</h3>
+<ul>
+    <li><code>st Це тестове повідомлення</code> — показати Toast із вказаним текстом.</li>
+</ul>
+
+<h3>sn</h3>
+<ul>
+    <li><code>sn Заголовок,Текст сповіщення</code> — сповіщення в шторці: заголовок і текст через кому.</li>
+</ul>
+
+<h3>sp</h3>
+<ul>
+    <li><code>sp com.tencent.mobileqq</code> — відкрити QQ.</li>
+    <li><code>sp com.tencent.mobileqq,com.tencent.mm</code> — відкрити QQ і WeChat.</li>
+</ul>
+
+<h3>lg</h3>
+<ul>
+    <li><code>lg 10086</code> — записати в лог рядок ERROR зі значенням <code>10086</code>.</li>
+</ul>
+
+<h2>Додаткові параметри тригерів</h2>
+
+<h3>Загальні правила</h3>
+<ul>
+    <li>Частина тригерів не приймає параметри — якщо щось вказано, воно ігнорується.</li>
+    <li>Частина тригерів приймає параметр, але необов'язково.</li>
+    <li>Частина тригерів вимагає параметр, інакше завдання не виконається.</li>
+</ul>
+
+<h3>Вимоги по тригерах</h3>
+<ul>
+    <li>«При включенні екрану» / «При виключенні екрану» — параметрів поки немає.</li>
+    <li>«Коли відкриваються додатки» — до версії 7.0 обов'язковий пакет додатку; з 7.0 можна вказати пакет додатку або «Мою підбірку» (з 9.2). Якщо вказано пакет, відкриття цього додатку зазвичай скасовує ще не виконані завдання тригера «При виході з додатків» для того самого додатку.</li>
+    <li>«При виході з додатків» — можна вказати пакет додатку або «Мою підбірку» (з 9.2). Якщо вказано пакет, вихід з цього додатку зазвичай скасовує ще не виконані завдання тригера «Коли відкриваються додатки» для того самого додатку.</li>
+    <li>«При розморозці додатків» / «При заморозці додатків» — можна вказати пакет додатку; без нього спрацює для будь-якого додатку.</li>
+</ul>
+
+<h3>Що можна вказати</h3>
+<ul>
+    <li>Пакет додатку, наприклад <code>com.tencent.mobileqq</code>.</li>
+    <li>«Моя підбірка», наприклад <code>@5oiR55qE5YiX6KGo</code>.</li>
+</ul>
+
+<h3>Приклади</h3>
+<ul>
+    <li>Тригер «Коли відкриваються додатки», параметр <code>com.tencent.mobileqq</code> — завдання виконається при запуску QQ.</li>
+    <li>Той самий тригер, параметр <code>com.tencent.mobileqq,com.tencent.mm</code> — при запуску QQ або WeChat.</li>
+    <li>Той самий тригер, параметр <code>com.tencent.mobileqq,@5oiR55qE5YiX6KGo</code> — при запуску QQ або будь-якого додатку з «Моєї підбірки» з alias <code>5oiR55qE5YiX6KGo</code>.</li>
+    <li>Той самий тригер, параметр — пакет поточного лаунчера — при поверненні на робочий стіл.</li>
+    <li>Тригер «При виході з додатків» без параметра — при виході з будь-якого додатку.</li>
+</ul>
+
+</body>
+</html>
