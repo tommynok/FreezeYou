@@ -71,6 +71,7 @@ import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
 import cf.playhi.freezeyou.ui.FirstTimeSetupActivity;
 import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity;
+import cf.playhi.freezeyou.ui.ScheduledTaskCommandsSyntaxActivity;
 import cf.playhi.freezeyou.ui.ScheduledTasksManageActivity;
 import cf.playhi.freezeyou.ui.SettingsActivity;
 import cf.playhi.freezeyou.ui.ShortcutLauncherFolderActivity;
@@ -1840,6 +1841,14 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
         }
         try {
+            // Offline help content only exists in Russian so far — hide it for other locales
+            // rather than show an English label pointing at Russian text.
+            menu.findItem(R.id.menu_scheduledTaskCommandsSyntax).setVisible(
+                    "ru-RU".equals(getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
             SubMenu vmUserDefinedSubMenu = menu.findItem(R.id.menu_vM_userDefined).getSubMenu();
             SubMenu createUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_createUserDefinedShortcut).getSubMenu();
             SubMenu forceStopUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_forceStopUserDefinedShortcut).getSubMenu();
@@ -2180,6 +2189,9 @@ public class Main extends FreezeYouBaseActivity {
                         requestOpenWebSite(this,
                                 String.format("https://www.zidon.net/%1$s/faq/",
                                         getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)));
+                        return true;
+                    case R.id.menu_scheduledTaskCommandsSyntax:
+                        startActivity(new Intent(this, ScheduledTaskCommandsSyntaxActivity.class));
                         return true;
                     case R.id.menu_onClickFunc_autoUFOrFreeze:
                         appListViewOnClickMode = APPListViewOnClickMode_autoUFOrFreeze;

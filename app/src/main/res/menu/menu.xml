@@ -280,6 +280,11 @@
         android:title="@string/faq"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_scheduledTaskCommandsSyntax"
+        android:title="@string/scheduledTaskCommandsSyntax"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_about"
         android:title="@string/about"
         app:showAsAction="never" />

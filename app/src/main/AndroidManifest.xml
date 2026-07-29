@@ -379,6 +379,11 @@
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:theme="@style/AppTheme.Dark.Default" />
         <activity
+            android:name=".ui.ScheduledTaskCommandsSyntaxActivity"
+            android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
+            android:label="@string/scheduledTaskCommandsSyntax"
+            android:theme="@style/AppTheme.Dark.Default" />
+        <activity
             android:name=".ui.AutoDiagnosisActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:label="@string/autoDiagnosis"
