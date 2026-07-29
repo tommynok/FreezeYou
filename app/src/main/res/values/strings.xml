@@ -411,8 +411,7 @@
     <string name="onlyRunning">Running</string>
     <string name="onlyRunningSys">Running: System</string>
     <string name="onlyRunningUser">Running: User</string>
-    <string name="scheduledTaskCommandsSyntax">Task Hints</string>
-    <string name="scheduledTaskCommandsSyntaxContent">Only available in Russian for now — see the online FAQ (Menu → FAQ) for scheduled task command syntax in other languages.</string>
+    <string name="scheduledTaskCommandsSyntax">Task Setup (Help)</string>
     <string name="lastInstall">Recently Installed</string>
     <string name="lastUpdate">Recently Updated</string>
     <string name="alphabetical">Alphabetical</string>
