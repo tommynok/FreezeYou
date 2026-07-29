@@ -106,12 +106,6 @@ class AboutActivity : FreezeYouBaseActivity() {
             AboutMenuItem(resources.getString(R.string.update), false) {
                 checkUpdate(this@AboutActivity)
             },
-            AboutMenuItem(resources.getString(R.string.thirdPartyOpenSourceLicenses), true) {
-                requestOpenWebSite(
-                    this@AboutActivity,
-                    "https://freezeyou.playhi.net/ThirdPartyOpenSourceLicenses.html"
-                )
-            },
             AboutMenuItem(
                 "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})",
                 true

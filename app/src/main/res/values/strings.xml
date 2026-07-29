@@ -186,7 +186,6 @@
     <string name="avoidFreezeForegroundApplications">Avoid Freezing Foreground Applications</string>
     <string name="avoidFreezeForegroundApplicationsSummary">Skips freezing an app while it\'s currently in the foreground, so active use isn\'t interrupted. Requires enabling Accessibility Service.</string>
     <string name="suggestUseTasksInstead">Recommend to use scheduled tasks instead</string>
-    <string name="thirdPartyOpenSourceLicenses">Third-party Open Source Licenses</string>
     <string name="delAllScheduledTasks">Delete All Scheduled Tasks</string>
     <string name="askIfDel">Are you sure to delete?</string>
     <string name="folder">Folder</string>

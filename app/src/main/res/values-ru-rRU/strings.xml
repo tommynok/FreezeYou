@@ -188,7 +188,6 @@
     <string name="avoidFreezeForegroundApplications">Предотвращение заморозки приложений переднего плана</string>
     <string name="avoidFreezeForegroundApplicationsSummary">Пропускает заморозку приложения, пока оно находится на переднем плане, чтобы не прерывать активное использование. Требует включения Специальных возможностей (Accessibility Service).</string>
     <string name="suggestUseTasksInstead">Рекомендуется вместо этого использовать запланированные задачи</string>
-    <string name="thirdPartyOpenSourceLicenses">Сторонние лицензии с открытым исходным кодом</string>
     <string name="delAllScheduledTasks">Удалить все запланированные задачи</string>
     <string name="askIfDel">Вы уверены, что хотите удалить?</string>
     <string name="folder">Папка</string>
