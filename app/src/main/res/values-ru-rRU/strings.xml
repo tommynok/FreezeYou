@@ -413,7 +413,7 @@
     <string name="onlyRunning">Работающие</string>
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
-    <string name="scheduledTaskCommandsSyntax">Шпаргалка по командам заданий</string>
+    <string name="scheduledTaskCommandsSyntax">Подсказки по заданиям</string>
     <string name="scheduledTaskCommandsSyntaxContent"># Доступные команды
 
 - `okff` — OneKEY заморозка.
