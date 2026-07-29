@@ -10,7 +10,7 @@ android {
         minSdkVersion 16
         targetSdk 32
         versionCode 151
-        versionName '11.5.151.20220530-t152-20221127-1-gh'
+        versionName '11.5.151-fork'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resConfigs "en", "en-rUS", "ru-rRU", "uk-rUA"
         ndk {

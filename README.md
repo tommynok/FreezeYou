@@ -1,5 +1,7 @@
 # 自冻 FreezeYou
 
+> **This is an unofficial fork**, not affiliated with the original developer, maintained privately for personal use. No support or issue tracker — see [upstream](https://github.com/FreezeYou/FreezeYou) for the official project.
+
 ###### [Website - FreezeYou](https://www.freezeyou.net/) | [官方主页 - 自冻](https://zidon.net/) | [官方主页 - 旧版](https://freezeyou.playhi.net/)
 
 [![GitHub license](https://img.shields.io/github/license/FreezeYou/FreezeYou.svg)](https://github.com/FreezeYou/FreezeYou/blob/master/LICENSE) [![Maintainability](https://api.codeclimate.com/v1/badges/727a63c38deeadb0c468/maintainability)](https://codeclimate.com/github/Playhi/FreezeYou/maintainability) [![Build Status](https://app.travis-ci.com/FreezeYou/FreezeYou.svg?branch=master)](https://travis-ci.org/FreezeYou/FreezeYou) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/freezeyou/localized.svg)](https://crowdin.com/project/freezeyou) [![GitHub release](https://img.shields.io/github/v/release/FreezeYou/FreezeYou.svg)](https://github.com/FreezeYou/FreezeYou/releases)
