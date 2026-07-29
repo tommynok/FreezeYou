@@ -373,7 +373,7 @@
     <string name="wechatMp_colon">WeChat Official Account: %1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">Try to avoid update when using</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
-    <string name="selectFUFModeGuide">Hide modes remove the app entirely from the launcher; Disable modes just mark it disabled. See FAQ (Menu → FAQ) for the full breakdown.</string>
+    <string name="selectFUFModeGuide">Both stop the app from running. Hide also removes it from Settings ▸ Apps; Disable leaves it listed there (as disabled), so it's easier to find and re-enable.</string>
     <string name="enable_Root_unhide">Unfreeze - ROOT(Unhide)</string>
     <string name="disable_Root_hide">Freeze - ROOT(Hide)</string>
     <string name="enable_Root_enable">Unfreeze - ROOT(Enable)</string>

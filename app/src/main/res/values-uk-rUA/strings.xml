@@ -373,7 +373,7 @@
     <string name="wechatMp_colon">WeChat офіційний акаунт: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Пробувати уникати оновлення при використанні</string>
     <string name="selectFUFMode">Виберіть режим заморозки і розморозки</string>
-    <string name="selectFUFModeGuide">Режими Hide повністю прибирають застосунок із лаунчера; режими Disable лише позначають його вимкненим. Подробиці — у розділі FAQ (Меню → FAQ).</string>
+    <string name="selectFUFModeGuide">Обидва варіанти зупиняють запуск застосунку. Hide додатково прибирає його зі списку застосунків у системних налаштуваннях; Disable залишає його там (позначеним «вимкнено») — так його простіше знайти і увімкнути назад.</string>
     <string name="enable_Root_unhide">Розморозка - ROOT (показати)</string>
     <string name="disable_Root_hide">Заморозка - ROOT (приховати)</string>
     <string name="enable_Root_enable">Розморозка - ROOT (включити)</string>
