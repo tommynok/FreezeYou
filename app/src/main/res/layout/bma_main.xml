@@ -78,12 +78,15 @@
                 android:text="@string/impt" />
         </LinearLayout>
 
+        <!-- Fixed height, not wrap_content: a large backup blob would otherwise be laid out in
+             full inside the ScrollView and freeze the UI. Scrolls internally instead. -->
         <EditText
             android:id="@+id/bma_main_inputAndoutput_editText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="180dp"
             android:gravity="start|top"
             android:inputType="textMultiLine"
+            android:scrollbars="vertical"
             android:textSize="14sp" />
     </LinearLayout>
 </ScrollView>

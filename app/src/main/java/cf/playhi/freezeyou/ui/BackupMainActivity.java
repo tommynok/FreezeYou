@@ -93,14 +93,16 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
             findViewById(R.id.bma_main_viaText_textView).setVisibility(View.GONE);
         }
 
-        bma_main_saveToFile_button.setOnClickListener(v -> mSaveToFileLauncher.launch(
+        bma_main_saveToFile_button.setOnClickListener(v -> launchPicker(
+                mSaveToFileLauncher,
                 new Intent(Intent.ACTION_CREATE_DOCUMENT)
                         .addCategory(Intent.CATEGORY_OPENABLE)
                         .setType(BACKUP_MIME_TYPE)
                         .putExtra(Intent.EXTRA_TITLE, generateBackupFileName())
         ));
 
-        bma_main_restoreFromFile_button.setOnClickListener(v -> mRestoreFromFileLauncher.launch(
+        bma_main_restoreFromFile_button.setOnClickListener(v -> launchPicker(
+                mRestoreFromFileLauncher,
                 new Intent(Intent.ACTION_OPEN_DOCUMENT)
                         .addCategory(Intent.CATEGORY_OPENABLE)
                         .setType("*/*")
@@ -131,6 +133,24 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
             editText.setText(ClipboardUtils.getClipboardItemText(getApplicationContext()));
         });
 
+    }
+
+    /**
+     * The document picker lives in a separate app (DocumentsUI) that this very app is capable of
+     * freezing or disabling — in which case launching it throws instead of opening anything. Fall
+     * back to a toast and the clipboard route rather than taking the whole activity down.
+     */
+    private void launchPicker(ActivityResultLauncher<Intent> launcher, Intent intent) {
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+            return;
+        }
+        try {
+            launcher.launch(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+        }
     }
 
     private static String generateBackupFileName() {
@@ -165,10 +185,8 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
             ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
             return;
         }
-        // Mirror what was written into the text field, so it's visible what the file contains
-        // and the clipboard path can still be used with the very same content.
-        EditText editText = findViewById(R.id.bma_main_inputAndoutput_editText);
-        editText.setText(content);
+        // Deliberately not mirrored into the text field: it sits in a wrap_content ScrollView,
+        // so a large backup would be laid out in full at once and freeze the UI for seconds.
         ToastUtils.showToast(BackupMainActivity.this, R.string.success);
     }
 
@@ -189,8 +207,6 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
             ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
             return;
         }
-        EditText editText = findViewById(R.id.bma_main_inputAndoutput_editText);
-        editText.setText(builder.toString());
         startImportChooser(builder.toString());
     }
 }
