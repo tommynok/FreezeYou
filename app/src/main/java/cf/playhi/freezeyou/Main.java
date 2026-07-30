@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -40,10 +41,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import com.google.android.material.snackbar.Snackbar;
 
 import net.grandcentrix.tray.AppPreferences;
 
@@ -1160,12 +1163,14 @@ public class Main extends FreezeYouBaseActivity {
                                     Main.this, pkgName, null, null,
                                     false, null, false);
                         }
+                        offerAddToUserDefinedList(pkgName, name);
                         break;
                     case APPListViewOnClickMode_freezeImmediately:
                         if (!realGetFrozenStatus(Main.this, pkgName, null)) {
                             processFreezeAction(
                                     Main.this, pkgName, null, null,
                                     false, null, false);
+                            offerAddToUserDefinedList(pkgName, name);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.freezeCompleted);
@@ -1177,6 +1182,7 @@ public class Main extends FreezeYouBaseActivity {
                             processUnfreezeAction(
                                     Main.this, pkgName, null, null,
                                     false, false, null, false);
+                            offerAddToUserDefinedList(pkgName, name);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.UFCompleted);
@@ -1188,6 +1194,7 @@ public class Main extends FreezeYouBaseActivity {
                             processUnfreezeAction(
                                     Main.this, pkgName, null, null,
                                     true, false, null, false);
+                            offerAddToUserDefinedList(pkgName, name);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.UFCompleted);
@@ -1206,6 +1213,7 @@ public class Main extends FreezeYouBaseActivity {
                                     Main.this, pkgName, null, null,
                                     false, null, false);
                         }
+                        offerAddToUserDefinedList(pkgName, name);
                         break;
                     case APPListViewOnClickMode_addToOFList:
                         showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
@@ -2345,6 +2353,14 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void showAddNewUserDefinedClassificationDialog() {
+        showAddNewUserDefinedClassificationDialog(null);
+    }
+
+    /**
+     * @param pkgNameToAdd if non-null, the new list starts with this package already in it
+     *                     (used by the "add to a list" Snackbar action after a freeze/unfreeze tap).
+     */
+    private void showAddNewUserDefinedClassificationDialog(@Nullable String pkgNameToAdd) {
         final EditText vmUserDefinedNameAlertDialogEditText = new EditText(this);
         AlertDialog.Builder vmUserDefinedNameAlertDialog = FreezeYouAlertDialogBuilder(this);
         vmUserDefinedNameAlertDialog.setTitle(R.string.label);
@@ -2375,11 +2391,15 @@ public class Main extends FreezeYouBaseActivity {
                     if (alreadyExists) {
                         showToast(Main.this, R.string.alreadyExist);
                     } else {
+                        String initialPackages = pkgNameToAdd != null ? pkgNameToAdd + "," : "";
                         vmUserDefinedDb.execSQL(
                                 "replace into categories(_id,label,packages) VALUES ( "
                                         + null + ",'"
-                                        + label + "','')"
+                                        + label + "','" + initialPackages + "')"
                         );
+                        if (pkgNameToAdd != null) {
+                            showToast(Main.this, R.string.added);
+                        }
                     }
                     vmUserDefinedDb.close();
                 }
@@ -2387,6 +2407,75 @@ public class Main extends FreezeYouBaseActivity {
         });
         vmUserDefinedNameAlertDialog.setNegativeButton(R.string.cancel, null);
         vmUserDefinedNameAlertDialog.show();
+    }
+
+    /**
+     * Surfaces the otherwise-buried "My customization" lists right at the point of use: a
+     * Snackbar action after a single freeze/unfreeze tap, instead of only being reachable through
+     * the multi-select action bar.
+     */
+    private void offerAddToUserDefinedList(String pkgName, String appName) {
+        Snackbar.make(findViewById(android.R.id.content), appName, Snackbar.LENGTH_LONG)
+                .setAction(R.string.pinToMyCustomization, v -> showAddPackageToUserDefinedListDialog(pkgName))
+                .show();
+    }
+
+    private void showAddPackageToUserDefinedListDialog(String pkgName) {
+        SQLiteDatabase db = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
+        db.execSQL(
+                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+        );
+        List<String> labels = new ArrayList<>();
+        Cursor cursor = db.query("categories", new String[]{"label"}, null, null, null, null, null);
+        if (cursor.moveToFirst()) {
+            for (int i = 0; i < cursor.getCount(); i++) {
+                labels.add(new String(Base64.decode(cursor.getString(cursor.getColumnIndex("label")), Base64.DEFAULT)));
+                cursor.moveToNext();
+            }
+        }
+        cursor.close();
+        db.close();
+
+        CharSequence[] items = new CharSequence[labels.size() + 1];
+        items[0] = getString(R.string.newClassification);
+        for (int i = 0; i < labels.size(); i++) {
+            items[i + 1] = labels.get(i);
+        }
+
+        FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.myCustomization)
+                .setItems(items, (dialog, which) -> {
+                    if (which == 0) {
+                        showAddNewUserDefinedClassificationDialog(pkgName);
+                    } else {
+                        addPackageToUserDefinedListByLabel(labels.get(which - 1), pkgName);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void addPackageToUserDefinedListByLabel(String label, String pkgName) {
+        SQLiteDatabase db = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
+        String encodedLabel = Base64.encodeToString(label.getBytes(), Base64.DEFAULT);
+        Cursor cursor = db.query(
+                "categories", new String[]{"packages"}, "label = ?", new String[]{encodedLabel},
+                null, null, null
+        );
+        String existsPkgs = "";
+        if (cursor.moveToFirst()) {
+            existsPkgs = cursor.getString(cursor.getColumnIndex("packages"));
+        }
+        cursor.close();
+        if (Arrays.asList(existsPkgs.split(",")).contains(pkgName)) {
+            showToast(this, R.string.alreadyExist);
+        } else {
+            ContentValues values = new ContentValues();
+            values.put("packages", existsPkgs + pkgName + ",");
+            db.update("categories", values, "label = ?", new String[]{encodedLabel});
+            showToast(this, R.string.added);
+        }
+        db.close();
     }
 
     @Override
