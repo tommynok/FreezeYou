@@ -9,6 +9,35 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <Button
+            android:id="@+id/bma_main_saveToFile_button"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/saveBackupToFile" />
+
+        <Button
+            android:id="@+id/bma_main_restoreFromFile_button"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/restoreBackupFromFile" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="10dp"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            android:id="@+id/bma_main_viaText_textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="@string/backupViaTextHint"
+            android:textSize="13sp" />
+
         <LinearLayout
             android:id="@+id/bma_main_part2_linearLayout"
             android:layout_width="match_parent"
@@ -55,20 +84,16 @@
                 android:text="@string/impt" />
         </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="10dp"
-            android:background="?android:attr/listDivider" />
-
+        <!-- Fixed height, not wrap_content: a large backup blob would otherwise be laid out in
+             full inside the ScrollView and freeze the UI. Scrolls internally instead. -->
         <EditText
             android:id="@+id/bma_main_inputAndoutput_editText"
             style="@style/Widget.AppCompat.EditText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="180dp"
             android:gravity="start|top"
             android:inputType="textMultiLine"
+            android:scrollbars="vertical"
             android:textSize="14sp" />
     </LinearLayout>
 </ScrollView>
