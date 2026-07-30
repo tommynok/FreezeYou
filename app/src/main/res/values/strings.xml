@@ -313,6 +313,9 @@
     <string name="clearUninstalledPkgsInFOQList">Remove uninstalled applications from the Freeze Once Quit list</string>
     <string name="impt">Import</string>
     <string name="expt">Export</string>
+    <string name="saveBackupToFile">Save to file</string>
+    <string name="restoreBackupFromFile">Restore from file</string>
+    <string name="backupViaTextHint">Or transfer as text via the clipboard:</string>
     <string name="appStore">App Store</string>
     <string name="finish">Done</string>
     <string name="welcomeToUseAppName">Welcome to %1$s</string>

@@ -9,6 +9,33 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <Button
+            android:id="@+id/bma_main_saveToFile_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/saveBackupToFile" />
+
+        <Button
+            android:id="@+id/bma_main_restoreFromFile_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/restoreBackupFromFile" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="10dp"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            android:id="@+id/bma_main_viaText_textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="@string/backupViaTextHint"
+            android:textSize="13sp" />
+
         <LinearLayout
             android:id="@+id/bma_main_part2_linearLayout"
             android:layout_width="match_parent"
@@ -50,30 +77,6 @@
                 android:layout_weight="1"
                 android:text="@string/impt" />
         </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="10dp"
-            android:background="?android:attr/listDivider" />
-
-        <!--        <FrameLayout-->
-        <!--            android:id="@+id/bma_main_qrCode_frameLayout"-->
-        <!--            android:layout_width="wrap_content"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:layout_below="@id/bma_main_part1_space"-->
-        <!--            android:layout_alignParentBottom="true"-->
-        <!--            android:layout_centerHorizontal="true">-->
-
-        <!--            <ImageView-->
-        <!--                android:id="@+id/bma_main_qrCode_imageView"-->
-        <!--                android:layout_width="match_parent"-->
-        <!--                android:layout_height="match_parent"-->
-        <!--                android:scaleType="fitXY"-->
-        <!--                android:src="@android:drawable/ic_popup_sync" />-->
-        <!--            -->
-        <!--        </FrameLayout>-->
 
         <EditText
             android:id="@+id/bma_main_inputAndoutput_editText"

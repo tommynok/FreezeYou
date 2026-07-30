@@ -315,6 +315,9 @@
     <string name="clearUninstalledPkgsInFOQList">Убрать удаленные приложения из \"Заморозка после выхода\"</string>
     <string name="impt">Импортировать</string>
     <string name="expt">Экспорт</string>
+    <string name="saveBackupToFile">Сохранить в файл</string>
+    <string name="restoreBackupFromFile">Восстановить из файла</string>
+    <string name="backupViaTextHint">Либо перенести текстом через буфер обмена:</string>
     <string name="appStore">Магазин приложений</string>
     <string name="finish">Готово</string>
     <string name="welcomeToUseAppName">Добро пожаловать в %1$s</string>
