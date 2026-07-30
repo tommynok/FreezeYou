@@ -7,7 +7,6 @@ import android.widget.SimpleAdapter;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,7 +18,6 @@ import cf.playhi.freezeyou.R;
 public class BackupImportChooserActivitySwitchSimpleAdapter extends SimpleAdapter {
 
     private final ArrayList<HashMap<String, String>> mData;
-    private final ArrayList<HashMap<String, String>> needExcludeData = new ArrayList<>();
     private final ArrayList<Integer> isDisabledList = new ArrayList<>();
     private JSONObject mJsonObject = null;
 
@@ -58,23 +56,17 @@ public class BackupImportChooserActivitySwitchSimpleAdapter extends SimpleAdapte
 
             s.setOnCheckedChangeListener(null);
 
-            String category = mData.get(position).get("category");
+            String categories = mData.get(position).get("categories");
             s.setChecked(!isDisabledList.contains(position));
-            if ("Failed!".equals(category)) {
+            if ("Failed!".equals(categories)) {
                 s.setChecked(true);
                 s.setEnabled(false);
             }
             s.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
                     isDisabledList.remove((Integer) position);
-                    needExcludeData.remove(mData.get(position));
-                } else {
-                    if (!needExcludeData.contains(mData.get(position))) {
-                        needExcludeData.add(mData.get(position));
-                    }
-                    if (!isDisabledList.contains(position)) {
-                        isDisabledList.add(position);
-                    }
+                } else if (!isDisabledList.contains(position)) {
+                    isDisabledList.add(position);
                 }
             });
         }
@@ -82,44 +74,21 @@ public class BackupImportChooserActivitySwitchSimpleAdapter extends SimpleAdapte
         return view;
     }
 
+    /**
+     * Drops every top-level category belonging to a switched-off group. importContents() keys off
+     * the presence of those categories, so removing them is all that's needed to skip them.
+     */
     public JSONObject getFinalList() {
         if (mJsonObject == null) {
             return new JSONObject();
         }
 
-        String spKey, category;
-        for (int i = 0; i < needExcludeData.size(); i++) {
-            HashMap<String, String> hm = needExcludeData.get(i);
-            category = hm.get("category");
-            spKey = hm.get("spKey");
-            if (category == null) continue;
-            if (spKey == null) continue;
-            JSONArray array = mJsonObject.optJSONArray(category);
-            if (array == null) continue;
-            switch (category) {
-                case "generalSettings_boolean":
-                case "generalSettings_string":
-                case "generalSettings_int":
-                case "oneKeyList":
-                    JSONObject jsonObj = array.optJSONObject(0);
-                    if (jsonObj == null) continue;
-                    jsonObj.remove(spKey);
-                    break;
-                case "userTimeScheduledTasks":
-                case "userTriggerScheduledTasks":
-                    for (int j = 0; j < array.length(); ++j) {
-                        JSONObject jsonObject = array.optJSONObject(j);
-                        if (jsonObject == null || !spKey.equals(jsonObject.optString("i", "-1")))
-                            continue;
-                        try {
-                            jsonObject.put("doNotImport", true);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    break;
-                default:
-                    break;
+        for (Integer position : isDisabledList) {
+            if (position == null || position < 0 || position >= mData.size()) continue;
+            String categories = mData.get(position).get("categories");
+            if (categories == null) continue;
+            for (String category : categories.split(",")) {
+                mJsonObject.remove(category);
             }
         }
 

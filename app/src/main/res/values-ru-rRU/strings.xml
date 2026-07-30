@@ -318,6 +318,8 @@
     <string name="saveBackupToFile">Сохранить в файл</string>
     <string name="restoreBackupFromFile">Восстановить из файла</string>
     <string name="backupViaTextHint">Либо перенести текстом через буфер обмена:</string>
+    <string name="backupGroupOneKeyLists">Списки OneKEY</string>
+    <string name="backupGroupAllowLists">Белые списки</string>
     <string name="appStore">Магазин приложений</string>
     <string name="finish">Готово</string>
     <string name="welcomeToUseAppName">Добро пожаловать в %1$s</string>
