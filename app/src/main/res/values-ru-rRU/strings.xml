@@ -353,7 +353,6 @@
     <string name="displayLanguage">Язык приложения</string>
     <string name="emptyNotAllowed">Пусто не допускается</string>
     <string name="myCustomization">Моя подборка</string>
-    <string name="pinToMyCustomization">В подборку</string>
     <string name="manageMyCustomization">Управление списком \"Моя подборка\"</string>
     <string name="myCustomizationDashLineLabel">Моя подборка - %1$s</string>
     <string name="copyAlias">Скопировать alias</string>
