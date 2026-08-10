@@ -6,11 +6,13 @@ android {
     compileSdk = 37
     buildToolsVersion = '37.0.0'
     defaultConfig {
-        applicationId = "cf.playhi.freezeyou"
+        // .preview suffix: lets this upstream-tracking build install side by side with the
+        // regular fork build (same applicationId would collide on install/signature).
+        applicationId = "cf.playhi.freezeyou.preview"
         minSdk = 23
         targetSdk = 33
         versionCode = 155
-        versionName = '12.0.155-nightly-20260809'
+        versionName = '12.0.155-nightly-20260809-preview'
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     // On some CI runners (e.g. GitHub ubuntu-latest), AGP's default debug keystore
