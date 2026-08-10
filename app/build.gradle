@@ -69,6 +69,12 @@ android {
     namespace = 'cf.playhi.freezeyou'
     lint {
         abortOnError = false
+        // AGP 9's lint worker dies in its static initializer under this CI's JDK
+        // (ExceptionInInitializerError in AndroidLintWorkAction.<clinit>), which fails
+        // lintVitalAnalyzeRelease. abortOnError only suppresses lint *findings*, not an
+        // internal crash, so the task has to be skipped outright. Upstream never hits
+        // this because its CI only builds debug, where lintVital does not run.
+        checkReleaseBuilds = false
     }
 }
 
