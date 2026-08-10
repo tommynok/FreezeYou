@@ -14,6 +14,11 @@ android {
         versionCode = 155
         versionName = '12.0.155-nightly-20260809-preview'
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Upstream packages native libs (MMKV, Shizuku) for every ABI. Match the fork and
+        // ship arm64 only — the other three are dead weight on an arm64 device.
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
     }
     // On some CI runners (e.g. GitHub ubuntu-latest), AGP's default debug keystore
     // creation uses multi-process locking (JvmWideVariable) and crashes with an NPE
@@ -35,6 +40,9 @@ android {
             signingConfig = signingConfigs.debug
         }
         release {
+            // Upstream leaves release unsigned, which produces an APK that cannot be
+            // installed. Sign with the same debug key so the CI artifact is usable.
+            signingConfig = signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             shrinkResources = true
             minifyEnabled = true

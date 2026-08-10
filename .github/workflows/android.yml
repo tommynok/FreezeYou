@@ -32,15 +32,15 @@ jobs:
       - name: Build with Gradle
         env:
           CI_DEBUG_KEYSTORE: ${{ github.workspace }}/.github/ci/debug.keystore
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload APK
         id: upload-apk
         uses: actions/upload-artifact@v4
         with:
-          name: app-preview-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: app-preview-release
+          path: app/build/outputs/apk/release/*.apk
 
       - name: Add download link to job summary
         run: |
-          echo "### 📦 [Download app-preview-debug.apk](${{ steps.upload-apk.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 📦 [Download app-preview-release.apk](${{ steps.upload-apk.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
