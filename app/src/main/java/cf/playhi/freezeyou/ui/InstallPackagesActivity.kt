@@ -586,7 +586,9 @@ open class InstallPackagesActivity : FreezeYouBaseActivity() {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val file = File(filePath)
         val uri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file)
+            // Derived from the package name, not hardcoded: the manifest authority is
+            // ${applicationId}-scoped so this build can coexist with the regular one.
+            FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
         } else {
             @Suppress("DEPRECATION")
             Uri.fromFile(file)
