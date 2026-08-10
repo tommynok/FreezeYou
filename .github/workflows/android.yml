@@ -23,6 +23,11 @@ jobs:
     # The two must not be combined; setup-java's gradle cache is removed above.
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v4
+      with:
+        # Without this the cache is read-only on every branch except the default
+        # one, so it is restored but never written and never actually speeds
+        # anything up. Work here happens on non-default branches.
+        cache-read-only: false
 
     - name: Grant Permission
       run: chmod +x ./gradlew
