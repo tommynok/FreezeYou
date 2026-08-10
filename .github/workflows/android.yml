@@ -16,7 +16,13 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '21'
-        cache: 'gradle'
+
+    # Replaces setup-java's `cache: gradle`, which only restores downloaded
+    # dependencies. This also caches task outputs and the configuration cache,
+    # and prunes stale entries so the cache does not grow without bound.
+    # The two must not be combined; setup-java's gradle cache is removed above.
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
 
     - name: Grant Permission
       run: chmod +x ./gradlew
