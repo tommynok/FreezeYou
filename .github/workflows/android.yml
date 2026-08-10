@@ -1,9 +1,10 @@
 name: Android CI
 
+# Manual only, matching the fork's own workflow. Upstream's push/pull_request
+# triggers fired a run on every push — and a second, duplicate run whenever the
+# branch also had an open pull request.
 on:
   workflow_dispatch:
-  push:
-  pull_request:
 
 jobs:
   build:
