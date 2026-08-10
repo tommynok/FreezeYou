@@ -18,10 +18,16 @@ jobs:
         with:
           distribution: temurin
           java-version: '18'
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      # Replaces setup-java's `cache: gradle`, which only restores downloaded
+      # dependencies. This also caches task outputs and the configuration cache,
+      # and prunes stale entries so the cache does not grow without bound.
+      # The two must not be combined; setup-java's gradle cache is removed above.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
