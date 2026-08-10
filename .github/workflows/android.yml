@@ -1,6 +1,7 @@
 name: Android CI
 
 on:
+  workflow_dispatch:
   push:
   pull_request:
 
@@ -22,26 +23,24 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      # AGP ValidateSigningTask always runs multi-process locking for the *default*
-      # debug keystore path, which NPEs on some runners (cgroup anyController=null).
-      # Use a project-local CI keystore with the usual debug credentials instead.
-      - name: Create CI debug keystore
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/.ci"
-          keytool -genkeypair \
-            -keystore "$GITHUB_WORKSPACE/.ci/debug.keystore" \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      # Upstream generates a throwaway keystore per run, which signs every build
+      # differently and blocks reinstalling a newer preview APK over an older one.
+      # Use the fork's checked-in debug key instead so preview builds install in place.
       - name: Build with Gradle
         env:
-          CI_DEBUG_KEYSTORE: ${{ github.workspace }}/.ci/debug.keystore
+          CI_DEBUG_KEYSTORE: ${{ github.workspace }}/.github/ci/debug.keystore
         run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        id: upload-apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-preview-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Add download link to job summary
+        run: |
+          echo "### 📦 [Download app-preview-debug.apk](${{ steps.upload-apk.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
