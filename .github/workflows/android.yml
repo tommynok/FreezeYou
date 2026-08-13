@@ -29,6 +29,12 @@ jobs:
         # anything up. Work here happens on non-default branches.
         cache-read-only: false
 
+    # Cheap guard for a failure the compiler cannot see: a layout split across
+    # res/layout/ and res/layout-vNN/ where only one copy got updated. The build
+    # still succeeds and only the affected API level crashes at runtime.
+    - name: Check layout variants
+      run: python3 tools/check_layout_variants.py
+
     - name: Grant Permission
       run: chmod +x ./gradlew
 
