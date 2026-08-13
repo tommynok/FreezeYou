@@ -78,6 +78,7 @@ import cf.playhi.freezeyou.ui.ShortcutLauncherFolderActivity;
 import cf.playhi.freezeyou.ui.fragment.MainActivityAppListFragment;
 import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.LauncherShortcutUtils;
+import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.utils.RunningAppsUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
@@ -1057,8 +1058,10 @@ public class Main extends FreezeYouBaseActivity {
                                         processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
                                         return true;
                                     case R.id.list_menu_freezeImmediately:
-                                        processDisableAndEnableImmediately(true);
-                                        actionMode.finish();
+                                        confirmIfCriticalSelectedThenRun(() -> {
+                                            processDisableAndEnableImmediately(true);
+                                            actionMode.finish();
+                                        });
                                         return true;
                                     case R.id.list_menu_UFImmediately:
                                         processDisableAndEnableImmediately(false);
@@ -2326,6 +2329,37 @@ public class Main extends FreezeYouBaseActivity {
                         return super.onOptionsItemSelected(item);
                 }
         }
+    }
+
+    /**
+     * Bulk-freezing straight from a "select all" is the one action that can leave the device
+     * without a status bar, Settings or a keyboard, with no easy way back. Freezing them stays
+     * allowed — this only asks first, and only when such a package is actually in the selection.
+     */
+    private void confirmIfCriticalSelectedThenRun(Runnable action) {
+        final List<String> critical =
+                CriticalPackagesUtils.findCriticalPackages(this, selectedPackages);
+        if (critical.isEmpty()) {
+            action.run();
+            return;
+        }
+
+        StringBuilder names = new StringBuilder();
+        for (String pkgName : critical) {
+            if (names.length() > 0) {
+                names.append(System.getProperty("line.separator"));
+            }
+            names.append("• ")
+                    .append(getApplicationLabel(Main.this, null, null, pkgName))
+                    .append(" (").append(pkgName).append(")");
+        }
+
+        FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.caution)
+                .setMessage(getString(R.string.criticalPackagesWarning, names.toString()))
+                .setPositiveButton(R.string.yes, (dialog, which) -> action.run())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     /**

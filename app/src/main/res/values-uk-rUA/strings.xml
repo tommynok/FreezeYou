@@ -413,6 +413,7 @@
     <string name="onlyRunning">Активні</string>
     <string name="onlyRunningSys">Активні: системні</string>
     <string name="onlyRunningUser">Активні: користувацькі</string>
+    <string name="criticalPackagesWarning">У виділенні є пакети, від яких залежить система:\n\n%1$s\n\nЇх заморозка може залишити пристрій без рядка стану, Налаштувань або клавіатури, і повернути все буде непросто. Все одно продовжити?</string>
     <string name="runningFilterUnavailable">Фільтр «Активні» доступний лише в режимах ROOT або Shizuku. Змініть режим: Налаштування \u2192 Заморозка і розморозка \u2192 Вибрати режим.</string>
     <string name="scheduledTaskCommandsSyntax">Налаштування завдань (довідка)</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">uk</string>

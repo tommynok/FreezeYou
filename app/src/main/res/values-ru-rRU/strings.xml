@@ -416,6 +416,7 @@
     <string name="onlyRunning">Работающие</string>
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
+    <string name="criticalPackagesWarning">В выделении есть пакеты, от которых зависит система:\n\n%1$s\n\nИх заморозка может оставить устройство без строки состояния, Настроек или клавиатуры, и вернуть всё будет непросто. Всё равно продолжить?</string>
     <string name="runningFilterUnavailable">Фильтр «Работающие» доступен только в режимах ROOT или Shizuku. Смените режим: Настройки \u2192 Заморозка и разморозка \u2192 Выбрать режим.</string>
     <string name="scheduledTaskCommandsSyntax">Настройка заданий (справка)</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">ru</string>
