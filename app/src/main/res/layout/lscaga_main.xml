@@ -32,14 +32,20 @@
                 android:layout_below="@id/lscaga_package_textView"
                 android:orientation="horizontal">
 
+                <!-- 0dp + weight, not match_parent + weight: the latter measures the field at
+                     the full parent width and then splits the (negative) leftover by weight,
+                     squeezing it. The button takes only what it needs so the name gets the rest,
+                     and minLines keeps a second line reserved for long identifiers in portrait. -->
                 <EditText
                     android:id="@+id/lscaga_package_editText"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2"
+                    android:layout_weight="1"
                     android:focusable="false"
+                    android:gravity="top|start"
                     android:hint="@string/application"
                     android:inputType="none"
+                    android:minLines="2"
                     android:text="@string/plsSelect" />
 
                 <Button
@@ -47,7 +53,7 @@
                     style="@style/Widget.AppCompat.Button.Colored"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.8"
+                    android:layout_gravity="top"
                     android:text="..."
                     tools:ignore="HardcodedText" />
             </LinearLayout>
@@ -114,14 +120,18 @@
                 android:layout_below="@id/lscaga_target_textView"
                 android:orientation="horizontal">
 
+                <!-- Fully qualified activity names are the longest thing this form shows, so
+                     this field gets the same treatment as the package one above. -->
                 <EditText
                     android:id="@+id/lscaga_target_editText"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2"
+                    android:layout_weight="1"
                     android:focusable="false"
+                    android:gravity="top|start"
                     android:hint="@string/target"
                     android:inputType="none"
+                    android:minLines="2"
                     android:text="@string/target" />
 
                 <Button
@@ -129,7 +139,7 @@
                     style="@style/Widget.AppCompat.Button.Colored"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.8"
+                    android:layout_gravity="top"
                     android:text="..."
                     tools:ignore="HardcodedText" />
             </LinearLayout>
