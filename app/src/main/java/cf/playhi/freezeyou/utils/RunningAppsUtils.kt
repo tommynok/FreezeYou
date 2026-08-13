@@ -39,14 +39,34 @@ object RunningAppsUtils {
         return apiMode in ROOT_API_MODES || apiMode in SHIZUKU_API_MODES
     }
 
+    /**
+     * The freeze mode only decides which source to *try first*. Both sources are independent of
+     * it — a device can have root granted while running in a Shizuku freeze mode, and the Shizuku
+     * path (reflection over hidden IActivityManager) returns nothing on some Android versions
+     * where the root /proc scan still works. Falling back to the other source turns that into a
+     * populated list instead of a silently empty one.
+     */
     @JvmStatic
     fun getRunningPackages(context: Context): Set<String> {
-        val apiMode = selectFUFMode.getValue()?.toIntOrNull() ?: return emptySet()
-        return when (apiMode) {
-            in ROOT_API_MODES -> ProcessUtils.getRootRunningPackages()
-            in SHIZUKU_API_MODES -> getShizukuRunningPackages(context)
-            else -> emptySet()
+        val apiMode = selectFUFMode.getValue()?.toIntOrNull()
+        val shizukuFirst = apiMode in SHIZUKU_API_MODES
+
+        val primary =
+            if (shizukuFirst) getShizukuRunningPackages(context)
+            else ProcessUtils.getRootRunningPackages()
+        if (primary.isNotEmpty()) return primary
+
+        val fallback =
+            if (shizukuFirst) ProcessUtils.getRootRunningPackages()
+            else getShizukuRunningPackages(context)
+        if (isDebugModeEnabled()) {
+            Log.e(
+                "DebugModeLogcat",
+                "getRunningPackages: primary(${if (shizukuFirst) "shizuku" else "root"}) empty, " +
+                        "fallback returned ${fallback.size}"
+            )
         }
+        return fallback
     }
 
     @Suppress("UNCHECKED_CAST")

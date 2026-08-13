@@ -1834,13 +1834,6 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
         }
         try {
-            // Android hides other apps' running processes from unprivileged callers since
-            // API 21 — only offer this filter in modes that already have elevated access.
-            menu.findItem(R.id.menu_vM_onlyRunning_submenu).setVisible(RunningAppsUtils.isRunningFilterAvailable());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
             SubMenu vmUserDefinedSubMenu = menu.findItem(R.id.menu_vM_userDefined).getSubMenu();
             SubMenu createUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_createUserDefinedShortcut).getSubMenu();
             SubMenu forceStopUserDefinedShortcutSubMenu = menu.findItem(R.id.menu_forceStopUserDefinedShortcut).getSubMenu();
@@ -2141,28 +2134,19 @@ public class Main extends FreezeYouBaseActivity {
                         }).start();
                         return true;
                     case R.id.menu_vM_onlyRunning:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList("RUN");
-                            }
-                        }).start();
+                        if (checkRunningFilterAvailableAndWarn()) {
+                            new Thread(() -> generateList("RUN")).start();
+                        }
                         return true;
                     case R.id.menu_vM_onlyRunningSys:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList("RUN_SYS");
-                            }
-                        }).start();
+                        if (checkRunningFilterAvailableAndWarn()) {
+                            new Thread(() -> generateList("RUN_SYS")).start();
+                        }
                         return true;
                     case R.id.menu_vM_onlyRunningUser:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList("RUN_USER");
-                            }
-                        }).start();
+                        if (checkRunningFilterAvailableAndWarn()) {
+                            new Thread(() -> generateList("RUN_USER")).start();
+                        }
                         return true;
                     case R.id.menu_vM_userDefined:
                         addUserDefinedCategoriesTo(item.getSubMenu(),
@@ -2342,6 +2326,19 @@ public class Main extends FreezeYouBaseActivity {
                         return super.onOptionsItemSelected(item);
                 }
         }
+    }
+
+    /**
+     * The Running filter used to be hidden outright when the freeze mode was neither ROOT nor
+     * Shizuku, which left no way to tell whether the feature was missing, broken, or just
+     * unavailable. It stays visible now and says what is wrong instead.
+     */
+    private boolean checkRunningFilterAvailableAndWarn() {
+        if (RunningAppsUtils.isRunningFilterAvailable()) {
+            return true;
+        }
+        showToast(this, R.string.runningFilterUnavailable);
+        return false;
     }
 
     private void showAddNewUserDefinedClassificationDialog() {

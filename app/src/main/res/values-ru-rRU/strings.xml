@@ -416,6 +416,7 @@
     <string name="onlyRunning">Работающие</string>
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
+    <string name="runningFilterUnavailable">Фильтр «Работающие» доступен только в режимах ROOT или Shizuku. Смените режим: Настройки \u2192 Заморозка и разморозка \u2192 Выбрать режим.</string>
     <string name="scheduledTaskCommandsSyntax">Настройка заданий (справка)</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">ru</string>
     <string name="lastInstall">Недавно установленные</string>
