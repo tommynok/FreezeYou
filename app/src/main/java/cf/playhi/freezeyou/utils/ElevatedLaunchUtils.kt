@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.utils
 
-import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -142,7 +141,10 @@ object ElevatedLaunchUtils {
                 ) as Int
             }
 
-            val ok = result == ActivityManager.START_SUCCESS
+            // ActivityManager.START_* codes are @hide, so mirror the framework's own
+            // isStartResultSuccessful(): 0..99 succeeded (0 = started, 2 = task brought to
+            // front, 3 = delivered to top), negatives are errors.
+            val ok = result in 0..99
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "elevated launch via shizuku: result=$result ok=$ok")
             }
