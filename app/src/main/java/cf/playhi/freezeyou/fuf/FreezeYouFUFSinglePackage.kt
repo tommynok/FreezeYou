@@ -56,7 +56,7 @@ class FreezeYouFUFSinglePackage(
         val result = super.commit()
         when (result) {
             ERROR_NO_ERROR_SUCCESS, ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT -> {
-                sendStatusChangedBroadcast(context)
+                sendStatusChangedBroadcast(context, singlePackageName)
                 when (actionMode) {
                     ACTION_MODE_FREEZE -> {
                         withContext(Dispatchers.Main) {

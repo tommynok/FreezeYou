@@ -13,12 +13,18 @@ import cf.playhi.freezeyou.MainApplication
 import cf.playhi.freezeyou.MyNotificationListenerService
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage
+import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.service.FUFService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.ui.AskRunActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import rikka.sui.Sui
 import rikka.shizuku.ShizukuProvider
 import java.io.DataOutputStream
@@ -88,7 +94,7 @@ object FUFUtils {
                 context, result, showUnnecessaryToast
             )
         ) {
-            sendStatusChangedBroadcast(context)
+            sendStatusChangedBroadcast(context, pkgName)
             if (enable) {
                 TasksUtils.onUFApplications(context, pkgName)
                 checkAndCreateFUFQuickNotification(context, pkgName)
@@ -401,13 +407,64 @@ object FUFUtils {
         ToastUtils.showToast(context, message)
     }
 
+    /**
+     * @param pkgName the one package whose state changed, so the list can refresh that row
+     * alone; null means "unknown / several", and the list re-checks everything.
+     */
     @JvmStatic
-    fun sendStatusChangedBroadcast(context: Context) {
+    @JvmOverloads
+    fun sendStatusChangedBroadcast(context: Context, pkgName: String? = null) {
         val intent = Intent()
         intent.action = "cf.playhi.freezeyou.action.packageStatusChanged"
-        intent.setPackage("cf.playhi.freezeyou")
+        intent.setPackage(context.packageName)
+        if (pkgName != null) intent.putExtra("pkgName", pkgName)
         context.sendBroadcast(intent)
     }
+
+    /**
+     * Single freeze/unfreeze without the FUFService detour. The service lives in its own
+     * `:backgroundService` process, so a tap from the list used to mean: fork a process, put up a
+     * foreground notification, fetch the Shizuku binder into that process over IPC, and only then
+     * make the one binder call the whole thing is about. In the main process the binder is
+     * already here and the proxy stays warm between taps — the call is milliseconds, as it is
+     * meant to be. This is the same path the Freeze activity already uses.
+     *
+     * Batch operations, shortcuts, widgets and scheduled tasks keep the service: there is no
+     * foreground activity to hold the work there.
+     */
+    @JvmStatic
+    fun processSingleActionInProcess(
+        context: Context,
+        pkgName: String,
+        target: String?,
+        tasks: String?,
+        freeze: Boolean,
+        askRun: Boolean,
+        runImmediately: Boolean
+    ) {
+        // Application context: the activity may be gone by the time the toast is shown.
+        val appContext = context.applicationContext
+        inProcessFUFScope.launch {
+            val fufSinglePackage = FreezeYouFUFSinglePackage(
+                appContext,
+                pkgName,
+                if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE,
+                needAskRun = askRun,
+                runImmediately = runImmediately,
+                tasks = tasks,
+                target = target
+            )
+            val result = fufSinglePackage.commit()
+            withContext(Dispatchers.Main) {
+                // Starting the app / the ask-run dialog after an unfreeze belongs on the UI thread.
+                val finalResult = if (freeze) result
+                else fufSinglePackage.checkAndStartTaskAndTargetAndActivity(result)
+                ToastUtils.showToast(appContext, getFUFRelatedToastString(appContext, finalResult))
+            }
+        }
+    }
+
+    private val inProcessFUFScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @TargetApi(21)
     private fun isAppStillNotifying(pkgName: String?): Boolean {

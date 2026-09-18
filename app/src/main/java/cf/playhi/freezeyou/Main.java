@@ -100,8 +100,7 @@ import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoF
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
 import static cf.playhi.freezeyou.utils.ClipboardUtils.copyToClipboard;
 import static cf.playhi.freezeyou.utils.FUFUtils.askRun;
-import static cf.playhi.freezeyou.utils.FUFUtils.processFreezeAction;
-import static cf.playhi.freezeyou.utils.FUFUtils.processUnfreezeAction;
+import static cf.playhi.freezeyou.utils.FUFUtils.processSingleActionInProcess;
 import static cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus;
 import static cf.playhi.freezeyou.utils.LauncherShortcutUtils.checkSettingsAndRequestCreateShortcut;
 import static cf.playhi.freezeyou.utils.LauncherShortcutUtils.createShortCut;
@@ -211,7 +210,7 @@ public class Main extends FreezeYouBaseActivity {
             );
             shortcutsCompleted = (shortcutsCount <= 0);
         }
-        updateFrozenStatus();
+        updateFrozenStatus(null);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         if (sharedPref.getBoolean(saveOnClickFunctionStatus.name(), saveOnClickFunctionStatus.defaultValue())) {
             appListViewOnClickMode = sharedPref.getInt("onClickFunctionStatus", APPListViewOnClickMode_chooseAction);
@@ -1155,20 +1154,20 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_autoUFOrFreeze:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processUnfreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    false, false, null, false);
+                                    false, false, false);
                         } else {
-                            processFreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    false, null, false);
+                                    true, false, false);
                         }
                         break;
                     case APPListViewOnClickMode_freezeImmediately:
                         if (!realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processFreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    false, null, false);
+                                    true, false, false);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.freezeCompleted);
@@ -1177,9 +1176,9 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_UFImmediately:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processUnfreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    false, false, null, false);
+                                    false, false, false);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.UFCompleted);
@@ -1188,9 +1187,9 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_UFAndRun:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processUnfreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    true, false, null, false);
+                                    false, true, false);
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.UFCompleted);
@@ -1201,13 +1200,13 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_autoUFOrFreezeAndRun:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processUnfreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    true, false, null, false);
+                                    false, true, false);
                         } else {
-                            processFreezeAction(
+                            processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
-                                    false, null, false);
+                                    true, false, false);
                         }
                         break;
                     case APPListViewOnClickMode_addToOFList:
@@ -1324,7 +1323,9 @@ public class Main extends FreezeYouBaseActivity {
                         // so re-run the filter to re-query the running package set.
                         new Thread(() -> generateList(currentFilter)).start();
                     } else {
-                        updateFrozenStatus();
+                        // A single action names its package; re-checking every row costs two
+                        // binder calls per app on the UI thread, which is most of the visible lag.
+                        updateFrozenStatus(intent.getStringExtra("pkgName"));
                     }
                 }
             };
@@ -1572,7 +1573,10 @@ public class Main extends FreezeYouBaseActivity {
         );
     }
 
-    private void updateFrozenStatus() {
+    /**
+     * @param onlyPkgName refresh just this row; null re-checks every row.
+     */
+    private void updateFrozenStatus(String onlyPkgName) {
 
         if (mMainActivityAppListFragment == null) {
             return;
@@ -1585,6 +1589,9 @@ public class Main extends FreezeYouBaseActivity {
             for (int i = 0; i < count; i++) {
                 Map<String, Object> hm = ((MainAppListSimpleAdapter) adapter).getStoredArrayList().get(i);
                 String pkgName = (String) hm.get("PackageName");
+                if (onlyPkgName != null && !onlyPkgName.equals(pkgName)) {
+                    continue;
+                }
                 ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
 
                 //检查是否已卸载
@@ -1624,6 +1631,9 @@ public class Main extends FreezeYouBaseActivity {
                                         )
                         );
                     }
+                }
+                if (onlyPkgName != null) {
+                    break;
                 }
             }
             ((MainAppListSimpleAdapter) adapter).notifyDataSetChanged();

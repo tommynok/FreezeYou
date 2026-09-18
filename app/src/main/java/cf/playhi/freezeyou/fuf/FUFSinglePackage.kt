@@ -217,40 +217,30 @@ open class FUFSinglePackage(
             ensureBinderAlive()?.let { return it }
 
             val freeze = actionMode == ACTION_MODE_FREEZE
-            val (pm, method) = obtainCachedPackageManagerProxyAndMethod()
+            val newState = if (freeze) {
+                when (apiMode) {
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    else ->
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                }
+            } else {
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            }
 
             try {
-                method.invoke(
-                    pm,
-                    singlePackageName,
-                    if (freeze) {
-                        when (apiMode) {
-                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
-                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
-                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                            API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
-                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                            else ->
-                                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                        }
-                    } else {
-                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                    },
-                    0,
-                    /**
-                     * .../private/android_filesystem_config.h
-                     * #define AID_USER 100000        /* \T\O\D\O: switch users over to AID_USER_OFFSET */
-                     * #define AID_USER_OFFSET 100000 /* offset for uid ranges for each user */
-                     */
-                    Os.getuid() / 100000,
-                    context.packageName
-                )
+                invokeSetApplicationEnabledSetting(newState)
             } catch (e: InvocationTargetException) {
-                if (e.cause is android.os.DeadObjectException) {
-                    invalidateCachedPackageManagerProxy()
-                }
-                throw e
+                if (e.cause !is android.os.DeadObjectException) throw e
+                // The cached proxy pointed at a Shizuku service that has since restarted. The
+                // binder itself is alive again (ensureBinderAlive said so), so one fresh proxy
+                // is enough — no need to make the user tap twice.
+                invalidateCachedPackageManagerProxy()
+                invokeSetApplicationEnabledSetting(newState)
             }
             // The binder call returns nothing, so "no exception" is not the same as "it took
             // effect" — some ROMs accept the call and ignore it. Read the state back instead of
@@ -272,6 +262,23 @@ open class FUFSinglePackage(
             e.printStackTrace()
         }
         return ERROR_OTHER
+    }
+
+    private fun invokeSetApplicationEnabledSetting(newState: Int) {
+        val (pm, method) = obtainCachedPackageManagerProxyAndMethod()
+        method.invoke(
+            pm,
+            singlePackageName,
+            newState,
+            0,
+            /**
+             * .../private/android_filesystem_config.h
+             * #define AID_USER 100000        /* \T\O\D\O: switch users over to AID_USER_OFFSET */
+             * #define AID_USER_OFFSET 100000 /* offset for uid ranges for each user */
+             */
+            Os.getuid() / 100000,
+            context.packageName
+        )
     }
 
     /**
@@ -301,7 +308,15 @@ open class FUFSinglePackage(
      */
     private fun ensureBinderAlive(): Int? {
         val now = System.currentTimeMillis()
-        if (now - lastBinderAliveCheckMs < BINDER_ALIVE_CACHE_MS && Shizuku.pingBinder()) {
+        if (Shizuku.pingBinder()) {
+            // The binder is already here — the main process gets it from ShizukuProvider, other
+            // processes keep it once received. Asking for it again is an IPC round trip through
+            // the provider for nothing. Only re-check the permission now and then.
+            if (now - lastBinderAliveCheckMs < BINDER_ALIVE_CACHE_MS) return null
+            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                return ERROR_INSUFFICIENT_PERMISSION
+            }
+            lastBinderAliveCheckMs = now
             return null
         }
 
