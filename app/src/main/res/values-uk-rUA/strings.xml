@@ -252,6 +252,7 @@
     <string name="id">ID</string>
     <string name="simulate">Перевірити</string>
     <string name="insufficientPermission">Недостатньо дозволів</string>
+    <string name="stateDidNotChange">Система прийняла команду, але стан не змінився</string>
     <string name="onlyUnfreeze">Тільки розморожені</string>
     <string name="unknown">Невідомий</string>
     <string name="installPackage_colon">Встановити пакет:</string>

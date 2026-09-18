@@ -254,6 +254,7 @@
     <string name="id">ID</string>
     <string name="simulate">Проверить</string>
     <string name="insufficientPermission">Недостаточно разрешений</string>
+    <string name="stateDidNotChange">Система приняла команду, но состояние не изменилось</string>
     <string name="onlyUnfreeze">Только размороженые</string>
     <string name="unknown">Неизвестный</string>
     <string name="installPackage_colon">Установить пакет:</string>

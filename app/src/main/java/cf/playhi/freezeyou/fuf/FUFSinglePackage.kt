@@ -9,6 +9,7 @@ import android.system.Os
 import cf.playhi.freezeyou.DeviceAdminReceiver.getComponentName
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.*
 import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
+import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
 import rikka.shizuku.ShizukuBinderWrapper
@@ -27,7 +28,9 @@ open class FUFSinglePackage(
     open suspend fun commit(): Int {
         if (singlePackageName.isBlank()) return ERROR_SINGLE_PACKAGE_NAME_IS_BLANK
 
-        if ("cf.playhi.freezeyou" == singlePackageName) {
+        // The fork may be installed under a different applicationId, so compare against the id
+        // this build actually runs as rather than the upstream package name.
+        if (context.packageName == singlePackageName) {
             return ERROR_OPERATION_ON_FREEZEYOU_IS_NOT_ALLOWED
         }
 
@@ -241,7 +244,7 @@ open class FUFSinglePackage(
                      * #define AID_USER_OFFSET 100000 /* offset for uid ranges for each user */
                      */
                     Os.getuid() / 100000,
-                    "cf.playhi.freezeyou"
+                    context.packageName
                 )
             } catch (e: InvocationTargetException) {
                 if (e.cause is android.os.DeadObjectException) {
@@ -249,7 +252,14 @@ open class FUFSinglePackage(
                 }
                 throw e
             }
-            return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+            // The binder call returns nothing, so "no exception" is not the same as "it took
+            // effect" — some ROMs accept the call and ignore it. Read the state back instead of
+            // reporting a success the user cannot see.
+            return if (verifyFrozenStateSettled(freeze)) {
+                ERROR_NO_ERROR_SUCCESS
+            } else {
+                ERROR_STATE_DID_NOT_CHANGE
+            }
         } catch (e: InvocationTargetException) {
             e.printStackTrace()
             if (e.cause is SecurityException) {
@@ -262,6 +272,27 @@ open class FUFSinglePackage(
             e.printStackTrace()
         }
         return ERROR_OTHER
+    }
+
+    /**
+     * [checkRootFrozen] reads exactly the value the binder call above writes — the application
+     * enabled setting — so it is a real confirmation, not a guess. PackageManager settings are
+     * persisted asynchronously, so the first read can still show the old value; poll briefly
+     * instead of waiting a fixed amount, which keeps the common case at one read.
+     *
+     * Deliberately not used for the root paths: `pm hide` is a different mechanism that this
+     * check does not observe.
+     */
+    private fun verifyFrozenStateSettled(expectFrozen: Boolean): Boolean {
+        var waited = 0
+        while (true) {
+            if (checkRootFrozen(context, singlePackageName, context.packageManager) == expectFrozen) {
+                return true
+            }
+            if (waited >= STATE_SETTLE_TIMEOUT_MS) return false
+            Thread.sleep(STATE_SETTLE_POLL_MS)
+            waited += STATE_SETTLE_POLL_MS.toInt()
+        }
     }
 
     /**
@@ -282,6 +313,12 @@ open class FUFSinglePackage(
             waited += 50
         }
         if (!Shizuku.pingBinder()) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
+
+        // pingBinder only says the service is running. Asking here turns a per-package
+        // SecurityException into one cheap check, and reports the actual reason.
+        if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
             return ERROR_INSUFFICIENT_PERMISSION
         }
 
@@ -321,6 +358,8 @@ open class FUFSinglePackage(
 
     companion object {
         private const val BINDER_ALIVE_CACHE_MS = 5000L
+        private const val STATE_SETTLE_POLL_MS = 50L
+        private const val STATE_SETTLE_TIMEOUT_MS = 300
 
         @Volatile
         private var lastBinderAliveCheckMs: Long = 0L
@@ -351,6 +390,7 @@ open class FUFSinglePackage(
         const val ERROR_NO_SUFFICIENT_PERMISSION_TO_START_THIS_ACTIVITY = -14
         const val ERROR_CANNOT_FIND_THE_LAUNCH_INTENT_OR_UNFREEZE_FAILED = -15
         const val ERROR_INSUFFICIENT_PERMISSION = -16
+        const val ERROR_STATE_DID_NOT_CHANGE = -17
 
         /**
          * 使用 FreezeYou 的 自动（免ROOT(DPM)/ROOT(DISABLE)） 模式

@@ -703,6 +703,12 @@ object FUFUtils {
                 )
                 false
             }
+            FUFSinglePackage.ERROR_STATE_DID_NOT_CHANGE -> {
+                showPreProcessFUFResultAndShowToastAndReturnIfResultBelongsSuccess(
+                    context, context.getString(R.string.stateDidNotChange)
+                )
+                false
+            }
             FUFSinglePackage.ERROR_OTHER -> {
                 showPreProcessFUFResultAndShowToastAndReturnIfResultBelongsSuccess(
                     context, context.getString(R.string.unknownError)
@@ -795,6 +801,10 @@ object FUFUtils {
             FUFSinglePackage.ERROR_CANNOT_FIND_THE_LAUNCH_INTENT_OR_UNFREEZE_FAILED ->
                 getPreProcessedFUFResultToastString(
                     context, context.getString(R.string.unrootedOrCannotFindTheLaunchIntent)
+                )
+            FUFSinglePackage.ERROR_STATE_DID_NOT_CHANGE ->
+                getPreProcessedFUFResultToastString(
+                    context, context.getString(R.string.stateDidNotChange)
                 )
             FUFSinglePackage.ERROR_OTHER ->
                 getPreProcessedFUFResultToastString(

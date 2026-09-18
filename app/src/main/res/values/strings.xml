@@ -252,6 +252,7 @@
     <string name="id">Id</string>
     <string name="simulate">Test</string>
     <string name="insufficientPermission">Insufficient permissions</string>
+    <string name="stateDidNotChange">The system accepted the command but the state did not change</string>
     <string name="onlyUnfreeze">Only Unfreeze</string>
     <string name="unknown">Unknown</string>
     <string name="installPackage_colon">Install Package: </string>
