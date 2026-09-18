@@ -79,11 +79,22 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                     if (activityInfos != null) {
                         for (ActivityInfo activityInfo : activityInfos) {
                             String ais = activityInfo.name;
-                            if (ais != null && activityInfo.exported) {
+                            if (ais != null) {
+                                // Non-exported activities used to be filtered out entirely. Since
+                                // Android 12 forces every component to declare android:exported
+                                // and almost everything is declared false, that hid nearly the
+                                // whole list. They are listed and labelled instead: starting one
+                                // falls back to a root/Shizuku launch, which is allowed to.
                                 HashMap<String, Object> hashMap = new HashMap<>();
                                 hashMap.put("Img", activityInfo.loadIcon(pm));
                                 hashMap.put("Name", ais);
-                                hashMap.put("Label", activityInfo.loadLabel(pm).toString());
+                                String label = activityInfo.loadLabel(pm).toString();
+                                hashMap.put(
+                                        "Label",
+                                        activityInfo.exported
+                                                ? label
+                                                : label + " · " + getString(R.string.requiresElevatedLaunch)
+                                );
                                 arrayList.add(hashMap);
                             }
                         }

@@ -196,7 +196,9 @@ object FUFUtils {
                     context.startActivity(intent)
                 } catch (e: SecurityException) {
                     e.printStackTrace()
-                    ToastUtils.showToast(context, R.string.insufficientPermission)
+                    // Refused because the target is not exported. Root, or the shell UID Shizuku
+                    // runs as, may still be allowed to start it.
+                    ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
                 }
             }
         } else if (context.packageManager.getLaunchIntentForPackage(pkgName) != null) {
