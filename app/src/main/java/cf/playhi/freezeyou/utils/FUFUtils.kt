@@ -200,7 +200,9 @@ object FUFUtils {
             currentPackage = MainApplication.currentPackage
         }
         if (currentPackage == null) currentPackage = " "
-        if ("cf.playhi.freezeyou" != pkgName) {
+        // Compare against the id this build actually runs as: a fork installed under a different
+        // applicationId would otherwise not recognise itself, and could freeze itself.
+        if (context.packageName != pkgName) {
             if (actionMode == FUFSinglePackage.ACTION_MODE_FREEZE &&
                 isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(pkgName)
             ) {
@@ -277,7 +279,7 @@ object FUFUtils {
                 outputStream = DataOutputStream(process.outputStream)
                 if (freeze) {
                     for (aPkgNameList in pkgNameList) {
-                        if ("cf.playhi.freezeyou" != aPkgNameList) {
+                        if (context.packageName != aPkgNameList) {
                             if (isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(
                                     aPkgNameList
                                 )
@@ -398,7 +400,7 @@ object FUFUtils {
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
-                        if ("cf.playhi.freezeyou" != aPkgName &&
+                        if (context.packageName != aPkgName &&
                             apiMode != FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO &&
                             apiMode != FUFSinglePackage.API_FREEZEYOU_MROOT_DPM ||
                             !freeze || !checkMRootFrozen(context, aPkgName)

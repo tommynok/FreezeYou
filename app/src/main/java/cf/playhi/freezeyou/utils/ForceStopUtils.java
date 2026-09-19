@@ -28,7 +28,7 @@ public final class ForceStopUtils {
                 process = Runtime.getRuntime().exec("su");
                 outputStream = new DataOutputStream(process.getOutputStream());
                 for (String aPkgNameList : pkgNameList) {
-                    if ((!"cf.playhi.freezeyou".equals(aPkgNameList))) {
+                    if (!context.getPackageName().equals(aPkgNameList)) {
                         if (FUFUtils.isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(aPkgNameList)) {
                             FUFUtils.checkAndShowAppStillNotifyingToast(context, aPkgNameList);
                         } else if (currentPackage.equals(aPkgNameList)) {

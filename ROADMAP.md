@@ -50,5 +50,3 @@
 
 - Цель ярлыка «Запуск» хранится как отсутствие значения, а не как явный маркер. Работает,
   но менее явно, чем `@onlyUnfreeze` рядом.
-- `FUFUtils.checkAndExecuteAction` всё ещё сравнивает с захардкоженным
-  `"cf.playhi.freezeyou"` вместо `context.packageName`.

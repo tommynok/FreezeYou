@@ -250,7 +250,7 @@
     <string name="clearAllUserDataSummary">Безповоротно видаляє всі налаштування застосунку, користувацькі групи, заплановані завдання та дані ярликів. Дію не можна скасувати.</string>
     <string name="packageNotFound">Додаток не знайдено</string>
     <string name="id">ID</string>
-    <string name="simulate">Перевірити</string>
+    <string name="simulate">Тест</string>
     <string name="insufficientPermission">Недостатньо дозволів</string>
     <string name="stateDidNotChange">Система прийняла команду, але стан не змінився</string>
     <string name="onlyUnfreeze">Тільки розморозити</string>
@@ -313,7 +313,7 @@
     <string name="clearUninstalledPkgsInOKFFList">Прибрати видалені додатки з OneKEY заморозка</string>
     <string name="clearUninstalledPkgsInFOQList">Прибрати видалені додатки з Заморозки після виходу</string>
     <string name="impt">Імпортувати</string>
-    <string name="expt">Експорт</string>
+    <string name="expt">Експортувати</string>
     <string name="saveBackupToFile">Зберегти у файл</string>
     <string name="restoreBackupFromFile">Відновити з файлу</string>
     <string name="backupViaTextHint">Або перенести текстом через буфер обміну:</string>
