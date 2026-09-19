@@ -1,8 +1,5 @@
 package cf.playhi.freezeyou.utils
 
-import android.content.Context
-import android.content.ContextWrapper
-import cf.playhi.freezeyou.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,48 +10,38 @@ import org.junit.Test
  * A shortcut stores its target as text. Two of the choices are offered in the user's language, so
  * the conversion between what the field shows and what gets stored is the point where a change of
  * language, or of wording, used to break every shortcut made earlier.
+ *
+ * The labels are passed in rather than read from resources, which is what the overload under test
+ * is for — Context.getString is final and cannot be stood in for.
  */
 class ShortcutTargetTest {
 
-    /**
-     * Only [getString] is ever called here. ContextWrapper supplies the rest of Context, and the
-     * unit-test android.jar returns defaults instead of throwing, so no mocking library is needed.
-     */
-    private class StringsOnlyContext(
-        private val strings: Map<Int, String>
-    ) : ContextWrapper(null) {
-        override fun getString(resId: Int): String = strings[resId] ?: "?$resId"
-    }
+    private val ruLaunch = "Запуск"
+    private val ruOnlyUnfreeze = "Только разморозить"
+    private val enLaunch = "Run"
+    private val enOnlyUnfreeze = "Only Unfreeze"
 
-    private fun contextOf(launch: String, onlyUnfreeze: String): Context =
-        StringsOnlyContext(
-            mapOf(R.string.launch to launch, R.string.onlyUnfreeze to onlyUnfreeze)
-        )
+    private fun inRussian(target: String?) =
+        FUFUtils.normalizeSelectedTarget(target, ruLaunch, ruOnlyUnfreeze)
 
-    private val russian = contextOf("Запуск", "Только разморозить")
-    private val english = contextOf("Run", "Only Unfreeze")
+    private fun inEnglish(target: String?) =
+        FUFUtils.normalizeSelectedTarget(target, enLaunch, enOnlyUnfreeze)
 
     @Test
     fun `launch is stored as no target at all`() {
-        assertNull(FUFUtils.normalizeSelectedTarget(russian, "Запуск"))
-        assertNull(FUFUtils.normalizeSelectedTarget(english, "Run"))
+        assertNull(inRussian(ruLaunch))
+        assertNull(inEnglish(enLaunch))
     }
 
     @Test
     fun `only unfreeze is stored as a marker that carries no language`() {
-        assertEquals(
-            FUFUtils.ONLY_UNFREEZE_TARGET,
-            FUFUtils.normalizeSelectedTarget(russian, "Только разморозить")
-        )
-        assertEquals(
-            FUFUtils.ONLY_UNFREEZE_TARGET,
-            FUFUtils.normalizeSelectedTarget(english, "Only Unfreeze")
-        )
+        assertEquals(FUFUtils.ONLY_UNFREEZE_TARGET, inRussian(ruOnlyUnfreeze))
+        assertEquals(FUFUtils.ONLY_UNFREEZE_TARGET, inEnglish(enOnlyUnfreeze))
     }
 
     @Test
     fun `a shortcut made in one language is still understood in another`() {
-        val stored = FUFUtils.normalizeSelectedTarget(russian, "Только разморозить")
+        val stored = inRussian(ruOnlyUnfreeze)
         // The device language changes; the stored value must not stop being recognised.
         assertTrue(FUFUtils.isOnlyUnfreezeTarget(stored))
     }
@@ -62,7 +49,7 @@ class ShortcutTargetTest {
     @Test
     fun `an activity class name is kept exactly as typed`() {
         val target = "com.looker.droidify.MainActivity"
-        assertEquals(target, FUFUtils.normalizeSelectedTarget(russian, target))
+        assertEquals(target, inRussian(target))
         assertFalse(FUFUtils.isOnlyUnfreezeTarget(target))
     }
 
@@ -74,7 +61,7 @@ class ShortcutTargetTest {
 
     @Test
     fun `no target and unknown text are not taken for only-unfreeze`() {
-        assertNull(FUFUtils.normalizeSelectedTarget(russian, null))
+        assertNull(inRussian(null))
         assertFalse(FUFUtils.isOnlyUnfreezeTarget(null))
         assertFalse(FUFUtils.isOnlyUnfreezeTarget(""))
         // The wording this choice used to be stored as, before it had a stable value.

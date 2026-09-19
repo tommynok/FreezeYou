@@ -80,11 +80,27 @@ object FUFUtils {
      */
     @JvmStatic
     fun normalizeSelectedTarget(context: Context, target: String?): String? {
+        return normalizeSelectedTarget(
+            target,
+            context.getString(R.string.launch),
+            context.getString(R.string.onlyUnfreeze)
+        )
+    }
+
+    /**
+     * The decision itself, with the two labels passed in rather than looked up. Context.getString
+     * is final, so a test cannot stand in for it; taking the strings as arguments keeps this
+     * reachable without one.
+     */
+    @JvmStatic
+    fun normalizeSelectedTarget(
+        target: String?, launchLabel: String, onlyUnfreezeLabel: String
+    ): String? {
         return when (target) {
             null -> null
             // "Launch" means the application's own entry point, which is expressed as no target.
-            context.getString(R.string.launch) -> null
-            context.getString(R.string.onlyUnfreeze) -> ONLY_UNFREEZE_TARGET
+            launchLabel -> null
+            onlyUnfreezeLabel -> ONLY_UNFREEZE_TARGET
             else -> target
         }
     }
