@@ -15,6 +15,8 @@ import cf.playhi.freezeyou.utils.FUFUtils.isAvoidFreezeNotifyingApplicationsEnab
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import cf.playhi.freezeyou.utils.FUFUtils.sendStatusChangedBroadcast
 import cf.playhi.freezeyou.utils.NotificationUtils.deleteNotification
+import cf.playhi.freezeyou.utils.DataStatisticsUtils.addFreezeTimes
+import cf.playhi.freezeyou.utils.DataStatisticsUtils.addUFreezeTimes
 import cf.playhi.freezeyou.utils.TasksUtils.*
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import kotlinx.coroutines.Dispatchers
@@ -57,17 +59,24 @@ class FreezeYouFUFSinglePackage(
         when (result) {
             ERROR_NO_ERROR_SUCCESS, ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT -> {
                 sendStatusChangedBroadcast(context, singlePackageName)
+                // These open two SQLite files and scan a table — disk I/O, and it used to happen
+                // on the UI thread for every single freeze, which is most of what made an
+                // operation that is one binder call feel slow. commit() already runs off the
+                // UI thread, so only the tasks themselves have to hop back (they show toasts),
+                // and a setup with no trigger tasks configured never hops at all.
                 when (actionMode) {
                     ACTION_MODE_FREEZE -> {
-                        withContext(Dispatchers.Main) {
-                            onFApplications(context, singlePackageName)
-                        }
+                        addFreezeTimes(context, singlePackageName)
+                        collectTriggeredTasks(context, singlePackageName, "onFApplications")
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { withContext(Dispatchers.Main) { runCollectedTasks(context, it) } }
                         deleteNotification(context, singlePackageName)
                     }
                     ACTION_MODE_UNFREEZE -> {
-                        withContext(Dispatchers.Main) {
-                            onUFApplications(context, singlePackageName)
-                        }
+                        addUFreezeTimes(context, singlePackageName)
+                        collectTriggeredTasks(context, singlePackageName, "onUFApplications")
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { withContext(Dispatchers.Main) { runCollectedTasks(context, it) } }
                         checkAndCreateFUFQuickNotification(context, singlePackageName)
                     }
                 }

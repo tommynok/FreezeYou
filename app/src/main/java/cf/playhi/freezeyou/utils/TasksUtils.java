@@ -27,6 +27,7 @@ import net.grandcentrix.tray.AppPreferences;
 
 import java.io.DataOutputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -391,6 +392,22 @@ public final class TasksUtils {
 
         DataStatisticsUtils.addUFreezeTimes(context, pkgNameString);
 
+        runCollectedTasks(
+                context, collectTriggeredTasks(context, pkgNameString, "onUFApplications"));
+    }
+
+    /**
+     * The database half of {@link #onFApplications} and {@link #onUFApplications}. Opening the
+     * file and scanning the table is disk I/O, so it does not belong on the UI thread — this part
+     * is safe to call from any thread, and the result goes to {@link #runCollectedTasks}.
+     *
+     * @return the matching tasks, with [cpkgn] already substituted.
+     */
+    public static ArrayList<String> collectTriggeredTasks(
+            Context context, String pkgNameString, String trigger) {
+
+        final ArrayList<String> collected = new ArrayList<>();
+
         final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
@@ -404,10 +421,10 @@ public final class TasksUtils {
                 }
                 String tg = cursor.getString(cursor.getColumnIndexOrThrow("tg"));
                 int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
-                if (enabled == 1 && "onUFApplications".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(context, tgExtra.split(","))).contains(pkgNameString))) {
+                if (enabled == 1 && trigger.equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(context, tgExtra.split(","))).contains(pkgNameString))) {
                     String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
                     if (task != null && !"".equals(task)) {
-                        runTask(task.replace("[cpkgn]", pkgNameString), context, null);
+                        collected.add(task.replace("[cpkgn]", pkgNameString));
                     }
                 }
                 cursor.moveToNext();
@@ -415,6 +432,18 @@ public final class TasksUtils {
         }
         cursor.close();
         db.close();
+
+        return collected;
+    }
+
+    /**
+     * As {@link #runTask} contains {@link ToastUtils#showToast} related function,
+     * this method should run on UI thread.
+     */
+    public static void runCollectedTasks(Context context, ArrayList<String> tasks) {
+        for (String task : tasks) {
+            runTask(task, context, null);
+        }
     }
 
     /**
@@ -425,30 +454,8 @@ public final class TasksUtils {
 
         DataStatisticsUtils.addFreezeTimes(context, pkgNameString);
 
-        final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
-        db.execSQL(
-                "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-        );
-        Cursor cursor = db.query("tasks", null, null, null, null, null, null);
-        if (cursor.moveToFirst()) {
-            for (int i = 0; i < cursor.getCount(); i++) {
-                String tg = cursor.getString(cursor.getColumnIndexOrThrow("tg"));
-                String tgExtra = cursor.getString(cursor.getColumnIndexOrThrow("tgextra"));
-                int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
-                if (tgExtra == null) {
-                    tgExtra = "";
-                }
-                if (enabled == 1 && "onFApplications".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(context, tgExtra.split(","))).contains(pkgNameString))) {
-                    String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
-                    if (task != null && !"".equals(task)) {
-                        runTask(task.replace("[cpkgn]", pkgNameString), context, null);
-                    }
-                }
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        db.close();
+        runCollectedTasks(
+                context, collectTriggeredTasks(context, pkgNameString, "onFApplications"));
     }
 
     private static void setMobileDataEnabled(Context context, boolean enable) {

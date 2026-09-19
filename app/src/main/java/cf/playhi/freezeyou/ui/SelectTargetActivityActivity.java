@@ -2,9 +2,12 @@ package cf.playhi.freezeyou.ui;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -73,34 +76,52 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                 );
                 arrayList.add(hm2);
 
-                try {
-                    PackageManager pm = getPackageManager();
-                    ActivityInfo[] activityInfos = pm.getPackageInfo(pkgName, PackageManager.GET_ACTIVITIES).activities;
-                    if (activityInfos != null) {
-                        for (ActivityInfo activityInfo : activityInfos) {
-                            String ais = activityInfo.name;
-                            if (ais != null) {
-                                // Non-exported activities used to be filtered out entirely. Since
-                                // Android 12 forces every component to declare android:exported
-                                // and almost everything is declared false, that hid nearly the
-                                // whole list. They are listed and labelled instead: starting one
-                                // falls back to a root/Shizuku launch, which is allowed to.
-                                HashMap<String, Object> hashMap = new HashMap<>();
-                                hashMap.put("Img", activityInfo.loadIcon(pm));
-                                hashMap.put("Name", ais);
-                                String label = activityInfo.loadLabel(pm).toString();
-                                hashMap.put(
-                                        "Label",
-                                        activityInfo.exported
-                                                ? label
-                                                : label + " · " + getString(R.string.requiresElevatedLaunch)
-                                );
-                                arrayList.add(hashMap);
-                            }
+                PackageManager pm = getPackageManager();
+                ActivityInfo[] activityInfos = getActivitiesFromSystem(pm, pkgName);
+                // The system answer travels over a binder transaction with a ~1MB ceiling. Packages
+                // like Google Play services or Settings declare far more activities than fit, and
+                // the call throws instead of returning a shorter list — which is why those used to
+                // show nothing at all. Parsing the APK happens in this process, with no such limit.
+                boolean fromArchive = false;
+                if (activityInfos == null || activityInfos.length == 0) {
+                    activityInfos = getActivitiesFromApk(pm, pkgName);
+                    fromArchive = activityInfos != null;
+                }
+
+                if (activityInfos != null) {
+                    for (ActivityInfo activityInfo : activityInfos) {
+                        String ais = activityInfo.name;
+                        if (ais == null) {
+                            continue;
                         }
+                        // Non-exported activities used to be filtered out entirely. Since
+                        // Android 12 forces every component to declare android:exported
+                        // and almost everything is declared false, that hid nearly the
+                        // whole list. They are listed and labelled instead: starting one
+                        // falls back to a root/Shizuku launch, which is allowed to.
+                        HashMap<String, Object> hashMap = new HashMap<>();
+                        String label;
+                        if (fromArchive) {
+                            // An ActivityInfo parsed out of an APK carries no resource paths, so
+                            // asking it for its icon and label would reopen the APK per row. The
+                            // class name is what the user picks by anyway.
+                            hashMap.put("Img", getApplicationIcon(
+                                    this, pkgName, getApplicationInfoFromPkgName(pkgName, this), false));
+                            int dot = ais.lastIndexOf('.');
+                            label = dot >= 0 && dot < ais.length() - 1 ? ais.substring(dot + 1) : ais;
+                        } else {
+                            hashMap.put("Img", activityInfo.loadIcon(pm));
+                            label = activityInfo.loadLabel(pm).toString();
+                        }
+                        hashMap.put("Name", ais);
+                        hashMap.put(
+                                "Label",
+                                activityInfo.exported
+                                        ? label
+                                        : label + " · " + getString(R.string.requiresElevatedLaunch)
+                        );
+                        arrayList.add(hashMap);
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
 
                 final SimpleAdapter adapter =
@@ -146,5 +167,48 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
             }
         }
 
+    }
+
+    /**
+     * Disabled components are left out unless asked for, and a component disabled by FreezeYou
+     * itself is exactly the kind the user wants to point a shortcut at.
+     */
+    private static ActivityInfo[] getActivitiesFromSystem(PackageManager pm, String pkgName) {
+        int flags = PackageManager.GET_ACTIVITIES;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            flags |= PackageManager.MATCH_DISABLED_COMPONENTS
+                    | PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS;
+        } else {
+            //noinspection deprecation
+            flags |= PackageManager.GET_DISABLED_COMPONENTS;
+        }
+        try {
+            return pm.getPackageInfo(pkgName, flags).activities;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Reads the package's own APK instead of asking the system, which is the only way to see the
+     * activity list of a package too large to cross a binder transaction.
+     */
+    private static ActivityInfo[] getActivitiesFromApk(PackageManager pm, String pkgName) {
+        try {
+            ApplicationInfo applicationInfo = pm.getApplicationInfo(pkgName, 0);
+            String apkPath = applicationInfo.publicSourceDir != null
+                    ? applicationInfo.publicSourceDir
+                    : applicationInfo.sourceDir;
+            if (apkPath == null) {
+                return null;
+            }
+            PackageInfo packageInfo =
+                    pm.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
+            return packageInfo == null ? null : packageInfo.activities;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
