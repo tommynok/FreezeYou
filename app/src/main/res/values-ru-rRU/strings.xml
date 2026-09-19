@@ -333,7 +333,7 @@
     <string name="resetUFTimes">Сброс счетчика разморозки</string>
     <string name="resetUseTimes">Сброс счетчика использования</string>
     <string name="selectAll">Выбрать все</string>
-    <string name="selectUnselected">Инвертировать выбор</string>
+    <string name="selectUnselected">Инвертировать</string>
     <string name="onClickFunctionStatus">Состояние \"Действия при нажатии\"</string>
     <string name="sortMethodStatus">Состояние способа сортировки</string>
     <string name="oneKeyFreezeList">Список OneKEY заморозка</string>

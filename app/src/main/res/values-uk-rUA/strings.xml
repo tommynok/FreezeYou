@@ -331,7 +331,7 @@
     <string name="resetUFTimes">Скидання лічильника розморозки</string>
     <string name="resetUseTimes">Скидання лічильника використання</string>
     <string name="selectAll">Вибрати все</string>
-    <string name="selectUnselected">Інвертувати вибір</string>
+    <string name="selectUnselected">Інвертувати</string>
     <string name="onClickFunctionStatus">Стан Дії при натисканні</string>
     <string name="sortMethodStatus">Стан способу сортування</string>
     <string name="oneKeyFreezeList">Список OneKEY заморозка</string>
