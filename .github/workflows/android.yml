@@ -39,8 +39,12 @@ jobs:
       run: chmod +x ./gradlew
 
     # Runs on the JVM, no device or emulator involved, so it costs seconds.
+    # `test` is the anchor task that runs whichever unit test variants this AGP
+    # version creates, rather than naming one that may not exist.
     - name: Unit tests
-      run: ./gradlew testReleaseUnitTest --stacktrace
+      run: |
+        ./gradlew :app:tasks --all --console=plain | grep -i unittest || true
+        ./gradlew test --stacktrace
 
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace
