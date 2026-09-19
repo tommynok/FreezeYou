@@ -23,6 +23,7 @@ import java.util.Date;
 
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
+import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.ThemeUtils;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 
@@ -267,8 +268,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             String title = lscaga_displayName_editText.getText().toString();
             String target = lscaga_target_editText.getText().toString();
             String tasks = lscaga_task_editText.getText().toString();
-            if (getString(R.string.launch).equals(target))
-                target = null;
+            target = FUFUtils.normalizeSelectedTarget(this, target);
             if (requestFromLauncher) {
                 Intent shortcutIntent = new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class);
                 shortcutIntent.putExtra("pkgName", pkgName);
@@ -305,8 +305,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             String pkgName = lscaga_package_editText.getText().toString();
             String target = lscaga_target_editText.getText().toString();
             String tasks = lscaga_task_editText.getText().toString();
-            if (getString(R.string.launch).equals(target))
-                target = null;
+            target = FUFUtils.normalizeSelectedTarget(this, target);
             startActivity(
                     new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class)
                             .putExtra("pkgName", pkgName)

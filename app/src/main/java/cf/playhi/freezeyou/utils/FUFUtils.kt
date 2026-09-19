@@ -45,7 +45,7 @@ object FUFUtils {
         if (runImmediately || DefaultMultiProcessMMKVStorageBooleanKeys.openImmediately.getValue()) {
             checkAndStartApp(context, pkgName, target, tasks, activity, finish)
         } else {
-            if (!isOnlyUnfreezeTarget(context, target)) {
+            if (!isOnlyUnfreezeTarget(target)) {
                 context.startActivity(
                     Intent(context, AskRunActivity::class.java)
                         .putExtra("pkgName", pkgName)
@@ -58,14 +58,36 @@ object FUFUtils {
     }
 
     /**
-     * "Only unfreeze" is identified by its own translated label, upstream's choice. That means
-     * the value stored in a shortcut or a scheduled task changes whenever the translation does,
-     * and such a shortcut then tries to start an activity named after a phrase. Kept in one place
-     * so the comparison is in one place if that is ever given a stable value instead.
+     * What a shortcut stores when the chosen action is "unfreeze, and do not launch anything".
+     *
+     * Upstream identified that choice by its own translated label, so the value written into a
+     * shortcut depended on the device language at the moment it was created: switch the phone to
+     * another language, and the shortcut stopped being recognised and was taken for the name of
+     * an activity to start. The '@' keeps this apart from every real class name, which cannot
+     * contain one, and it never changes with the language or the wording.
+     */
+    const val ONLY_UNFREEZE_TARGET = "@onlyUnfreeze"
+
+    @JvmStatic
+    fun isOnlyUnfreezeTarget(target: String?): Boolean {
+        return target == ONLY_UNFREEZE_TARGET
+    }
+
+    /**
+     * Turns what the target field shows into what gets stored. The field is human-readable and
+     * editable, so the two standing choices appear there in the user's language; they are
+     * translated to their stored form here, at the one boundary where a target is saved or
+     * simulated. Anything else is an activity class name and is kept as typed.
      */
     @JvmStatic
-    fun isOnlyUnfreezeTarget(context: Context, target: String?): Boolean {
-        return target != null && target == context.getString(R.string.onlyUnfreeze)
+    fun normalizeSelectedTarget(context: Context, target: String?): String? {
+        return when (target) {
+            null -> null
+            // "Launch" means the application's own entry point, which is expressed as no target.
+            context.getString(R.string.launch) -> null
+            context.getString(R.string.onlyUnfreeze) -> ONLY_UNFREEZE_TARGET
+            else -> target
+        }
     }
 
     @JvmStatic
@@ -204,7 +226,7 @@ object FUFUtils {
         finish: Boolean
     ) {
         if (target != null) {
-            if (!isOnlyUnfreezeTarget(context, target)) {
+            if (!isOnlyUnfreezeTarget(target)) {
                 try {
                     val component = ComponentName(pkgName, target)
                     val intent = Intent()

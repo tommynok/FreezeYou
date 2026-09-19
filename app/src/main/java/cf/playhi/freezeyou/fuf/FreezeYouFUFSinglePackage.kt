@@ -102,7 +102,7 @@ class FreezeYouFUFSinglePackage(
             runTask(tasks, context, null)
         }
 
-        if (needAskRun && !isOnlyUnfreezeTarget(context, target)) {
+        if (needAskRun && !isOnlyUnfreezeTarget(target)) {
             if (runImmediately || openImmediately.getValue()) {
                 checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(
                     context,
@@ -144,7 +144,7 @@ class FreezeYouFUFSinglePackage(
             }
 
             if (target != null) {
-                if (!isOnlyUnfreezeTarget(context, target)) {
+                if (!isOnlyUnfreezeTarget(target)) {
                     try {
                         val component = ComponentName(pkgName, target)
                         val intent = Intent()
