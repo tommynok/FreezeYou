@@ -86,6 +86,7 @@ import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAle
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.cacheApplicationsIcons;
+import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.greyFrozenApplicationsIcons;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.noCaution;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.saveOnClickFunctionStatus;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.saveSortMethodStatus;
@@ -1544,6 +1545,9 @@ public class Main extends FreezeYouBaseActivity {
 
         Adapter adapter = mMainActivityAppListFragment.getAppListAdapter();
         if (adapter instanceof MainAppListSimpleAdapter) {
+            // Runs on every onResume, so coming back from the settings applies the switch at once.
+            ((MainAppListSimpleAdapter) adapter)
+                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
             PackageManager pm = getPackageManager();
             int count = adapter.getCount();
             for (int i = 0; i < count; i++) {

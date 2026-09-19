@@ -118,8 +118,6 @@ public class MainActivityAppListFragment extends Fragment {
             Context context, ArrayList<Map<String, Object>> appList,
             ArrayList<String> selectedPackages) {
         if (mAppListAdapter instanceof MainAppListSimpleAdapter) {
-            ((MainAppListSimpleAdapter) mAppListAdapter)
-                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(context));
             ((MainAppListSimpleAdapter) mAppListAdapter).replaceAllInFormerArrayList(appList);
         } else {
             mAppListAdapter = new MainAppListSimpleAdapter(

@@ -98,8 +98,8 @@ public class MainAppListSimpleAdapter extends SimpleAdapter {
     }
 
     /**
-     * The adapter outlives a trip to the settings, so the setting is re-read into it rather than
-     * only taken at construction.
+     * The adapter outlives a trip to the settings, so the setting is re-read into it on resume
+     * rather than only taken at construction. Call from the UI thread.
      */
     public void setGreyFrozenIcons(boolean greyFrozenIcons) {
         if (mGreyFrozenIcons != greyFrozenIcons) {

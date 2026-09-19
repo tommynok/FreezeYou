@@ -15,7 +15,6 @@
         app:iconSpaceReserved="false"
         app:key="greyFrozenApplicationsIcons"
         app:singleLineTitle="false"
-        app:summary="@string/greyFrozenApplicationsIconsSummary"
         app:title="@string/greyFrozenApplicationsIcons" />
     <ListPreference
         app:useSimpleSummaryProvider="true"
