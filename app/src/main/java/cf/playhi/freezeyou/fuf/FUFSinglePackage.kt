@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.system.Os
+import android.util.Log
 import cf.playhi.freezeyou.DeviceAdminReceiver.getComponentName
+import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.*
 import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
@@ -213,8 +215,11 @@ open class FUFSinglePackage(
 
     private fun pureExecuteAPIShizukuAction(): Int {
         if (Build.VERSION.SDK_INT < 23) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
+        val debug = isDebugModeEnabled()
+        val startedAt = System.currentTimeMillis()
         try {
             ensureBinderAlive()?.let { return it }
+            val binderReadyAt = System.currentTimeMillis()
 
             val freeze = actionMode == ACTION_MODE_FREEZE
             val newState = if (freeze) {
@@ -242,14 +247,21 @@ open class FUFSinglePackage(
                 invalidateCachedPackageManagerProxy()
                 invokeSetApplicationEnabledSetting(newState)
             }
+            val calledAt = System.currentTimeMillis()
             // The binder call returns nothing, so "no exception" is not the same as "it took
             // effect" — some ROMs accept the call and ignore it. Read the state back instead of
             // reporting a success the user cannot see.
-            return if (verifyFrozenStateSettled(freeze)) {
-                ERROR_NO_ERROR_SUCCESS
-            } else {
-                ERROR_STATE_DID_NOT_CHANGE
+            val settled = verifyFrozenStateSettled(freeze)
+            if (debug) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "shizuku $singlePackageName freeze=$freeze settled=$settled " +
+                            "binder=${binderReadyAt - startedAt}ms " +
+                            "call=${calledAt - binderReadyAt}ms " +
+                            "verify=${System.currentTimeMillis() - calledAt}ms"
+                )
             }
+            return if (settled) ERROR_NO_ERROR_SUCCESS else ERROR_STATE_DID_NOT_CHANGE
         } catch (e: InvocationTargetException) {
             e.printStackTrace()
             if (e.cause is SecurityException) {

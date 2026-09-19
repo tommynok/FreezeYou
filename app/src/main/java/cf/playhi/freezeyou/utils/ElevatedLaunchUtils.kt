@@ -1,33 +1,24 @@
 package cf.playhi.freezeyou.utils
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuBinderWrapper
-import rikka.shizuku.SystemServiceHelper
 import java.io.BufferedReader
 import java.io.DataOutputStream
+import java.io.InputStream
 import java.io.InputStreamReader
 
 /**
  * Launching an activity another app declares as `exported="false"` throws a SecurityException for
- * an ordinary caller. A root shell, and the shell UID Shizuku runs as, are both allowed to start
+ * an ordinary caller. A root shell, and the shell uid Shizuku runs as, are both allowed to start
  * arbitrary components. This is the retry path used after the normal launch is refused, so a
  * shortcut pointing at an internal activity still works on a device that has either.
- *
- * The Shizuku path goes through IActivityManager rather than spawning `am`, which is how Shizuku
- * is meant to be used (and how RunningAppsUtils already talks to it here): it returns a real
- * result code instead of text that has to be guessed at.
  */
 object ElevatedLaunchUtils {
 
@@ -38,7 +29,7 @@ object ElevatedLaunchUtils {
     @JvmStatic
     fun startActivityElevatedAsync(context: Context, pkgName: String, target: String) {
         Thread {
-            val launched = startActivityElevated(context, pkgName, target)
+            val launched = startActivityElevated(pkgName, target)
             Handler(Looper.getMainLooper()).post {
                 ToastUtils.showToast(
                     context,
@@ -48,33 +39,23 @@ object ElevatedLaunchUtils {
         }.start()
     }
 
-    private fun startActivityElevated(context: Context, pkgName: String, target: String): Boolean {
-        if (runViaRoot("am start -n $pkgName/$target")) return true
-        return runViaShizuku(context, pkgName, target)
+    private fun startActivityElevated(pkgName: String, target: String): Boolean {
+        // Shizuku first: it is the mode this fork is normally used in, and unlike `su` it never
+        // pops a permission prompt of its own when it is not set up.
+        if (runViaShizuku(pkgName, target)) return true
+        return runViaRoot(pkgName, target)
     }
 
-    private fun runViaRoot(command: String): Boolean {
+    private fun runViaRoot(pkgName: String, target: String): Boolean {
         var process: Process? = null
         var outputStream: DataOutputStream? = null
         return try {
             process = Runtime.getRuntime().exec("su")
             outputStream = DataOutputStream(process.outputStream)
-            outputStream.writeBytes("$command\n")
+            outputStream.writeBytes("${amStartCommand(pkgName, target).joinToString(" ")}\n")
             outputStream.writeBytes("exit\n")
             outputStream.flush()
-            val output = readOutput(process)
-            val exitCode = process.waitFor()
-            // `am start` exits 0 even when it started nothing, printing the reason instead, so
-            // the output has to be inspected as well as the exit code.
-            val ok = exitCode == 0 &&
-                    !output.contains("Error", ignoreCase = true) &&
-                    !output.contains("Exception", ignoreCase = true)
-            if (isDebugModeEnabled()) {
-                Log.e(
-                    "DebugModeLogcat",
-                    "elevated launch via root: exit=$exitCode ok=$ok output=${output.trim()}"
-                )
-            }
+            val ok = succeeded(process, "root")
             ok
         } catch (e: Exception) {
             e.printStackTrace()
@@ -85,12 +66,22 @@ object ElevatedLaunchUtils {
         }
     }
 
-    private fun runViaShizuku(context: Context, pkgName: String, target: String): Boolean {
+    /**
+     * Runs `am start` inside Shizuku's own process rather than calling IActivityManager directly.
+     *
+     * The direct call cannot work: ActivityManagerService checks that the calling package belongs
+     * to the calling uid, and over Shizuku the caller is shell or root, not this app — so passing
+     * our own package name is refused with a SecurityException, which looked to the user like the
+     * target activity being off limits. `am` already runs with that identity and states it
+     * correctly, and it behaves the same whether Shizuku was started from adb or as root.
+     */
+    private fun runViaShizuku(pkgName: String, target: String): Boolean {
+        var process: Process? = null
         try {
             if (Build.VERSION.SDK_INT < 23) return false
             if (!Shizuku.pingBinder()) return false
-            // pingBinder only says the service is there. Without this the binder call below fails
-            // with a bare SecurityException that looks like the target refusing the launch.
+            // pingBinder only says the service is there; without the permission the call below
+            // fails with a bare SecurityException that looks like the target refusing the launch.
             if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
                 if (isDebugModeEnabled()) {
                     Log.e("DebugModeLogcat", "elevated launch via shizuku: permission not granted")
@@ -98,70 +89,47 @@ object ElevatedLaunchUtils {
                 return false
             }
 
-            val intent = Intent()
-                .setComponent(ComponentName(pkgName, target))
-                .setAction(Intent.ACTION_MAIN)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-            // Reflection because there is no hidden-API stub dependency in this project; the same
-            // approach is already used for IActivityManager in RunningAppsUtils.
-            val iActivityManager = Class.forName("android.app.IActivityManager")
-            val activityManager = Class.forName("android.app.IActivityManager\$Stub")
-                .getMethod("asInterface", IBinder::class.java)
-                .invoke(
-                    null,
-                    ShizukuBinderWrapper(SystemServiceHelper.getSystemService(Context.ACTIVITY_SERVICE))
-                ) ?: return false
-
-            val applicationThread = Class.forName("android.app.IApplicationThread")
-            val profilerInfo = Class.forName("android.app.ProfilerInfo")
-            val callingPackage = context.packageName
-
-            val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                iActivityManager.getMethod(
-                    "startActivityWithFeature",
-                    applicationThread, String::class.java, String::class.java, Intent::class.java,
-                    String::class.java, IBinder::class.java, String::class.java,
-                    Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-                    profilerInfo, Bundle::class.java
-                ).invoke(
-                    activityManager, null, callingPackage, null, intent,
-                    null, null, null, 0, 0, null, null
-                ) as Int
-            } else {
-                iActivityManager.getMethod(
-                    "startActivity",
-                    applicationThread, String::class.java, Intent::class.java,
-                    String::class.java, IBinder::class.java, String::class.java,
-                    Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-                    profilerInfo, Bundle::class.java
-                ).invoke(
-                    activityManager, null, callingPackage, intent,
-                    null, null, null, 0, 0, null, null
-                ) as Int
-            }
-
-            // ActivityManager.START_* codes are @hide, so mirror the framework's own
-            // isStartResultSuccessful(): 0..99 succeeded (0 = started, 2 = task brought to
-            // front, 3 = delivered to top), negatives are errors.
-            val ok = result in 0..99
-            if (isDebugModeEnabled()) {
-                Log.e("DebugModeLogcat", "elevated launch via shizuku: result=$result ok=$ok")
-            }
-            return ok
+            @Suppress("DEPRECATION")
+            process = Shizuku.newProcess(amStartCommand(pkgName, target), null, null)
+            return succeeded(process, "shizuku")
         } catch (e: Exception) {
             e.printStackTrace()
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "elevated launch via shizuku failed: $e")
             }
             return false
+        } finally {
+            if (process != null) ProcessUtils.destroyProcess(null, process)
         }
     }
 
-    private fun readOutput(process: Process): String {
+    private fun amStartCommand(pkgName: String, target: String): Array<String> =
+        arrayOf("am", "start", "-n", "$pkgName/$target")
+
+    /**
+     * `am start` exits 0 even when it started nothing, printing the reason instead — and it prints
+     * that reason on stderr, so both streams have to be read.
+     */
+    private fun succeeded(process: Process, via: String): Boolean {
+        val output = readStream(process.inputStream) + readStream(process.errorStream)
+        val exitCode = process.waitFor()
+        val ok = exitCode == 0 &&
+                !output.contains("Error", ignoreCase = true) &&
+                !output.contains("Exception", ignoreCase = true)
+        if (isDebugModeEnabled()) {
+            Log.e(
+                "DebugModeLogcat",
+                "elevated launch via $via: exit=$exitCode ok=$ok output=${output.trim()}"
+            )
+        }
+        return ok
+    }
+
+    private fun readStream(stream: InputStream?): String {
+        if (stream == null) return ""
         return try {
             val builder = StringBuilder()
-            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+            BufferedReader(InputStreamReader(stream)).use { reader ->
                 var line = reader.readLine()
                 while (line != null) {
                     builder.append(line).append('\n')

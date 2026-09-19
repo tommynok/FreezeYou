@@ -25,8 +25,13 @@ import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
+import static cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog;
 
 public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
+
+    /** Row metadata, not bound to any view — see where it is put. */
+    private static final String KEY_EXPORTED = "Exported";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
@@ -114,12 +119,12 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                             label = activityInfo.loadLabel(pm).toString();
                         }
                         hashMap.put("Name", ais);
-                        hashMap.put(
-                                "Label",
-                                activityInfo.exported
-                                        ? label
-                                        : label + " · " + getString(R.string.requiresElevatedLaunch)
-                        );
+                        hashMap.put("Label", label);
+                        // Kept out of the visible row: since Android 12 forces every component to
+                        // declare android:exported and nearly all declare it false, a note on each
+                        // row would be on almost every row and carry no information. The user is
+                        // told once, when they pick one.
+                        hashMap.put(KEY_EXPORTED, activityInfo.exported);
                         arrayList.add(hashMap);
                     }
                 }
@@ -150,23 +155,40 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                 staaMainListView.setAdapter(adapter);
 
                 staaMainListView.setOnItemClickListener((parent, view, position, id) -> {
-                    String name = (String) arrayList.get(position).get("Name");
-                    String label = (String) arrayList.get(position).get("Label");
-                    Drawable drawable = (Drawable) arrayList.get(position).get("Img");
-                    Bitmap icon = drawable == null ?
-                            null : ApplicationIconUtils.getBitmapFromDrawable(drawable);
-                    setResult(
-                            RESULT_OK,
-                            new Intent()
-                                    .putExtra("name", name)
-                                    .putExtra("icon", icon)
-                                    .putExtra("label", label)
-                                    .putExtra("id", "FreezeYou!" + pkgName + " " + name));
-                    finish();
+                    Object exported = arrayList.get(position).get(KEY_EXPORTED);
+                    if (Boolean.FALSE.equals(exported)) {
+                        buildAlertDialog(
+                                this, 0,
+                                R.string.requiresElevatedLaunchExplanation,
+                                R.string.requiresElevatedLaunch)
+                                .setPositiveButton(android.R.string.ok,
+                                        (dialog, which) -> selectAndFinish(arrayList, position, pkgName))
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show();
+                    } else {
+                        selectAndFinish(arrayList, position, pkgName);
+                    }
                 });
             }
         }
 
+    }
+
+    private void selectAndFinish(
+            ArrayList<HashMap<String, Object>> arrayList, int position, String pkgName) {
+        String name = (String) arrayList.get(position).get("Name");
+        String label = (String) arrayList.get(position).get("Label");
+        Drawable drawable = (Drawable) arrayList.get(position).get("Img");
+        Bitmap icon = drawable == null ?
+                null : ApplicationIconUtils.getBitmapFromDrawable(drawable);
+        setResult(
+                RESULT_OK,
+                new Intent()
+                        .putExtra("name", name)
+                        .putExtra("icon", icon)
+                        .putExtra("label", label)
+                        .putExtra("id", "FreezeYou!" + pkgName + " " + name));
+        finish();
     }
 
     /**

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import cf.playhi.freezeyou.DeviceAdminReceiver
 import cf.playhi.freezeyou.MainApplication
 import cf.playhi.freezeyou.MyNotificationListenerService
@@ -445,6 +446,7 @@ object FUFUtils {
         // Application context: the activity may be gone by the time the toast is shown.
         val appContext = context.applicationContext
         inProcessFUFScope.launch {
+            val startedAt = System.currentTimeMillis()
             val fufSinglePackage = FreezeYouFUFSinglePackage(
                 appContext,
                 pkgName,
@@ -455,6 +457,13 @@ object FUFUtils {
                 target = target
             )
             val result = fufSinglePackage.commit()
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "fuf $pkgName freeze=$freeze result=$result " +
+                            "took=${System.currentTimeMillis() - startedAt}ms"
+                )
+            }
             withContext(Dispatchers.Main) {
                 // Starting the app / the ask-run dialog after an unfreeze belongs on the UI thread.
                 val finalResult = if (freeze) result
