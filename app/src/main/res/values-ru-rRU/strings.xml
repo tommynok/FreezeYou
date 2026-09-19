@@ -147,8 +147,7 @@
     <string name="clearNameCache">Очистить кэш имен приложений</string>
     <string name="refreshCache">Обновить кэш</string>
     <string name="saveOnClickFunctionStatus">Сохранить состояние «Действия при нажатии»</string>
-    <string name="accessibility_service_description">\"Следить за изменениями приложений переднего плана.
-Используется для работы функции, которая предотвращает заморозку приложений переднего плана при авто-заморозке, и для автозаморозки приложений, когда они не являются приложениями переднего плана, и т.д.\"</string>
+    <string name="accessibility_service_description">Следить за изменениями приложений переднего плана. \nИспользуется для работы функции, которая предотвращает заморозку приложений переднего плана при авто-заморозке, и для автозаморозки приложений, когда они не являются приложениями переднего плана, и т.д.</string>
     <string name="configureAccessibilityService">Настройка службы специальных возможностей</string>
     <string name="freezeOnceQuit">Заморозка после выхода</string>
     <string name="freezeOnceQuitSummary">Включает список «Заморозка при выходе»: добавленные в него приложения замораживаются автоматически, как только вы их закрываете.</string>
@@ -156,8 +155,7 @@
     <string name="invalidArguments">Неверные параметры</string>
     <string name="exceptionHC">Произошло исключение, но операция продолжится:</string>
     <string name="plsConfirm">Пожалуйста подтвердите</string>
-    <string name="removeNoRootCaution">\"Вы действительно хотите отменить разрешение для режима без-ROOT? 
-Чтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!\"</string>
+    <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-ROOT? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
     <string name="noRootNotActivated">К сожалению режим без-ROOT не был включен сейчас!</string>
     <string name="faq">ЧАВО</string>
     <string name="executeImmediately">Выполнить</string>
