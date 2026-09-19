@@ -244,7 +244,7 @@
     <string name="loading___">Loading...</string>
     <string name="freezeSlashRun">Freeze/Run</string>
     <string name="UfSlashRun">Unfreeze/Run</string>
-    <string name="isForegroundApplication">%1$s is foreground application</string>
+    <string name="isForegroundApplication">%1$s is in the foreground</string>
     <string name="appHasNotifi">%1$s is still notifying</string>
     <string name="dangerous">Dangerous</string>
     <string name="alert_isObsd">The window is obscured, the operation has been rejected, please remove the mask layer and retry</string>

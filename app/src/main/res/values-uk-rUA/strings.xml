@@ -169,7 +169,7 @@
     <string name="repeat">Повтор</string>
     <string name="task">Задача</string>
     <string name="help">Допомога</string>
-    <string name="label">Мітка</string>
+    <string name="label">Назва</string>
     <string name="hourShouldBetween">Години мають бути між 0 і 23</string>
     <string name="minutesShouldBetween">Хвилини повинні бути від 0 до 59</string>
     <string name="requestFailedPlsRetry">Запит не вдався, спробуйте ще раз</string>
@@ -279,7 +279,7 @@
     <string name="loading___">Завантаження...</string>
     <string name="freezeSlashRun">Заморозка / Запуск</string>
     <string name="UfSlashRun">Розморозка / Запуск</string>
-    <string name="isForegroundApplication">%1$s фоновий додаток</string>
+    <string name="isForegroundApplication">%1$s зараз на передньому плані</string>
     <string name="appHasNotifi">%1$s все ще повідомляє</string>
     <string name="dangerous">Небезпечно</string>
     <string name="alert_isObsd">Вікно затемнено, операція була відхилена. Будь ласка, вимкніть екранні накладання і спробуйте ще раз.</string>

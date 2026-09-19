@@ -66,30 +66,49 @@ public final class MoreUtils {
 
     public static ArrayList<Map<String, Object>> processListFilter(CharSequence prefix, ArrayList<Map<String, Object>> unfilteredValues) {
 
-        String prefixString = prefix.toString().toLowerCase();
+        String prefixString = prefix.toString().toLowerCase(Locale.ROOT).trim();
 
-        if (unfilteredValues != null) {
-            int count = unfilteredValues.size();
-
-            ArrayList<Map<String, Object>> newValues = new ArrayList<>(count);
-            for (int i = 0; i < count; i++) {
-                try {
-                    Map<String, Object> h = unfilteredValues.get(i);
-                    String name = ((String) h.get("Name"));
-                    String pkgName = ((String) h.get("PackageName"));
-                    if ((name != null && name.toLowerCase(Locale.ROOT).contains(prefixString))
-                            || (pkgName != null
-                            && pkgName.toLowerCase(Locale.ROOT).contains(prefixString))) {
-                        newValues.add(h);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            return newValues;
+        if (unfilteredValues == null) {
+            return new ArrayList<>();
         }
 
-        return new ArrayList<>();
+        int count = unfilteredValues.size();
+
+        // Three buckets, in the order they are offered. Searching by the name shown on screen is
+        // what a person reaches for first, so those matches come before matches that only occur
+        // inside a package name — otherwise typing "droid" buries Droid-ify under every
+        // com.android.* package on the device, which is what it looked like when nothing was
+        // found at all.
+        ArrayList<Map<String, Object>> nameStartsWith = new ArrayList<>(count);
+        ArrayList<Map<String, Object>> nameContains = new ArrayList<>(count);
+        ArrayList<Map<String, Object>> packageOnly = new ArrayList<>(count);
+
+        for (int i = 0; i < count; i++) {
+            try {
+                Map<String, Object> h = unfilteredValues.get(i);
+                String name = ((String) h.get("Name"));
+                String pkgName = ((String) h.get("PackageName"));
+                String lowerName = name == null ? null : name.toLowerCase(Locale.ROOT);
+
+                if (lowerName != null && lowerName.startsWith(prefixString)) {
+                    nameStartsWith.add(h);
+                } else if (lowerName != null && lowerName.contains(prefixString)) {
+                    nameContains.add(h);
+                } else if (pkgName != null
+                        && pkgName.toLowerCase(Locale.ROOT).contains(prefixString)) {
+                    packageOnly.add(h);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        ArrayList<Map<String, Object>> newValues =
+                new ArrayList<>(nameStartsWith.size() + nameContains.size() + packageOnly.size());
+        newValues.addAll(nameStartsWith);
+        newValues.addAll(nameContains);
+        newValues.addAll(packageOnly);
+        return newValues;
     }
 
 }

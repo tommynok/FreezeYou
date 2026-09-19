@@ -169,7 +169,7 @@
     <string name="repeat">Repeat</string>
     <string name="task">Task</string>
     <string name="help">Help</string>
-    <string name="label">Label</string>
+    <string name="label">Name</string>
     <string name="hourShouldBetween">The hour needs to be between 0 and 23</string>
     <string name="minutesShouldBetween">Minutes need to be between 0 and 59</string>
     <string name="requestFailedPlsRetry">Request failed, please try again</string>
@@ -279,7 +279,7 @@
     <string name="loading___">Loading...</string>
     <string name="freezeSlashRun">Freeze/Run</string>
     <string name="UfSlashRun">Unfreeze/Run</string>
-    <string name="isForegroundApplication">%1$s is foreground application</string>
+    <string name="isForegroundApplication">%1$s is in the foreground</string>
     <string name="appHasNotifi">%1$s is still notifying</string>
     <string name="dangerous">Dangerous</string>
     <string name="alert_isObsd">The window is obscured, the operation has been rejected, please remove the mask layer and retry</string>
