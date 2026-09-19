@@ -10,6 +10,13 @@
         app:key="mainActivityPattern"
         app:singleLineTitle="false"
         app:title="@string/mainActivityPattern" />
+    <CheckBoxPreference
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="greyFrozenApplicationsIcons"
+        app:singleLineTitle="false"
+        app:summary="@string/greyFrozenApplicationsIconsSummary"
+        app:title="@string/greyFrozenApplicationsIcons" />
     <ListPreference
         app:useSimpleSummaryProvider="true"
         app:defaultValue="default"

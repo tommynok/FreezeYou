@@ -13,7 +13,6 @@ import android.content.pm.ShortcutManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -94,8 +93,6 @@ import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStri
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern;
 import static cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
-import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable;
-import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getGrayBitmap;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
 import static cf.playhi.freezeyou.utils.ClipboardUtils.copyToClipboard;
@@ -1425,16 +1422,11 @@ public class Main extends FreezeYouBaseActivity {
         checkLongTimeNotUpdated();
     }
 
-    /**
-     * @param packageName 应用包名
-     * @return 资源 Id
-     */
-    private int getFrozenStatus(String packageName, PackageManager packageManager) {
-        return realGetFrozenStatus(Main.this, packageName, packageManager) ? customThemeDisabledDot : customThemeEnabledDot;
-    }
-
     private void processFrozenStatus(Map<String, Object> keyValuePair, String packageName, PackageManager packageManager) {
-        keyValuePair.put("isFrozen", getFrozenStatus(packageName, packageManager));
+        boolean frozen = realGetFrozenStatus(Main.this, packageName, packageManager);
+        // The dot at the end of the row, and the plain flag the adapter greys the icon by.
+        keyValuePair.put("isFrozen", frozen ? customThemeDisabledDot : customThemeEnabledDot);
+        keyValuePair.put("Frozen", frozen);
     }
 
     private Map<String, Object> processAppStatus(String name, String packageName, PackageInfo packageInfo, PackageManager packageManager, boolean saveIconCache) {
@@ -1442,28 +1434,13 @@ public class Main extends FreezeYouBaseActivity {
             Map<String, Object> keyValuePair = new HashMap<>();
             keyValuePair.put(
                     "Img",
-                    isGridMode && realGetFrozenStatus(this, packageName, packageManager)
-                            ?
-                            new BitmapDrawable(
-                                    getGrayBitmap(
-                                            getBitmapFromDrawable(
-                                                    getApplicationIcon(
-                                                            this, packageName,
-                                                            packageInfo.applicationInfo,
-                                                            false,
-                                                            saveIconCache)
-                                            )
-                                    )
-                            )
-                            :
-                            getApplicationIcon(
-                                    Main.this,
-                                    packageName,
-                                    packageInfo.applicationInfo,
-                                    false,
-                                    saveIconCache
-                            )
-
+                    getApplicationIcon(
+                            Main.this,
+                            packageName,
+                            packageInfo.applicationInfo,
+                            false,
+                            saveIconCache
+                    )
             );
             keyValuePair.put("Name", name);
             processFrozenStatus(keyValuePair, packageName, packageManager);
@@ -1491,24 +1468,12 @@ public class Main extends FreezeYouBaseActivity {
             }
             if (!("android".equals(aPkg) || "cf.playhi.freezeyou".equals(aPkg) || "".equals(aPkg))) {
                 Map<String, Object> keyValuePair = new HashMap<>();
-                icon = isGridMode && realGetFrozenStatus(this, aPkg, null)
-                        ?
-                        new BitmapDrawable(
-                                getGrayBitmap(
-                                        getBitmapFromDrawable(getApplicationIcon(
-                                                this, aPkg,
-                                                getApplicationInfoFromPkgName(aPkg, this),
-                                                false)
-                                        )
-                                )
-                        )
-                        :
-                        getApplicationIcon(
-                                Main.this,
-                                aPkg,
-                                getApplicationInfoFromPkgName(aPkg, Main.this),
-                                true
-                        );
+                icon = getApplicationIcon(
+                        Main.this,
+                        aPkg,
+                        getApplicationInfoFromPkgName(aPkg, Main.this),
+                        true
+                );
                 keyValuePair.put("Img", icon);
                 keyValuePair.put("Name", name);
                 processFrozenStatus(keyValuePair, aPkg, null);
@@ -1595,38 +1560,8 @@ public class Main extends FreezeYouBaseActivity {
                     break;
                 }
 
-                //更新冻结状态信息
-                if ((int) hm.get("isFrozen") != getFrozenStatus(pkgName, pm)) {
-
-                    //更新冻结状态点
-                    processFrozenStatus(hm, pkgName, pm);
-
-                    //更新图标
-                    if (isGridMode) {
-                        hm.put("Img",
-                                realGetFrozenStatus(this, pkgName, pm)
-                                        ?
-                                        new BitmapDrawable(
-                                                getGrayBitmap(
-                                                        getBitmapFromDrawable(
-                                                                getApplicationIcon(
-                                                                        this,
-                                                                        pkgName,
-                                                                        applicationInfo,
-                                                                        false)
-                                                        )
-                                                )
-                                        )
-                                        :
-                                        getApplicationIcon(
-                                                Main.this,
-                                                pkgName,
-                                                applicationInfo,
-                                                true
-                                        )
-                        );
-                    }
-                }
+                //更新冻结状态点与置灰标记。图标本身不再重新生成，置灰由适配器完成。
+                processFrozenStatus(hm, pkgName, pm);
                 if (onlyPkgName != null) {
                     break;
                 }

@@ -21,6 +21,8 @@ import java.util.Map;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 
+import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.greyFrozenApplicationsIcons;
+
 public class MainActivityAppListFragment extends Fragment {
 
     private boolean mUseGridMode = false;
@@ -116,6 +118,8 @@ public class MainActivityAppListFragment extends Fragment {
             Context context, ArrayList<Map<String, Object>> appList,
             ArrayList<String> selectedPackages) {
         if (mAppListAdapter instanceof MainAppListSimpleAdapter) {
+            ((MainAppListSimpleAdapter) mAppListAdapter)
+                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(context));
             ((MainAppListSimpleAdapter) mAppListAdapter).replaceAllInFormerArrayList(appList);
         } else {
             mAppListAdapter = new MainAppListSimpleAdapter(
@@ -128,7 +132,9 @@ public class MainActivityAppListFragment extends Fragment {
                     new String[]{"Img", "Name", "PackageName", "isFrozen"},
                     mUseGridMode ?
                             new int[]{R.id.mgmi_imageView, R.id.mgmi_textView} :
-                            new int[]{R.id.img, R.id.name, R.id.pkgName, R.id.isFrozen});
+                            new int[]{R.id.img, R.id.name, R.id.pkgName, R.id.isFrozen},
+                    mUseGridMode ? R.id.mgmi_imageView : R.id.img,
+                    greyFrozenApplicationsIcons.getValue(context));
         }
 
         Activity activity = getActivity();

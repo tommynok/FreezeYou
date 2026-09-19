@@ -299,6 +299,8 @@
     <string name="scheduledTasksUserNotification">Заплановані завдання - Сповіщення користувачів</string>
     <string name="manageSpace">Керування простором</string>
     <string name="cacheApplicationsIcons">Кеш іконок додатків</string>
+    <string name="greyFrozenApplicationsIcons">Знебарвлювати заморожені додатки</string>
+    <string name="greyFrozenApplicationsIconsSummary">Значок замороженого додатка показується сірим, на додачу до крапки в кінці рядка.</string>
     <string name="tryDelApkAfterInstalled">Спробувати видалити. АРК після установки</string>
     <string name="sortBy">Сортування</string>
     <string name="sortBy_default">За замовчуванням</string>

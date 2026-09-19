@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS
+import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_APPEARANCE
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_COMMON
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_FREEZE_AND_UNFREEZE
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_ICON_ENTRY
@@ -44,6 +45,12 @@ enum class DefaultSharedPreferenceStorageBooleanKeys : AbstractKey<Boolean> {
         override fun titleTextStringId(): Int = R.string.cacheApplicationsIcons
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_COMMON
         override fun getValue(context: Context?): Boolean = true
+    },
+
+    greyFrozenApplicationsIcons {
+        override fun defaultValue(): Boolean = true
+        override fun titleTextStringId(): Int = R.string.greyFrozenApplicationsIcons
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_APPEARANCE
     },
 
     firstIconEnabled {
