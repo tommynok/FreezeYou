@@ -11,7 +11,6 @@ import android.os.Build
 import android.util.Log
 import cf.playhi.freezeyou.DeviceAdminReceiver
 import cf.playhi.freezeyou.MainApplication
-import cf.playhi.freezeyou.MyNotificationListenerService
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage
 import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
@@ -634,17 +633,9 @@ object FUFUtils {
 
     @TargetApi(21)
     private fun isAppStillNotifying(pkgName: String?): Boolean {
-        if (pkgName != null) {
-            val statusBarNotifications = MyNotificationListenerService.getStatusBarNotifications()
-            if (statusBarNotifications != null) {
-                for (aStatusBarNotifications in statusBarNotifications) {
-                    if (pkgName == aStatusBarNotifications.packageName) {
-                        return true
-                    }
-                }
-            }
-        }
-        return false
+        // Read from the shared store rather than the listener service's own field: that service
+        // lives in :backgroundService, and this check runs wherever the freeze was asked for.
+        return ProcessSharedState.isNotifying(pkgName)
     }
 
     @JvmStatic

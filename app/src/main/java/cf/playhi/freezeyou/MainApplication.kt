@@ -16,6 +16,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.OneKeyListUtils
+import cf.playhi.freezeyou.utils.ProcessSharedState
 import cf.playhi.freezeyou.utils.ServiceUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
@@ -330,12 +331,21 @@ class MainApplication : Application() {
                 field = intent
             }
 
+        /**
+         * Written by the accessibility service, which runs in `:backgroundService`, and read
+         * wherever a freeze is about to happen — which is no longer the same process. It is kept
+         * in the shared store for that reason; the field beside it only serves as a fallback for
+         * the process that did the writing, in case the store has nothing yet.
+         */
         @JvmStatic
         var currentPackage: String?
             @NonNull
-            get() = mCurrentPackage
+            get() = ProcessSharedState.getForegroundPackage() ?: mCurrentPackage
             set(pkgName) {
-                if (pkgName != null) mCurrentPackage = pkgName
+                if (pkgName != null) {
+                    mCurrentPackage = pkgName
+                    ProcessSharedState.setForegroundPackage(pkgName)
+                }
             }
     }
 }
