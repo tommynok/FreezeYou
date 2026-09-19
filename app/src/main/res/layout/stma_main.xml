@@ -28,8 +28,6 @@
             android:background="@drawable/shapedot_almost_white"
             android:contentDescription="@string/time"
             android:elevation="3dp"
-            android:padding="9dp"
-            android:scaleType="fitCenter"
             app:srcCompat="@drawable/ic_add_alarm"
             android:stateListAnimator="@animator/fab_animator"
             android:visibility="gone" />
@@ -45,8 +43,6 @@
             android:background="@drawable/shapedot_almost_white"
             android:contentDescription="@string/add"
             android:elevation="3dp"
-            android:padding="9dp"
-            android:scaleType="fitCenter"
             app:srcCompat="@drawable/ic_explore"
             android:stateListAnimator="@animator/fab_animator"
             android:visibility="gone" />
