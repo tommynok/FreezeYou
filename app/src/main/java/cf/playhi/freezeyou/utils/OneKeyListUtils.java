@@ -7,6 +7,7 @@ import android.util.Base64;
 
 import net.grandcentrix.tray.AppPreferences;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public final class OneKeyListUtils {
@@ -96,6 +97,19 @@ public final class OneKeyListUtils {
                 result.append(",");
             }
         }
-        return result.toString().split(",");
+        // "".split(",") is a one-element array holding an empty string, not an empty one, so an
+        // empty list used to arrive downstream as a single blank package name — reported to the
+        // user as "package name is empty" for a command that simply named nothing.
+        if (result.length() == 0) {
+            return new String[]{};
+        }
+        String[] decoded = result.toString().split(",");
+        ArrayList<String> nonBlank = new ArrayList<>(decoded.length);
+        for (String pkg : decoded) {
+            if (!pkg.trim().isEmpty()) {
+                nonBlank.add(pkg.trim());
+            }
+        }
+        return nonBlank.toArray(new String[0]);
     }
 }
