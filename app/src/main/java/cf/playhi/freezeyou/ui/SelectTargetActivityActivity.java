@@ -18,19 +18,46 @@ import java.util.HashMap;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.fuf.FUFSinglePackage;
 import cf.playhi.freezeyou.utils.ApplicationIconUtils;
 
+import rikka.shizuku.Shizuku;
+
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processActionBar;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
-import static cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog;
 
 public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
 
-    /** Row metadata, not bound to any view — see where it is put. */
-    private static final String KEY_EXPORTED = "Exported";
+    /**
+     * Whether this device can start a component another app keeps to itself. Read from the
+     * configured freeze mode rather than probed: asking for root here would pop a permission
+     * prompt just for opening a list.
+     */
+    private boolean elevatedLaunchAvailable() {
+        int mode;
+        try {
+            mode = Integer.parseInt(selectFUFMode.getValue(this));
+        } catch (Exception e) {
+            return false;
+        }
+        switch (mode) {
+            case FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE:
+            case FUFSinglePackage.API_FREEZEYOU_ROOT_UNHIDE_HIDE:
+                return true;
+            case FUFSinglePackage.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE:
+            case FUFSinglePackage.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER:
+            case FUFSinglePackage.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED:
+                // Cheap and silent, unlike spawning su, and it catches "Shizuku is selected but
+                // not running" before the user builds a shortcut that could never fire.
+                return Shizuku.pingBinder();
+            default:
+                return false;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,10 +120,18 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                     fromArchive = activityInfos != null;
                 }
 
+                // Starting a non-exported activity needs root or Shizuku. Without one of those
+                // configured, listing them would only offer the user targets that cannot work,
+                // so they are left out entirely rather than explained away in every row.
+                final boolean canLaunchNonExported = elevatedLaunchAvailable();
+
                 if (activityInfos != null) {
                     for (ActivityInfo activityInfo : activityInfos) {
                         String ais = activityInfo.name;
                         if (ais == null) {
+                            continue;
+                        }
+                        if (!activityInfo.exported && !canLaunchNonExported) {
                             continue;
                         }
                         // Non-exported activities used to be filtered out entirely. Since
@@ -120,11 +155,6 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                         }
                         hashMap.put("Name", ais);
                         hashMap.put("Label", label);
-                        // Kept out of the visible row: since Android 12 forces every component to
-                        // declare android:exported and nearly all declare it false, a note on each
-                        // row would be on almost every row and carry no information. The user is
-                        // told once, when they pick one.
-                        hashMap.put(KEY_EXPORTED, activityInfo.exported);
                         arrayList.add(hashMap);
                     }
                 }
@@ -154,21 +184,8 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
 
                 staaMainListView.setAdapter(adapter);
 
-                staaMainListView.setOnItemClickListener((parent, view, position, id) -> {
-                    Object exported = arrayList.get(position).get(KEY_EXPORTED);
-                    if (Boolean.FALSE.equals(exported)) {
-                        buildAlertDialog(
-                                this, 0,
-                                R.string.requiresElevatedLaunchExplanation,
-                                R.string.requiresElevatedLaunch)
-                                .setPositiveButton(android.R.string.ok,
-                                        (dialog, which) -> selectAndFinish(arrayList, position, pkgName))
-                                .setNegativeButton(android.R.string.cancel, null)
-                                .show();
-                    } else {
-                        selectAndFinish(arrayList, position, pkgName);
-                    }
-                });
+                staaMainListView.setOnItemClickListener((parent, view, position, id) ->
+                        selectAndFinish(arrayList, position, pkgName));
             }
         }
 
