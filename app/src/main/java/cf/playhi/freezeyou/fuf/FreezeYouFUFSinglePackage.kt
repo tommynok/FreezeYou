@@ -12,6 +12,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.ui.AskRunActivity
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndCreateFUFQuickNotification
 import cf.playhi.freezeyou.utils.FUFUtils.isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying
+import cf.playhi.freezeyou.utils.FUFUtils.isOnlyUnfreezeTarget
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import cf.playhi.freezeyou.utils.FUFUtils.sendStatusChangedBroadcast
 import cf.playhi.freezeyou.utils.NotificationUtils.deleteNotification
@@ -101,7 +102,7 @@ class FreezeYouFUFSinglePackage(
             runTask(tasks, context, null)
         }
 
-        if (needAskRun && context.getString(R.string.onlyUnfreeze) != target) {
+        if (needAskRun && !isOnlyUnfreezeTarget(context, target)) {
             if (runImmediately || openImmediately.getValue()) {
                 checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(
                     context,
@@ -143,7 +144,7 @@ class FreezeYouFUFSinglePackage(
             }
 
             if (target != null) {
-                if (context.getString(R.string.onlyUnfreeze) != target) {
+                if (!isOnlyUnfreezeTarget(context, target)) {
                     try {
                         val component = ComponentName(pkgName, target)
                         val intent = Intent()

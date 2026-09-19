@@ -45,7 +45,7 @@ object FUFUtils {
         if (runImmediately || DefaultMultiProcessMMKVStorageBooleanKeys.openImmediately.getValue()) {
             checkAndStartApp(context, pkgName, target, tasks, activity, finish)
         } else {
-            if (context.getString(R.string.onlyUnfreeze) != target) {
+            if (!isOnlyUnfreezeTarget(context, target)) {
                 context.startActivity(
                     Intent(context, AskRunActivity::class.java)
                         .putExtra("pkgName", pkgName)
@@ -56,6 +56,24 @@ object FUFUtils {
             }
         }
     }
+
+    /**
+     * "Only unfreeze" is stored as its own translated label, so the stored value changes whenever
+     * the translation does — and shortcuts and scheduled tasks made earlier keep the old text.
+     * Those are recognised too, otherwise fixing a wording would turn every existing shortcut
+     * into an attempt to start an activity named after a phrase.
+     */
+    @JvmStatic
+    fun isOnlyUnfreezeTarget(context: Context, target: String?): Boolean {
+        if (target == null) return false
+        return target == context.getString(R.string.onlyUnfreeze) ||
+                target in LEGACY_ONLY_UNFREEZE_TARGETS
+    }
+
+    private val LEGACY_ONLY_UNFREEZE_TARGETS = setOf(
+        "Только размороженые", // ru, until the wording was corrected
+        "Тільки розморожені"   // uk, same
+    )
 
     @JvmStatic
     fun checkAndDoActivityFinish(activity: Activity?, finish: Boolean) {
@@ -193,7 +211,7 @@ object FUFUtils {
         finish: Boolean
     ) {
         if (target != null) {
-            if (context.getString(R.string.onlyUnfreeze) != target) {
+            if (!isOnlyUnfreezeTarget(context, target)) {
                 try {
                     val component = ComponentName(pkgName, target)
                     val intent = Intent()
