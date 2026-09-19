@@ -58,22 +58,15 @@ object FUFUtils {
     }
 
     /**
-     * "Only unfreeze" is stored as its own translated label, so the stored value changes whenever
-     * the translation does — and shortcuts and scheduled tasks made earlier keep the old text.
-     * Those are recognised too, otherwise fixing a wording would turn every existing shortcut
-     * into an attempt to start an activity named after a phrase.
+     * "Only unfreeze" is identified by its own translated label, upstream's choice. That means
+     * the value stored in a shortcut or a scheduled task changes whenever the translation does,
+     * and such a shortcut then tries to start an activity named after a phrase. Kept in one place
+     * so the comparison is in one place if that is ever given a stable value instead.
      */
     @JvmStatic
     fun isOnlyUnfreezeTarget(context: Context, target: String?): Boolean {
-        if (target == null) return false
-        return target == context.getString(R.string.onlyUnfreeze) ||
-                target in LEGACY_ONLY_UNFREEZE_TARGETS
+        return target != null && target == context.getString(R.string.onlyUnfreeze)
     }
-
-    private val LEGACY_ONLY_UNFREEZE_TARGETS = setOf(
-        "Только размороженые", // ru, until the wording was corrected
-        "Тільки розморожені"   // uk, same
-    )
 
     @JvmStatic
     fun checkAndDoActivityFinish(activity: Activity?, finish: Boolean) {
