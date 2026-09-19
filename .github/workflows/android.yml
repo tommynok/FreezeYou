@@ -38,6 +38,10 @@ jobs:
     - name: Grant Permission
       run: chmod +x ./gradlew
 
+    # Runs on the JVM, no device or emulator involved, so it costs seconds.
+    - name: Unit tests
+      run: ./gradlew testReleaseUnitTest --stacktrace
+
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace
 
