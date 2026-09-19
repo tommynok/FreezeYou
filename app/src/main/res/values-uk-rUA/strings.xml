@@ -13,7 +13,7 @@
     <string name="appDetail">Про програму</string>
     <string name="removeFromOneKeyList">Видалити з списку OneKEY заморозка</string>
     <string name="removeFromOneKeyUFList">Видалити з списку OneKEY розморозка</string>
-    <string name="removeFromFreezeOnceQuit">Видалити з \"Заморозка після виходу\"</string>
+    <string name="removeFromFreezeOnceQuit">Видалити з «Заморозка після виходу»</string>
     <string name="removed">Видалено</string>
     <string name="removeFailed">Не вдалося видалити</string>
     <string name="addToOneKeyList">Додати в список OneKEY заморозка</string>
@@ -57,8 +57,8 @@
     <string name="summary_deleteAllScheduledTasks">Безповоротно видаляє всі створені вами заплановані завдання</string>
     <string name="unfreeze">Розморозка</string>
     <string name="unfreezedAndAskLaunch">Запит на розморозку, спробувати відразу запустити?</string>
-    <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через відсутніть дозволу.</string>
-    <string name="frozen">Заморожений</string>
+    <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через нестачу прав.</string>
+    <string name="frozen">Заморожено</string>
     <string name="OneKeyFreezeImmediately">OneKEY заморозка</string>
     <string name="about">Про FreezeYou!</string>
     <string name="plsVisit">Будь ласка, відвідайте</string>
@@ -340,7 +340,7 @@
     <string name="scheduledTaskDashLineLabel">Заплановане завдання - %1$s</string>
     <string name="moreSettingsDashLineLabel">Додаткові налаштування %1$s</string>
     <string name="parseFailed">Збій розбору</string>
-    <string name="nothing">None</string>
+    <string name="nothing">Немає</string>
     <string name="share">Поділитися</string>
     <string name="notAllowWhenIsObsd">Не дозволяти вікну затемнюватися</string>
     <string name="remove">Видалити</string>
@@ -352,7 +352,7 @@
     <string name="displayLanguage">Мова додатку</string>
     <string name="emptyNotAllowed">Порожнє не допускається</string>
     <string name="myCustomization">Моя підбірка</string>
-    <string name="manageMyCustomization">Керування \"Моєю підбіркою\"</string>
+    <string name="manageMyCustomization">Керування «Моєю підбіркою»</string>
     <string name="myCustomizationDashLineLabel">Моя підбірка - %1$s</string>
     <string name="copyAlias">Скопіювати alias</string>
     <string name="version_colon_vN_longVC">Версія: %1$s ( %2$s)</string>
@@ -369,8 +369,8 @@
     <string name="app_uninstallFinished">Видалення %1$s завершено</string>
     <string name="app_uninstallFailed">Збій видалення %1$s</string>
     <string name="commandExecutionTool">Інструмент виконання команд</string>
-    <string name="addToMyCustomization">Додати в \"Моя підбірка\"</string>
-    <string name="removeFromMyCustomization">Видалити з \"Моя підбірка\"</string>
+    <string name="addToMyCustomization">Додати в «Моя підбірка»</string>
+    <string name="removeFromMyCustomization">Видалити з «Моя підбірка»</string>
     <string name="waitingToInstall_app">Очікування установки після виходу %1$s</string>
     <string name="installWhenNotUsing">Встановити, якщо не використовується</string>
     <string name="contactUs">Зв\'\язатися з нами</string>
@@ -426,13 +426,13 @@
     <string name="bluetoothPermissionIsNotGranted">Пов\'язаний дозвіл Bluetooth не надано</string>
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Можливо, не вдасться використати заплановані завдання для ввімкнення або вимкнення Bluetooth</string>
     <string name="gotoStore">Перейти до магазину</string>
-    <string name="selfRevokeProfileOwner">Надати дозвіл власника профілю</string>
+    <string name="selfRevokeProfileOwner">Відключити режим власника профілю</string>
     <string name="selfRevokeProfileOwnerSummary">Потрібно лише якщо ви використовували режим Без root (Власник профілю). Знімає право власника профілю — інакше видалення FreezeYou може не спрацювати.</string>
     <string name="uninstallSummary">Видаляє FreezeYou. Якщо ви використовували режим Без root (Власник профілю), спочатку скасуйте його вище — інакше видалення може не спрацювати.</string>
     <string name="isNotProfileOwner">Це не власник профілю</string>
     <string name="getBackupData">Отримати резервні копії даних</string>
     <string name="theAppHasNotificationInTheNotificationBar">Додаток має сповіщення на панелі сповіщень</string>
-    <string name="theAppIsCurrentlyTheForegroundApp">Додаток в даний час є активним додатком</string>
+    <string name="theAppIsCurrentlyTheForegroundApp">Зараз на передньому плані</string>
     <string name="operationOnFreezeYouIsNotAllowed">Операція у FreezeYou не дозволена</string>
     <string name="shizukuVersionIsTooLow">Версія Shizuku застаріла</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не встановлено або інші винятки</string>
