@@ -43,8 +43,12 @@
 
 ## Что стоит помнить о самом приложении
 
-- Режим заморозки у владельца — **Shizuku**. Root на устройстве есть, но FreezeYou его не
-  запрашивал.
+- Владелец тестирует **оба режима — и root, и Shizuku**, а не только один. Shizuku при этом
+  запущен через root (Sui, модуль KernelSU/Magisk), а не через adb, поэтому его служба
+  работает под uid 0, а не под shell (2000). Это причина, по которой команды через Shizuku
+  выполняются как `am` внутри его процесса (`Shizuku.newProcess`), а не прямым вызовом
+  IActivityManager: прямой вызов требует callingPackage, совпадающего с uid вызывающего, и
+  ломался бы по-разному в зависимости от того, чем Shizuku запущен.
 - `AccessibilityService` и `MyNotificationListenerService` объявлены с
   `android:process=":backgroundService"` — это отдельный процесс. Всё, что они наблюдают,
   должно попадать в `ProcessSharedState` (многопроцессный MMKV), иначе основной процесс
