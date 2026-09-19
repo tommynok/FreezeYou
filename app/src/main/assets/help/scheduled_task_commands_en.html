@@ -72,21 +72,21 @@
     <li><code>okuf</code> — Onekey Unfreeze.</li>
     <li><code>ff</code> — freeze.</li>
     <li><code>uf</code> — unfreeze.</li>
-    <li><code>es</code> — enable a setting: <code>wifi</code> (6.2+), <code>cd</code> — mobile data (7.1+), <code>bluetooth</code> (7.3+).</li>
+    <li><code>es</code> — enable a setting: <code>wifi</code>, <code>cd</code> — mobile data, <code>bluetooth</code>.</li>
     <li><code>ds</code> — disable a setting (same values and versions as <code>es</code>).</li>
     <li><code>st</code> — show a Toast message.</li>
-    <li><code>sn</code> (8.6+) — show a notification in the notification shade.</li>
+    <li><code>sn</code> — show a notification in the notification shade.</li>
     <li><code>sp</code> — open the specified app.</li>
     <li><code>su</code> — open an app via Uri.</li>
-    <li><code>lg</code> (7.2+) — write an ERROR-level log line; not needed under normal use.</li>
-    <li><code>ls</code> (8.7+) — lock the screen.</li>
+    <li><code>lg</code> — write an ERROR-level log line; not needed under normal use.</li>
+    <li><code>ls</code> — lock the screen.</li>
 </ul>
 
 <h2>Internal variables</h2>
 <p class="lead">Optional additional parameters.</p>
 <ul>
-    <li><code>[ppkgn]</code> (7.4+) — previous app's package name. Only for the "When Leave Applications" and "When Open Applications" triggers. Before relying on it in a real task, check its value with <code>st [ppkgn]</code> to reduce the risk of freezing the wrong app.</li>
-    <li><code>[cpkgn]</code> (7.4+) — current app's package name. For the "When Open Applications", "When Leave Applications", "When Unfreeze Applications" and "When Freeze Applications" triggers. Check it first with <code>st [cpkgn]</code> as well.</li>
+    <li><code>[ppkgn]</code> — previous app's package name. Only for the "When Leave Applications" and "When Open Applications" triggers. Before relying on it in a real task, check its value with <code>st [ppkgn]</code> to reduce the risk of freezing the wrong app.</li>
+    <li><code>[cpkgn]</code> — current app's package name. For the "When Open Applications", "When Leave Applications", "When Unfreeze Applications" and "When Freeze Applications" triggers. Check it first with <code>st [cpkgn]</code> as well.</li>
 </ul>
 
 <h2>Command examples</h2>
@@ -163,8 +163,8 @@
 <h3>Requirements per trigger</h3>
 <ul>
     <li>"On Screen On" / "On Screen Off" — no additional parameters yet.</li>
-    <li>"When Open Applications" — up to version 7.0 a package name is required; from 7.0 you can supply a package name or "My customization" (9.2+). With a package name set, opening that app normally cancels any pending delayed tasks scheduled by "When Leave Applications" for the same app.</li>
-    <li>"When Leave Applications" — a package name or "My customization" (9.2+) can be supplied. With a package name set, leaving that app normally cancels any pending delayed tasks scheduled by "When Open Applications" for the same app.</li>
+    <li>"When Open Applications" — a package name or "My customization" can be supplied. With a package name set, opening that app normally cancels any pending delayed tasks scheduled by "When Leave Applications" for the same app.</li>
+    <li>"When Leave Applications" — a package name or "My customization" can be supplied. With a package name set, leaving that app normally cancels any pending delayed tasks scheduled by "When Open Applications" for the same app.</li>
     <li>"When Unfreeze Applications" / "When Freeze Applications" — a package name can be supplied; without one, it fires for any app.</li>
 </ul>
 

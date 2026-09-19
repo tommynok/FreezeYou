@@ -9,6 +9,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -43,6 +44,11 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 public class Freeze extends FreezeYouBaseActivity {
     private FreezeActivityViewModel viewModel;
     private ImageView applicationIconImageView;
+    /**
+     * The work now finishes long before the animation does, so closing as soon as the result
+     * arrives would leave nothing to see. Hold the window until the animation has run out.
+     */
+    private long animationEndsAtUptime = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,11 +76,20 @@ public class Freeze extends FreezeYouBaseActivity {
                 )
         );
         viewModel.getFinishMe().observe(this, finishMe -> {
-            if (finishMe) finish();
+            if (finishMe) finishWhenAnimationIsOver();
         });
         viewModel.getPlayAnimator().observe(this, this::onPlayAnimator);
         viewModel.getShowDialog().observe(this, this::buildAndShowFUFDialog);
         viewModel.loadStartedIntentAndPkgName(getIntent());
+    }
+
+    private void finishWhenAnimationIsOver() {
+        long remaining = animationEndsAtUptime - SystemClock.uptimeMillis();
+        if (remaining > 0) {
+            getWindow().getDecorView().postDelayed(this::finish, remaining);
+        } else {
+            finish();
+        }
     }
 
     private void onPlayAnimator(PlayAnimatorData playAnimatorData) {
@@ -133,7 +148,8 @@ public class Freeze extends FreezeYouBaseActivity {
     }
 
     private void onUnfreezeStart() {
-        long animDuration = viewModel.getAverageTimeCosts();
+        long animDuration = viewModel.getAnimationDurationMillis();
+        animationEndsAtUptime = SystemClock.uptimeMillis() + animDuration;
         ObjectAnimator fadeAnim = ObjectAnimator.ofFloat(
                 applicationIconImageView, "alpha", 0.2f, 1f);
         fadeAnim.setDuration(animDuration);
@@ -165,7 +181,8 @@ public class Freeze extends FreezeYouBaseActivity {
     }
 
     private void onFreezeStart() {
-        long animDuration = viewModel.getAverageTimeCosts();
+        long animDuration = viewModel.getAnimationDurationMillis();
+        animationEndsAtUptime = SystemClock.uptimeMillis() + animDuration;
         ObjectAnimator fadeAnim = ObjectAnimator.ofFloat(
                 applicationIconImageView, "alpha", 1f, 0f);
         fadeAnim.setDuration(animDuration);

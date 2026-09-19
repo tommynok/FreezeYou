@@ -47,6 +47,26 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.stma_menu, menu);
+        String cTheme = ThemeUtils.getUiTheme(this);
+        if ("white".equals(cTheme) || "default".equals(cTheme))
+            menu.findItem(R.id.menu_stma_syntax).setIcon(R.drawable.ic_action_help_outline_light);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // The command syntax is only of use on this screen, so it is reachable from here rather
+        // than from the main overflow, where it used to sit several taps away.
+        if (item.getItemId() == R.id.menu_stma_syntax) {
+            startActivity(new Intent(this, ScheduledTaskCommandsSyntaxActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case 1:

@@ -69,7 +69,6 @@ import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
 import cf.playhi.freezeyou.ui.FirstTimeSetupActivity;
 import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity;
-import cf.playhi.freezeyou.ui.ScheduledTaskCommandsSyntaxActivity;
 import cf.playhi.freezeyou.ui.ScheduledTasksManageActivity;
 import cf.playhi.freezeyou.ui.SettingsActivity;
 import cf.playhi.freezeyou.ui.ShortcutLauncherFolderActivity;
@@ -2112,9 +2111,6 @@ public class Main extends FreezeYouBaseActivity {
                         requestOpenWebSite(this,
                                 String.format("https://www.zidon.net/%1$s/faq/",
                                         getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)));
-                        return true;
-                    case R.id.menu_scheduledTaskCommandsSyntax:
-                        startActivity(new Intent(this, ScheduledTaskCommandsSyntaxActivity.class));
                         return true;
                     case R.id.menu_onClickFunc_autoUFOrFreeze:
                         appListViewOnClickMode = APPListViewOnClickMode_autoUFOrFreeze;
