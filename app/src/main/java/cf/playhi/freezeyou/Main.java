@@ -65,7 +65,6 @@ import java.util.Set;
 
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
-import cf.playhi.freezeyou.service.FUFService;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
@@ -80,6 +79,7 @@ import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.LauncherShortcutUtils;
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.utils.RunningAppsUtils;
+import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
@@ -1555,12 +1555,7 @@ public class Main extends FreezeYouBaseActivity {
     private void processDisableAndEnableImmediately(boolean freeze) {
         int size = selectedPackages.size();
         String[] pkgNameList = selectedPackages.toArray(new String[size]);
-        ServiceUtils.startService(
-                Main.this,
-                new Intent(Main.this, FUFService.class)
-                        .putExtra("single", false)
-                        .putExtra("packages", pkgNameList)
-                        .putExtra("freeze", freeze));
+        FUFUtils.processBatchAction(Main.this, pkgNameList, freeze);
     }
 
     private void processForceStopImmediately() {

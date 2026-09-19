@@ -5,18 +5,43 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
+import java.util.Collections;
+import java.util.List;
+
 public final class DataStatisticsUtils {
 
     public static void addFreezeTimes(Context context, String pkgNameString) {
-        SQLiteDatabase db = context.openOrCreateDatabase("ApplicationsFreezeTimes", Context.MODE_PRIVATE, null);
-        addTimes(db, pkgNameString);
-        db.close();
+        addFreezeTimes(context, Collections.singletonList(pkgNameString));
     }
 
     public static void addUFreezeTimes(Context context, String pkgNameString) {
-        SQLiteDatabase db = context.openOrCreateDatabase("ApplicationsUFreezeTimes", Context.MODE_PRIVATE, null);
-        addTimes(db, pkgNameString);
-        db.close();
+        addUFreezeTimes(context, Collections.singletonList(pkgNameString));
+    }
+
+    /**
+     * Opening the database is the expensive part, so a batch pays for it once rather than once
+     * per application.
+     */
+    public static void addFreezeTimes(Context context, List<String> pkgNameStrings) {
+        addTimes(context, "ApplicationsFreezeTimes", pkgNameStrings);
+    }
+
+    public static void addUFreezeTimes(Context context, List<String> pkgNameStrings) {
+        addTimes(context, "ApplicationsUFreezeTimes", pkgNameStrings);
+    }
+
+    private static void addTimes(Context context, String dbName, List<String> pkgNameStrings) {
+        if (pkgNameStrings.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
+        try {
+            for (String pkgNameString : pkgNameStrings) {
+                addTimes(db, pkgNameString);
+            }
+        } finally {
+            db.close();
+        }
     }
 
     public static void addUseTimes(Context context, String pkgNameString) {

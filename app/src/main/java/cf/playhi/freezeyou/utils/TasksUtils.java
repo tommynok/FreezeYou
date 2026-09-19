@@ -30,6 +30,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 import java.util.Date;
 
 import cf.playhi.freezeyou.R;
@@ -405,8 +407,20 @@ public final class TasksUtils {
      */
     public static ArrayList<String> collectTriggeredTasks(
             Context context, String pkgNameString, String trigger) {
+        return collectTriggeredTasks(context, Collections.singletonList(pkgNameString), trigger);
+    }
+
+    /**
+     * A batch reads the table once for every application in it, instead of opening the database
+     * and scanning it again per application.
+     */
+    public static ArrayList<String> collectTriggeredTasks(
+            Context context, List<String> pkgNameStrings, String trigger) {
 
         final ArrayList<String> collected = new ArrayList<>();
+        if (pkgNameStrings.isEmpty()) {
+            return collected;
+        }
 
         final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
         db.execSQL(
@@ -421,10 +435,19 @@ public final class TasksUtils {
                 }
                 String tg = cursor.getString(cursor.getColumnIndexOrThrow("tg"));
                 int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
-                if (enabled == 1 && trigger.equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(context, tgExtra.split(","))).contains(pkgNameString))) {
+                if (enabled == 1 && trigger.equals(tg)) {
                     String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
                     if (task != null && !"".equals(task)) {
-                        collected.add(task.replace("[cpkgn]", pkgNameString));
+                        // An empty tgextra means "any application"; otherwise it names the ones
+                        // this task applies to, and the lists in it are decoded once per row.
+                        List<String> onlyFor = "".equals(tgExtra) ? null : Arrays.asList(
+                                OneKeyListUtils.decodeUserListsInPackageNames(
+                                        context, tgExtra.split(",")));
+                        for (String pkgNameString : pkgNameStrings) {
+                            if (onlyFor == null || onlyFor.contains(pkgNameString)) {
+                                collected.add(task.replace("[cpkgn]", pkgNameString));
+                            }
+                        }
                     }
                 }
                 cursor.moveToNext();

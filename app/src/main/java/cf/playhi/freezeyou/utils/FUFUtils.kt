@@ -473,6 +473,128 @@ object FUFUtils {
         }
     }
 
+    /**
+     * Freezing a selection of applications, without the FUFService detour.
+     *
+     * The service version paid, per application, for: a `runBlocking` round trip, two SQLite
+     * databases opened and a table scanned, and a status broadcast that woke the list — 20
+     * applications meant 40 database opens and 21 broadcasts, all on the service process's main
+     * thread. The binder calls the operation actually consists of are a rounding error next to
+     * that, which is why a batch felt far slower here than in apps doing the same thing.
+     *
+     * Now the applications are handled one after another on a background thread, the bookkeeping
+     * is done once for the whole batch, and the list is told once at the end.
+     *
+     * The root modes stay on the service: they drive a single su session for the whole batch
+     * already, and report through toasts from the calling thread.
+     */
+    @JvmStatic
+    fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
+        val apiMode = try {
+            DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue(context)!!.toInt()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            startBatchService(context, packages, freeze)
+            return
+        }
+
+        @Suppress("DEPRECATION")
+        if (apiMode == FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO ||
+            apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE ||
+            apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_UNHIDE_HIDE
+        ) {
+            startBatchService(context, packages, freeze)
+            return
+        }
+
+        val appContext = context.applicationContext
+        val actionMode =
+            if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE
+
+        inProcessFUFScope.launch {
+            val startedAt = System.currentTimeMillis()
+            val succeeded = mutableListOf<String>()
+            val failed = mutableListOf<String>()
+
+            for (pkgName in packages) {
+                val result = executeActionQuietly(appContext, pkgName, apiMode, actionMode)
+                if (result == FUFSinglePackage.ERROR_NO_ERROR_SUCCESS ||
+                    result == FUFSinglePackage.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+                ) {
+                    succeeded += pkgName
+                } else {
+                    failed += pkgName
+                }
+            }
+
+            if (succeeded.isNotEmpty()) {
+                if (freeze) {
+                    DataStatisticsUtils.addFreezeTimes(appContext, succeeded)
+                    succeeded.forEach { NotificationUtils.deleteNotification(appContext, it) }
+                } else {
+                    DataStatisticsUtils.addUFreezeTimes(appContext, succeeded)
+                    succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+                }
+                sendStatusChangedBroadcast(appContext)
+                val triggered = TasksUtils.collectTriggeredTasks(
+                    appContext, succeeded,
+                    if (freeze) "onFApplications" else "onUFApplications"
+                )
+                if (triggered.isNotEmpty()) {
+                    withContext(Dispatchers.Main) { TasksUtils.runCollectedTasks(appContext, triggered) }
+                }
+            }
+
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
+                            "failed=${failed.size} took=${System.currentTimeMillis() - startedAt}ms"
+                )
+            }
+
+            withContext(Dispatchers.Main) {
+                if (failed.isNotEmpty()) {
+                    showFailedApplicationsToast(appContext, failed)
+                } else if (!lesserToast.getValue()) {
+                    ToastUtils.showToast(appContext, R.string.executed)
+                }
+            }
+        }
+    }
+
+    private fun startBatchService(context: Context, packages: Array<String>, freeze: Boolean) {
+        ServiceUtils.startService(
+            context, Intent(context, FUFService::class.java)
+                .putExtra("single", false)
+                .putExtra("packages", packages)
+                .putExtra("freeze", freeze)
+        )
+    }
+
+    /**
+     * The same guards [FreezeYouFUFSinglePackage] applies, without its per-application follow-up
+     * work — in a batch that work is done once at the end instead.
+     */
+    private suspend fun executeActionQuietly(
+        context: Context, pkgName: String, apiMode: Int, actionMode: Int
+    ): Int {
+        if (context.packageName == pkgName) {
+            return FUFSinglePackage.ERROR_OPERATION_ON_FREEZEYOU_IS_NOT_ALLOWED
+        }
+        if (actionMode == FUFSinglePackage.ACTION_MODE_FREEZE) {
+            if (isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(pkgName)) {
+                return FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_NOTIFYING_APPLICATION
+            }
+            if (DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeForegroundApplications.getValue()
+                && MainApplication.currentPackage == pkgName
+            ) {
+                return FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_FOREGROUND_APPLICATION
+            }
+        }
+        return FUFSinglePackage(context, pkgName, actionMode, apiMode).commit()
+    }
+
     private val inProcessFUFScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @TargetApi(21)
