@@ -299,8 +299,8 @@
     <string name="scheduledTasksUserNotification">Scheduled Tasks - User notifications</string>
     <string name="manageSpace">Manage space</string>
     <string name="cacheApplicationsIcons">Cache Applications Icons</string>
-    <string name="greyFrozenApplicationsIcons">Grey out frozen applications</string>
-    <string name="greyFrozenApplicationsIconsSummary">The icon of a frozen application is shown desaturated, in addition to the dot at the end of the row.</string>
+    <string name="greyFrozenApplicationsIcons">Show frozen applications in grey</string>
+    <string name="greyFrozenApplicationsIconsSummary">The icon of a frozen application loses its colour — a second marker alongside the dot at the end of the row.</string>
     <string name="tryDelApkAfterInstalled">Try to delete the APK after installed</string>
     <string name="sortBy">Sort by</string>
     <string name="sortBy_default">Default</string>
