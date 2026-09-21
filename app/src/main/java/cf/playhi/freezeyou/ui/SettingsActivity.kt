@@ -27,10 +27,14 @@ class SettingsActivity : FreezeYouBaseActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         processSetTheme(this)
         super.onCreate(savedInstanceState)
-        // Display the fragment as the main content.
-        supportFragmentManager.beginTransaction()
-            .replace(android.R.id.content, SettingsFragment())
-            .commit()
+        // Only on a first start. Changing the theme or the language calls recreate(), and the
+        // fragments are restored with the activity — adding another root fragment on top of the
+        // restored one left two preference lists drawn over each other.
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(android.R.id.content, SettingsFragment())
+                .commit()
+        }
         processActionBar(supportActionBar)
     }
 
@@ -49,7 +53,7 @@ class SettingsActivity : FreezeYouBaseActivity(),
         val args = Bundle()
         args.putString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT, preferenceScreen.key)
         fragment.arguments = args
-        ft.replace(R.id.content, fragment, preferenceScreen.key)
+        ft.replace(android.R.id.content, fragment, preferenceScreen.key)
         ft.addToBackStack(preferenceScreen.key)
         ft.commit()
         return true

@@ -246,8 +246,8 @@
     <string name="application">Приложения</string>
     <string name="shortcutPackageFieldHint">Нажмите «...», чтобы выбрать любое приложение из полного списка, а не только то, с которого вы начали.</string>
     <string name="allowEditWhCreateShortcut">Разрешить редактирование при создании ярлыков</string>
-    <string name="clearAllUserData">Очистить все данные</string>
-    <string name="clearAllUserDataSummary">Безвозвратно удаляет все настройки приложения, пользовательские группы, запланированные задачи и данные ярлыков. Действие нельзя отменить.</string>
+    <string name="clearAllUserData">Стереть данные FreezeYou</string>
+    <string name="clearAllUserDataSummary">Безвозвратно стирает данные самого FreezeYou: настройки, пользовательские группы, запланированные задания и данные ярлыков. Замороженные приложения останутся замороженными — это состояние хранит система, а не FreezeYou. Отменить нельзя.</string>
     <string name="packageNotFound">Приложение не найдено</string>
     <string name="id">ID</string>
     <string name="simulate">Тест</string>
@@ -534,6 +534,6 @@
     <string name="summary_spr_installUninstall">Установка пакетов и что происходит после</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
     <string name="summary_spr_advance">Отладка, служба специальных возможностей, опасная зона</string>
-    <string name="dangerZoneSummary">Стирание данных, отзыв прав владельца, удаление</string>
+    <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
     <string name="summary_hToUse">Справка на сайте приложения</string>
 </resources>

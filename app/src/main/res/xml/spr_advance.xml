@@ -41,21 +41,15 @@
             android:targetPackage="cf.playhi.freezeyou" />
     </Preference>
     <!-- The danger zone keeps a screen of its own: a row that wipes data or revokes ownership
-         should not sit one careless tap away from a debugging switch. It is no longer a heading
-         on the settings root, though — nothing there led anywhere but here. -->
-    <PreferenceCategory
+         should not sit one careless tap away from a debugging switch. A category around it would
+         only repeat the row's own title, so the row stands on its own. -->
+    <Preference
+        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsDangerZoneFragment"
         app:iconSpaceReserved="false"
-        app:title="@string/dangerZone">
-
-        <Preference
-            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsDangerZoneFragment"
-            app:iconSpaceReserved="false"
-            app:key="dangerZone"
-            app:singleLineTitle="false"
-            app:summary="@string/dangerZoneSummary"
-            app:title="@string/dangerZone" />
-
-    </PreferenceCategory>
+        app:key="dangerZone"
+        app:singleLineTitle="false"
+        app:summary="@string/dangerZoneSummary"
+        app:title="@string/dangerZone" />
 
     <!--        <Preference app:title="@string/commandExecutionTool">-->
     <!--            <intent-->

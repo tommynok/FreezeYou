@@ -246,8 +246,8 @@
     <string name="application">Додатки</string>
     <string name="shortcutPackageFieldHint">Натисніть «...», щоб вибрати будь-який застосунок з повного списку, а не лише той, з якого ви почали.</string>
     <string name="allowEditWhCreateShortcut">Дозволити редагування при створенні ярликів</string>
-    <string name="clearAllUserData">Очистити всі дані</string>
-    <string name="clearAllUserDataSummary">Безповоротно видаляє всі налаштування застосунку, користувацькі групи, заплановані завдання та дані ярликів. Дію не можна скасувати.</string>
+    <string name="clearAllUserData">Стерти дані FreezeYou</string>
+    <string name="clearAllUserDataSummary">Безповоротно стирає дані самого FreezeYou: налаштування, користувацькі групи, заплановані завдання та дані ярликів. Заморожені додатки залишаться замороженими — цей стан зберігає система, а не FreezeYou. Скасувати не можна.</string>
     <string name="packageNotFound">Додаток не знайдено</string>
     <string name="id">ID</string>
     <string name="simulate">Тест</string>
@@ -533,6 +533,6 @@
     <string name="summary_spr_installUninstall">Встановлення пакетів і що відбувається після</string>
     <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
     <string name="summary_spr_advance">Налагодження, служба спеціальних можливостей, небезпечна зона</string>
-    <string name="dangerZoneSummary">Стирання даних, відкликання прав власника, видалення</string>
+    <string name="dangerZoneSummary">Стирання даних самого FreezeYou, відкликання прав власника, видалення FreezeYou</string>
     <string name="summary_hToUse">Довідка на сайті програми</string>
 </resources>
