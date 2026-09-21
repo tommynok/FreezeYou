@@ -24,8 +24,10 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 
 import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.core.TrayItem;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -525,9 +527,16 @@ public final class TasksUtils {
 
             for (String id : unprocessed.split(",")) {
                 if (id != null && !"".equals(id)) {
+                    final int requestCode;
+                    try {
+                        requestCode = Integer.parseInt(id);
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                        continue;
+                    }
                     PendingIntent alarmIntent =
                             PendingIntent.getBroadcast(
-                                    context, Integer.parseInt(id), intent,
+                                    context, requestCode, intent,
                                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                                             ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
                                             : PendingIntent.FLAG_CANCEL_CURRENT);
@@ -537,6 +546,60 @@ public final class TasksUtils {
                 }
             }
             appPreferences.put(typeNeedsCheckTaskTrigger, "");
+        }
+    }
+
+    /**
+     * Deleting the two task databases is not enough on its own: an alarm outlives the row it was
+     * made from, so the system goes on waking us for tasks that no longer exist. Every alarm is
+     * cancelled first — the timed ones by the row id they were registered under, the delayed ones
+     * by the request codes recorded for them when they were scheduled.
+     */
+    public static void deleteAllScheduledTasks(Context context) {
+        cancelEveryTimeTask(context);
+        cancelEveryPendingDelayTask(context);
+        for (String name : new String[]{"scheduledTasks", "scheduledTriggerTasks"}) {
+            final File file = context.getDatabasePath(name);
+            if (file.exists() && !file.delete()) {
+                Log.e("FreezeYou", "Could not delete the database " + name);
+            }
+        }
+    }
+
+    private static void cancelEveryTimeTask(Context context) {
+        if (!context.getDatabasePath("scheduledTasks").exists()) {
+            return;
+        }
+        final SQLiteDatabase db =
+                context.openOrCreateDatabase("scheduledTasks", Context.MODE_PRIVATE, null);
+        db.execSQL(
+                "create table if not exists tasks(_id integer primary key autoincrement,hour integer(2),minutes integer(2),repeat varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
+        );
+        final Cursor cursor =
+                db.query("tasks", new String[]{"_id"}, null, null, null, null, null);
+        while (cursor.moveToNext()) {
+            cancelTheTask(context, cursor.getInt(cursor.getColumnIndexOrThrow("_id")));
+        }
+        cursor.close();
+        db.close();
+    }
+
+    /**
+     * A delayed task is registered not under its row id but under a request code invented when it
+     * was scheduled, and those codes are kept per trigger: "OSA_&lt;package&gt;" and
+     * "OLA_&lt;package&gt;" for entering and leaving an application, "onScreenOn" and
+     * "onScreenOff" for the screen.
+     */
+    private static void cancelEveryPendingDelayTask(Context context) {
+        for (TrayItem item : new AppPreferences(context).getAll()) {
+            final String key = item.key();
+            if (key == null) {
+                continue;
+            }
+            if (key.startsWith("OSA_") || key.startsWith("OLA_")
+                    || "onScreenOn".equals(key) || "onScreenOff".equals(key)) {
+                cancelAllUnexecutedDelayTasks(context, key);
+            }
         }
     }
 

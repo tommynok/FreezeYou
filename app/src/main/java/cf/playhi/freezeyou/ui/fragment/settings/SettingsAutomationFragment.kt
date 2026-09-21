@@ -6,7 +6,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog
-import java.io.File
+import cf.playhi.freezeyou.utils.TasksUtils.deleteAllScheduledTasks
 
 @Keep
 class SettingsAutomationFragment : PreferenceFragmentCompat() {
@@ -22,14 +22,7 @@ class SettingsAutomationFragment : PreferenceFragmentCompat() {
                 R.string.caution
             )
                 .setPositiveButton(R.string.yes) { _, _ ->
-                    var file: File
-                    for (name in arrayOf(
-                        "scheduledTasks",
-                        "scheduledTriggerTasks"
-                    )) {
-                        file = requireContext().getDatabasePath(name)
-                        if (file.exists()) file.delete()
-                    }
+                    deleteAllScheduledTasks(requireContext())
                 }
                 .setNegativeButton(R.string.no, null)
                 .show()
