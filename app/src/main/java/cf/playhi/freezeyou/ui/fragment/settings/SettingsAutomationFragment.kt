@@ -1,12 +1,10 @@
 package cf.playhi.freezeyou.ui.fragment.settings
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.annotation.Keep
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import cf.playhi.freezeyou.R
-import cf.playhi.freezeyou.ui.UriAutoAllowManageActivity
 import cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog
 import java.io.File
 
@@ -15,12 +13,6 @@ class SettingsAutomationFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.spr_automation, rootKey)
-
-        findPreference<Preference?>("manageIpaAutoAllow")?.intent = Intent(
-            requireActivity(),
-            UriAutoAllowManageActivity::class.java
-        )
-            .putExtra("isIpaMode", true)
 
         findPreference<Preference?>("deleteAllScheduledTasks")?.setOnPreferenceClickListener {
             buildAlertDialog(

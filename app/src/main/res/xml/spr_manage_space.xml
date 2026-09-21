@@ -67,11 +67,5 @@
         app:singleLineTitle="false"
         app:summary="@string/summary_resetUseTimes"
         app:title="@string/resetUseTimes" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="deleteAllScheduledTasks"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_deleteAllScheduledTasks"
-        app:title="@string/delAllScheduledTasks" />
 
 </PreferenceScreen>

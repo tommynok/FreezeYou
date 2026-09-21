@@ -2,14 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Preference
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:title="@string/manageUriAutoAllow">
-        <intent
-            android:targetClass="cf.playhi.freezeyou.ui.UriAutoAllowManageActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
     <ListPreference
         app:defaultValue="0"
         app:entries="@array/selectFUFModeSelection"

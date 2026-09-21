@@ -99,27 +99,6 @@ class SettingsManageSpaceFragment : PreferenceFragmentCompat() {
             askIfResetTimes("ApplicationsUseTimes")
             true
         }
-        findPreference<Preference?>("deleteAllScheduledTasks")?.setOnPreferenceClickListener {
-            buildAlertDialog(
-                activity,
-                R.drawable.ic_warning,
-                R.string.askIfDel,
-                R.string.caution
-            )
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    var file: File
-                    for (name in arrayOf(
-                        "scheduledTasks",
-                        "scheduledTriggerTasks"
-                    )) {
-                        file = requireContext().getDatabasePath(name)
-                        if (file.exists()) file.delete()
-                    }
-                }
-                .setNegativeButton(R.string.no, null)
-                .show()
-            true
-        }
     }
 
     override fun onResume() {

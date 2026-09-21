@@ -18,11 +18,6 @@
             android:targetClass="cf.playhi.freezeyou.ui.UriAutoAllowManageActivity"
             android:targetPackage="cf.playhi.freezeyou" />
     </Preference>
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="manageIpaAutoAllow"
-        app:singleLineTitle="false"
-        app:title="@string/manageIpaAutoAllow" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
@@ -41,7 +36,7 @@
         app:iconSpaceReserved="false"
         app:key="deleteAllScheduledTasks"
         app:singleLineTitle="false"
-        app:summary="@string/delAllScheduledTasks"
+        app:summary="@string/summary_deleteAllScheduledTasks"
         app:title="@string/delAllScheduledTasks" />
 
 </PreferenceScreen>
