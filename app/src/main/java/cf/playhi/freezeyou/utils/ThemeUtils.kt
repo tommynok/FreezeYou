@@ -43,24 +43,19 @@ internal object ThemeUtils {
     /**
      * 主要用于各点的 getThemeDot 的另一（相对/相反）状态
      *
+     * The dot for "not frozen" is meant to be seen by nobody: it exists so that the row keeps its
+     * shape whether or not the application is frozen. It used to be painted in the theme's
+     * background colour, which works only as long as it sits on that background — on a selected
+     * row, drawn on a grey highlight, it turned into a visible light circle and read as a marker
+     * of its own. Nothing to see is the same on every background.
+     *
      * @param context Context
      * @return 资源 Id
      */
+    @Suppress("UNUSED_PARAMETER")
     @JvmStatic
     fun getThemeSecondDot(@NonNull context: Context): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return R.drawable.shapedot_colorbackground
-        }
-        val string = getUiTheme(context)
-        return if (string != null) {
-            when (string) {
-                "black", "deepBlack" -> R.drawable.shapedotblack
-                "blue", "orange", "green", "pink", "yellow", "white", "red" -> R.drawable.shapedotwhite
-                else -> R.drawable.shapedotwhite
-            }
-        } else {
-            R.drawable.shapedotwhite
-        }
+        return R.drawable.shapedot_transparent
     }
 
     @JvmStatic
