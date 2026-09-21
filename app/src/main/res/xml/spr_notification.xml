@@ -1,13 +1,53 @@
-<?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<?xml version="1.0" encoding="utf-8"?><!--
+    This screen used to hold two rows, one of which only led to another screen. The settings that
+    lived there are here now, under a heading that says what they are about.
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceScreen
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsNotificationFufFragment"
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="spr_notification_fuf"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_notificationBar_fuf"
-        app:title="@string/freezeAUF" />
+        app:title="@string/freezeAUF">
+
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="createQuickFUFNotiAfterUnfrozen"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_createQuickFUFNotiAfterUnfrozen"
+            app:title="@string/createQuickFUFNotiAfterUnfrozen" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="notificationBarFreezeImmediately"
+            app:singleLineTitle="false"
+            app:summary="@string/effectNextCreate"
+            app:title="@string/notificationBarFreezeImmediately" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="notificationBarDisableSlideOut"
+            app:singleLineTitle="false"
+            app:summary="@string/effectNextCreate"
+            app:title="@string/disableSlideOut" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="notificationBarDisableClickDisappear"
+            app:singleLineTitle="false"
+            app:summary="@string/effectNextCreate"
+            app:title="@string/disableClickDisappear" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:title="@string/manageQuickFUFNoti">
+            <intent
+                android:targetClass="cf.playhi.freezeyou.ui.FUFNotificationsManageActivity"
+                android:targetPackage="cf.playhi.freezeyou" />
+        </Preference>
+
+    </PreferenceCategory>
+
     <Preference
         app:iconSpaceReserved="false"
         app:key="notificationBar_more"

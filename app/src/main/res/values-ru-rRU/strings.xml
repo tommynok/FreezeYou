@@ -512,4 +512,27 @@
         <item>Темная</item>
         <item>Черная</item>
     </string-array>
+    <string name="mainScreenSettings">Главный экран</string>
+    <string name="accessAndSecurity">Вход и безопасность</string>
+    <string name="category_feedback">Отклик</string>
+    <string name="category_freezeMode">Режим</string>
+    <string name="category_protection">Защита</string>
+    <string name="category_shortcuts">Ярлыки</string>
+    <string name="category_afterUnfreeze">После разморозки</string>
+    <string name="category_cache">Кеш</string>
+    <string name="category_statistics">Статистика</string>
+    <string name="category_lists">Списки</string>
+    <string name="category_settings">Настройки</string>
+    <string name="category_maintenance">Обслуживание</string>
+    <string name="category_help">Справка</string>
+    <string name="summary_spr_mainScreen">Список или сетка, сортировка, что делает нажатие</string>
+    <string name="summary_spr_appearance">Тема, темный режим, язык, анимации</string>
+    <string name="summary_spr_fuf">Режим, защита, ярлыки, фоновая служба</string>
+    <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
+    <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
+    <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
+    <string name="summary_spr_installUninstall">Установка пакетов и что происходит после</string>
+    <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
+    <string name="summary_spr_advance">Отладка, служба специальных возможностей, опасная зона</string>
+    <string name="dangerZoneSummary">Стирание данных, отзыв прав владельца, удаление</string>
 </resources>

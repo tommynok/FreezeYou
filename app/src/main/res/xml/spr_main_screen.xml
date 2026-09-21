@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Everything that decides how the application list looks and behaves. These settings used to be
+    split between "Appearance" and "Common", though they all answer questions about one screen.
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        app:defaultValue="default"
+        app:entries="@array/mainActivityPatternSelection"
+        app:entryValues="@array/mainActivityPatternSelectionValues"
+        app:iconSpaceReserved="false"
+        app:key="mainActivityPattern"
+        app:singleLineTitle="false"
+        app:title="@string/mainActivityPattern"
+        app:useSimpleSummaryProvider="true" />
+    <CheckBoxPreference
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="greyFrozenApplicationsIcons"
+        app:singleLineTitle="false"
+        app:title="@string/greyFrozenApplicationsIcons" />
+    <ListPreference
+        app:defaultValue="all"
+        app:entries="@array/launchModeSelection"
+        app:entryValues="@array/launchModeSelectionValues"
+        app:iconSpaceReserved="false"
+        app:key="launchMode"
+        app:singleLineTitle="false"
+        app:title="@string/launchMode"
+        app:useSimpleSummaryProvider="true" />
+    <CheckBoxPreference
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="saveSortMethodStatus"
+        app:singleLineTitle="false"
+        app:title="@string/saveSortMethodStatus" />
+    <CheckBoxPreference
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="saveOnClickFunctionStatus"
+        app:singleLineTitle="false"
+        app:title="@string/saveOnClickFunctionStatus" />
+    <CheckBoxPreference
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="noCaution"
+        app:singleLineTitle="false"
+        app:title="@string/nSCaution" />
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/category_lists">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_manageMyCustomization"
+            app:title="@string/manageMyCustomization">
+            <intent
+                android:targetClass="cf.playhi.freezeyou.ui.UserDefinedListsManageActivity"
+                android:targetPackage="cf.playhi.freezeyou" />
+        </Preference>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

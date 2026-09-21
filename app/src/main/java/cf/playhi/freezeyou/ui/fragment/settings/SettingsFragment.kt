@@ -2,7 +2,6 @@ package cf.playhi.freezeyou.ui.fragment.settings
 
 import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -22,10 +21,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Load the preferences from an XML resource
         setPreferencesFromResource(R.xml.spr, rootKey)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            preferenceScreen?.removePreferenceRecursively("backgroundService")
-        }
 
     }
 

@@ -6,15 +6,15 @@ import androidx.preference.PreferenceFragmentCompat
 import cf.playhi.freezeyou.R
 
 @Keep
-class SettingsBackgroundServiceFragment : PreferenceFragmentCompat() {
+class SettingsMainScreenFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.spr_background_service, rootKey)
+        setPreferencesFromResource(R.xml.spr_main_screen, rootKey)
     }
 
     override fun onResume() {
         super.onResume()
-        activity?.setTitle(R.string.backgroundService)
+        activity?.setTitle(R.string.mainScreenSettings)
     }
 
 }

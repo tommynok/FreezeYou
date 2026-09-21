@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Everything that answers one question: how the application is entered, and by whom. The lock
+    was a screen of its own holding a single checkbox; the launcher icons and the dialer code were
+    another. Hiding from the recents list is here too — it is privacy, not a general preference.
+-->
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/security">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enableAuthentication"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_enableAuthentication"
+            app:title="@string/enableAuthentication" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:disableDependentsState="false"
+            app:iconSpaceReserved="false"
+            app:key="showInRecents"
+            app:singleLineTitle="false"
+            app:summary="@string/showInRecentsSummary"
+            app:title="@string/showInRecents" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="showInRecents"
+            app:iconSpaceReserved="false"
+            app:key="includeFUFActivityInRecents"
+            app:singleLineTitle="false"
+            app:summary="@string/includeFUFActivityInRecentsSummary"
+            app:title="@string/includeFUFActivityInRecents" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/iconAEntry">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:icon="@mipmap/ic_launcher"
+            app:iconSpaceReserved="false"
+            app:key="firstIconEnabled"
+            app:singleLineTitle="false" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:icon="@mipmap/ic_launcher_round"
+            app:iconSpaceReserved="false"
+            app:key="secondIconEnabled"
+            app:singleLineTitle="false" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:icon="@mipmap/ic_launcher_new_round"
+            app:iconSpaceReserved="false"
+            app:key="thirdIconEnabled"
+            app:singleLineTitle="false" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:summary="@string/dialEntry_Ex"
+            app:title="@string/dialEntry" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

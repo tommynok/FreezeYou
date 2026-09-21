@@ -511,4 +511,27 @@
         <item>Темна</item>
         <item>Чорна</item>
     </string-array>
+    <string name="mainScreenSettings">Головний екран</string>
+    <string name="accessAndSecurity">Вхід і безпека</string>
+    <string name="category_feedback">Відгук</string>
+    <string name="category_freezeMode">Режим</string>
+    <string name="category_protection">Захист</string>
+    <string name="category_shortcuts">Ярлики</string>
+    <string name="category_afterUnfreeze">Після розморозки</string>
+    <string name="category_cache">Кеш</string>
+    <string name="category_statistics">Статистика</string>
+    <string name="category_lists">Списки</string>
+    <string name="category_settings">Налаштування</string>
+    <string name="category_maintenance">Обслуговування</string>
+    <string name="category_help">Довідка</string>
+    <string name="summary_spr_mainScreen">Список або сітка, сортування, що робить натискання</string>
+    <string name="summary_spr_appearance">Тема, темний режим, мова, анімації</string>
+    <string name="summary_spr_fuf">Режим, захист, ярлики, фонова служба</string>
+    <string name="summary_spr_automation">Заплановані завдання, блокування екрана, вихід із додатка</string>
+    <string name="summary_spr_notification">Швидке сповіщення після розморозки та його поведінка</string>
+    <string name="summary_spr_access">Блокування, значки в лаунчері, вхід через дзвонилку</string>
+    <string name="summary_spr_installUninstall">Встановлення пакетів і що відбувається після</string>
+    <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
+    <string name="summary_spr_advance">Налагодження, служба спеціальних можливостей, небезпечна зона</string>
+    <string name="dangerZoneSummary">Стирання даних, відкликання прав власника, видалення</string>
 </resources>

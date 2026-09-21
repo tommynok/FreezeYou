@@ -1,119 +1,119 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+    Sixteen rows without a word of explanation, several of them leading to a screen with a single
+    switch on it. Now the rows are grouped by what they are for, each says what is inside, and the
+    screens holding one or two settings have been folded into the ones they belong with.
+-->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Preference
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="howToUse"
-        app:singleLineTitle="false"
-        app:title="@string/hToUse" />
+        app:title="@string/category_settings">
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsCommonFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_common"
-        app:singleLineTitle="false"
-        app:title="@string/common" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsMainScreenFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_mainScreen"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_mainScreen"
+            app:title="@string/mainScreenSettings" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAppearanceFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_appearance"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_appearance"
+            app:title="@string/appearance" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsFufFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_fuf"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_fuf"
+            app:title="@string/freezeAUF" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAutomationFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_automation"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_automation"
+            app:title="@string/automation" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsNotificationFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_notification"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_notification"
+            app:title="@string/notificationBar" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAccessFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_access"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_access"
+            app:title="@string/accessAndSecurity" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsInstallUninstallFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_installUninstall"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_installUninstall"
+            app:title="@string/installAndUninstall" />
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAppearanceFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_appearance"
-        app:singleLineTitle="false"
-        app:title="@string/appearance" />
+    </PreferenceCategory>
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsSecurityFragment"
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="spr_security"
-        app:singleLineTitle="false"
-        app:title="@string/security" />
+        app:title="@string/category_maintenance">
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsNotificationFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_notification"
-        app:singleLineTitle="false"
-        app:title="@string/notificationBar" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsManageSpaceFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_manageSpace"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_manageSpace"
+            app:title="@string/manageSpace" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="backupAndRestore"
+            app:singleLineTitle="false"
+            app:title="@string/backupAndRestore" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:title="@string/autoDiagnosis">
+            <intent
+                android:targetClass="cf.playhi.freezeyou.ui.AutoDiagnosisActivity"
+                android:targetPackage="cf.playhi.freezeyou" />
+        </Preference>
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAdvanceFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_advance"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_advance"
+            app:title="@string/advance" />
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAutomationFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_automation"
-        app:singleLineTitle="false"
-        app:title="@string/automation" />
+    </PreferenceCategory>
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsFufFragment"
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="spr_fuf"
-        app:singleLineTitle="false"
-        app:title="@string/freezeAUF" />
+        app:title="@string/category_help">
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsIconEntryFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_iconAEntry"
-        app:singleLineTitle="false"
-        app:title="@string/iconAEntry" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="howToUse"
+            app:singleLineTitle="false"
+            app:title="@string/hToUse" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:title="@string/about">
+            <intent
+                android:targetClass="cf.playhi.freezeyou.ui.AboutActivity"
+                android:targetPackage="cf.playhi.freezeyou" />
+        </Preference>
 
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsInstallUninstallFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_installUninstall"
-        app:singleLineTitle="false"
-        app:title="@string/installAndUninstall" />
-
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsBackgroundServiceFragment"
-        app:iconSpaceReserved="false"
-        app:key="backgroundService"
-        app:singleLineTitle="false"
-        app:title="@string/backgroundService" />
-
-    <Preference
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:title="@string/autoDiagnosis">
-        <intent
-            android:targetClass="cf.playhi.freezeyou.ui.AutoDiagnosisActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
-
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsManageSpaceFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_manageSpace"
-        app:singleLineTitle="false"
-        app:title="@string/manageSpace" />
-
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="backupAndRestore"
-        app:singleLineTitle="false"
-        app:title="@string/backupAndRestore" />
-
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAdvanceFragment"
-        app:iconSpaceReserved="false"
-        app:key="spr_advance"
-        app:singleLineTitle="false"
-        app:title="@string/advance" />
-
-    <Preference
-        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsDangerZoneFragment"
-        app:iconSpaceReserved="false"
-        app:key="dangerZone"
-        app:singleLineTitle="false"
-        app:title="@string/dangerZone" />
-
-    <Preference
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:title="@string/about">
-        <intent
-            android:targetClass="cf.playhi.freezeyou.ui.AboutActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
+    </PreferenceCategory>
 
 </PreferenceScreen>

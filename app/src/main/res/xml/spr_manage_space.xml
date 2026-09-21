@@ -1,71 +1,86 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+    Three different subjects used to sit here in one undivided list: caches, counters, and lists
+    left over from uninstalled applications. "My customization" was among them, although it is a
+    list one edits, not something taking up space — it lives on the main screen settings now.
+-->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Preference
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_manageMyCustomization"
-        app:title="@string/manageMyCustomization">
-        <intent
-            android:targetClass="cf.playhi.freezeyou.ui.UserDefinedListsManageActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
-    <Preference
+        app:title="@string/category_cache">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearIconCache"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_clearIconCache"
+            app:title="@string/clearIconCache" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearNameCache"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_clearNameCache"
+            app:title="@string/clearNameCache" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearAllCache"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_clearAllCache"
+            app:title="@string/delAllCache" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="clearUninstalledPkgsInOKFFList"
-        app:singleLineTitle="false"
-        app:title="@string/clearUninstalledPkgsInOKFFListAsterisk" />
-    <Preference
+        app:title="@string/category_statistics">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="resetFreezeTimes"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_resetFreezeTimes"
+            app:title="@string/resetFreezeTimes" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="resetUFTimes"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_resetUFTimes"
+            app:title="@string/resetUFTimes" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="resetUseTimes"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_resetUseTimes"
+            app:title="@string/resetUseTimes" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="clearUninstalledPkgsInOKUFList"
-        app:singleLineTitle="false"
-        app:title="@string/clearUninstalledPkgsInOKUFListAsterisk" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="clearUninstalledPkgsInFOQList"
-        app:singleLineTitle="false"
-        app:title="@string/clearUninstalledPkgsInFOQListAsterisk" />
-    <Preference
-        android:selectable="false"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_clearUninstalledPkgsInList" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="clearIconCache"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_clearIconCache"
-        app:title="@string/clearIconCache" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="clearNameCache"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_clearNameCache"
-        app:title="@string/clearNameCache" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="clearAllCache"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_clearAllCache"
-        app:title="@string/delAllCache" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="resetFreezeTimes"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_resetFreezeTimes"
-        app:title="@string/resetFreezeTimes" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="resetUFTimes"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_resetUFTimes"
-        app:title="@string/resetUFTimes" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:key="resetUseTimes"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_resetUseTimes"
-        app:title="@string/resetUseTimes" />
+        app:title="@string/category_lists">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearUninstalledPkgsInOKFFList"
+            app:singleLineTitle="false"
+            app:title="@string/clearUninstalledPkgsInOKFFListAsterisk" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearUninstalledPkgsInOKUFList"
+            app:singleLineTitle="false"
+            app:title="@string/clearUninstalledPkgsInOKUFListAsterisk" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clearUninstalledPkgsInFOQList"
+            app:singleLineTitle="false"
+            app:title="@string/clearUninstalledPkgsInFOQListAsterisk" />
+        <Preference
+            android:selectable="false"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_clearUninstalledPkgsInList" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

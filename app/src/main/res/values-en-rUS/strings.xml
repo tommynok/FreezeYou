@@ -462,4 +462,27 @@
         <item>Dark</item>
         <item>Black</item>
     </string-array>
+    <string name="mainScreenSettings">Main screen</string>
+    <string name="accessAndSecurity">Access and security</string>
+    <string name="category_feedback">Feedback</string>
+    <string name="category_freezeMode">Mode</string>
+    <string name="category_protection">Protection</string>
+    <string name="category_shortcuts">Shortcuts</string>
+    <string name="category_afterUnfreeze">After unfreezing</string>
+    <string name="category_cache">Cache</string>
+    <string name="category_statistics">Statistics</string>
+    <string name="category_lists">Lists</string>
+    <string name="category_settings">Settings</string>
+    <string name="category_maintenance">Maintenance</string>
+    <string name="category_help">Help</string>
+    <string name="summary_spr_mainScreen">List or grid, sorting, what a tap does</string>
+    <string name="summary_spr_appearance">Theme, dark mode, language, animations</string>
+    <string name="summary_spr_fuf">Mode, protection, shortcuts, background service</string>
+    <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
+    <string name="summary_spr_notification">The quick notification after unfreezing, and how it behaves</string>
+    <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
+    <string name="summary_spr_installUninstall">Installing packages and what happens afterwards</string>
+    <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
+    <string name="summary_spr_advance">Debugging, accessibility service, danger zone</string>
+    <string name="dangerZoneSummary">Wiping data, revoking ownership, uninstalling</string>
 </resources>

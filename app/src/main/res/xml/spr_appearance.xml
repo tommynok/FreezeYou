@@ -1,30 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+    How the application looks, and how loudly it reports what it is doing. The list and grid
+    settings moved to the main screen: they are about one screen, not about the whole theme.
+-->
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ListPreference
-        app:useSimpleSummaryProvider="true"
-        app:defaultValue="default"
-        app:entries="@array/mainActivityPatternSelection"
-        app:entryValues="@array/mainActivityPatternSelectionValues"
-        app:iconSpaceReserved="false"
-        app:key="mainActivityPattern"
-        app:singleLineTitle="false"
-        app:title="@string/mainActivityPattern" />
-    <CheckBoxPreference
-        app:defaultValue="true"
-        app:iconSpaceReserved="false"
-        app:key="greyFrozenApplicationsIcons"
-        app:singleLineTitle="false"
-        app:title="@string/greyFrozenApplicationsIcons" />
-    <ListPreference
-        app:useSimpleSummaryProvider="true"
         app:defaultValue="default"
         app:entries="@array/uiStyleSelection"
         app:entryValues="@array/uiStyleSelectionValues"
         app:iconSpaceReserved="false"
         app:key="uiStyleSelection"
         app:singleLineTitle="false"
-        app:title="@string/uiStyle" />
+        app:title="@string/uiStyle"
+        app:useSimpleSummaryProvider="true" />
     <CheckBoxPreference
         app:defaultValue="true"
         app:iconSpaceReserved="false"
@@ -33,14 +21,14 @@
         app:summary="@string/willOverrideInterfaceStyle"
         app:title="@string/allowFollowSystemAutoSwitchDarkMode" />
     <ListPreference
-        app:useSimpleSummaryProvider="true"
         app:defaultValue="default"
         app:entries="@array/themeOfAutoSwitchDarkModeEntries"
         app:entryValues="@array/themeOfAutoSwitchDarkModeEntryValues"
         app:iconSpaceReserved="false"
         app:key="themeOfAutoSwitchDarkMode"
         app:singleLineTitle="false"
-        app:title="@string/themeOfAutoSwitchDarkMode" />
+        app:title="@string/themeOfAutoSwitchDarkMode"
+        app:useSimpleSummaryProvider="true" />
     <ListPreference
         app:defaultValue="Default"
         app:entries="@array/displayLanguageOptionsSelection"
@@ -50,5 +38,25 @@
         app:singleLineTitle="false"
         app:title="@string/displayLanguage"
         app:useSimpleSummaryProvider="true" />
+
+    <!-- Both answer the same question: how much the application shows of what it just did. -->
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/category_feedback">
+
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="playFUFAnimations"
+            app:singleLineTitle="false"
+            app:title="@string/playFUFAnimations" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="lesserToast"
+            app:singleLineTitle="false"
+            app:title="@string/lesserToast" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>
