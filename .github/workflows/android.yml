@@ -69,8 +69,8 @@ jobs:
         tag="build-${BUILD}"
         gh release create "$tag" "$name" \
           --target "${{ github.sha }}" \
-          --title "Сборка ${BUILD}" \
-          --notes "Ветка \`${{ github.ref_name }}\`, коммит ${{ github.sha }}."
+          --title "Build ${BUILD}" \
+          --notes "Branch \`${{ github.ref_name }}\`, commit ${{ github.sha }}."
         echo "url=$(gh release view "$tag" --json url --jq .url)" >> "$GITHUB_OUTPUT"
 
     - name: Upload APK
@@ -81,4 +81,4 @@ jobs:
 
     - name: Add download link to job summary
       run: |
-        echo "### 📦 [Сборка ${{ github.run_number }} в Releases](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "### 📦 [Build ${{ github.run_number }} in Releases](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
