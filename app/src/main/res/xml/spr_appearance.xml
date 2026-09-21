@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-    How the application looks, and how loudly it reports what it is doing. The list and grid
+    How the application looks, and how much it shows of what it just did. The list and grid
     settings moved to the main screen: they are about one screen, not about the whole theme.
+
+    The two schemes read as a pair and are kept next to each other: the first is what is used,
+    the second is what is used instead while the system is in dark mode. Neither is declared a
+    dependency of the switch below them, so neither greys out — the order costs nothing.
 -->
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -13,13 +17,6 @@
         app:singleLineTitle="false"
         app:title="@string/uiStyle"
         app:useSimpleSummaryProvider="true" />
-    <CheckBoxPreference
-        app:defaultValue="true"
-        app:iconSpaceReserved="false"
-        app:key="allowFollowSystemAutoSwitchDarkMode"
-        app:singleLineTitle="false"
-        app:summary="@string/willOverrideInterfaceStyle"
-        app:title="@string/allowFollowSystemAutoSwitchDarkMode" />
     <ListPreference
         app:defaultValue="default"
         app:entries="@array/themeOfAutoSwitchDarkModeEntries"
@@ -29,6 +26,13 @@
         app:singleLineTitle="false"
         app:title="@string/themeOfAutoSwitchDarkMode"
         app:useSimpleSummaryProvider="true" />
+    <CheckBoxPreference
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="allowFollowSystemAutoSwitchDarkMode"
+        app:singleLineTitle="false"
+        app:summary="@string/willOverrideInterfaceStyle"
+        app:title="@string/allowFollowSystemAutoSwitchDarkMode" />
     <ListPreference
         app:defaultValue="Default"
         app:entries="@array/displayLanguageOptionsSelection"
@@ -39,11 +43,17 @@
         app:title="@string/displayLanguage"
         app:useSimpleSummaryProvider="true" />
 
-    <!-- Both answer the same question: how much the application shows of what it just did. -->
+    <!-- All three answer the same question: how much the application shows of what it just did. -->
     <PreferenceCategory
         app:iconSpaceReserved="false"
         app:title="@string/category_feedback">
 
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="greyFrozenApplicationsIcons"
+            app:singleLineTitle="false"
+            app:title="@string/greyFrozenApplicationsIcons" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:iconSpaceReserved="false"

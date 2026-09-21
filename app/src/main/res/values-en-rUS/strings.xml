@@ -102,7 +102,7 @@
     <string name="disableConfirmation">Confirm cancellation?</string>
     <string name="disabled">Disabled</string>
     <string name="notUpdatedForALongTimeMessage">Has not been updated for a long time, do you want to check for update now?</string>
-    <string name="uiStyle">Interface Style</string>
+    <string name="uiStyle">Colour scheme</string>
     <string name="willTakeEffectsNextLaunch">Will take effect the next time the application is launched</string>
     <string name="freezeAUF">Freeze and Unfreeze</string>
     <string name="notificationBar">Notification</string>
@@ -346,7 +346,7 @@
     <string name="disable_Root_disable">Freeze - ROOT(Disable)</string>
     <string name="enable_MRoot_DPM">Unfreeze - No-root(DPM)</string>
     <string name="disable_MRoot_DPM">Freeze - No-root(DPM)</string>
-    <string name="allowFollowSystemAutoSwitchDarkMode">Allow follow the system auto switch dark mode</string>
+    <string name="allowFollowSystemAutoSwitchDarkMode">Follow the system dark theme</string>
     <string name="willOverrideInterfaceStyle">Will override interface style</string>
     <string name="installPerimisionCheckFailed_ifContinue">Install permission check failed, continue?</string>
     <string name="jumpToSysInstaller">Go to system installer</string>
@@ -377,7 +377,7 @@
     <string name="lastUpdate">Recently Updated</string>
     <string name="alphabetical">Alphabetical</string>
     <string name="refresh">Refresh</string>
-    <string name="themeOfAutoSwitchDarkMode">Interface style of auto switch dark mode</string>
+    <string name="themeOfAutoSwitchDarkMode">Scheme for dark mode</string>
     <string name="bluetoothPermissionIsNotGranted">Related Bluetooth permission is not granted</string>
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">May cannot use the scheduled task to enable or disable Bluetooth</string>
     <string name="gotoStore">Go to the store</string>
@@ -485,4 +485,5 @@
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
     <string name="summary_spr_advance">Debugging, accessibility service, danger zone</string>
     <string name="dangerZoneSummary">Wiping data, revoking ownership, uninstalling</string>
+    <string name="summary_hToUse">The guide on the application website</string>
 </resources>

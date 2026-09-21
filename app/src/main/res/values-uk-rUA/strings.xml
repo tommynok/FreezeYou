@@ -43,7 +43,7 @@
     <string name="summary_notAllowWhenIsObsd">Блокує встановлення/видалення, якщо екран перекрито вікном іншого застосунку (захист від підміни натискань)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Відкладає оновлення застосунку, поки ви ним користуєтесь, і встановлює його, коли ви виходите</string>
     <string name="summary_manageIpaAutoAllow">Список застосунків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
-    <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи застосунків</string>
+    <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи додатків</string>
     <string name="summary_clearUninstalledPkgsInList">* Видаляє зі списку лише ті застосунки, які ви вже видалили з пристрою — решта пунктів списку не змінюється</string>
     <string name="clearUninstalledPkgsInOKFFListAsterisk">Прибрати видалені додатки з OneKEY заморозка *</string>
     <string name="clearUninstalledPkgsInOKUFListAsterisk">Прибрати видалені додатки з OneKEY розморозка *</string>
@@ -82,7 +82,7 @@
     <string name="common">Загальні налаштування</string>
     <string name="openImmediately">Відкрити негайно</string>
     <string name="openImmediatelyEx">Запустити додаток відразу після розморозки</string>
-    <string name="hToUse">Як користуватися (довідка на сайті програми)</string>
+    <string name="hToUse">Як користуватися</string>
     <string name="openAndUFImmediately">Негайна розморозка і запуск при натисканні на ярлик</string>
     <string name="openAndUFImmediatelyEx">Більше не можна використовувати ярлик для заморозки додатку.</string>
     <string name="quickView">Швидкий перегляд</string>
@@ -125,7 +125,7 @@
     <string name="disableConfirmation">Підтвердити скасування?</string>
     <string name="disabled">Відключено</string>
     <string name="notUpdatedForALongTimeMessage">Давно не оновлювалося, хочете перевірити наявність оновлень зараз?</string>
-    <string name="uiStyle">Колірна тема</string>
+    <string name="uiStyle">Колірна схема</string>
     <string name="willTakeEffectsNextLaunch">Вступить в силу при наступному запуску програми</string>
     <string name="freezeAUF">Заморозка і розморозка</string>
     <string name="notificationBar">Сповіщення</string>
@@ -150,7 +150,7 @@
     <string name="accessibility_service_description">Стежити за змінами додатків переднього плану. Використовується для роботи функції, котра запобігає заморозку додатків переднього плану при автозаморозці, і для автозаморози додатків, коли вони не є додатками переднього плану, і т.д.</string>
     <string name="configureAccessibilityService">Налаштування служби спеціальних можливостей</string>
     <string name="freezeOnceQuit">Заморозка після виходу</string>
-    <string name="freezeOnceQuitSummary">Вмикає список «Заморожування при виході»: додані до нього застосунки заморожуються автоматично, щойно ви їх закриваєте.</string>
+    <string name="freezeOnceQuitSummary">Вмикає список «Заморозка після виходу»: додані до нього додатки заморожуються автоматично, щойно ви їх закриваєте.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
     <string name="invalidArguments">Неправильні параметри</string>
     <string name="exceptionHC">Стався виняток, але операція продовжиться:</string>
@@ -386,7 +386,7 @@
     <string name="disable_Root_disable">Заморозка - ROOT (відключити)</string>
     <string name="enable_MRoot_DPM">Розморозка - без-ROOT (DPM)</string>
     <string name="disable_MRoot_DPM">Заморозка без-ROOT (DPM)</string>
-    <string name="allowFollowSystemAutoSwitchDarkMode">Підтримувати перемикання колірної теми як в системі</string>
+    <string name="allowFollowSystemAutoSwitchDarkMode">Слідувати системній темній темі</string>
     <string name="willOverrideInterfaceStyle">Перевизначить стиль інтерфейсу</string>
     <string name="installPerimisionCheckFailed_ifContinue">Перевірка дозволу установки не вдалася, продовжити?</string>
     <string name="jumpToSysInstaller">Перейти до системного установника</string>
@@ -423,7 +423,7 @@
     <string name="lastUpdate">Нещодавно оновлені</string>
     <string name="alphabetical">За алфавітом</string>
     <string name="refresh">Оновити</string>
-    <string name="themeOfAutoSwitchDarkMode">Стиль інтерфейсу для автоматичного перемикання темного режиму</string>
+    <string name="themeOfAutoSwitchDarkMode">Схема для темного режиму</string>
     <string name="bluetoothPermissionIsNotGranted">Пов\'язаний дозвіл Bluetooth не надано</string>
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Можливо, не вдасться використати заплановані завдання для ввімкнення або вимкнення Bluetooth</string>
     <string name="gotoStore">Перейти до магазину</string>
@@ -534,4 +534,5 @@
     <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
     <string name="summary_spr_advance">Налагодження, служба спеціальних можливостей, небезпечна зона</string>
     <string name="dangerZoneSummary">Стирання даних, відкликання прав власника, видалення</string>
+    <string name="summary_hToUse">Довідка на сайті програми</string>
 </resources>

@@ -43,7 +43,7 @@
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
-    <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте свои собственные группы приложений</string>
+    <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
     <string name="summary_clearUninstalledPkgsInList">* Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
     <string name="clearUninstalledPkgsInOKFFListAsterisk">Убрать удаленные приложения из OneKEY заморозка *</string>
     <string name="clearUninstalledPkgsInOKUFListAsterisk">Убрать удаленные приложения из OneKEY разморозка *</string>
@@ -82,7 +82,7 @@
     <string name="common">Общие настройки</string>
     <string name="openImmediately">Открыть немедленно</string>
     <string name="openImmediatelyEx">Открыть приложение сразу после разморозки</string>
-    <string name="hToUse">Как пользоваться (справка на сайте приложения)</string>
+    <string name="hToUse">Как пользоваться</string>
     <string name="openAndUFImmediately">Немедленная разморозка и запуск при нажатии на ярлык</string>
     <string name="openAndUFImmediatelyEx">Больше нельзя использовать ярлык для заморозки приложения.</string>
     <string name="quickView">Быстрый просмотр</string>
@@ -125,7 +125,7 @@
     <string name="disableConfirmation">Подтвердить отмену?</string>
     <string name="disabled">Отключено</string>
     <string name="notUpdatedForALongTimeMessage">Давно не обновлялось, хотите проверить наличие обновлений сейчас?</string>
-    <string name="uiStyle">Цветовая тема</string>
+    <string name="uiStyle">Цветовая схема</string>
     <string name="willTakeEffectsNextLaunch">Вступит в силу при следующем запуске приложения</string>
     <string name="freezeAUF">Заморозка и разморозка</string>
     <string name="notificationBar">Уведомления</string>
@@ -150,7 +150,7 @@
     <string name="accessibility_service_description">Следить за изменениями приложений переднего плана. \nИспользуется для работы функции, которая предотвращает заморозку приложений переднего плана при авто-заморозке, и для автозаморозки приложений, когда они не являются приложениями переднего плана, и т.д.</string>
     <string name="configureAccessibilityService">Настройка службы специальных возможностей</string>
     <string name="freezeOnceQuit">Заморозка после выхода</string>
-    <string name="freezeOnceQuitSummary">Включает список «Заморозка при выходе»: добавленные в него приложения замораживаются автоматически, как только вы их закрываете.</string>
+    <string name="freezeOnceQuitSummary">Включает список «Заморозка после выхода»: добавленные в него приложения замораживаются автоматически, как только вы их закрываете.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="exceptionHC">Произошло исключение, но операция продолжится:</string>
@@ -386,7 +386,7 @@
     <string name="disable_Root_disable">Заморозка - ROOT (отключить)</string>
     <string name="enable_MRoot_DPM">Разморозка - без-ROOT (DPM)</string>
     <string name="disable_MRoot_DPM">Заморозка без-ROOT (DPM)</string>
-    <string name="allowFollowSystemAutoSwitchDarkMode">Поддерживать переключение цветовой темы как в системе</string>
+    <string name="allowFollowSystemAutoSwitchDarkMode">Следовать системной темной теме</string>
     <string name="willOverrideInterfaceStyle">Переопределит стиль интерфейса</string>
     <string name="installPerimisionCheckFailed_ifContinue">Проверка разрешения установки не удалась, продолжить?</string>
     <string name="jumpToSysInstaller">Перейти к системному установщику</string>
@@ -424,7 +424,7 @@
     <string name="lastUpdate">Недавно обновленные</string>
     <string name="alphabetical">В алфавитном порядке</string>
     <string name="refresh">Обновить</string>
-    <string name="themeOfAutoSwitchDarkMode">Стиль интерфейса автопереключения темного режима</string>
+    <string name="themeOfAutoSwitchDarkMode">Схема для темного режима</string>
     <string name="bluetoothPermissionIsNotGranted">Связанное разрешение Bluetooth не предоставлено</string>
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Возможно, не удастся использовать запланированные задачи для включения или отключения Bluetooth</string>
     <string name="gotoStore">Перейти в магазин приложений</string>
@@ -535,4 +535,5 @@
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
     <string name="summary_spr_advance">Отладка, служба специальных возможностей, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных, отзыв прав владельца, удаление</string>
+    <string name="summary_hToUse">Справка на сайте приложения</string>
 </resources>

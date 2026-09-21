@@ -104,6 +104,7 @@
             app:iconSpaceReserved="false"
             app:key="howToUse"
             app:singleLineTitle="false"
+            app:summary="@string/summary_hToUse"
             app:title="@string/hToUse" />
         <Preference
             app:iconSpaceReserved="false"

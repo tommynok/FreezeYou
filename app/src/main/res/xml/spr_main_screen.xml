@@ -14,12 +14,6 @@
         app:singleLineTitle="false"
         app:title="@string/mainActivityPattern"
         app:useSimpleSummaryProvider="true" />
-    <CheckBoxPreference
-        app:defaultValue="true"
-        app:iconSpaceReserved="false"
-        app:key="greyFrozenApplicationsIcons"
-        app:singleLineTitle="false"
-        app:title="@string/greyFrozenApplicationsIcons" />
     <ListPreference
         app:defaultValue="all"
         app:entries="@array/launchModeSelection"
