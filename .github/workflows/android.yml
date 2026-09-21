@@ -6,6 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Needed to publish the build to Releases.
+    permissions:
+      contents: write
     env:
       JAVA_TOOL_OPTIONS: -XX:-UseContainerSupport
     steps:
@@ -49,8 +52,28 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew assembleRelease --stacktrace
 
+    # A release carries the APK itself, so it installs straight from the phone's
+    # browser. An artifact is a zip that has to be unpacked first, which is why
+    # the release is what the summary links to.
+    - name: Publish the APK to Releases
+      id: release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        BUILD: ${{ github.run_number }}
+      run: |
+        set -euo pipefail
+        apk="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
+        name="FreezeYou-build${BUILD}.apk"
+        cp "$apk" "$name"
+        # The run number only ever grows, so the tag is unique without any bookkeeping.
+        tag="build-${BUILD}"
+        gh release create "$tag" "$name" \
+          --target "${{ github.sha }}" \
+          --title "Сборка ${BUILD}" \
+          --notes "Ветка \`${{ github.ref_name }}\`, коммит ${{ github.sha }}."
+        echo "url=$(gh release view "$tag" --json url --jq .url)" >> "$GITHUB_OUTPUT"
+
     - name: Upload APK
-      id: upload-apk
       uses: actions/upload-artifact@v4
       with:
         name: app-release
@@ -58,4 +81,4 @@ jobs:
 
     - name: Add download link to job summary
       run: |
-        echo "### 📦 [Download app-release.apk](${{ steps.upload-apk.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "### 📦 [Сборка ${{ github.run_number }} в Releases](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
