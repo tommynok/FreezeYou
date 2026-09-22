@@ -88,7 +88,7 @@
     <string name="quickView">Quick View</string>
     <string name="nCaution">Don\'t remind</string>
     <string name="nSCaution">No longer show the warning at startup</string>
-    <string name="advance">Advanced</string>
+    <string name="advance">Other settings</string>
     <string name="manualMode">Manual Mode</string>
     <string name="packageName">Package Name</string>
     <string name="disable_MRoot">Freeze - NO-ROOT</string>

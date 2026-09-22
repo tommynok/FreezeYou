@@ -88,7 +88,7 @@
     <string name="quickView">Быстрый просмотр</string>
     <string name="nCaution">Не напоминать</string>
     <string name="nSCaution">Больше не показывать предупреждение при запуске</string>
-    <string name="advance">Дополнительно</string>
+    <string name="advance">Прочие настройки</string>
     <string name="manualMode">Ручной режим</string>
     <string name="packageName">Имя пакета</string>
     <string name="disable_MRoot">Заморозка - без-ROOT</string>
