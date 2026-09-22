@@ -19,6 +19,7 @@ import java.util.Locale;
 import cf.playhi.freezeyou.utils.DataStatisticsUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ProcessSharedState;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
@@ -116,6 +117,18 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     @Override
     public void onInterrupt() {
 
+    }
+
+    /**
+     * Android unbinds this service when the user takes the permission away. The last package it
+     * saw is kept in shared storage, which outlives the process, so leaving it there would mean
+     * the "do not freeze the foreground application" guard went on refusing to freeze whatever
+     * happened to be in front at that moment — for good, with nothing left to update it.
+     */
+    @Override
+    public boolean onUnbind(android.content.Intent intent) {
+        ProcessSharedState.clearForegroundPackage();
+        return super.onUnbind(intent);
     }
 
     private void onApplicationsForeground(String previousPkg, String pkgNameString) {

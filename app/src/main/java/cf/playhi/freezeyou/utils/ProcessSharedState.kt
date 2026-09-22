@@ -29,9 +29,20 @@ object ProcessSharedState {
         DefaultMultiProcessMMKVStorage().putString(KEY_FOREGROUND_PACKAGE, pkgName)
     }
 
+    /**
+     * Called when the accessibility service is unbound: what it last saw is no longer news, and a
+     * value nobody updates any more would keep a guard refusing freezes forever.
+     */
+    @JvmStatic
+    fun clearForegroundPackage() {
+        DefaultMultiProcessMMKVStorage().putString(KEY_FOREGROUND_PACKAGE, "")
+    }
+
     @JvmStatic
     fun getForegroundPackage(): String? {
-        return DefaultMultiProcessMMKVStorage().getString(KEY_FOREGROUND_PACKAGE, null)
+        return DefaultMultiProcessMMKVStorage()
+            .getString(KEY_FOREGROUND_PACKAGE, null)
+            ?.takeIf { it.isNotEmpty() }
     }
 
     /**

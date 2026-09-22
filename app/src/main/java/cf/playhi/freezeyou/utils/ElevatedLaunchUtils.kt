@@ -28,11 +28,14 @@ object ElevatedLaunchUtils {
      */
     @JvmStatic
     fun startActivityElevatedAsync(context: Context, pkgName: String, target: String) {
+        // `su` blocks for as long as it takes, and the activity that asked may well be finished
+        // by the time there is an answer — so the toast goes through the application context.
+        val appContext = context.applicationContext
         Thread {
             val launched = startActivityElevated(pkgName, target)
             Handler(Looper.getMainLooper()).post {
                 ToastUtils.showToast(
-                    context,
+                    appContext,
                     if (launched) R.string.executed else R.string.insufficientPermission
                 )
             }

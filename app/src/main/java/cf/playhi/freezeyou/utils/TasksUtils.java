@@ -556,14 +556,19 @@ public final class TasksUtils {
      * by the request codes recorded for them when they were scheduled.
      */
     public static void deleteAllScheduledTasks(Context context) {
-        cancelEveryTimeTask(context);
-        cancelEveryPendingDelayTask(context);
-        for (String name : new String[]{"scheduledTasks", "scheduledTriggerTasks"}) {
-            final File file = context.getDatabasePath(name);
-            if (file.exists() && !file.delete()) {
-                Log.e("FreezeYou", "Could not delete the database " + name);
+        // Called from a dialog button, so off the main thread: this reads a database, talks to
+        // the preference provider and deletes files.
+        final Context appContext = context.getApplicationContext();
+        new Thread(() -> {
+            cancelEveryTimeTask(appContext);
+            cancelEveryPendingDelayTask(appContext);
+            for (String name : new String[]{"scheduledTasks", "scheduledTriggerTasks"}) {
+                final File file = appContext.getDatabasePath(name);
+                if (file.exists() && !file.delete()) {
+                    Log.e("FreezeYou", "Could not delete the database " + name);
+                }
             }
-        }
+        }).start();
     }
 
     private static void cancelEveryTimeTask(Context context) {
@@ -575,13 +580,18 @@ public final class TasksUtils {
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,hour integer(2),minutes integer(2),repeat varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
         );
-        final Cursor cursor =
-                db.query("tasks", new String[]{"_id"}, null, null, null, null, null);
-        while (cursor.moveToNext()) {
-            cancelTheTask(context, cursor.getInt(cursor.getColumnIndexOrThrow("_id")));
+        Cursor cursor = null;
+        try {
+            cursor = db.query("tasks", new String[]{"_id"}, null, null, null, null, null);
+            while (cursor.moveToNext()) {
+                cancelTheTask(context, cursor.getInt(cursor.getColumnIndexOrThrow("_id")));
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.close();
         }
-        cursor.close();
-        db.close();
     }
 
     /**

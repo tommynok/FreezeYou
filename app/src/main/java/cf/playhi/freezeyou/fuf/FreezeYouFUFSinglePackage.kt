@@ -10,6 +10,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.openImmediately
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.ui.AskRunActivity
+import cf.playhi.freezeyou.utils.ElevatedLaunchUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndCreateFUFQuickNotification
 import cf.playhi.freezeyou.utils.FUFUtils.isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying
 import cf.playhi.freezeyou.utils.FUFUtils.isOnlyUnfreezeTarget
@@ -154,7 +155,12 @@ class FreezeYouFUFSinglePackage(
                         context.startActivity(intent)
                     } catch (e: SecurityException) {
                         e.printStackTrace()
-                        return ERROR_NO_SUFFICIENT_PERMISSION_TO_START_THIS_ACTIVITY
+                        // Refused because the target is not exported. This is the path a shortcut
+                        // takes, and the activity picker now offers non-exported targets whenever
+                        // root or Shizuku is configured — so retry the way the other launch path
+                        // does, instead of reporting a refusal for something that can be started.
+                        // The elevated attempt reports its own result when it finishes.
+                        ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
                     }
                 }
             } else if (

@@ -68,126 +68,139 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
         init();
     }
 
+    /**
+     * Off the main thread on purpose. Asking the system for a package's activities can fail for a
+     * large package, and the fallback then parses the whole APK in this process and loads an icon
+     * and a label per row. That is exactly the case for Google Play services or Settings — the
+     * packages with hundreds of activities — so doing it in onCreate was an ANR waiting to happen.
+     */
     private void init() {
-        final ArrayList<HashMap<String, Object>> arrayList = new ArrayList<>();
-        Intent intent = getIntent();
+        final Intent intent = getIntent();
         if (intent == null) {
             finish();
-        } else {
-            final String pkgName = intent.getStringExtra("pkgName");
-            if (pkgName == null) {
-                finish();
-            } else {
-                HashMap<String, Object> hm = new HashMap<>();
-                hm.put("Img",
-                        getApplicationIcon(
-                                this,
-                                pkgName,
-                                getApplicationInfoFromPkgName(pkgName, this),
-                                false));
-                hm.put("Name", getString(R.string.launch));
-                hm.put("Label",
-                        getApplicationLabel(
-                                this, getPackageManager(),
-                                getApplicationInfoFromPkgName(pkgName, this), pkgName)
-                );
-                arrayList.add(hm);
+            return;
+        }
+        final String pkgName = intent.getStringExtra("pkgName");
+        if (pkgName == null) {
+            finish();
+            return;
+        }
+        new Thread(() -> buildListAndShow(pkgName)).start();
+    }
 
-                HashMap<String, Object> hm2 = new HashMap<>();
-                hm2.put("Img",
-                        getApplicationIcon(
-                                this,
-                                pkgName,
-                                getApplicationInfoFromPkgName(pkgName, this),
-                                false));
-                hm2.put("Name", getString(R.string.onlyUnfreeze));
-                hm2.put("Label",
-                        getApplicationLabel(
-                                this, getPackageManager(),
-                                getApplicationInfoFromPkgName(pkgName, this), pkgName)
-                );
-                arrayList.add(hm2);
+    private void buildListAndShow(final String pkgName) {
+        final ArrayList<HashMap<String, Object>> arrayList = new ArrayList<>();
+        HashMap<String, Object> hm = new HashMap<>();
+        hm.put("Img",
+                getApplicationIcon(
+                        this,
+                        pkgName,
+                        getApplicationInfoFromPkgName(pkgName, this),
+                        false));
+        hm.put("Name", getString(R.string.launch));
+        hm.put("Label",
+                getApplicationLabel(
+                        this, getPackageManager(),
+                        getApplicationInfoFromPkgName(pkgName, this), pkgName)
+        );
+        arrayList.add(hm);
 
-                PackageManager pm = getPackageManager();
-                ActivityInfo[] activityInfos = getActivitiesFromSystem(pm, pkgName);
-                // The system answer travels over a binder transaction with a ~1MB ceiling. Packages
-                // like Google Play services or Settings declare far more activities than fit, and
-                // the call throws instead of returning a shorter list — which is why those used to
-                // show nothing at all. Parsing the APK happens in this process, with no such limit.
-                boolean fromArchive = false;
-                if (activityInfos == null || activityInfos.length == 0) {
-                    activityInfos = getActivitiesFromApk(pm, pkgName);
-                    fromArchive = activityInfos != null;
+        HashMap<String, Object> hm2 = new HashMap<>();
+        hm2.put("Img",
+                getApplicationIcon(
+                        this,
+                        pkgName,
+                        getApplicationInfoFromPkgName(pkgName, this),
+                        false));
+        hm2.put("Name", getString(R.string.onlyUnfreeze));
+        hm2.put("Label",
+                getApplicationLabel(
+                        this, getPackageManager(),
+                        getApplicationInfoFromPkgName(pkgName, this), pkgName)
+        );
+        arrayList.add(hm2);
+
+        PackageManager pm = getPackageManager();
+        ActivityInfo[] activityInfos = getActivitiesFromSystem(pm, pkgName);
+        // The system answer travels over a binder transaction with a ~1MB ceiling. Packages
+        // like Google Play services or Settings declare far more activities than fit, and
+        // the call throws instead of returning a shorter list — which is why those used to
+        // show nothing at all. Parsing the APK happens in this process, with no such limit.
+        boolean fromArchive = false;
+        if (activityInfos == null || activityInfos.length == 0) {
+            activityInfos = getActivitiesFromApk(pm, pkgName);
+            fromArchive = activityInfos != null;
+        }
+
+        // Starting a non-exported activity needs root or Shizuku. Without one of those
+        // configured, listing them would only offer the user targets that cannot work,
+        // so they are left out entirely rather than explained away in every row.
+        final boolean canLaunchNonExported = elevatedLaunchAvailable();
+
+        if (activityInfos != null) {
+            for (ActivityInfo activityInfo : activityInfos) {
+                String ais = activityInfo.name;
+                if (ais == null) {
+                    continue;
                 }
-
-                // Starting a non-exported activity needs root or Shizuku. Without one of those
-                // configured, listing them would only offer the user targets that cannot work,
-                // so they are left out entirely rather than explained away in every row.
-                final boolean canLaunchNonExported = elevatedLaunchAvailable();
-
-                if (activityInfos != null) {
-                    for (ActivityInfo activityInfo : activityInfos) {
-                        String ais = activityInfo.name;
-                        if (ais == null) {
-                            continue;
-                        }
-                        if (!activityInfo.exported && !canLaunchNonExported) {
-                            continue;
-                        }
-                        // Non-exported activities used to be filtered out entirely. Since
-                        // Android 12 forces every component to declare android:exported
-                        // and almost everything is declared false, that hid nearly the
-                        // whole list. They are listed and labelled instead: starting one
-                        // falls back to a root/Shizuku launch, which is allowed to.
-                        HashMap<String, Object> hashMap = new HashMap<>();
-                        String label;
-                        if (fromArchive) {
-                            // An ActivityInfo parsed out of an APK carries no resource paths, so
-                            // asking it for its icon and label would reopen the APK per row. The
-                            // class name is what the user picks by anyway.
-                            hashMap.put("Img", getApplicationIcon(
-                                    this, pkgName, getApplicationInfoFromPkgName(pkgName, this), false));
-                            int dot = ais.lastIndexOf('.');
-                            label = dot >= 0 && dot < ais.length() - 1 ? ais.substring(dot + 1) : ais;
-                        } else {
-                            hashMap.put("Img", activityInfo.loadIcon(pm));
-                            label = activityInfo.loadLabel(pm).toString();
-                        }
-                        hashMap.put("Name", ais);
-                        hashMap.put("Label", label);
-                        arrayList.add(hashMap);
-                    }
+                if (!activityInfo.exported && !canLaunchNonExported) {
+                    continue;
                 }
-
-                final SimpleAdapter adapter =
-                        new SimpleAdapter(
-                                SelectTargetActivityActivity.this,
-                                arrayList,
-                                R.layout.staa_main_item,
-                                new String[]{"Img", "Label", "Name"},
-                                new int[]{
-                                        R.id.staa_main_item_imageView,
-                                        R.id.staa_main_item_textView,
-                                        R.id.staa_main_item_subtitle_textView
-                                });
-
-                adapter.setViewBinder((view, data, textRepresentation) -> {
-                    if (view instanceof ImageView && data instanceof Drawable) {
-                        ((ImageView) view).setImageDrawable((Drawable) data);
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-
-                ListView staaMainListView = findViewById(R.id.staa_main_listView);
-
-                staaMainListView.setAdapter(adapter);
-
-                staaMainListView.setOnItemClickListener((parent, view, position, id) ->
-                        selectAndFinish(arrayList, position, pkgName));
+                // Non-exported activities used to be filtered out entirely. Since
+                // Android 12 forces every component to declare android:exported
+                // and almost everything is declared false, that hid nearly the
+                // whole list. They are listed and labelled instead: starting one
+                // falls back to a root/Shizuku launch, which is allowed to.
+                HashMap<String, Object> hashMap = new HashMap<>();
+                String label;
+                if (fromArchive) {
+                    // An ActivityInfo parsed out of an APK carries no resource paths, so
+                    // asking it for its icon and label would reopen the APK per row. The
+                    // class name is what the user picks by anyway.
+                    hashMap.put("Img", getApplicationIcon(
+                            this, pkgName, getApplicationInfoFromPkgName(pkgName, this), false));
+                    int dot = ais.lastIndexOf('.');
+                    label = dot >= 0 && dot < ais.length() - 1 ? ais.substring(dot + 1) : ais;
+                } else {
+                    hashMap.put("Img", activityInfo.loadIcon(pm));
+                    label = activityInfo.loadLabel(pm).toString();
+                }
+                hashMap.put("Name", ais);
+                hashMap.put("Label", label);
+                arrayList.add(hashMap);
             }
         }
+
+        final SimpleAdapter adapter =
+                new SimpleAdapter(
+                        SelectTargetActivityActivity.this,
+                        arrayList,
+                        R.layout.staa_main_item,
+                        new String[]{"Img", "Label", "Name"},
+                        new int[]{
+                                R.id.staa_main_item_imageView,
+                                R.id.staa_main_item_textView,
+                                R.id.staa_main_item_subtitle_textView
+                        });
+
+        adapter.setViewBinder((view, data, textRepresentation) -> {
+            if (view instanceof ImageView && data instanceof Drawable) {
+                ((ImageView) view).setImageDrawable((Drawable) data);
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        runOnUiThread(() -> {
+            if (isFinishing()) {
+                return;
+            }
+            ListView staaMainListView = findViewById(R.id.staa_main_listView);
+            staaMainListView.setAdapter(adapter);
+            staaMainListView.setOnItemClickListener((parent, view, position, id) ->
+                    selectAndFinish(arrayList, position, pkgName));
+        });
 
     }
 
