@@ -483,7 +483,7 @@
     <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
     <string name="summary_spr_installUninstall">Installing packages and what happens afterwards</string>
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
-    <string name="summary_spr_advance">Debugging, accessibility service, danger zone</string>
+    <string name="summary_spr_advance">Installing packages, debugging, accessibility service, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
     <string name="summary_hToUse">The guide on the application website</string>
 </resources>

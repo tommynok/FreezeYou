@@ -533,7 +533,7 @@
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
     <string name="summary_spr_installUninstall">Установка пакетов и что происходит после</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
-    <string name="summary_spr_advance">Отладка, служба специальных возможностей, опасная зона</string>
+    <string name="summary_spr_advance">Установка пакетов, отладка, служба специальных возможностей, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
     <string name="summary_hToUse">Справка на сайте приложения</string>
 </resources>

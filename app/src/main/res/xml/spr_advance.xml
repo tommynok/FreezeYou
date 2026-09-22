@@ -2,6 +2,14 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- Installing packages through FreezeYou is a side line, not something reached daily. -->
+    <Preference
+        app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsInstallUninstallFragment"
+        app:iconSpaceReserved="false"
+        app:key="spr_installUninstall"
+        app:singleLineTitle="false"
+        app:summary="@string/summary_spr_installUninstall"
+        app:title="@string/installAndUninstall" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"

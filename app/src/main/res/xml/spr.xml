@@ -52,13 +52,6 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_spr_access"
             app:title="@string/accessAndSecurity" />
-        <Preference
-            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsInstallUninstallFragment"
-            app:iconSpaceReserved="false"
-            app:key="spr_installUninstall"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_spr_installUninstall"
-            app:title="@string/installAndUninstall" />
 
     </PreferenceCategory>
 
