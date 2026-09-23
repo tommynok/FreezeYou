@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -29,6 +30,7 @@ import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
+import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
 
@@ -85,7 +87,29 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
             finish();
             return;
         }
-        new Thread(() -> buildListAndShow(pkgName)).start();
+        // Anything thrown while reading a foreign package would otherwise leave the spinner
+        // turning for ever, with no way to tell that from a slow package.
+        new Thread(() -> {
+            try {
+                buildListAndShow(pkgName);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                runOnUiThread(() -> {
+                    if (isFinishing()) {
+                        return;
+                    }
+                    hideLoadingIndicator();
+                    showToast(SelectTargetActivityActivity.this, R.string.failed);
+                });
+            }
+        }).start();
+    }
+
+    private void hideLoadingIndicator() {
+        View progressBar = findViewById(R.id.staa_main_loading_progressBar);
+        if (progressBar != null) {
+            progressBar.setVisibility(View.GONE);
+        }
     }
 
     private void buildListAndShow(final String pkgName) {
@@ -196,6 +220,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
             if (isFinishing()) {
                 return;
             }
+            hideLoadingIndicator();
             ListView staaMainListView = findViewById(R.id.staa_main_listView);
             staaMainListView.setAdapter(adapter);
             staaMainListView.setOnItemClickListener((parent, view, position, id) ->
