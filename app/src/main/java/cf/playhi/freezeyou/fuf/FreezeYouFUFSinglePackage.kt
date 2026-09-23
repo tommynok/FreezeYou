@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.fuf
 
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -161,6 +162,19 @@ class FreezeYouFUFSinglePackage(
                         // does, instead of reporting a refusal for something that can be started.
                         // The elevated attempt reports its own result when it finishes.
                         ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
+                    } catch (e: ActivityNotFoundException) {
+                        e.printStackTrace()
+                        // The picker also lists components the system will not start directly: ones
+                        // disabled in the manifest, and ones read out of the APK that the package
+                        // manager does not resolve. Both land here rather than in SecurityException,
+                        // and this used to leave the exception uncaught — which killed the process
+                        // instead of the launch. The elevated path can still start some of them.
+                        ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
+                    } catch (e: Exception) {
+                        // Whatever else a foreign component throws on the way up, it is not worth
+                        // the process. Reported and dropped.
+                        e.printStackTrace()
+                        showToast(context, R.string.failed)
                     }
                 }
             } else if (

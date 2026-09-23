@@ -106,7 +106,8 @@
     <string name="dialEntry">Використовуйте клавіатуру для введення</string>
     <string name="dialEntry_Ex">Якщо ярлики на екрані приховано, відкрийте FreezeYou, набравши код *#*#373393968#*#* (*#*#FreezeYou#*#*) у номеронабирачі телефону. Підтримується на більшості Android-пристроїв.</string>
     <string name="ciFinishedToast">Відправлено, будь ласка, дочекайтеся оновлення лаунчера, або перезапустіть його.</string>
-    <string name="ifUploadCrashLog">Виявлено log збою, котрий стався раніше. Ви хочете відправити цей лог розробнику програми?</string>
+    <string name="ifUploadCrashLog">Знайдено лог збою. Поділитися ним?</string>
+    <string name="crashLog">Лог збою</string>
     <string name="search">Пошук</string>
     <string name="launchMode">Вигляд при запуску</string>
     <string name="freezeImmediately">Заморозка негайно</string>

@@ -106,7 +106,8 @@
     <string name="dialEntry">Use the dial pad to enter</string>
     <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>
     <string name="ciFinishedToast">Submitted, please wait for the launcher to refresh or restart the launcher.</string>
-    <string name="ifUploadCrashLog">Detected an exception log that has occurred but has not been committed, do you want to upload this log?</string>
+    <string name="ifUploadCrashLog">A crash log from an earlier run was found. Share it?</string>
+    <string name="crashLog">Crash log</string>
     <string name="search">Search</string>
     <string name="launchMode">Startup Mode</string>
     <string name="freezeImmediately">Freeze Immediately</string>

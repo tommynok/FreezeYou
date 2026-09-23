@@ -2,5 +2,7 @@
 <resources>
     <paths>
         <external-cache-path name="cache" path="" />
+        <!-- Crash logs are written here, and sharing one hands its file to another application. -->
+        <cache-path name="internal_cache" path="" />
     </paths>
 </resources>

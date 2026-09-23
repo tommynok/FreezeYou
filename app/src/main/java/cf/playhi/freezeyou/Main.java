@@ -41,6 +41,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -1254,58 +1255,80 @@ public class Main extends FreezeYouBaseActivity {
         AppList.add(keyValuePair);
     }
 
+    /**
+     * The log used to go one place only: a crash report page belonging to the upstream author,
+     * which is of no use to a fork. It is handed to the system share sheet instead, so it can go
+     * wherever it is actually wanted.
+     */
     private void manageCrashLog() throws Exception {
         File crashCheck = new File(getCacheDir() + File.separator + "log" + File.separator + "NeedUpload.log");
-        if (crashCheck.exists()) {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(crashCheck));
-            String filePath = bufferedReader.readLine();
-            bufferedReader.close();
-            FileInputStream fileInputStream = new FileInputStream(filePath);
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[fileInputStream.available()];
-            fileInputStream.read(buffer);
-            byteArrayOutputStream.write(buffer);
-            fileInputStream.close();
-            buildAlertDialog(Main.this, R.mipmap.ic_launcher_new_round, R.string.ifUploadCrashLog, R.string.notice)
-                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            Uri webPage = Uri.parse("https://freezeyou.playhi.net/crashReport.php?data=" + Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT));
-                            Intent report = new Intent(Intent.ACTION_VIEW, webPage);
-                            if (report.resolveActivity(getPackageManager()) != null) {
-                                startActivity(report);
-                            } else {
-                                showToast(Main.this, R.string.failed);
-                            }
-                            checkIfNeedAskFirstTimeSetupAndShowDialog();
-                        }
-                    })
-                    .setNeutralButton(R.string.update, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            checkUpdate(Main.this);
-                            checkIfNeedAskFirstTimeSetupAndShowDialog();
-                        }
-                    })
-                    .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            checkIfNeedAskFirstTimeSetupAndShowDialog();
-                        }
-                    })
-                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialogInterface) {
-                            checkIfNeedAskFirstTimeSetupAndShowDialog();
-                        }
-                    })
-                    .create()
-                    .show();
-            //删除数据
-            new File(filePath).delete();
-            crashCheck.delete();
-        } else {
+        if (!crashCheck.exists()) {
             checkIfNeedAskFirstTimeSetupAndShowDialog();
+            return;
+        }
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(crashCheck));
+        String filePath = bufferedReader.readLine();
+        bufferedReader.close();
+        // Dropped first: whatever happens with the dialog, the same log must not be offered again.
+        crashCheck.delete();
+        final File logFile = filePath == null ? null : new File(filePath);
+        if (logFile == null || !logFile.isFile()) {
+            checkIfNeedAskFirstTimeSetupAndShowDialog();
+            return;
+        }
+        final String logText = readTextFile(logFile);
+        buildAlertDialog(Main.this, R.mipmap.ic_launcher_new_round, R.string.ifUploadCrashLog, R.string.notice)
+                .setPositiveButton(R.string.share, (dialogInterface, i) -> {
+                    shareCrashLog(logFile, logText);
+                    checkIfNeedAskFirstTimeSetupAndShowDialog();
+                })
+                .setNegativeButton(R.string.no, (dialogInterface, i) -> {
+                    logFile.delete();
+                    checkIfNeedAskFirstTimeSetupAndShowDialog();
+                })
+                .setOnCancelListener(dialogInterface ->
+                        checkIfNeedAskFirstTimeSetupAndShowDialog())
+                .create()
+                .show();
+    }
+
+    private static String readTextFile(File file) throws Exception {
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = fileInputStream.read(buffer)) != -1) {
+                byteArrayOutputStream.write(buffer, 0, read);
+            }
+            return byteArrayOutputStream.toString();
+        }
+    }
+
+    /**
+     * Both the text and the file are offered: a messenger takes the text, a file manager or a mail
+     * client takes the attachment, and neither has to be chosen in advance. The file is left in the
+     * cache directory afterwards, because the receiving application may read the uri after this
+     * dialog is long gone; the system reclaims cache on its own.
+     */
+    private void shareCrashLog(File logFile, String logText) {
+        Intent share = new Intent(Intent.ACTION_SEND)
+                .setType("text/plain")
+                .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name) + " — " + getString(R.string.crashLog))
+                .putExtra(Intent.EXTRA_TEXT, logText);
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    this, "cf.playhi.freezeyou.fileprovider", logFile);
+            share.putExtra(Intent.EXTRA_STREAM, uri)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception e) {
+            // Sharing the text alone still works, so this is not worth reporting.
+            e.printStackTrace();
+        }
+        try {
+            startActivity(Intent.createChooser(share, getString(R.string.share)));
+        } catch (Exception e) {
+            e.printStackTrace();
+            showToast(Main.this, R.string.failed);
         }
     }
 
