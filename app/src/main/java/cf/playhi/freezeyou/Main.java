@@ -264,7 +264,7 @@ public class Main extends FreezeYouBaseActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        onPrepareMainOptionsMenu(menu);
+        onPrepareMainOptionsMenu(menu, false);
         return true;
     }
 
@@ -373,7 +373,7 @@ public class Main extends FreezeYouBaseActivity {
                 moreSettingsImageButton.setAlpha(1f);
                 PopupMenu popupMenu = new PopupMenu(Main.this, v);
                 popupMenu.inflate(R.menu.menu);
-                onPrepareMainOptionsMenu(popupMenu.getMenu());
+                onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -1758,7 +1758,21 @@ public class Main extends FreezeYouBaseActivity {
         userDefinedDb.close();
     }
 
-    private void onPrepareMainOptionsMenu(Menu menu) {
+    /**
+     * One menu resource feeds both the action bar overflow and the floating button's popup, so
+     * whatever is here applies to both and the two cannot drift apart.
+     *
+     * @param fromFloatingButton The popup under the thumb is for what gets used often. Settings,
+     *                           the FAQ and the about screen are opened once in a while and stay
+     *                           in the action bar overflow only, which is the menu that holds
+     *                           everything.
+     */
+    private void onPrepareMainOptionsMenu(Menu menu, boolean fromFloatingButton) {
+        if (fromFloatingButton) {
+            hideMenuItem(menu, R.id.menu_moreSettings);
+            hideMenuItem(menu, R.id.menu_faq);
+            hideMenuItem(menu, R.id.menu_about);
+        }
         try {
             // Dynamic theme-attribute tinting turned out unreliable in practice (rendered fully
             // transparent on the test device). Fall back to a static light/dark drawable swap,
@@ -1804,6 +1818,13 @@ public class Main extends FreezeYouBaseActivity {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void hideMenuItem(Menu menu, int id) {
+        MenuItem item = menu.findItem(id);
+        if (item != null) {
+            item.setVisible(false);
         }
     }
 
