@@ -2,7 +2,6 @@ package cf.playhi.freezeyou.ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,6 +10,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
@@ -41,6 +41,16 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
     private boolean requestFromLauncher;
     private Class<?> targetSelfCls;
     private Drawable finalDrawable;
+    /**
+     * A shortcut that only starts one activity. The same screen serves it, minus the fields that
+     * belong to freezing — the attached task and the shortcut id — and with the activity picker
+     * opening by itself, since picking an activity is the whole point of coming here.
+     * <p>
+     * Held in a field rather than read from the intent each time: re-picking the package replaces
+     * the intent with the picker's answer, which carries no mode of its own.
+     */
+    private boolean activityShortcutMode;
+    private boolean openTargetPickerOnNextInit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +63,11 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
         Intent intent = getIntent();
 
         requestFromLauncher = Intent.ACTION_CREATE_SHORTCUT.equals(intent.getAction());
+
+        activityShortcutMode = intent.getBooleanExtra("activityShortcutMode", false);
+        // Not after a rotation: the picked activity is already in the fields, and reopening the
+        // list would throw it away.
+        openTargetPickerOnNextInit = activityShortcutMode && savedInstanceState == null;
 
         targetSelfCls =
                 requestFromLauncher
@@ -113,6 +128,8 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             case 11:
                 if (resultCode == RESULT_OK) {
                     setIntent(data);
+                    // A different package means a different activity list, so ask again.
+                    openTargetPickerOnNextInit = activityShortcutMode;
                     init();
                 }
                 break;
@@ -173,6 +190,35 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
         processGenerateButton(lscaga_generate_button, lscaga_package_editText, lscaga_displayName_editText, lscaga_target_editText, lscaga_id_editText, lscaga_task_editText);
 
+        if (activityShortcutMode) {
+            hideFieldsThatBelongToFreezing();
+            if (openTargetPickerOnNextInit) {
+                openTargetPickerOnNextInit = false;
+                startSelectTargetActivityForResult(pkgName);
+            }
+        }
+
+    }
+
+    /**
+     * The attached task and the shortcut id are part of a freeze shortcut, not of one that starts
+     * an activity. The id is still needed to pin the shortcut, so it is generated rather than
+     * asked for. Every hidden view sits at the end of the layout's chain of rules, so nothing is
+     * positioned relative to them.
+     */
+    private void hideFieldsThatBelongToFreezing() {
+        int[] ids = {
+                R.id.lscaga_task_textView,
+                R.id.lscaga_task_editText,
+                R.id.lscaga_id_textView,
+                R.id.lscaga_id_editText
+        };
+        for (int id : ids) {
+            View view = findViewById(id);
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void processDisplayNameEditText(String name, EditText lscaga_displayName_editText) {
@@ -274,6 +320,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 shortcutIntent.putExtra("pkgName", pkgName);
                 shortcutIntent.putExtra("target", target);
                 shortcutIntent.putExtra("tasks", tasks);
+                shortcutIntent.putExtra("justLaunch", activityShortcutMode);
                 Intent intent = new Intent();
                 intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
                 intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
@@ -289,7 +336,8 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                         lscaga_id_editText.getText().toString(),
                         context,
                         target,
-                        tasks
+                        tasks,
+                        activityShortcutMode
                 );
             }
         });
@@ -311,6 +359,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                             .putExtra("pkgName", pkgName)
                             .putExtra("target", target)
                             .putExtra("tasks", tasks)
+                            .putExtra("justLaunch", activityShortcutMode)
             );
         });
     }
@@ -324,9 +373,11 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
     private void startSelectTargetActivityForResult(final String pkgName) {
         try {
-            ActivityInfo[] activityInfoS =
-                    getPackageManager().getPackageInfo(
-                            pkgName, PackageManager.GET_ACTIVITIES).activities;
+            // Only that the package exists. Asking for its activities here as well used to throw
+            // for a package too large to cross a binder transaction — Google Play services,
+            // Settings — and the picker then refused to open at all, although it knows how to
+            // read those from the APK instead.
+            getPackageManager().getApplicationInfo(pkgName, 0);
             startActivityForResult(
                     new Intent(
                             LauncherShortcutConfirmAndGenerateActivity.this,

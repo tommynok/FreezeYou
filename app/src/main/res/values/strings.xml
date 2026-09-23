@@ -100,6 +100,8 @@
     <string name="disableAEnable">Freeze/Unfreeze/Run</string>
     <string name="copyPkgName">Copy Package Name</string>
     <string name="createDisEnableShortCut">Create a freeze and unfreeze shortcut</string>
+    <string name="createActivityShortcut">Create an activity shortcut</string>
+    <string name="cannotLaunchFrozenApplication">The application is frozen, so its activities cannot be started</string>
     <string name="iconAEntry">Icons and Entrances</string>
     <string name="dialEntry">Use the dial pad to enter</string>
     <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>

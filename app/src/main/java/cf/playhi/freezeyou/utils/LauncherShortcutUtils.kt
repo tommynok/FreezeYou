@@ -59,6 +59,7 @@ object LauncherShortcutUtils {
      * @param context Context
      * @param target Target activity. If null, launch the application directly.
      * @param tasks Attached task(s)
+     * @param justLaunch Start the target and nothing else — no freeze, no unfreeze, no dialog.
      */
     @JvmStatic
     @JvmOverloads
@@ -70,7 +71,8 @@ object LauncherShortcutUtils {
         id: String,
         context: Context,
         target: String? = null,
-        tasks: String? = null
+        tasks: String? = null,
+        justLaunch: Boolean = false
     ) {
         requestCreateShortCut(
             title,
@@ -79,7 +81,8 @@ object LauncherShortcutUtils {
                 .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 .putExtra("pkgName", pkgName)
                 .putExtra("target", target)
-                .putExtra("tasks", tasks),
+                .putExtra("tasks", tasks)
+                .putExtra("justLaunch", justLaunch),
             icon, id, context, null
         )
     }

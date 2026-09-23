@@ -25,6 +25,13 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
     private var mIsFromShortcut = false
     private var mTarget: String? = null
     private var mTasks: String? = null
+
+    /**
+     * An activity shortcut: start the target component and nothing else. It cannot be encoded in
+     * [mTarget] the way `@onlyUnfreeze` is, because for this kind of shortcut the target holds the
+     * class name to start.
+     */
+    private var mJustLaunch = false
     private var mPkgName: MutableLiveData<String> =
         MutableLiveData(getApplication<Application>().packageName)
     private var mToastStringId: MutableLiveData<Int> = MutableLiveData()
@@ -79,6 +86,7 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         }
         mTarget = mStartedIntent.getStringExtra("target")
         mTasks = mStartedIntent.getStringExtra("tasks")
+        mJustLaunch = mStartedIntent.getBooleanExtra("justLaunch", false)
     }
 
     fun go() {
@@ -91,6 +99,18 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 return
             }
             val frozen = realGetFrozenStatus(getApplication(), it, null)
+            if (mJustLaunch) {
+                // A frozen package is disabled or hidden in the package manager, and none of its
+                // components can be started — not even with root. Saying so beats a launch that
+                // appears to do nothing.
+                if (frozen) {
+                    mToastStringId.value = R.string.cannotLaunchFrozenApplication
+                } else {
+                    checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(it, target, tasks)
+                }
+                mFinishMe.value = true
+                return
+            }
             if (mIsFromShortcut && shortcutAutoFUF.getValue()) {
                 if (frozen) {
                     fufAction(

@@ -34,6 +34,7 @@ import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.ui.InstallPackagesActivity;
+import cf.playhi.freezeyou.ui.LauncherShortcutConfirmAndGenerateActivity;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
@@ -258,6 +259,20 @@ public final class Support {
                                     Freeze.class,
                                     "FreezeYou! " + pkgName,
                                     context);
+                            break;
+                        case R.id.main_sca_menu_createActivityShortcut:
+                            // Straight to the confirmation screen rather than through
+                            // checkSettingsAndRequestCreateShortcut: an activity has to be picked
+                            // before there is anything to point a shortcut at, so the "create
+                            // shortcuts without asking" setting has nothing to skip here.
+                            context.startActivity(
+                                    new Intent(context, LauncherShortcutConfirmAndGenerateActivity.class)
+                                            .putExtra("pkgName", pkgName)
+                                            .putExtra("name", name)
+                                            .putExtra("id", "FreezeYou! " + pkgName)
+                                            .putExtra("class", Freeze.class)
+                                            .putExtra("activityShortcutMode", true)
+                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                             break;
                         case R.id.main_sca_menu_removeFromTheList:
                             if (folderPkgListSp != null) {
