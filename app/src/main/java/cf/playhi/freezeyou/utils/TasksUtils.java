@@ -77,6 +77,7 @@ public final class TasksUtils {
         calendar.set(Calendar.MILLISECOND, 0);
 
         if (alarmMgr != null) {
+            rememberPublishedTimeTask(context, id);
             if ("0".equals(repeat)) {
                 if (systemTime >= calendar.getTimeInMillis()) {
                     calendar.add(Calendar.DAY_OF_MONTH, 1);
@@ -572,6 +573,19 @@ public final class TasksUtils {
     }
 
     private static void cancelEveryTimeTask(Context context) {
+        // The recorded codes first, because they are the only thing that reaches an alarm whose row
+        // has already been deleted — and those are exactly the ones nothing else can call off.
+        final AppPreferences preferences = new AppPreferences(context);
+        final String recorded = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+        for (String id : splitIdList(recorded)) {
+            try {
+                cancelTheTask(context, Integer.parseInt(id));
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+        preferences.put(PUBLISHED_TIME_TASK_IDS, "");
+
         if (!context.getDatabasePath("scheduledTasks").exists()) {
             return;
         }
@@ -626,6 +640,79 @@ public final class TasksUtils {
         if (alarmMgr != null) {
             alarmMgr.cancel(alarmIntent);
         }
+        forgetPublishedTimeTask(context, id);
+    }
+
+    /**
+     * Request codes of the timed tasks that have an alarm registered right now.
+     *
+     * Cancelling used to work off the rows of the scheduledTasks database, which cannot reach an
+     * alarm whose row is already gone — and an alarm outlives its row easily enough: delete a task
+     * while something goes wrong, or lose the database, and the system keeps waking the application
+     * for a task that no longer exists, with nothing able to call it off. Owner's device had
+     * exactly one such alarm, still listed by dumpsys after "delete all scheduled tasks".
+     *
+     * The codes are kept outside the database for that reason, the same way the delayed tasks
+     * already keep theirs. Alarms do not survive a reboot, and what is re-registered after one
+     * comes from the database, so an alarm that predates this list disappears at the next restart.
+     */
+    private static final String PUBLISHED_TIME_TASK_IDS = "publishedTimeTaskIds";
+
+    private static void rememberPublishedTimeTask(Context context, int id) {
+        AppPreferences preferences = new AppPreferences(context);
+        final String stored = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+        final String updated = addIdToList(stored, id);
+        if (!updated.equals(stored)) {
+            preferences.put(PUBLISHED_TIME_TASK_IDS, updated);
+        }
+    }
+
+    private static void forgetPublishedTimeTask(Context context, int id) {
+        AppPreferences preferences = new AppPreferences(context);
+        final String stored = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+        final String updated = removeIdFromList(stored, id);
+        if (!updated.equals(stored)) {
+            preferences.put(PUBLISHED_TIME_TASK_IDS, updated);
+        }
+    }
+
+    /**
+     * Whole entries only, never a substring: the ids are numbers, so removing "1" from "11,1," by
+     * replacing text would eat half of the eleven. Split and compare, the same lesson the notifying
+     * list already taught.
+     */
+    static String addIdToList(String stored, int id) {
+        final String wanted = Integer.toString(id);
+        for (String part : splitIdList(stored)) {
+            if (wanted.equals(part)) {
+                return stored == null ? "" : stored;
+            }
+        }
+        return (stored == null ? "" : stored) + wanted + ",";
+    }
+
+    static String removeIdFromList(String stored, int id) {
+        final String unwanted = Integer.toString(id);
+        final StringBuilder builder = new StringBuilder();
+        for (String part : splitIdList(stored)) {
+            if (!unwanted.equals(part)) {
+                builder.append(part).append(',');
+            }
+        }
+        return builder.toString();
+    }
+
+    private static String[] splitIdList(String stored) {
+        if (stored == null || stored.isEmpty()) {
+            return new String[0];
+        }
+        final java.util.ArrayList<String> parts = new java.util.ArrayList<>();
+        for (String part : stored.split(",")) {
+            if (!part.isEmpty()) {
+                parts.add(part);
+            }
+        }
+        return parts.toArray(new String[0]);
     }
 
     public static void checkTimeTasks(Context context) {
