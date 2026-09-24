@@ -140,7 +140,7 @@
     <string name="helpTranslate">Помогите перевести это приложение</string>
     <string name="thanksList">Благодарности</string>
     <string name="automation">Автоматизация</string>
-    <string name="freezeAfterScreenLock">Запуск OneKEY заморозка после блокировки экрана</string>
+    <string name="freezeAfterScreenLock">Запускать OneKEY заморозку при выключении экрана</string>
     <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKEY заморозка» каждый раз, когда гаснет экран.</string>
     <string name="backgroundService">Фоновый сервис</string>
     <string name="useForegroundService">Использовать сервис переднего плана</string>

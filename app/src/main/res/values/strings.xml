@@ -140,7 +140,7 @@
     <string name="helpTranslate">Help Translate</string>
     <string name="thanksList">Thanks List</string>
     <string name="automation">Automation</string>
-    <string name="freezeAfterScreenLock">Onekey freeze after screen locked</string>
+    <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
     <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
     <string name="backgroundService">Background Services</string>
     <string name="useForegroundService">Use the foreground service</string>

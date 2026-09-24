@@ -140,7 +140,7 @@
     <string name="helpTranslate">Допоможіть перекласти цей додаток</string>
     <string name="thanksList">Подяки</string>
     <string name="automation">Автоматизація</string>
-    <string name="freezeAfterScreenLock">Запуск OneKEY заморозка після блокування екрану</string>
+    <string name="freezeAfterScreenLock">Запускати OneKEY заморозку при вимкненні екрана</string>
     <string name="freezeAfterScreenLockSummary">Заморожує додатки зі списку «OneKEY заморозка» щоразу, коли гасне екран.</string>
     <string name="backgroundService">Фоновий сервіс</string>
     <string name="useForegroundService">Використовувати сервіс переднього плану</string>
