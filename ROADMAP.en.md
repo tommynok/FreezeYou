@@ -8,7 +8,7 @@ unverified first, reference material after that, history last.
 
 **This file is a snapshot for sharing, translated from `ROADMAP.md`, which is the source of
 truth.** Where the two disagree, the Russian one is right. Snapshot taken 24 September 2026, at
-build 128.
+build 133.
 
 ---
 
@@ -16,7 +16,8 @@ build 128.
 
 | | What it is |
 |---|---|
-| `build-115` (`7c39824`) | Provisionally stable. Confirmed working in a quick check: long activity lists open without delay, a shortcut to a non-exported activity starts. No full pass yet. |
+| `build-115` (`7c39824`) | **The fallback point in force.** Confirmed working in a quick check: long activity lists open without delay, a shortcut to a non-exported activity starts. |
+| `build-133` | **A candidate, not yet designated.** Confirmed on it: the activity shortcut in full, the faster batches, alarm cancellation, sharing from the log viewer, settings in the floating button, dependent rows, the danger zone, and no stacked settings lists. Moving the point here is the owner's call and he has not made it. |
 | `stable-2026-08-13` (`89d485c`, run #76) | Older, verified in full. The last state before the speed work. |
 
 Falling back is `git checkout build-115`; the APK of that same build is attached to the release
@@ -27,59 +28,42 @@ already names the commit and does not move, while a branch moves and needs tendi
 
 ## Still to verify on a device
 
-The only list of open checks. Unit tests are not part of it — they run in CI before every build.
+Builds 116 to 133 have been through the owner's checks. What follows is only what is still open;
+everything confirmed is one line in the table at the end of this file.
 
-### Settings, after the menu rework (builds 110–115)
+- [ ] **The crash log dialog.** There is nothing to check it with until the application crashes,
+      and it cannot be summoned by hand. If no crash comes, this stays open for ever, which is the
+      good outcome.
+- [ ] **The fingerprint sensor** under "Access and security" — the rest of that screen is checked.
+- [ ] **A full pass over the settings sections.** The one done was quick, and the owner noted he
+      may have missed something.
+- [ ] **The wording on the automation screen** as of build 132 — simply read both rows.
 
-- [ ] Walk every section: nothing lost, nothing duplicated, every row has its summary.
-- [ ] "Access and security": the lock turns on and off (biometrics are asked for), and toggling
-      the launcher icons really shows and hides them.
-- [ ] "Freeze and unfreeze": dependent rows grey out when the shortcut automation is off.
-- [ ] "Other settings" → "Danger zone" opens, and its text is about FreezeYou itself.
-- [ ] "Automation" → "Delete all tasks": the system does not wake the application afterwards on
-      the schedule of tasks that no longer exist.
-- [ ] Switch colour scheme and language several times — the settings lists must not stack.
-- [ ] The dot at the end of a row: select an **un**frozen application in the light theme, there
-      must be no pale dot.
+### How to check the alarms of scheduled tasks
 
-### Unloaded menu (build 116)
+Nothing in the interface shows them, so the system has to be asked. From a root shell (or through
+Shizuku):
 
-- [ ] The floating "+" no longer offers the FAQ and About; everything else is there.
-- [ ] The floating "+" has Settings as its **bottom row**, closest to the thumb.
-- [ ] The action bar overflow still has all three, in the order it had.
+```
+dumpsys alarm | grep -i freezeyou
+```
 
-### Activity shortcut (builds 117, 120–123, 127)
+It is easy to conclude nothing changed, because lines carrying the package name **remain** after a
+deletion. They are of different kinds, told apart by their indentation:
 
-- [ ] "Create an activity shortcut" is the second row of an application's menu.
-- [ ] Tapping it opens the activity list straight away, with no screen in between.
-- [ ] No "Task" and "ID" fields on the page; name and icon are filled in.
-- [ ] "Test" starts the activity, "Create" pins the shortcut.
-- [ ] The shortcut starts the activity and does **not** unfreeze the application.
-- [ ] A non-exported activity starts through root/Shizuku.
-- [ ] **A frozen application: the activity list opens at all.** This was broken until build 127.
-- [ ] A frozen application: the dialog offers to unfreeze; confirming unfreezes and starts,
-      cancelling just closes.
-- [ ] The dialog text is one paragraph and readable at a glance; the name it quotes matches the
-      menu entry it points at.
-- [ ] Leave the activity list with Back, then create the shortcut — the existing freeze shortcut
-      of the same application is still there.
-- [ ] Two shortcuts to different activities of one application do not overwrite each other.
-- [ ] "Unfreeze only" is not offered in the list in this mode.
-- [ ] The list opens for a huge package (Google Play services, Settings).
+```
+    RTC_WAKEUP #18: Alarm{...}          <- 4 spaces: a scheduled alarm
+      tag=*walarm*:...                  <- 6: its tag
+      operation=PendingIntent{...}      <- 6: its PendingIntent
+          type=RTC_WAKEUP tag=*walarm*  <- 10: statistics, what already happened
+```
 
-### Crash log and loading indicator (builds 118, 119)
+Only the `RTC_WAKEUP #N: Alarm{` line counts. Lines indented by ten spaces are the statistics
+section, a history of registrations; it accumulates and does not go away when an alarm is
+cancelled.
 
-- [ ] The dialog after a crash asks whether to share the log, with a Share button.
-- [ ] The log reaches a messenger as text and a file manager as an attachment.
-- [ ] The same log is not offered again on the next launch.
-- [ ] Activities that used to kill the process now either start or report.
-- [ ] A spinner is visible while the activity list is built and goes when the list arrives.
-
-### Not checked and not planned
-
-- "Automatic freeze/unfreeze" on tapping a row — the mode is not used.
-
----
+The check on build 133 ran like this: empty after a reboot, one alarm once a task was created, and
+after "delete all scheduled tasks" **no alarm at all, only two statistics lines**.
 
 ## Open questions
 
@@ -131,6 +115,7 @@ only what does not touch Android can be covered.
 | `SearchRankingTest` | Search order: start of the label, then anywhere in the label, then the package name. |
 | `SettingsKeyWiringTest` | Every settings row's `app:key` against the enum constant names in `storage/key`. |
 | `NotifyingListTest` | Batch removal from the notifying list: "com.foo" must not take "com.foo.bar" with it. |
+| `TaskIdListTest` | The list of scheduled alarm request codes: removing "1" must not eat half of "11". |
 
 `SettingsKeyWiringTest` reads the names from source rather than by reflection: loading those
 classes drags in Android and MMKV for what is a comparison of two sets of strings. Both new tests
@@ -180,12 +165,19 @@ state and the application cannot know whether that is wanted.
 The name of the other kind of shortcut, quoted in the dialog, is taken from that command's own
 string resource so the two cannot drift apart.
 
-### Sharing the crash log
+### Sharing logs
 
-The dialog offered one destination: the upstream author's crash report page. For a fork that is of
-no use. `Main.shareCrashLog` hands the log to the system share sheet in two forms at once —
-`EXTRA_TEXT` for messengers and note apps, `EXTRA_STREAM` through `FileProvider` for file managers
-and mail.
+The crash dialog offered one destination: the upstream author's crash report page. For a fork that
+is of no use. And the log viewer could not hand a log over at all — it was selected by hand in the
+hope the system would offer somewhere to put it, when sending it somewhere is the only reason that
+screen is opened.
+
+Both paths go through `LogSharingUtils.shareLog`, which hands the log to the system share sheet in
+two forms at once: `EXTRA_TEXT` for messengers and note apps, `EXTRA_STREAM` through
+`FileProvider` for file managers and mail. The crash dialog already has a file and passes it as it
+is; the viewer writes a copy into the cache. Text longer than 200k characters is left out of the
+intent and only attached as a file: that extra crosses a binder transaction, and a long log would
+take the whole share down rather than arrive truncated.
 
 Two traps, both accounted for:
 
@@ -226,10 +218,18 @@ removed — in `SettingsFufFragment`, not in `SettingsFragment`.
 ### Deleting every scheduled task
 
 `TasksUtils.deleteAllScheduledTasks` cancels the alarms before deleting the databases — otherwise
-the system kept waking the application on the schedule of tasks that no longer existed. Timed
-tasks are cancelled by the row's `_id`; delayed ones by the request codes recorded in Tray under
-`OSA_<package>`, `OLA_<package>`, `onScreenOn` and `onScreenOff`, because a delayed task's code is
-not its `_id` — it is made up when the task is scheduled, and there is no other way to find it.
+the system kept waking the application on the schedule of tasks that no longer existed.
+
+The request codes are **never derived from the database**; they are recorded separately, because an
+alarm outlives its row (see the post-mortem of the same name):
+
+- timed tasks in Tray under `publishedTimeTaskIds`, a list of `id,` entries;
+- delayed ones under `OSA_<package>`, `OLA_<package>`, `onScreenOn` and `onScreenOff`, because a
+  delayed task's code is not its `_id` — it is made up when the task is scheduled.
+
+Both lists are parsed by whole entries, through `addIdToList`/`removeIdFromList`, rather than by
+replacing text, because the codes are numbers. The old walk over the database rows is kept as a
+second step; it does no harm.
 
 ### Batch operations
 
@@ -323,6 +323,31 @@ viewer and look for the `DebugModeLogcat` tag: `binder/call/verify` per package 
 `actions/bookkeeping/reportedAfter/notifications` per batch. If debug mode is silent, the system
 itself provides a scale: it prints a `JavaBinder`/`Parcel` pair for every
 `setApplicationEnabledSetting` call, and the first measurement was taken from their timestamps.
+
+### An alarm outlived its row
+
+Checking with `dumpsys alarm | grep -i freezeyou` before and after deleting every scheduled task
+showed **the same** alarm both times: a timed task that had not gone anywhere.
+
+The cause: `cancelEveryTimeTask` cancelled alarms by **walking the rows** of the `scheduledTasks`
+database. An alarm whose row is already gone cannot be reached that way at all — nothing in the
+application could call it off, and the system kept waking it for a task that no longer exists. That
+is a limit of the approach rather than a slip in one line, and reading the code did not find it: I
+looked at that function twice and both times saw nothing wrong.
+
+Fixed the way the delayed tasks have always worked: the request codes of timed tasks are recorded
+**outside the database**, in Tray under `publishedTimeTaskIds`. `publishTask` adds a code,
+`cancelTheTask` removes it, and deleting everything cancels what is recorded before walking the
+rows as before.
+
+The list is parsed by whole entries rather than by replacing text: the codes are numbers, and
+removing "1" from "11,1," that way would eat half of the eleven — the trap the notifying list
+already sprang, which is why `addIdToList` and `removeIdFromList` are separated out and covered by
+`TaskIdListTest`.
+
+An alarm registered before this record cannot be cancelled, and gets no workaround on purpose:
+alarms do not survive a reboot, and what is re-registered afterwards comes from the database, where
+the row is gone. Confirmed on the device — the dump was empty after a restart.
 
 ### Debug mode could never be turned on
 
@@ -439,3 +464,11 @@ the scenario does not reproduce. The long-standing `mShowDialog` has the same sh
 | The settings menu rework | "How the finished pieces work" |
 | The unloaded floating "+" | one menu resource for both, rare entries hidden in `onPrepareMainOptionsMenu`. Settings were hidden here at first and then brought back as the bottom row: they are opened constantly while testing, and reaching for the top of the screen is what this button exists to avoid. `orderInCategory` 50–53 places them last without moving anything in the action bar overflow. |
 | Faster batch operations | "Post-mortems" |
+| The activity shortcut in full: the menu entry, the list opening at once, Test, the shortcut not unfreezing, non-exported targets, the unfreeze dialog, two shortcuts not overwriting each other | "How the finished pieces work" |
+| The spinner on the activity picker | — |
+| Settings back in the floating "+" as its bottom row | `orderInCategory` 50–53, the overflow untouched |
+| Sharing from the log viewer | `LogSharingUtils`, one path with the crash dialog |
+| The automation summaries rewritten and the title made to agree | `CLAUDE.md`, the section on wording |
+| Alarms cancelled by "delete all scheduled tasks", orphans included | "An alarm outlived its row" |
+| Dependent rows greying out under "Freeze and unfreeze" | `app:dependency="shortcutAutoFUF"` |
+| The danger zone, switching scheme and language, the dot on unfrozen rows | — |
