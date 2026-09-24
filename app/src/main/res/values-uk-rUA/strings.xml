@@ -109,6 +109,7 @@
     <string name="ciFinishedToast">Відправлено, будь ласка, дочекайтеся оновлення лаунчера, або перезапустіть його.</string>
     <string name="ifUploadCrashLog">Знайдено лог збою. Поділитися ним?</string>
     <string name="crashLog">Лог збою</string>
+    <string name="log">Лог</string>
     <string name="search">Пошук</string>
     <string name="launchMode">Вигляд при запуску</string>
     <string name="freezeImmediately">Заморозка негайно</string>

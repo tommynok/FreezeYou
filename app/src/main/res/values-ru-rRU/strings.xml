@@ -109,6 +109,7 @@
     <string name="ciFinishedToast">Отправлено, пожалуйста, дождитесь обновления лаунчера, или перезапустите его.</string>
     <string name="ifUploadCrashLog">Обнаружен лог сбоя. Поделиться им?</string>
     <string name="crashLog">Лог сбоя</string>
+    <string name="log">Лог</string>
     <string name="search">Поиск</string>
     <string name="launchMode">Вид при запуске</string>
     <string name="freezeImmediately">Заморозка немедленно</string>

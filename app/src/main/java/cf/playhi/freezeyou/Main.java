@@ -14,7 +14,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -41,7 +40,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -79,6 +77,7 @@ import cf.playhi.freezeyou.utils.LauncherShortcutUtils;
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.utils.RunningAppsUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
+import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
@@ -1305,31 +1304,16 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * Both the text and the file are offered: a messenger takes the text, a file manager or a mail
-     * client takes the attachment, and neither has to be chosen in advance. The file is left in the
-     * cache directory afterwards, because the receiving application may read the uri after this
-     * dialog is long gone; the system reclaims cache on its own.
+     * The crash log already sits in a file, so that file is handed over as it is. Everything about
+     * how a log is shared lives in one place, which the log viewer uses as well.
      */
     private void shareCrashLog(File logFile, String logText) {
-        Intent share = new Intent(Intent.ACTION_SEND)
-                .setType("text/plain")
-                .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name) + " — " + getString(R.string.crashLog))
-                .putExtra(Intent.EXTRA_TEXT, logText);
-        try {
-            Uri uri = FileProvider.getUriForFile(
-                    this, "cf.playhi.freezeyou.fileprovider", logFile);
-            share.putExtra(Intent.EXTRA_STREAM, uri)
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (Exception e) {
-            // Sharing the text alone still works, so this is not worth reporting.
-            e.printStackTrace();
-        }
-        try {
-            startActivity(Intent.createChooser(share, getString(R.string.share)));
-        } catch (Exception e) {
-            e.printStackTrace();
-            showToast(Main.this, R.string.failed);
-        }
+        LogSharingUtils.shareLog(
+                this,
+                getString(R.string.app_name) + " \u2014 " + getString(R.string.crashLog),
+                logText,
+                logFile
+        );
     }
 
     private void go() {
