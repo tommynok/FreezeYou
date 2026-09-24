@@ -104,9 +104,12 @@ public final class DataStatisticsUtils {
                     + (Integer.parseInt(cursor.getString(cursor.getColumnIndex("times"))) + 1)
                     + "' WHERE pkg = '" + Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT) + "';");
         } else {
+            // The row is created because this application was just acted on, so the count starts
+            // at one. It used to start at zero, which meant every application's first freeze went
+            // uncounted and the statistics were short by one for ever after.
             db.execSQL("insert into TimesList(pkg,times) values('"
                     + Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT)
-                    + "','0');");
+                    + "','1');");
         }
         cursor.close();
 

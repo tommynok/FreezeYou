@@ -13,7 +13,7 @@
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"
-        app:key="DebugModeEnabled"
+        app:key="debugModeEnabled"
         app:singleLineTitle="false"
         app:summary="@string/debugModeSummary"
         app:title="@string/debugMode" />
