@@ -78,7 +78,7 @@
     <string name="copyPkgName">Copy Package Name</string>
     <string name="createDisEnableShortCut">Create a freeze and unfreeze shortcut</string>
     <string name="createActivityShortcut">Create an activity shortcut</string>
-    <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will not freeze back on its own.\n\nTo freeze it from the home screen, there is a separate entry: «%1$s».</string>
+    <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen.\n\nNeed to freeze the application from a shortcut? Create one with «%1$s».</string>
     <string name="iconAEntry">Icons and Entrances</string>
     <string name="dialEntry">Use the dial pad to enter</string>
     <string name="dialEntry_Ex">*#*#373393968#*#* (*#*#FreezeYou#*#*) (Most Android devices support)</string>
