@@ -101,7 +101,7 @@
     <string name="copyPkgName">Скопіювати ім\'\ я пакета</string>
     <string name="createDisEnableShortCut">Створити ярлик заморозка / розморозка</string>
     <string name="createActivityShortcut">Створити ярлик активіті</string>
-    <string name="unfreezeAndLaunchActivity">Розморозити і запустити активіті? Застосунок залишиться розмороженим.\n\nПотрібна зворотна заморозка — підійде «%1$s».</string>
+    <string name="unfreezeAndLaunchActivity">Застосунок заморожений — активіті не запуститься. Розморозити? Назад воно саме не заморозиться.\n\nЩоб заморожувати застосунок з робочого столу, є окремий пункт: «%1$s».</string>
     <string name="iconAEntry">Іконки і вхід</string>
     <string name="dialEntry">Використовуйте клавіатуру для введення</string>
     <string name="dialEntry_Ex">Якщо ярлики на екрані приховано, відкрийте FreezeYou, набравши код *#*#373393968#*#* (*#*#FreezeYou#*#*) у номеронабирачі телефону. Підтримується на більшості Android-пристроїв.</string>
