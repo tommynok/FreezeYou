@@ -101,7 +101,7 @@
     <string name="copyPkgName">Скопировать имя пакета</string>
     <string name="createDisEnableShortCut">Создать ярлык заморозка/разморозка</string>
     <string name="createActivityShortcut">Создать ярлык активити</string>
-    <string name="cannotLaunchFrozenApplication">Приложение заморожено, запустить его активити нельзя</string>
+    <string name="unfreezeAndLaunchActivity">Разморозить и запустить активити? Приложение останется размороженным.\n\nНужна обратная заморозка — подойдет «%1$s».</string>
     <string name="iconAEntry">Иконки и вход</string>
     <string name="dialEntry">Используйте клавиатуру для ввода</string>
     <string name="dialEntry_Ex">Если ярлыки на экране скрыты, откройте FreezeYou, набрав код *#*#373393968#*#* (*#*#FreezeYou#*#*) в номеронабирателе телефона. Поддерживается на большинстве Android-устройств.</string>

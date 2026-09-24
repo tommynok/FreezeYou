@@ -37,6 +37,7 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
     private var mToastStringId: MutableLiveData<Int> = MutableLiveData()
     private var mFinishMe: MutableLiveData<Boolean> = MutableLiveData(false)
     private var mShowDialog: MutableLiveData<DialogData?> = MutableLiveData()
+    private var mShowUnfreezeToLaunchDialog: MutableLiveData<DialogData?> = MutableLiveData()
     private var mPlayAnimator: MutableLiveData<PlayAnimatorData?> = MutableLiveData()
     private var mExecuteResult: MutableLiveData<ExecuteResult> = MutableLiveData()
 
@@ -54,6 +55,13 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun getShowDialog(): LiveData<DialogData?> {
         return mShowDialog
+    }
+
+    /**
+     * Asked when an activity shortcut points into an application that is currently frozen.
+     */
+    fun getShowUnfreezeToLaunchDialog(): LiveData<DialogData?> {
+        return mShowUnfreezeToLaunchDialog
     }
 
     fun getPlayAnimator(): LiveData<PlayAnimatorData?> {
@@ -101,14 +109,16 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
             val frozen = realGetFrozenStatus(getApplication(), it, null)
             if (mJustLaunch) {
                 // A frozen package is disabled or hidden in the package manager, and none of its
-                // components can be started — not even with root. Saying so beats a launch that
-                // appears to do nothing.
+                // components can be started — not even with root. Refusing outright left the
+                // shortcut useless on exactly the applications this one is kept frozen, so the
+                // unfreeze is offered instead of assumed: it changes state, and only the person
+                // holding the phone knows whether that is wanted.
                 if (frozen) {
-                    mToastStringId.value = R.string.cannotLaunchFrozenApplication
+                    mShowUnfreezeToLaunchDialog.value = DialogData(it, target, tasks, true, true)
                 } else {
                     checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(it, target, tasks)
+                    mFinishMe.value = true
                 }
-                mFinishMe.value = true
                 return
             }
             if (mIsFromShortcut && shortcutAutoFUF.getValue()) {

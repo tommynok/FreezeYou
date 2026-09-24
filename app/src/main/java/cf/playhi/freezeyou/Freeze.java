@@ -80,6 +80,8 @@ public class Freeze extends FreezeYouBaseActivity {
         });
         viewModel.getPlayAnimator().observe(this, this::onPlayAnimator);
         viewModel.getShowDialog().observe(this, this::buildAndShowFUFDialog);
+        viewModel.getShowUnfreezeToLaunchDialog().observe(
+                this, this::buildAndShowUnfreezeToLaunchDialog);
         viewModel.loadStartedIntentAndPkgName(getIntent());
     }
 
@@ -235,6 +237,41 @@ public class Freeze extends FreezeYouBaseActivity {
         } else {
             super.finish();
         }
+    }
+
+    /**
+     * An activity shortcut aimed at a frozen application. Two buttons and three lines: the offer,
+     * what it leaves behind, and where to go for a shortcut that can freeze back. The name of that
+     * other shortcut is taken from its own menu entry, so the two cannot end up calling it
+     * different things.
+     */
+    private void buildAndShowUnfreezeToLaunchDialog(DialogData data) {
+        if (data == null) return;
+        FreezeYouAlertDialogBuilder(this)
+                .setIcon(
+                        getApplicationIcon(
+                                this,
+                                data.getPkgName(),
+                                getApplicationInfoFromPkgName(data.getPkgName(), this),
+                                true
+                        )
+                )
+                .setTitle(getApplicationLabel(this, null, null, data.getPkgName()))
+                .setMessage(
+                        getString(
+                                R.string.unfreezeAndLaunchActivity,
+                                getString(R.string.createDisEnableShortCut)
+                        )
+                )
+                .setPositiveButton(R.string.unfreeze, (dialogInterface, i) ->
+                        viewModel.fufAction(
+                                data.getPkgName(), data.getTarget(), data.getTasks(),
+                                true, true
+                        )
+                )
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finish())
+                .setOnCancelListener(dialogInterface -> finish())
+                .show();
     }
 
     private void buildAndShowFUFDialog(DialogData data) {
