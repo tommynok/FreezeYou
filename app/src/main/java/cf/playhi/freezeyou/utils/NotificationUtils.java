@@ -131,16 +131,32 @@ public final class NotificationUtils {
     private static void deleteNotifying(Context context, List<String> pkgNames) {
         AppPreferences defaultSharedPreferences = new AppPreferences(context);
         String notifying = defaultSharedPreferences.getString("notifying", "");
-        if (notifying == null || notifying.isEmpty()) {
-            return;
-        }
-        String updated = notifying;
-        for (String pkgName : pkgNames) {
-            updated = updated.replace(pkgName + ",", "");
-        }
+        String updated = removeFromNotifyingList(notifying, pkgNames);
         if (!updated.equals(notifying)) {
             defaultSharedPreferences.put("notifying", updated);
         }
+    }
+
+    /**
+     * The list is stored as one string, each package followed by a comma. Separated from the Tray
+     * access above so it can be tested without a device: this is the part that a batch made
+     * interesting, and getting it wrong would quietly leave packages marked as notifying, which is
+     * what stops them being frozen.
+     *
+     * @return the list without any of {@code pkgNames}, or the original string when none was there.
+     */
+    public static String removeFromNotifyingList(String notifying, List<String> pkgNames) {
+        if (notifying == null || notifying.isEmpty()) {
+            return notifying == null ? "" : notifying;
+        }
+        String updated = notifying;
+        for (String pkgName : pkgNames) {
+            if (pkgName == null || pkgName.isEmpty()) {
+                continue;
+            }
+            updated = updated.replace(pkgName + ",", "");
+        }
+        return updated;
     }
 
     public static void startAppNotificationSettingsSystemActivity(Activity activity, String pkgName, int pkgUid) {
