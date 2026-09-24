@@ -265,11 +265,15 @@ public final class Support {
                             // checkSettingsAndRequestCreateShortcut: an activity has to be picked
                             // before there is anything to point a shortcut at, so the "create
                             // shortcuts without asking" setting has nothing to skip here.
+                            // No id passed on purpose, so the screen generates a fresh one. The
+                            // freeze shortcut's id is "FreezeYou! <package>", one per package;
+                            // handing that to an activity shortcut would pin it over the freeze
+                            // shortcut of the same application, and there can be several activity
+                            // shortcuts for one package anyway.
                             context.startActivity(
                                     new Intent(context, LauncherShortcutConfirmAndGenerateActivity.class)
                                             .putExtra("pkgName", pkgName)
                                             .putExtra("name", name)
-                                            .putExtra("id", "FreezeYou! " + pkgName)
                                             .putExtra("class", Freeze.class)
                                             .putExtra("activityShortcutMode", true)
                                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

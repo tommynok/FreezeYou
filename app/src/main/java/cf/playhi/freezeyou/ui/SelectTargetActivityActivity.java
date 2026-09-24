@@ -34,6 +34,9 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
 
+    /** Set when the caller is building a shortcut that only starts an activity. */
+    private boolean activityShortcutMode;
+
     /**
      * Whether this device can start a component another app keeps to itself. Read from the
      * configured freeze mode rather than probed: asking for root here would pop a permission
@@ -87,6 +90,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
             finish();
             return;
         }
+        activityShortcutMode = intent.getBooleanExtra("activityShortcutMode", false);
         // Anything thrown while reading a foreign package would otherwise leave the spinner
         // turning for ever, with no way to tell that from a slow package.
         new Thread(() -> {
@@ -129,20 +133,24 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
         );
         arrayList.add(hm);
 
-        HashMap<String, Object> hm2 = new HashMap<>();
-        hm2.put("Img",
-                getApplicationIcon(
-                        this,
-                        pkgName,
-                        getApplicationInfoFromPkgName(pkgName, this),
-                        false));
-        hm2.put("Name", getString(R.string.onlyUnfreeze));
-        hm2.put("Label",
-                getApplicationLabel(
-                        this, getPackageManager(),
-                        getApplicationInfoFromPkgName(pkgName, this), pkgName)
-        );
-        arrayList.add(hm2);
+        // Left out for an activity shortcut: that shortcut does not freeze or unfreeze anything,
+        // so "unfreeze only" as its target would build a shortcut that does nothing at all.
+        if (!activityShortcutMode) {
+            HashMap<String, Object> hm2 = new HashMap<>();
+            hm2.put("Img",
+                    getApplicationIcon(
+                            this,
+                            pkgName,
+                            getApplicationInfoFromPkgName(pkgName, this),
+                            false));
+            hm2.put("Name", getString(R.string.onlyUnfreeze));
+            hm2.put("Label",
+                    getApplicationLabel(
+                            this, getPackageManager(),
+                            getApplicationInfoFromPkgName(pkgName, this), pkgName)
+            );
+            arrayList.add(hm2);
+        }
 
         PackageManager pm = getPackageManager();
         ActivityInfo[] activityInfos = getActivitiesFromSystem(pm, pkgName);
@@ -273,7 +281,11 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
      */
     private static ActivityInfo[] getActivitiesFromApk(PackageManager pm, String pkgName) {
         try {
-            ApplicationInfo applicationInfo = pm.getApplicationInfo(pkgName, 0);
+            // Same flag as everywhere else: a frozen package is disabled or hidden, and the plain
+            // lookup does not find it.
+            //noinspection deprecation
+            ApplicationInfo applicationInfo =
+                    pm.getApplicationInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES);
             String apkPath = applicationInfo.publicSourceDir != null
                     ? applicationInfo.publicSourceDir
                     : applicationInfo.sourceDir;

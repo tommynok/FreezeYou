@@ -202,9 +202,10 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
     /**
      * The attached task and the shortcut id are part of a freeze shortcut, not of one that starts
-     * an activity. The id is still needed to pin the shortcut, so it is generated rather than
-     * asked for. Every hidden view sits at the end of the layout's chain of rules, so nothing is
-     * positioned relative to them.
+     * an activity. The id is still needed to pin the shortcut: the picker supplies one per
+     * activity, and until then {@link #init()} has generated a timestamp, so it is never the
+     * freeze shortcut's id for this package. Every hidden view sits at the end of the layout's
+     * chain of rules, so nothing is positioned relative to them.
      */
     private void hideFieldsThatBelongToFreezing() {
         int[] ids = {
@@ -377,12 +378,19 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             // for a package too large to cross a binder transaction — Google Play services,
             // Settings — and the picker then refused to open at all, although it knows how to
             // read those from the APK instead.
-            getPackageManager().getApplicationInfo(pkgName, 0);
+            //
+            // The flag is what the rest of the application uses (see ApplicationInfoUtils): a
+            // frozen package is disabled or hidden, and without it the lookup throws for exactly
+            // the applications this screen is most wanted for.
+            //noinspection deprecation
+            getPackageManager().getApplicationInfo(
+                    pkgName, PackageManager.GET_UNINSTALLED_PACKAGES);
             startActivityForResult(
                     new Intent(
                             LauncherShortcutConfirmAndGenerateActivity.this,
                             SelectTargetActivityActivity.class)
-                            .putExtra("pkgName", pkgName),
+                            .putExtra("pkgName", pkgName)
+                            .putExtra("activityShortcutMode", activityShortcutMode),
                     8);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();

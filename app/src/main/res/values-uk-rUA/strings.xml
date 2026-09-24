@@ -101,6 +101,7 @@
     <string name="copyPkgName">Скопіювати ім\'\ я пакета</string>
     <string name="createDisEnableShortCut">Створити ярлик заморозка / розморозка</string>
     <string name="createActivityShortcut">Створити ярлик активіті</string>
+    <string name="cannotFindTheEntrance">У цього застосунку не знайшлося точки входу</string>
     <string name="unfreezeAndLaunchActivity">Застосунок заморожений — активіті не запуститься. Розморозити? Він залишиться розмороженим. Якщо потрібно заморожувати застосунок через ярлик — створіть його через пункт «%1$s».</string>
     <string name="iconAEntry">Іконки і вхід</string>
     <string name="dialEntry">Використовуйте клавіатуру для введення</string>

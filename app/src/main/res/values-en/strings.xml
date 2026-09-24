@@ -78,6 +78,7 @@
     <string name="copyPkgName">Copy Package Name</string>
     <string name="createDisEnableShortCut">Create a freeze and unfreeze shortcut</string>
     <string name="createActivityShortcut">Create an activity shortcut</string>
+    <string name="cannotFindTheEntrance">Cannot find an entrance to this application</string>
     <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen. If you need to freeze the application from a shortcut — create one with «%1$s».</string>
     <string name="iconAEntry">Icons and Entrances</string>
     <string name="dialEntry">Use the dial pad to enter</string>

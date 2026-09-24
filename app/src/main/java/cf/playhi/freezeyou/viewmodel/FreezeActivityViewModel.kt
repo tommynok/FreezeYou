@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_SUCCESS
 import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
@@ -116,7 +118,18 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 if (frozen) {
                     mShowUnfreezeToLaunchDialog.value = DialogData(it, target, tasks, true, true)
                 } else {
-                    checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(it, target, tasks)
+                    val result =
+                        checkAndStartTaskAndTargetAndActivityOfUnfrozenApp(it, target, tasks)
+                    // A shortcut left on "Launch" against an application that has no launcher
+                    // activity comes back here. Saying nothing looked like a shortcut that had
+                    // simply stopped working.
+                    if (result != ERROR_NO_ERROR_SUCCESS &&
+                        result != ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+                    ) {
+                        // Not the usual message for this code: that one speaks of an unfreeze that
+                        // succeeded, and here nothing was unfrozen.
+                        mToastStringId.value = R.string.cannotFindTheEntrance
+                    }
                     mFinishMe.value = true
                 }
                 return
