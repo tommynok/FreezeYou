@@ -1785,14 +1785,16 @@ public class Main extends FreezeYouBaseActivity {
      * One menu resource feeds both the action bar overflow and the floating button's popup, so
      * whatever is here applies to both and the two cannot drift apart.
      *
-     * @param fromFloatingButton The popup under the thumb is for what gets used often. Settings,
-     *                           the FAQ and the about screen are opened once in a while and stay
-     *                           in the action bar overflow only, which is the menu that holds
-     *                           everything.
+     * @param fromFloatingButton The popup under the thumb is for what gets used often. The FAQ and
+     *                           the about screen are opened once in a while and stay in the action
+     *                           bar overflow only, which is the menu that holds everything.
+     *                           Settings started out hidden here too and came back: they are
+     *                           opened constantly while testing, and reaching for the top of the
+     *                           screen every time is the thing this button exists to avoid. Their
+     *                           row sorts last, so it sits closest to the thumb.
      */
     private void onPrepareMainOptionsMenu(Menu menu, boolean fromFloatingButton) {
         if (fromFloatingButton) {
-            hideMenuItem(menu, R.id.menu_moreSettings);
             hideMenuItem(menu, R.id.menu_faq);
             hideMenuItem(menu, R.id.menu_about);
         }

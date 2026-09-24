@@ -266,21 +266,31 @@
         </menu>
     </item>
 
+    <!--
+        These four sort after the rows that carry an icon (10 to 40), which is what puts settings at
+        the very bottom of the floating button's popup: the FAQ and the about screen are hidden
+        there, so settings is the last row under the thumb. The action bar overflow keeps the order
+        it had, because the icon rows live in the bar itself and not in the list.
+    -->
     <item
         android:id="@+id/menu_moreSettings"
+        android:orderInCategory="50"
         android:title="@string/moreSettings"
         app:showAsAction="never" />
     <item
         android:id="@+id/menu_update"
+        android:orderInCategory="51"
         android:title="@string/update"
         android:visible="false"
         app:showAsAction="never" />
     <item
         android:id="@+id/menu_faq"
+        android:orderInCategory="52"
         android:title="@string/faq"
         app:showAsAction="never" />
     <item
         android:id="@+id/menu_about"
+        android:orderInCategory="53"
         android:title="@string/about"
         app:showAsAction="never" />
 </menu>

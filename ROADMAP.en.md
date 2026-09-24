@@ -44,8 +44,9 @@ The only list of open checks. Unit tests are not part of it — they run in CI b
 
 ### Unloaded menu (build 116)
 
-- [ ] The floating "+" no longer offers Settings, FAQ and About; everything else is there.
-- [ ] The action bar overflow still has all three.
+- [ ] The floating "+" no longer offers the FAQ and About; everything else is there.
+- [ ] The floating "+" has Settings as its **bottom row**, closest to the thumb.
+- [ ] The action bar overflow still has all three, in the order it had.
 
 ### Activity shortcut (builds 117, 120–123, 127)
 
@@ -436,5 +437,5 @@ the scenario does not reproduce. The long-standing `mShowDialog` has the same sh
 | The two small buttons on the tasks screen, 35 → 45 dp | "Rules paid for with mistakes" |
 | Releases instead of artifacts, tagged `build-<number>` | `CLAUDE.md` |
 | The settings menu rework | "How the finished pieces work" |
-| The unloaded floating "+" | one menu resource for both, rare entries hidden in `onPrepareMainOptionsMenu` |
+| The unloaded floating "+" | one menu resource for both, rare entries hidden in `onPrepareMainOptionsMenu`. Settings were hidden here at first and then brought back as the bottom row: they are opened constantly while testing, and reaching for the top of the screen is what this button exists to avoid. `orderInCategory` 50–53 places them last without moving anything in the action bar overflow. |
 | Faster batch operations | "Post-mortems" |
