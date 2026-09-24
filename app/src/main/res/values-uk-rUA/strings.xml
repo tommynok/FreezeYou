@@ -141,7 +141,7 @@
     <string name="thanksList">Подяки</string>
     <string name="automation">Автоматизація</string>
     <string name="freezeAfterScreenLock">Запуск OneKEY заморозка після блокування екрану</string>
-    <string name="freezeAfterScreenLockSummary">Автоматично заморожує список одним натисканням під час блокування екрана.</string>
+    <string name="freezeAfterScreenLockSummary">Заморожує додатки зі списку «OneKEY заморозка» щоразу, коли гасне екран.</string>
     <string name="backgroundService">Фоновий сервіс</string>
     <string name="useForegroundService">Використовувати сервіс переднього плану</string>
     <string name="serviceLongerEx">Знизить ймовірність збою фонового сервісу</string>
@@ -155,7 +155,7 @@
     <string name="accessibility_service_description">Стежити за змінами додатків переднього плану. Використовується для роботи функції, котра запобігає заморозку додатків переднього плану при автозаморозці, і для автозаморози додатків, коли вони не є додатками переднього плану, і т.д.</string>
     <string name="configureAccessibilityService">Налаштування служби спеціальних можливостей</string>
     <string name="freezeOnceQuit">Заморозка після виходу</string>
-    <string name="freezeOnceQuitSummary">Вмикає список «Заморозка після виходу»: додані до нього додатки заморожуються автоматично, щойно ви їх закриваєте.</string>
+    <string name="freezeOnceQuitSummary">Додатки зі списку «Заморозка після виходу» заморожуються, щойно ви з них вийшли.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
     <string name="invalidArguments">Неправильні параметри</string>
     <string name="exceptionHC">Стався виняток, але операція продовжиться:</string>
