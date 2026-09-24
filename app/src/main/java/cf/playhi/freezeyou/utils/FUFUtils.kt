@@ -367,12 +367,16 @@ object FUFUtils {
                             context,
                             TasksUtils.collectTriggeredTasks(context, batch, "onUFApplications")
                         )
-                        for (aPkgNameList in pkgNameList) {
-                            checkAndCreateFUFQuickNotification(context, aPkgNameList)
-                        }
                     }
                     if (!lesserToast.getValue()) {
                         ToastUtils.showToast(context, R.string.executed)
+                    }
+                    // After the toast, for the reason given in the in-process batch: an icon per
+                    // application is the slowest part of an unfreeze and nothing waits on it.
+                    if (!freeze) {
+                        for (aPkgNameList in pkgNameList) {
+                            checkAndCreateFUFQuickNotification(context, aPkgNameList)
+                        }
                     }
                 } else {
                     ToastUtils.showToast(context, R.string.mayUnrootedOrOtherEx)
@@ -599,7 +603,7 @@ object FUFUtils {
                     NotificationUtils.deleteNotifications(appContext, succeeded)
                 } else {
                     DataStatisticsUtils.addUFreezeTimes(appContext, succeeded)
-                    succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+                    // The quick notifications are deliberately not here — see after the toast.
                 }
                 sendStatusChangedBroadcast(appContext)
                 val triggered = TasksUtils.collectTriggeredTasks(
@@ -611,15 +615,7 @@ object FUFUtils {
                 }
             }
 
-            if (DebugModeUtils.isDebugModeEnabled()) {
-                Log.e(
-                    "DebugModeLogcat",
-                    "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
-                            "failed=${failed.size} took=${System.currentTimeMillis() - startedAt}ms " +
-                            "actions=${actionsDoneAt - startedAt}ms " +
-                            "bookkeeping=${System.currentTimeMillis() - actionsDoneAt}ms"
-                )
-            }
+            val bookkeepingDoneAt = System.currentTimeMillis()
 
             withContext(Dispatchers.Main) {
                 if (failed.isNotEmpty()) {
@@ -627,6 +623,29 @@ object FUFUtils {
                 } else if (!lesserToast.getValue()) {
                     ToastUtils.showToast(appContext, R.string.executed)
                 }
+            }
+
+            // Last, and after the list has been told to refresh and the toast has been shown,
+            // because this is the slowest part of an unfreeze and nothing waits on its result.
+            // Each notification carries the application's icon, which means a package manager
+            // lookup, an icon loaded or decoded from the cache, a bitmap drawn from it and a
+            // binder transaction to post it — measured at 1.4 s for 24 applications, against
+            // 237 ms for the unfreezing itself. Held before the toast, that was the whole
+            // perceived cost of a batch.
+            if (!freeze) {
+                succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+            }
+
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
+                            "failed=${failed.size} " +
+                            "actions=${actionsDoneAt - startedAt}ms " +
+                            "bookkeeping=${bookkeepingDoneAt - actionsDoneAt}ms " +
+                            "reportedAfter=${bookkeepingDoneAt - startedAt}ms " +
+                            "notifications=${System.currentTimeMillis() - bookkeepingDoneAt}ms"
+                )
             }
         }
     }
