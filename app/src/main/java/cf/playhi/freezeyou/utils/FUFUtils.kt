@@ -348,14 +348,26 @@ object FUFUtils {
                 outputStream.flush()
                 val exitValue = process.waitFor()
                 if (exitValue == 0) {
+                    // The same bookkeeping as the in-process batch, and it used to be done one
+                    // application at a time: onFApplications alone opened the statistics database
+                    // and scanned the trigger table per package, which for a couple of dozen of
+                    // them cost several times as long as the freezing. Same set of packages as
+                    // before, so nothing changes but the number of database round trips.
+                    val batch = pkgNameList.toList()
                     if (freeze) {
-                        for (aPkgNameList in pkgNameList) {
-                            TasksUtils.onFApplications(context, aPkgNameList)
-                            NotificationUtils.deleteNotification(context, aPkgNameList)
-                        }
+                        DataStatisticsUtils.addFreezeTimes(context, batch)
+                        NotificationUtils.deleteNotifications(context, batch)
+                        TasksUtils.runCollectedTasks(
+                            context,
+                            TasksUtils.collectTriggeredTasks(context, batch, "onFApplications")
+                        )
                     } else {
+                        DataStatisticsUtils.addUFreezeTimes(context, batch)
+                        TasksUtils.runCollectedTasks(
+                            context,
+                            TasksUtils.collectTriggeredTasks(context, batch, "onUFApplications")
+                        )
                         for (aPkgNameList in pkgNameList) {
-                            TasksUtils.onUFApplications(context, aPkgNameList)
                             checkAndCreateFUFQuickNotification(context, aPkgNameList)
                         }
                     }
@@ -577,10 +589,14 @@ object FUFUtils {
                 }
             }
 
+            // Split on purpose: the actions and the bookkeeping that follows them are different
+            // costs, and reading one number for both hid that the bookkeeping was the slower half.
+            val actionsDoneAt = System.currentTimeMillis()
+
             if (succeeded.isNotEmpty()) {
                 if (freeze) {
                     DataStatisticsUtils.addFreezeTimes(appContext, succeeded)
-                    succeeded.forEach { NotificationUtils.deleteNotification(appContext, it) }
+                    NotificationUtils.deleteNotifications(appContext, succeeded)
                 } else {
                     DataStatisticsUtils.addUFreezeTimes(appContext, succeeded)
                     succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
@@ -599,7 +615,9 @@ object FUFUtils {
                 Log.e(
                     "DebugModeLogcat",
                     "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
-                            "failed=${failed.size} took=${System.currentTimeMillis() - startedAt}ms"
+                            "failed=${failed.size} took=${System.currentTimeMillis() - startedAt}ms " +
+                            "actions=${actionsDoneAt - startedAt}ms " +
+                            "bookkeeping=${System.currentTimeMillis() - actionsDoneAt}ms"
                 )
             }
 
