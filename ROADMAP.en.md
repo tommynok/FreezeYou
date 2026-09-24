@@ -65,6 +65,112 @@ cancelled.
 The check on build 133 ran like this: empty after a reboot, one alarm once a task was created, and
 after "delete all scheduled tasks" **no alarm at all, only two statistics lines**.
 
+## Renaming the fork: licence, what it would cost, the icon
+
+Worked out on 24 September at the owner's request. He has not decided anything yet; what follows is
+the facts and the price.
+
+### What the licence actually requires
+
+`LICENSE` is Apache 2.0, the untouched boilerplate, with the `Copyright [yyyy] [name]` line in the
+appendix never filled in, and there is no `NOTICE`. The repository is public and so are the
+releases, so distribution is already happening and the §4 obligations apply.
+
+All four are met: the licence text is there; the README says "This is an unofficial fork" in its
+first line, which is the §4(b) statement of changes; no copyright notices were removed; and there is
+no `NOTICE` to carry, upstream has none.
+
+**The licence does not require renaming the application, the icon or the package.** The name and
+the mark fall under §6, which simply grants no rights to trademarks; no duty to rename follows from
+it. Apache does not require publishing sources either, unlike the GPL — shipping only an APK would
+be fine.
+
+### What changing the `applicationId` would cost
+
+It is `cf.playhi.freezeyou` today, and the `namespace` matches. The code holds **32** literal
+`"cf.playhi.freezeyou"` strings, the manifest **18**, the resources about **50**. A minority of
+those are class and alias names and must not be touched; the rest mean "myself", and the correct
+repair is `context.packageName` rather than a new literal.
+
+What would break silently:
+
+- `CrashHandler` calls `getPackageInfo("cf.playhi.freezeyou", 0)` — it would **throw** where
+  upstream is not installed;
+- `AutoDiagnosisViewModel` asks `isIgnoringBatteryOptimizations("cf.playhi.freezeyou")` — it would
+  answer about a different application;
+- `AccessibilityService` compares the previous package against the literal, so it would stop
+  recognising itself;
+- the `cf.playhi.freezeyou.fileprovider` authority is hard-coded in the manifest and twice in code,
+  so sharing would fall over.
+
+**On installing beside upstream in particular.** Six providers declare literal authorities rather
+than `${applicationId}`: `export.QUERY`, `export.UNFREEZE`, `export.FREEZE`,
+`export.GetBackupData`, `fileprovider` and `MMKVContentProvider`. Android refuses to install two
+applications declaring the same authority — the install simply fails. Changing the `applicationId`
+alone is therefore **not enough** for the two to coexist; those six have to move as well.
+
+If it is changed, staying inside `cf.playhi` makes little sense — that is the original author's
+domain reversed. A namespace of one's own, such as `io.github.tommynok.freezeyou`.
+
+### What survives a rename
+
+| Channel | Does it survive |
+|---|---|
+| FreezeYou's own backup | **Always.** The JSON carries no package name in any field, the import goes by key names, and unknown keys are skipped silently (`if (key == null) continue`). It works in both directions with upstream. |
+| Android's system backup | **No — and it already does not.** That is tied to the `applicationId` **and the signature**, and these builds are signed with the debug key kept in the repository (`.github/ci/debug.keystore`), while upstream signs with its own. |
+
+What would genuinely be lost by changing the `applicationId` is the data of one's **own previous**
+install on the same phone: a new application means new storage. The same export fixes it — back up
+before, import after. The launcher-icon switches and `enableAuthentication` are deliberately not
+carried over, being tied to the device.
+
+### The order, if it is done
+
+1. **The name** (`app_name`, currently "FreezeYou!") — one line, and the largest effect: the shade,
+   the recents screen and the system dialogs all start saying whose build this is.
+2. **A link to the list of changes in the README** — §4(b) is then met to the letter rather than in
+   spirit; `ROADMAP.en.md` exists for exactly that.
+3. **The icon** — see below.
+4. **`applicationId`, the six authorities and the literals** — only if installing beside upstream is
+   wanted. Otherwise it is work without a return.
+
+### The icon: what there is, and what a generator needs to produce
+
+Today it is an adaptive vector icon: a solid `#2962FF` background and a vector foreground in
+`drawable-v24/ic_launcher_new_round_foreground.xml`.
+
+An image generator is good for the idea and the picture, but not for a finished icon: an adaptive
+icon has a 108×108 dp canvas of which only the central ~66 dp is guaranteed to be visible — the
+launcher draws the mask and masks differ — and everything has to read at 48 dp. So what is needed
+from the service is one layer: the subject centred on a transparent background, with the background
+colour set in resources.
+
+**What to hand over for integration:** a 1024×1024 PNG, transparent background, the subject within
+the central ~60% of the canvas, plus the hex of the background colour. That is enough to assemble
+the `adaptive-icon` without rework.
+
+The base prompt:
+
+```
+A flat vector app icon, single centered subject, no text, no letters, no words.
+Solid transparent background. Bold simple geometry, thick even strokes, high contrast,
+readable when scaled down to 48x48 pixels. Two or three colors at most. No gradients,
+no shadows, no 3D, no bevel, no photorealism, no drop shadow, no border, no frame.
+Centered composition with generous empty margin around the subject.
+Subject: <SUBJECT>
+```
+
+Subjects to substitute on the last line and choose between:
+
+- `a snowflake with six arms, one arm shaped like a power on-off symbol`
+- `a rounded square app tile encased in a block of ice, crisp angular ice facets`
+- `a snowflake inside a rounded square outline, minimal, geometric`
+- `a pause symbol made of two icicles hanging down`
+- `a simple padlock made of ice crystals`
+
+Deliberately to be avoided: the same shade of `#2962FF`, and any restatement of the original's
+subject — the point is for one's own build to stand out on the screen at a glance.
+
 ## Open questions
 
 ### Deferred
