@@ -289,7 +289,7 @@
     <string name="dangerous">Dangerous</string>
     <string name="alert_isObsd">The window is obscured, the operation has been rejected, please remove the mask layer and retry</string>
     <string name="retry">Retry</string>
-    <string name="enableInstallPkgFunc">Enable install packages function</string>
+    <string name="enableInstallPkgFunc">Install APK files through FreezeYou</string>
     <string name="allow">Allow</string>
     <string name="reject">Reject</string>
     <string name="execute_colon">Execute: </string>
@@ -297,7 +297,7 @@
     <string name="alwaysAllow_name">Always allow %1$s</string>
     <string name="existed_colon">Existed: %1$s</string>
     <string name="manageUriAutoAllow">Manage URI Request Auto Allow List</string>
-    <string name="manageIpaAutoAllow">Manage Request Install Applications Auto Allow List</string>
+    <string name="manageIpaAutoAllow">Allow-list: installs without confirmation</string>
     <string name="delAllCache">Clear all Caches</string>
     <string name="needStoragePermission">Storage Permission Required</string>
     <string name="okay">OK</string>
@@ -305,7 +305,7 @@
     <string name="manageSpace">Manage space</string>
     <string name="cacheApplicationsIcons">Cache Applications Icons</string>
     <string name="greyFrozenApplicationsIcons">Show frozen applications in grey</string>
-    <string name="tryDelApkAfterInstalled">Try to delete the APK after installed</string>
+    <string name="tryDelApkAfterInstalled">Delete the APK file after installation</string>
     <string name="sortBy">Sort by</string>
     <string name="sortBy_default">Default</string>
     <string name="sortBy_no">No sort</string>
@@ -349,7 +349,7 @@
     <string name="parseFailed">Parse failed</string>
     <string name="nothing">None</string>
     <string name="share">Share</string>
-    <string name="notAllowWhenIsObsd">Don\'t allow window being obscured</string>
+    <string name="notAllowWhenIsObsd">Block installs while the screen is obscured</string>
     <string name="remove">Remove</string>
     <string name="newFolder">New Folder</string>
     <string name="alreadyExist">Already exists</string>
@@ -384,7 +384,7 @@
     <string name="email_colon">Email: %1$s </string>
     <string name="qqGroup_colon">QQ Group: %1$s </string>
     <string name="wechatMp_colon">WeChat Official Account: %1$s </string>
-    <string name="tryToAvoidUpdateWhenUsing">Try to avoid update when using</string>
+    <string name="tryToAvoidUpdateWhenUsing">Don\'t update an app while it\'s in use</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
     <string name="enable_Root_unhide">Unfreeze - ROOT(Unhide)</string>
     <string name="disable_Root_hide">Freeze - ROOT(Hide)</string>
@@ -626,9 +626,9 @@
     <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
     <string name="summary_spr_notification">The quick notification after unfreezing, and how it behaves</string>
     <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
-    <string name="summary_spr_installUninstall">Installing packages and what happens afterwards</string>
+    <string name="summary_spr_installUninstall">Options related to installing apps and removing APK files</string>
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
-    <string name="summary_spr_advance">Installing packages, debugging, accessibility service, danger zone</string>
+    <string name="summary_spr_advance">Installing apps, debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
     <string name="summary_hToUse">The guide on the application website</string>
 </resources>

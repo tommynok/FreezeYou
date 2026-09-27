@@ -289,7 +289,7 @@
     <string name="dangerous">Опасно</string>
     <string name="alert_isObsd">Окно затемнено, операция была отклонена. Пожалуйста, отключите экранные наложения и повторите попытку.</string>
     <string name="retry">Повтор</string>
-    <string name="enableInstallPkgFunc">Включить функцию установки пакетов</string>
+    <string name="enableInstallPkgFunc">Устанавливать APK через FreezeYou</string>
     <string name="allow">Разрешить</string>
     <string name="reject">Отклонено</string>
     <string name="execute_colon">Выполнить:</string>
@@ -297,7 +297,7 @@
     <string name="alwaysAllow_name">Всегда разрешать %1$s</string>
     <string name="existed_colon">Существовавшие: %1$s</string>
     <string name="manageUriAutoAllow">Управление запросами белого списка URI</string>
-    <string name="manageIpaAutoAllow">Управление запросами на установку приложений БЕЛОГО списка</string>
+    <string name="manageIpaAutoAllow">Белый список: установка без подтверждения</string>
     <string name="delAllCache">Очистить все кеши</string>
     <string name="needStoragePermission">Требуется разрешение на доступ к памяти</string>
     <string name="okay">ОК</string>
@@ -305,7 +305,7 @@
     <string name="manageSpace">Управление пространством</string>
     <string name="cacheApplicationsIcons">Кеш иконок приложений</string>
     <string name="greyFrozenApplicationsIcons">Отображать замороженные серым цветом</string>
-    <string name="tryDelApkAfterInstalled">Попробовать удалить .АРК после установки</string>
+    <string name="tryDelApkAfterInstalled">Удалять APK-файл после установки</string>
     <string name="sortBy">Сортировка</string>
     <string name="sortBy_default">По умолчанию</string>
     <string name="sortBy_no">Не сортировать</string>
@@ -348,7 +348,7 @@
     <string name="parseFailed">Сбой разбора</string>
     <string name="nothing">Нет</string>
     <string name="share">Поделиться</string>
-    <string name="notAllowWhenIsObsd">Не позволять окну затемняться</string>
+    <string name="notAllowWhenIsObsd">Блокировать установку при перекрытом экране</string>
     <string name="remove">Удалить</string>
     <string name="newFolder">Новая папка</string>
     <string name="alreadyExist">Уже существует</string>
@@ -383,7 +383,7 @@
     <string name="email_colon">Email: %1$s</string>
     <string name="qqGroup_colon">QQ сообщество: %1$s</string>
     <string name="wechatMp_colon">WeChat официальный аккаунт: %1$s</string>
-    <string name="tryToAvoidUpdateWhenUsing">Пробовать избегать обновления при использовании</string>
+    <string name="tryToAvoidUpdateWhenUsing">Не обновлять приложение во время использования</string>
     <string name="selectFUFMode">Выберите режим заморозки и разморозки</string>
     <string name="enable_Root_unhide">Разморозка - ROOT (показать)</string>
     <string name="disable_Root_hide">Заморозка - ROOT(скрыть)</string>
@@ -536,9 +536,9 @@
     <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
     <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
-    <string name="summary_spr_installUninstall">Установка пакетов и что происходит после</string>
+    <string name="summary_spr_installUninstall">Настройки, связанные с установкой приложений и удалением APK-файлов</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
-    <string name="summary_spr_advance">Установка пакетов, отладка, служба специальных возможностей, опасная зона</string>
+    <string name="summary_spr_advance">Установка приложений, отладка, специальные возможности, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
     <string name="summary_hToUse">Справка на сайте приложения</string>
 </resources>
