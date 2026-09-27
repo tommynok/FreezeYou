@@ -174,7 +174,7 @@
     <string name="enable">Enable</string>
     <string name="repeat">Repeat</string>
     <string name="task">Task</string>
-    <string name="help">Help</string>
+    <string name="help">Help (original website)</string>
     <string name="label">Name</string>
     <string name="hourShouldBetween">The hour needs to be between 0 and 23</string>
     <string name="minutesShouldBetween">Minutes need to be between 0 and 59</string>
@@ -428,7 +428,7 @@
     <string name="onlyRunningUser">Running: User</string>
     <string name="criticalPackagesWarning">The selection includes packages the system depends on:\n\n%1$s\n\nFreezing these can leave the device without a status bar, Settings or a keyboard, and hard to recover. Continue anyway?</string>
     <string name="runningFilterUnavailable">The Running filter needs a ROOT or Shizuku freeze mode. Change it in Settings \u2192 Freeze and unfreeze \u2192 Select freeze mode.</string>
-    <string name="scheduledTaskCommandsSyntax">Task Setup (Help)</string>
+    <string name="scheduledTaskCommandsSyntax">Task Setup (offline help)</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">en</string>
     <string name="lastInstall">Recently Installed</string>
     <string name="lastUpdate">Recently Updated</string>
@@ -634,5 +634,5 @@
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
     <string name="summary_spr_advance">Installing apps, debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
-    <string name="summary_hToUse">The guide on the original application website</string>
+    <string name="summary_hToUse">Online documentation on the original application website</string>
 </resources>
