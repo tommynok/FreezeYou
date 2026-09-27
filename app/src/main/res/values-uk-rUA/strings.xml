@@ -73,7 +73,7 @@
     <string name="onlySA">Системні додатки</string>
     <string name="onlyUA">Додатки користувача</string>
     <string name="moreSettings">Налаштування</string>
-    <string name="visitWebsite">Відвідайте вебсайт FreezeYou-Fork</string>
+    <string name="visitWebsite">Вебсайт оригінального FreezeYou</string>
     <string name="addQQGroup">Приєднатися до QQ групи</string>
     <string name="dangerZone">Небезпечна зона</string>
     <string name="disableMRootMode">Відключити режим без-ROOT</string>
@@ -82,7 +82,7 @@
     <string name="common">Загальні налаштування</string>
     <string name="openImmediately">Відкрити негайно</string>
     <string name="openImmediatelyEx">Запустити додаток відразу після розморозки</string>
-    <string name="hToUse">Як користуватися</string>
+    <string name="hToUse">Як користуватися (сайт оригіналу)</string>
     <string name="openAndUFImmediately">Негайна розморозка і запуск при натисканні на ярлик</string>
     <string name="openAndUFImmediatelyEx">Більше не можна використовувати ярлик для заморозки додатку.</string>
     <string name="quickView">Швидкий перегляд</string>
@@ -139,7 +139,7 @@
     <string name="disableClickDisappear">Не зникати після натискання</string>
     <string name="effectNextCreate">Вступить в силу в наступний раз</string>
     <string name="helpTranslate">Допоможіть перекласти цей додаток</string>
-    <string name="thanksList">Подяки</string>
+    <string name="thanksList">Подяки авторам оригіналу</string>
     <string name="automation">Автоматизація</string>
     <string name="freezeAfterScreenLock">Запускати OneKEY заморозку при вимкненні екрана</string>
     <string name="freezeAfterScreenLockSummary">Заморожує додатки зі списку «OneKEY заморозка» щоразу, коли гасне екран.</string>
@@ -163,7 +163,7 @@
     <string name="plsConfirm">Будь ласка підтвердіть</string>
     <string name="removeNoRootCaution">Ви дійсно хочете скасувати дозвіл для режиму без-ROOT? Щоб уникнути непотрібних проблем, необхідно розморозити всі заморожені додатки перед відключенням цього режиму!</string>
     <string name="noRootNotActivated">На жаль режим без-ROOT не був включений зараз!</string>
-    <string name="faq">Часті запитання</string>
+    <string name="faq">Часті запитання на сайті оригіналу</string>
     <string name="executeImmediately">Виконати</string>
     <string name="oneKeyLockScreen">Блокування екрану</string>
     <string name="mustContainColon">Використовуйте двокрапку : для розділення годин і хвилин</string>
@@ -543,5 +543,5 @@
     <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
     <string name="summary_spr_advance">Встановлення додатків, налагодження, спеціальні можливості, небезпечна зона</string>
     <string name="dangerZoneSummary">Стирання даних самого FreezeYou, відкликання прав власника, видалення FreezeYou</string>
-    <string name="summary_hToUse">Довідка на сайті програми</string>
+    <string name="summary_hToUse">Довідка на сайті оригінального додатку</string>
 </resources>
