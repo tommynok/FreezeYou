@@ -89,7 +89,8 @@
     <string name="nCaution">Don\'t remind</string>
     <string name="nSCaution">No longer show the warning at startup</string>
     <string name="advance">Other settings</string>
-    <string name="manualMode">Manual Mode</string>
+    <string name="manualMode">Freeze by package name</string>
+    <string name="summary_manualMode">Enter a package name and freeze or unfreeze it manually — for applications that are not in the list</string>
     <string name="packageName">Package Name</string>
     <string name="disable_MRoot">Freeze - NO-ROOT</string>
     <string name="disable_Root">Freeze - ROOT</string>
@@ -233,6 +234,7 @@
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
     <string name="showLogcat">View Logs</string>
+    <string name="summary_showLogcat">Read the application\'s operation log and share it as a file</string>
     <string name="freezeOrLaunch">Freeze/Run</string>
     <string name="askIfSave">Save?</string>
     <string name="mainActivityPattern">Home pattern</string>

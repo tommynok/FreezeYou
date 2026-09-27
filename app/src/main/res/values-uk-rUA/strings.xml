@@ -89,7 +89,8 @@
     <string name="nCaution">Не нагадувати</string>
     <string name="nSCaution">Більше не показувати попередження при запуску</string>
     <string name="advance">Інші налаштування</string>
-    <string name="manualMode">Ручний режим</string>
+    <string name="manualMode">Заморозка за ім\'ям пакета</string>
+    <string name="summary_manualMode">Введення імені пакета та заморозка чи розморозка вручну — для додатків, яких немає у списку</string>
     <string name="packageName">Ім\'\я пакету</string>
     <string name="disable_MRoot">Заморозка - без-ROOT</string>
     <string name="disable_Root">Заморозка ROOT</string>
@@ -232,7 +233,8 @@
     <string name="status">Стан</string>
     <string name="debugMode">Режим налагодження</string>
     <string name="debugModeSummary">Записує в журнал внутрішні дії додатку (спроби заморожування/розморожування, виклики Shizuku/root) для діагностики проблем. Може дещо знизити продуктивність.</string>
-    <string name="showLogcat">Переглянути log</string>
+    <string name="showLogcat">Перегляд журналу</string>
+    <string name="summary_showLogcat">Перегляд журналу роботи додатку та надсилання його файлом через «Поділитися»</string>
     <string name="freezeOrLaunch">Заморозка / Запуск</string>
     <string name="askIfSave">Зберегти?</string>
     <string name="mainActivityPattern">Вигляд стартової сторінки</string>

@@ -24,6 +24,17 @@
             app:singleLineTitle="false"
             app:summary="@string/serviceLongerEx"
             app:title="@string/useForegroundService" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="manualMode"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_manualMode"
+            app:title="@string/manualMode">
+            <intent
+                android:data="ManualMode"
+                android:targetClass="cf.playhi.freezeyou.ui.ManualModeActivity"
+                android:targetPackage="cf.playhi.freezeyou" />
+        </Preference>
 
     </PreferenceCategory>
 

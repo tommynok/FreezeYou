@@ -17,6 +17,18 @@
         app:singleLineTitle="false"
         app:summary="@string/debugModeSummary"
         app:title="@string/debugMode" />
+    <!-- Kept next to the debug switch: both are about the same journal, one writes it,
+         the other reads it. -->
+    <Preference
+        app:iconSpaceReserved="false"
+        app:key="showLogcat"
+        app:singleLineTitle="false"
+        app:summary="@string/summary_showLogcat"
+        app:title="@string/showLogcat">
+        <intent
+            android:targetClass="cf.playhi.freezeyou.ui.ShowLogcatActivity"
+            android:targetPackage="cf.playhi.freezeyou" />
+    </Preference>
     <EditTextPreference
         app:defaultValue="@string/app_name"
         app:iconSpaceReserved="false"
@@ -31,23 +43,6 @@
         app:singleLineTitle="false"
         app:summary="@string/accessibility_service_description"
         app:title="@string/configureAccessibilityService" />
-    <Preference
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:title="@string/manualMode">
-        <intent
-            android:data="ManualMode"
-            android:targetClass="cf.playhi.freezeyou.ui.ManualModeActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
-    <Preference
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:title="@string/showLogcat">
-        <intent
-            android:targetClass="cf.playhi.freezeyou.ui.ShowLogcatActivity"
-            android:targetPackage="cf.playhi.freezeyou" />
-    </Preference>
     <!-- The danger zone keeps a screen of its own: a row that wipes data or revokes ownership
          should not sit one careless tap away from a debugging switch. A category around it would
          only repeat the row's own title, so the row stands on its own. -->
