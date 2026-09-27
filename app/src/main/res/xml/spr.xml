@@ -70,10 +70,13 @@
             app:iconSpaceReserved="false"
             app:key="backupAndRestore"
             app:singleLineTitle="false"
+            app:summary="@string/summary_backupAndRestore"
             app:title="@string/backupAndRestore" />
         <Preference
             app:iconSpaceReserved="false"
+            app:key="autoDiagnosis"
             app:singleLineTitle="false"
+            app:summary="@string/summary_autoDiagnosis"
             app:title="@string/autoDiagnosis">
             <intent
                 android:targetClass="cf.playhi.freezeyou.ui.AutoDiagnosisActivity"

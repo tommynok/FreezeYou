@@ -202,6 +202,7 @@
     <string name="avoidFreezeNotifyingApplicationsSummary">Пропускає заморожування додатку, поки в нього є активне сповіщення (наприклад, відтворення музики, завантаження), щоб він продовжував працювати.</string>
     <string name="needL">Потрібен Android 5.0 і новіше</string>
     <string name="autoDiagnosis">Діагностика</string>
+    <string name="summary_autoDiagnosis">Автоматична перевірка дозволів, режиму власника, root та економії батареї — зі списком знайдених проблем</string>
     <string name="sysVerLow">Застаріла версія Android</string>
     <string name="someFuncUn">Деякі функції можуть бути недоступні</string>
     <string name="ACBSNotEnabled">Служба спеціальних можливостей не включена</string>
@@ -227,7 +228,8 @@
     <string name="shortcutAutoFUFEx">Заморозити незаморожені, розморозити заморожені</string>
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
-    <string name="backupAndRestore">Резервне копіювання та відновлення</string>
+    <string name="backupAndRestore">Бекап і відновлення</string>
+    <string name="summary_backupAndRestore">Експорт налаштувань, списків, ярликів і завдань у файл та імпорт назад</string>
     <string name="backup">Резервне копіювання</string>
     <string name="restore">Відновити</string>
     <string name="status">Стан</string>

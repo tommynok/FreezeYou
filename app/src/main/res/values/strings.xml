@@ -202,6 +202,7 @@
     <string name="avoidFreezeNotifyingApplicationsSummary">Skips freezing an app while it has an active notification (e.g. music playback, downloads), so it keeps running.</string>
     <string name="needL">Requires Android 5.0 and newer</string>
     <string name="autoDiagnosis">Diagnosis</string>
+    <string name="summary_autoDiagnosis">Automatic checks of permissions, device-owner mode, root and battery optimization, listing whatever needs attention</string>
     <string name="sysVerLow">Low system version</string>
     <string name="someFuncUn">Some features may not available</string>
     <string name="ACBSNotEnabled">Accessibility service not enabled</string>
@@ -228,6 +229,7 @@
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
+    <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
     <string name="backup">Backup</string>
     <string name="restore">Restore</string>
     <string name="status">Status</string>
