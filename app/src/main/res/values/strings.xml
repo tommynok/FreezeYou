@@ -82,7 +82,7 @@
     <string name="common">General</string>
     <string name="openImmediately">Open Immediately</string>
     <string name="openImmediatelyEx">Open the application immediately after being unfrozen</string>
-    <string name="hToUse">How to use (original website)</string>
+    <string name="hToUse">How to use</string>
     <string name="openAndUFImmediately">Unfreeze immediately then run when clicking the shortcut</string>
     <string name="openAndUFImmediatelyEx">Cannot use the shortcut to freeze the application any more.</string>
     <string name="quickView">Quick View</string>
@@ -139,7 +139,7 @@
     <string name="disableClickDisappear">Do not disappear after clicked</string>
     <string name="effectNextCreate">Take effects the next time created</string>
     <string name="helpTranslate">Help Translate</string>
-    <string name="thanksList">Thanks from the original authors</string>
+    <string name="thanksList">Project contributors</string>
     <string name="automation">Automation</string>
     <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
     <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
@@ -163,7 +163,7 @@
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>
     <string name="noRootNotActivated">Oops! The no-root mode has not been enabled now!</string>
-    <string name="faq">FAQ on the original website</string>
+    <string name="faq">FAQ</string>
     <string name="executeImmediately">Execute</string>
     <string name="oneKeyLockScreen">Lock Screen</string>
     <string name="mustContainColon">Must include : to distinguish hours and minutes</string>

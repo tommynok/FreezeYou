@@ -82,7 +82,7 @@
     <string name="common">Общие настройки</string>
     <string name="openImmediately">Открыть немедленно</string>
     <string name="openImmediatelyEx">Открыть приложение сразу после разморозки</string>
-    <string name="hToUse">Как пользоваться (сайт оригинала)</string>
+    <string name="hToUse">Как пользоваться</string>
     <string name="openAndUFImmediately">Немедленная разморозка и запуск при нажатии на ярлык</string>
     <string name="openAndUFImmediatelyEx">Больше нельзя использовать ярлык для заморозки приложения.</string>
     <string name="quickView">Быстрый просмотр</string>
@@ -139,7 +139,7 @@
     <string name="disableClickDisappear">Не исчезать после нажатия</string>
     <string name="effectNextCreate">Вступит в силу в следующий раз</string>
     <string name="helpTranslate">Помогите перевести это приложение</string>
-    <string name="thanksList">Благодарности авторам оригинала</string>
+    <string name="thanksList">Благодарности участникам проекта</string>
     <string name="automation">Автоматизация</string>
     <string name="freezeAfterScreenLock">Запускать OneKEY заморозку при выключении экрана</string>
     <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKEY заморозка» каждый раз, когда гаснет экран.</string>
@@ -163,7 +163,7 @@
     <string name="plsConfirm">Пожалуйста подтвердите</string>
     <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-ROOT? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
     <string name="noRootNotActivated">К сожалению режим без-ROOT не был включен сейчас!</string>
-    <string name="faq">ЧАВО на сайте оригинала</string>
+    <string name="faq">ЧАВО</string>
     <string name="executeImmediately">Выполнить</string>
     <string name="oneKeyLockScreen">Блокировка экрана</string>
     <string name="mustContainColon">Используйте двоеточие : для разделения часов и минут</string>
