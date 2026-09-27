@@ -50,7 +50,9 @@ jobs:
         ./gradlew test --stacktrace
 
     - name: Build with Gradle
-      run: ./gradlew assembleRelease --stacktrace
+      # forkBuildNumber is the run number: it makes versionCode grow by one every build,
+      # so an update always installs over the previous one.
+      run: ./gradlew assembleRelease -PforkBuildNumber=${{ github.run_number }} --stacktrace
 
     # A release carries the APK itself, so it installs straight from the phone's
     # browser. An artifact is a zip that has to be unpacked first, which is why

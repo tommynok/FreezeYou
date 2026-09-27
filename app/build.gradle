@@ -2,6 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'kotlin-parcelize'
 
+// CI passes -PforkBuildNumber=<github.run_number>, so every build gets a strictly larger
+// versionCode than the one before and versionName shows the same number as the release tag.
+// The +100 offset exists because versionCode was hardcoded 151 while the run number was
+// already 138 at the switch: Android refuses installs whose versionCode is lower than the
+// installed one, so the first CI-numbered build had to land above 151. Locally, without the
+// property, the old numbers stand.
+def forkBuildNumber = (project.findProperty("forkBuildNumber") ?: "51").toInteger()
+def effectiveVersionCode = forkBuildNumber + 100
+
 android {
     compileSdk 37
     buildToolsVersion '32.0.0'
@@ -9,8 +18,8 @@ android {
         applicationId "cf.playhi.freezeyou"
         minSdkVersion 16
         targetSdk 32
-        versionCode 151
-        versionName '11.5.151-fork'
+        versionCode effectiveVersionCode
+        versionName "11.5.${effectiveVersionCode}-fork"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resConfigs "ru-rRU", "uk-rUA"
         ndk {

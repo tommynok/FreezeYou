@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FreezeYou!</string>
+    <string name="app_name">FreezeYou-Fork</string>
     <string name="oneKeyFreeze">OneKEY заморозка</string>
     <string name="oneKeyUF">OneKEY разморозка</string>
     <string name="alertT1">Внимание! Не замораживайте важные для системы приложения. Это может привести к сбою системы!</string>
@@ -60,7 +60,7 @@
     <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за нехватки прав.</string>
     <string name="frozen">Заморожено</string>
     <string name="OneKeyFreezeImmediately">OneKEY заморозка</string>
-    <string name="about">О FreezeYou!</string>
+    <string name="about">О FreezeYou-Fork</string>
     <string name="plsVisit">Пожалуйста, посетите</string>
     <string name="viewMode">Режим просмотра</string>
     <string name="onlyFrozen">Замороженные</string>
@@ -73,11 +73,11 @@
     <string name="onlySA">Системные</string>
     <string name="onlyUA">Пользовательские</string>
     <string name="moreSettings">Настройки</string>
-    <string name="visitWebsite">Посетить вебсайт FreezeYou!</string>
+    <string name="visitWebsite">Посетить вебсайт FreezeYou-Fork</string>
     <string name="addQQGroup">Присоединиться к QQ группе</string>
     <string name="dangerZone">Опасная зона</string>
     <string name="disableMRootMode">Отключить режим без-ROOT</string>
-    <string name="disableMRootModeEx">Если вы включили режим без-ROOT, вам необходимо отключить его перед удалением FreezeYou!</string>
+    <string name="disableMRootModeEx">Если вы включили режим без-ROOT, вам необходимо отключить его перед удалением FreezeYou-Fork</string>
     <string name="update">Обновить</string>
     <string name="common">Общие настройки</string>
     <string name="openImmediately">Открыть немедленно</string>

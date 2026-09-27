@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FreezeYou!</string>
+    <string name="app_name">FreezeYou-Fork</string>
     <string name="oneKeyFreeze">OneKEY заморозка</string>
     <string name="oneKeyUF">OneKEY розморозка</string>
     <string name="alertT1">Увага! Не заморожуйте важливі для системи додатки. Це може привести до збою системи!</string>
@@ -60,7 +60,7 @@
     <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через нестачу прав.</string>
     <string name="frozen">Заморожено</string>
     <string name="OneKeyFreezeImmediately">OneKEY заморозка</string>
-    <string name="about">Про FreezeYou!</string>
+    <string name="about">Про FreezeYou-Fork</string>
     <string name="plsVisit">Будь ласка, відвідайте</string>
     <string name="viewMode">Режим перегляду</string>
     <string name="onlyFrozen">Заморожені</string>
@@ -73,7 +73,7 @@
     <string name="onlySA">Системні додатки</string>
     <string name="onlyUA">Додатки користувача</string>
     <string name="moreSettings">Налаштування</string>
-    <string name="visitWebsite">Відвідайте вебсайт FreezeYou!</string>
+    <string name="visitWebsite">Відвідайте вебсайт FreezeYou-Fork</string>
     <string name="addQQGroup">Приєднатися до QQ групи</string>
     <string name="dangerZone">Небезпечна зона</string>
     <string name="disableMRootMode">Відключити режим без-ROOT</string>
