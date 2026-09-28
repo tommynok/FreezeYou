@@ -6,7 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.appcompat.app.AppCompatActivity;
+import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 
 import static cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled;
 import static cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner;
@@ -15,7 +15,7 @@ import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionRoot;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
-public class EnableApplications extends AppCompatActivity {
+public class EnableApplications extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
