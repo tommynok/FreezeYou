@@ -174,7 +174,8 @@
     <string name="enable">Включити</string>
     <string name="repeat">Повтор</string>
     <string name="task">Задача</string>
-    <string name="help">Допомога (сайт оригіналу)</string>
+    <string name="help">Допомога</string>
+    <string name="summary_stma_add_help">Синтаксис команд запланованих завдань</string>
     <string name="label">Назва</string>
     <string name="hourShouldBetween">Години мають бути між 0 і 23</string>
     <string name="minutesShouldBetween">Хвилини повинні бути від 0 до 59</string>
@@ -426,7 +427,7 @@
     <string name="onlyRunningUser">Активні: користувацькі</string>
     <string name="criticalPackagesWarning">У виділенні є пакети, від яких залежить система:\n\n%1$s\n\nЇх заморозка може залишити пристрій без рядка стану, Налаштувань або клавіатури, і повернути все буде непросто. Все одно продовжити?</string>
     <string name="runningFilterUnavailable">Фільтр «Активні» доступний лише в режимах ROOT або Shizuku. Змініть режим: Налаштування \u2192 Заморозка і розморозка \u2192 Вибрати режим.</string>
-    <string name="scheduledTaskCommandsSyntax">Налаштування завдань (офлайн-довідка)</string>
+    <string name="scheduledTaskCommandsSyntax">Налаштування завдань</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">uk</string>
     <string name="lastInstall">Нещодавно встановлені</string>
     <string name="lastUpdate">Нещодавно оновлені</string>

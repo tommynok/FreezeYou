@@ -44,6 +44,7 @@
         app:iconSpaceReserved="false"
         app:key="stma_add_help"
         app:singleLineTitle="false"
+        app:summary="@string/summary_stma_add_help"
         app:title="@string/help" />
 
 </PreferenceScreen>

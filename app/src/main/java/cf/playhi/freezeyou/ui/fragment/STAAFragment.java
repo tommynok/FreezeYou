@@ -1,12 +1,13 @@
 package cf.playhi.freezeyou.ui.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import cf.playhi.freezeyou.R;
-import cf.playhi.freezeyou.utils.MoreUtils;
+import cf.playhi.freezeyou.ui.ScheduledTaskCommandsSyntaxActivity;
 
 public class STAAFragment extends PreferenceFragmentCompat {
 
@@ -21,9 +22,10 @@ public class STAAFragment extends PreferenceFragmentCompat {
         if (key != null) {
             switch (key) {
                 case "stma_add_help":
-                    MoreUtils.requestOpenWebSite(getActivity(),
-                            String.format("https://www.zidon.net/%1$s/guide/schedules.html",
-                                    getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)));
+                    // The online guide repeated the syntax page shipped in assets; the
+                    // offline copy answers the same question without leaving the app.
+                    startActivity(
+                            new Intent(requireContext(), ScheduledTaskCommandsSyntaxActivity.class));
                     break;
                 default:
                     break;
