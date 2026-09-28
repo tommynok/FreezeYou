@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Simplified Chinese, revived 2026-09-28 from the upstream snapshot
+    (translations/upstream-zh-rCN) plus translations for everything the fork
+    added or rewrote since. Terms: 冻结 = freeze, 解冻 = unfreeze, 一键 = OneKEY.
+    Machine-assisted, not yet reviewed by a native speaker.
+-->
+<resources>
+<string name="app_name">自冻</string>
+    <string name="oneKeyFreeze">一键冻结</string>
+    <string name="oneKeyUF">一键解冻</string>
+    <string name="alertT1">注意！\n不知道的不要乱冻结，可能会使系统崩溃！\n请谨慎操作！\n请谨慎操作！</string>
+    <string name="cancel">取消</string>
+    <string name="chooseDetailAction">请选择具体操作</string>
+    <string name="added">已添加</string>
+    <string name="notice">提示</string>
+    <string name="freeze">冻结</string>
+    <string name="more">更多</string>
+    <string name="appDetail">应用详情</string>
+    <string name="removeFromOneKeyList">移出一键冻结列表</string>
+    <string name="removeFromOneKeyUFList">移出一键解冻列表</string>
+    <string name="removeFromFreezeOnceQuit">移出离开冻结列表</string>
+    <string name="removed">已移出</string>
+    <string name="removeFailed">移除失败</string>
+    <string name="addToOneKeyList">加入一键冻结列表</string>
+    <string name="addToOneKeyUFList">加入一键解冻列表</string>
+    <string name="addToFreezeOnceQuit">加入离开冻结列表</string>
+    <string name="addFailed">添加失败</string>
+    <string name="caution">警告</string>
+    <string name="cautionContent">不知道的不要乱冻结，可能会使系统崩溃！\n请谨慎操作！\n\n长按可以多选\n右侧点为是否已冻结\n主题以及桌面三个图标等可以在“更多设置”中自行选择</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="requested">已发出创建请求</string>
+    <string name="requestFailed">请求创建失败： </string>
+    <string name="createOneKeyFreezeShortcut">一键冻结</string>
+    <string name="executed">执行完成</string>
+    <string name="exception">异常： </string>
+    <string name="launch">启动</string>
+    <string name="mayUnrooted">可能尚未ROOT或免ROOT模式未启用成功</string>
+    <string name="mayUnrootedOrOtherEx">可能没有授予权限、目标已卸载或发生了其它异常</string>
+    <string name="nApplicationsFailedColonList">%1$d 个应用失败：%2$s</string>
+    <string name="andNMoreApplications">，以及另外 %1$d 个</string>
+    <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
+    <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
+    <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
+    <string name="summary_enableInstallPkgFunc">允许通过应用内置安装器安装 APK 文件</string>
+    <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
+    <string name="summary_notAllowWhenIsObsd">当屏幕被其他应用窗口遮挡时阻止安装/卸载确认（防点击劫持）</string>
+    <string name="summary_tryToAvoidUpdateWhenUsing">使用应用时延迟其更新，离开后再安装</string>
+    <string name="summary_manageIpaAutoAllow">允许无需每次确认即请求安装的应用列表</string>
+    <string name="summary_manageMyCustomization">创建、重命名或删除你的应用分组</string>
+    <string name="summary_clearUninstalledPkgsInList">* 仅移除已卸载应用的条目——列表其余部分不受影响</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">从“一键冻结”列表中移除已卸载的应用 *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">从“一键解冻”列表中移除已卸载的应用 *</string>
+    <string name="clearUninstalledPkgsInFOQListAsterisk">从“离开冻结”列表中移除已卸载的应用 *</string>
+    <string name="summary_clearIconCache">释放已缓存应用图标占用的存储；需要时会重新加载</string>
+    <string name="summary_clearNameCache">释放已缓存应用名称占用的存储；需要时会重新加载</string>
+    <string name="summary_clearAllCache">一次清空图标缓存和名称缓存</string>
+    <string name="summary_resetFreezeTimes">将应用列表中显示的每个应用的冻结次数归零</string>
+    <string name="summary_resetUFTimes">将应用列表中显示的每个应用的解冻次数归零</string>
+    <string name="summary_resetUseTimes">将应用列表中显示的每个应用的使用次数归零</string>
+    <string name="summary_deleteAllScheduledTasks">彻底删除你创建的所有计划任务——无法撤销</string>
+    <string name="unfreeze">解冻</string>
+    <string name="unfreezedAndAskLaunch">已要求解冻，立即尝试启动？</string>
+    <string name="unrootedOrCannotFindTheLaunchIntent">解冻成功但未找到程序入口，或权限不足导致解冻失败</string>
+    <string name="OneKeyFreezeImmediately">一键冻结</string>
+    <string name="about">关于 FreezeYou-Fork</string>
+    <string name="plsVisit">请访问</string>
+    <string name="viewMode">查看模式</string>
+    <string name="onlyFrozen">仅已冻结</string>
+    <string name="onlyUF">仅未冻结</string>
+    <string name="shortCut">快捷方式</string>
+    <string name="notAvailable">暂无</string>
+    <string name="displayAll">显示全部</string>
+    <string name="onlyOnekey">一键冻结</string>
+    <string name="uninstalled">已卸载</string>
+    <string name="onlySA">系统预装</string>
+    <string name="onlyUA">用户应用</string>
+    <string name="moreSettings">更多设置</string>
+    <string name="visitWebsite">原 FreezeYou 网站</string>
+    <string name="addQQGroup">加入QQ群</string>
+    <string name="dangerZone">危险区</string>
+    <string name="disableMRootMode">解除免ROOT</string>
+    <string name="disableMRootModeEx">如果启用免ROOT模式成功，需要解除后才能正常卸载本应用程序。</string>
+    <string name="update">检查更新</string>
+    <string name="common">常规</string>
+    <string name="openImmediately">立即打开</string>
+    <string name="openImmediatelyEx">解冻后直接打开应用程序，不再询问</string>
+    <string name="hToUse">使用指南</string>
+    <string name="openAndUFImmediately">快捷方式立即解冻并启动</string>
+    <string name="openAndUFImmediatelyEx">损失快捷方式冻结的便利（可利用 一键冻结）</string>
+    <string name="quickView">快捷查看</string>
+    <string name="nCaution">不再提醒</string>
+    <string name="nSCaution">启动时不再显示警示</string>
+    <string name="advance">高级</string>
+    <string name="manualMode">按包名冻结</string>
+    <string name="summary_manualMode">输入包名并手动冻结或解冻——适用于不在列表中的应用</string>
+    <string name="packageName">应用程序包名</string>
+    <string name="failed">失败</string>
+    <string name="success">成功</string>
+    <string name="disableAEnable">冻结/解冻/启动</string>
+    <string name="copyPkgName">复制包名</string>
+    <string name="createDisEnableShortCut">创建冻结解冻快捷方式</string>
+    <string name="createActivityShortcut">创建活动快捷方式</string>
+    <string name="cannotFindTheEntrance">未找到该应用的入口</string>
+    <string name="unfreezeAndLaunchActivity">应用已冻结，其界面无法启动。要解冻吗？解冻后将保持未冻结状态。如需通过快捷方式冻结应用——请通过“%1$s”项创建。</string>
+    <string name="iconAEntry">图标与入口</string>
+    <string name="dialEntry">拨号盘进入</string>
+    <string name="dialEntry_Ex">*#*#373393968#*#*(*#*#FreezeYou#*#*)(大部分安卓设备支持)</string>
+    <string name="ciFinishedToast">已提交，请等待桌面刷新或重启桌面。</string>
+    <string name="ifUploadCrashLog">检测到存在发生过但并未提交的异常日志，是否上传日志？</string>
+    <string name="crashLog">崩溃日志</string>
+    <string name="log">日志</string>
+    <string name="search">搜索</string>
+    <string name="launchMode">启动模式</string>
+    <string name="freezeImmediately">立即冻结</string>
+    <string name="UFImmediately">立即解冻</string>
+    <string name="plsRemoveUninstalledApplications">[提示]可以将已卸载的应用程序移出列表</string>
+    <string name="notificationBarFreezeImmediately">点击通知栏快捷操作立即冻结</string>
+    <string name="onClickFunction">单击功能</string>
+    <string name="chooseAction">选择操作</string>
+    <string name="autoUFOrFreeze">自动冻解</string>
+    <string name="UFAndRun">解冻启动</string>
+    <string name="autoUFOrFreezeAndRun">冻解启动</string>
+    <string name="freezeCompleted">已冻结</string>
+    <string name="UFCompleted">已解冻</string>
+    <string name="shortCutOneKeyFreezeAdditionalOptions">快捷方式一键冻结后追加</string>
+    <string name="askIfLockScreen">是否立即锁屏？</string>
+    <string name="devicePolicyManagerNotFound">未找到可用的设备管理器</string>
+    <string name="activated">已激活</string>
+    <string name="disableConfirmation">确定取消？</string>
+    <string name="disabled">已停用</string>
+    <string name="notUpdatedForALongTimeMessage">已经很久没有更新过了，是否立即检查更新？</string>
+    <string name="uiStyle">界面风格</string>
+    <string name="willTakeEffectsNextLaunch">将会在下次启动应用时生效</string>
+    <string name="freezeAUF">冻结与解冻</string>
+    <string name="notificationBar">通知栏</string>
+    <string name="disableSlideOut">禁止滑动移除</string>
+    <string name="disableClickDisappear">禁止点击消失</string>
+    <string name="effectNextCreate">下次创建时生效</string>
+    <string name="helpTranslate">协助翻译</string>
+    <string name="thanksList">原项目贡献者</string>
+    <string name="automation">自动化</string>
+    <string name="freezeAfterScreenLock">锁屏后一键冻结</string>
+    <string name="freezeAfterScreenLockSummary">每次屏幕熄灭时冻结“一键冻结”列表中的应用。</string>
+    <string name="backgroundService">后台服务</string>
+    <string name="useForegroundService">使用前台服务(安卓8.0及以上强制开启)</string>
+    <string name="serviceLongerEx">减小后台功能失效的概率</string>
+    <string name="getDisabledApplications">获得已冻结的应用程序列表</string>
+    <string name="enableApplications">解冻应用</string>
+    <string name="disableApplications">冻结应用</string>
+    <string name="clearIconCache">清除图标缓存</string>
+    <string name="clearNameCache">清除应用程序名称缓存</string>
+    <string name="saveOnClickFunctionStatus">保存单击功能状态</string>
+    <string name="accessibility_service_description">侦听前台应用切换变化。 \n用于避免自动冻结时前台应用被冻结以及应用不在前台时自动冻结等功能。</string>
+    <string name="configureAccessibilityService">设置无障碍服务</string>
+    <string name="freezeOnceQuit">离开冻结</string>
+    <string name="freezeOnceQuitSummary">“离开冻结”列表中的应用会在你离开后立即冻结。</string>
+    <string name="needActiveAccessibilityService">需要启用无障碍服务</string>
+    <string name="invalidArguments">参数错误</string>
+    <string name="plsConfirm">请确认</string>
+    <string name="removeNoRootCaution">真的要解除免ROOT吗？\n!为避免造成不必要的麻烦，解除前请先解冻所有已冻结的程序！</string>
+    <string name="noRootNotActivated">现在还没有成功启用免ROOT呢！</string>
+    <string name="faq">常见问题</string>
+    <string name="executeImmediately">立即执行</string>
+    <string name="oneKeyLockScreen">一键锁屏</string>
+    <string name="mustContainColon">必须包含 : 以区分小时与时间</string>
+    <string name="scheduledTasks">计划任务</string>
+    <string name="add">添加</string>
+    <string name="save">保存</string>
+    <string name="time">时间</string>
+    <string name="enable">启用</string>
+    <string name="repeat">重复</string>
+    <string name="task">任务</string>
+    <string name="help">帮助</string>
+    <string name="summary_stma_add_help">计划任务命令语法</string>
+    <string name="label">标签</string>
+    <string name="hourShouldBetween">小时需要在0至23之间</string>
+    <string name="minutesShouldBetween">分钟需要在0至59之间</string>
+    <string name="requestFailedPlsRetry">请求失败，请重试</string>
+    <string name="uninstall">卸载</string>
+    <string name="triggers">触发器</string>
+    <string name="triggers_extra_parameters">触发器附加参数</string>
+    <string name="delete">删除</string>
+    <string name="copyAfterBeingFormatted">格式化后复制</string>
+    <string name="showInRecents">显示在最近任务列表</string>
+    <string name="showInRecentsSummary">让 FreezeYou 保持在最近任务（多任务）列表中可见。</string>
+    <string name="mayHaveNoEffectsL">在 Android 4.4 及以下系统无效</string>
+    <string name="lesserToast">更少的 Toast 提示</string>
+    <string name="avoidFreezeForegroundApplications">避免冻结前台应用程序</string>
+    <string name="avoidFreezeForegroundApplicationsSummary">当应用位于前台时跳过冻结，以免打断正在使用。需要启用无障碍服务（Accessibility Service）。</string>
+    <string name="delAllScheduledTasks">删除全部计划任务</string>
+    <string name="askIfDel">确认删除？</string>
+    <string name="folder">文件夹</string>
+    <string name="later">延后</string>
+    <string name="onlyMROOTModeUse">仅免ROOT模式使用</string>
+    <string name="organizationName">组织名称</string>
+    <string name="avoidFreezeNotifyingApplications">避免冻结有通知的应用程序</string>
+    <string name="avoidFreezeNotifyingApplicationsSummary">当应用有活动通知时跳过冻结（例如正在播放音乐、下载），使其保持运行。</string>
+    <string name="needL">需要 Android 5.0 及以上</string>
+    <string name="autoDiagnosis">诊断</string>
+    <string name="summary_autoDiagnosis">自动检查权限、设备所有者模式、root 和电池优化，并列出需要注意的事项</string>
+    <string name="sysVerLow">系统版本偏低</string>
+    <string name="someFuncUn">部分功能无法使用</string>
+    <string name="ACBSNotEnabled">无障碍服务未启用</string>
+    <string name="affect">影响</string>
+    <string name="etc">等</string>
+    <string name="mayCannotNotify">可能无法发送通知栏消息</string>
+    <string name="noNotifyPermission">未授予发送通知栏消息</string>
+    <string name="noNotificationListenerPermission">未授予通知使用权</string>
+    <string name="noProblemsFound">未发现问题</string>
+    <string name="everySeemsAllRight">似乎一切正常</string>
+    <string name="noMRootPermission">免 ROOT 权限未授予</string>
+    <string name="someFuncMayRestrict">部分功能可能受到限制</string>
+    <string name="noRootPermission">无 ROOT 权限</string>
+    <string name="noIgnoringBO">未忽略电池优化</string>
+    <string name="someFuncMayBeAff">部分功能可能受到影响</string>
+    <string name="notUpdatedForALongTime">长时间未更新</string>
+    <string name="someNewFuncMayPub">一些新功能可能已发布</string>
+    <string name="inPowerSaveMode">省电模式已开启</string>
+    <string name="manageQuickFUFNoti">管理冻结解冻快捷通知</string>
+    <string name="addToRemoveFrom">加入/移出</string>
+    <string name="shortcutAutoFUF">快捷方式自动冻解</string>
+    <string name="shortcutAutoFUFEx">已冻结则解冻，已解冻则冻结</string>
+    <string name="regenerateSomeCache">重建一些缓存</string>
+    <string name="updateSomeData">更新一些数据</string>
+    <string name="backupAndRestore">备份与恢复</string>
+    <string name="summary_backupAndRestore">将设置、列表、快捷方式和计划任务导出到文件，并可重新导入</string>
+    <string name="status">状态</string>
+    <string name="debugMode">调试模式</string>
+    <string name="debugModeSummary">记录应用内部操作（冻结/解冻尝试、Shizuku/root 调用）以便诊断问题。可能会略微降低性能。</string>
+    <string name="showLogcat">查看日志</string>
+    <string name="summary_showLogcat">查看应用运行日志并以文件形式分享</string>
+    <string name="askIfSave">是否保存？</string>
+    <string name="mainActivityPattern">首页格局</string>
+    <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">通过快捷方式自动冻结时，冻结应用前先显示确认提示。</string>
+    <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">通过快捷方式自动解冻后立即打开应用。</string>
+    <string name="needCfmWhenFreeze">冻结时额外弹窗确认</string>
+    <string name="openImmediatelyAfterUF">解冻后立即启动</string>
+    <string name="createLauncherShortcut">创建桌面快捷方式</string>
+    <string name="name">名称</string>
+    <string name="icon">图标</string>
+    <string name="target">目标</string>
+    <string name="shortcutTargetFieldHint">默认情况下，快捷方式启动应用本身。点按 … 可从可启动列表中选择其他界面（activity）。</string>
+    <string name="generate">生成</string>
+    <string name="plsSelect">请选择</string>
+    <string name="application">应用</string>
+    <string name="shortcutPackageFieldHint">点按 … 可从完整列表中选择任意应用，而不只是你当前所处的应用。</string>
+    <string name="allowEditWhCreateShortcut">创建快捷方式时允许编辑</string>
+    <string name="clearAllUserData">清除全部数据</string>
+    <string name="clearAllUserDataSummary">彻底清除 FreezeYou 自身的数据：设置、自选分组、计划任务和快捷方式数据。已冻结的应用保持冻结——该状态由系统保存，与 FreezeYou 无关。此操作无法撤销。</string>
+    <string name="packageNotFound">未找到该应用程序</string>
+    <string name="id">ID</string>
+    <string name="simulate">模拟</string>
+    <string name="insufficientPermission">权限不足</string>
+    <string name="stateDidNotChange">系统已接受命令，但状态未改变</string>
+    <string name="onlyUnfreeze">仅解冻</string>
+    <string name="unknown">未知</string>
+    <string name="installPackage_colon">安装应用： </string>
+    <string name="requestFromPackage_colon">来源应用： </string>
+    <string name="whetherAllow">是否允许？</string>
+    <string name="uninstallPackage_colon">卸载应用：</string>
+    <string name="install">安装</string>
+    <string name="installFailed">安装失败</string>
+    <string name="uninstallFailed">卸载失败</string>
+    <string name="installAndUninstall">安装与卸载</string>
+    <string name="errorUninstallToast">卸载应用时发生错误： %1$s </string>
+    <string name="errorInstallToast">安装应用时发生错误： %1$s </string>
+    <string name="invalidUriToast">无效的Uri:  %1$s </string>
+    <string name="reason_colon">原因： %1$s </string>
+    <string name="plsWait">请稍候</string>
+    <string name="loading___">正在加载...</string>
+    <string name="freezeSlashRun">冻结/启动</string>
+    <string name="UfSlashRun">解冻/启动</string>
+    <string name="isForegroundApplication">%1$s 为前台应用程序</string>
+    <string name="appHasNotifi">%1$s 在通知栏有通知</string>
+    <string name="dangerous">危险</string>
+    <string name="alert_isObsd">存在遮罩层，操作已被拦截，请移除后重试</string>
+    <string name="retry">重试</string>
+    <string name="enableInstallPkgFunc">通过 FreezeYou 安装 APK</string>
+    <string name="allow">允许</string>
+    <string name="reject">拒绝</string>
+    <string name="execute_colon">执行：</string>
+    <string name="target_colon">目标：</string>
+    <string name="alwaysAllow_name">总是允许 %1$s</string>
+    <string name="manageUriAutoAllow">管理 URI 请求自动允许名单</string>
+    <string name="manageIpaAutoAllow">白名单：无需确认的安装</string>
+    <string name="delAllCache">清除全部缓存</string>
+    <string name="needStoragePermission">需要存储权限</string>
+    <string name="okay">好的</string>
+    <string name="scheduledTasksUserNotification">计划任务 - 用户通知</string>
+    <string name="manageSpace">管理空间</string>
+    <string name="cacheApplicationsIcons">缓存应用程序图标</string>
+    <string name="greyFrozenApplicationsIcons">以灰色显示已冻结应用</string>
+    <string name="tryDelApkAfterInstalled">安装后删除 APK 文件</string>
+    <string name="sortBy">排序方式</string>
+    <string name="sortBy_default">默认排序</string>
+    <string name="sortBy_no">不作处理</string>
+    <string name="uf_ascending">解冻升序</string>
+    <string name="uf_descending">解冻降序</string>
+    <string name="ff_ascending">冻结升序</string>
+    <string name="ff_descending">冻结降序</string>
+    <string name="us_ascending">使用升序</string>
+    <string name="us_descending">使用降序</string>
+    <string name="impt">导入</string>
+    <string name="expt">导出</string>
+    <string name="saveBackupToFile">保存到文件</string>
+    <string name="restoreBackupFromFile">从文件恢复</string>
+    <string name="backupViaTextHint">或通过剪贴板以文本方式传输：</string>
+    <string name="backupGroupOneKeyLists">一键列表</string>
+    <string name="backupGroupAllowLists">白名单</string>
+    <string name="appStore">应用市场</string>
+    <string name="finish">完成</string>
+    <string name="welcomeToUseAppName">欢迎使用 %1$s</string>
+    <string name="quickSetup">快速设置</string>
+    <string name="importConfig">导入配置</string>
+    <string name="loadingPkgList">载入应用列表</string>
+    <string name="sorting">正在排序</string>
+    <string name="saveSortMethodStatus">保存排序方式状态</string>
+    <string name="resetFreezeTimes">重置冻结次数计数</string>
+    <string name="resetUFTimes">重置解冻次数计数</string>
+    <string name="resetUseTimes">重置使用次数计数</string>
+    <string name="selectAll">全选</string>
+    <string name="selectUnselected">反选</string>
+    <string name="parseFailed">解析失败</string>
+    <string name="nothing">无</string>
+    <string name="share">分享</string>
+    <string name="notAllowWhenIsObsd">屏幕被遮挡时阻止安装</string>
+    <string name="remove">移除</string>
+    <string name="newFolder">新文件夹</string>
+    <string name="alreadyExist">已存在</string>
+    <string name="queryStatus">查询状态</string>
+    <string name="newClassification">新建分类</string>
+    <string name="displayLanguage">显示语言</string>
+    <string name="emptyNotAllowed">不可为空</string>
+    <string name="myCustomization">我的自选</string>
+    <string name="manageMyCustomization">管理我的自选</string>
+    <string name="copyAlias">复制别名</string>
+    <string name="version_colon_vN_longVC">版本：%1$s(%2$s)</string>
+    <string name="existed_colon_vN_longVC">现存：%1$s(%2$s)</string>
+    <string name="application_colon_app">应用：%1$s</string>
+    <string name="pkgName_colon_pkgName">包名：%1$s</string>
+    <string name="cannotInstall_colon_msg">无法安装：%1$s</string>
+    <string name="installing_app">正在安装 %1$s</string>
+    <string name="uninstalling_app">正在卸载 %1$s</string>
+    <string name="app_installFinished">%1$s 安装完成</string>
+    <string name="app_installFailed">%1$s 安装失败</string>
+    <string name="app_uninstallFinished">%1$s 卸载完成</string>
+    <string name="app_uninstallFailed">%1$s 卸载失败</string>
+    <string name="commandExecutionTool">命令执行工具</string>
+    <string name="addToMyCustomization">加入我的自选</string>
+    <string name="removeFromMyCustomization">移出我的自选</string>
+    <string name="waitingToInstall_app">正在等待离开 %1$s 后安装</string>
+    <string name="installWhenNotUsing">非前台时安装</string>
+    <string name="contactUs">联系我们</string>
+    <string name="email_colon">邮箱：%1$s </string>
+    <string name="qqGroup_colon">QQ群：%1$s </string>
+    <string name="tryToAvoidUpdateWhenUsing">使用中不更新应用</string>
+    <string name="selectFUFMode">选择冻结解冻模式</string>
+    <string name="allowFollowSystemAutoSwitchDarkMode">允许跟随系统自动切换暗色模式</string>
+    <string name="willOverrideInterfaceStyle">会覆盖界面风格的设定</string>
+    <string name="installPerimisionCheckFailed_ifContinue">安装权限检查未通过，是否继续？</string>
+    <string name="jumpToSysInstaller">转至系统安装器</string>
+    <string name="appearance">外观</string>
+    <string name="createQuickFUFNotiAfterUnfrozen">解冻后创建相应的快捷通知</string>
+    <string name="executionResult_colon_message">执行结果：%1$s</string>
+    <string name="unknownResult_probablySuccess">结果未知（可能成功）</string>
+    <string name="unknownError">未知错误</string>
+    <string name="packageNameIsEmpty">包名为空</string>
+    <string name="isNotDevicePolicyManager">无 DPM 权限</string>
+    <string name="noSuchApiMode">无该 API 模式</string>
+    <string name="executeFailedFromSystem">系统内部错误</string>
+    <string name="isNotSystemApp">非系统应用</string>
+    <string name="telegramGroup_colon">电报群组：%1$s</string>
+    <string name="unlock">解锁</string>
+    <string name="security">安全</string>
+    <string name="enableAuthentication">启用身份验证</string>
+    <string name="authentication">身份验证</string>
+    <string name="verifyToContinue">验证以继续</string>
+    <string name="authenticationFailed">验证失败</string>
+    <string name="authenticationError_colon">验证出错：%1$s</string>
+    <string name="correspondingAndAvailableWebsiteUrlLanguageCode">zh-CN</string>
+    <string name="forceStop">强行停止</string>
+    <string name="unfrozenUA">未冻用应</string>
+    <string name="onlyRunning">运行中</string>
+    <string name="onlyRunningSys">运行中：系统</string>
+    <string name="onlyRunningUser">运行中：用户</string>
+    <string name="criticalPackagesWarning">所选内容包含系统依赖的包：\n\n%1$s\n\n冻结它们可能导致设备失去状态栏、设置或键盘，且难以恢复。仍要继续吗？</string>
+    <string name="runningFilterUnavailable">“运行中”筛选需要 ROOT 或 Shizuku 冻结模式。请在 设置 → 冻结与解冻 → 选择冻结模式 中更改。</string>
+    <string name="scheduledTaskCommandsSyntax">计划任务</string>
+    <string name="lastInstall">最近安装</string>
+    <string name="lastUpdate">最近更新</string>
+    <string name="alphabetical">字母顺序</string>
+    <string name="refresh">刷新</string>
+    <string name="themeOfAutoSwitchDarkMode">自动切换暗色模式时的界面风格</string>
+    <string name="bluetoothPermissionIsNotGranted">相关的蓝牙权限尚未授予</string>
+    <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">可能无法使用计划任务启用或禁用蓝牙</string>
+    <string name="gotoStore">转至市场</string>
+    <string name="selfRevokeProfileOwner">释放配置文件所有者（Profile-Owner）权限</string>
+    <string name="selfRevokeProfileOwnerSummary">如果被设定为配置文件所有者（Profile-Owner），需要解除后才能正常卸载本应用程序。</string>
+    <string name="uninstallSummary">卸载 FreezeYou。如果你使用过无 ROOT（设备所有者）模式，请先在上方解除，否则卸载可能失败。</string>
+    <string name="isNotProfileOwner">不是配置文件所有者（Profile Owner）</string>
+    <string name="getBackupData">获得备份数据</string>
+    <string name="theAppHasNotificationInTheNotificationBar">应用程序在通知栏中有通知</string>
+    <string name="theAppIsCurrentlyTheForegroundApp">应用程序是当前的前台应用程序</string>
+    <string name="operationOnFreezeYouIsNotAllowed">不允许对自冻执行此操作</string>
+    <string name="shizukuVersionIsTooLow">Shizuku 的版本过低</string>
+    <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku 尚未安装或其他异常</string>
+    <string name="includeFUFActivityInRecents">在最近任务中包括冻结与解冻活动</string>
+    <string name="includeFUFActivityInRecentsSummary">同时在最近任务列表中单独显示冻结/解冻进度界面。</string>
+    <string name="playFUFAnimations">播放冻结与解冻动画</string>
+    <string name="toggleGridListMode">切换列表/网格视图</string>
+    <string-array name="launchModeSelection">
+        <item>显示全部</item>
+        <item>仅冻结</item>
+        <item>仅未冻结</item>
+        <item>系统预装</item>
+        <item>用户应用</item>
+        <item>一键冻结</item>
+        <item>一键解冻</item>
+        <item>离开冻结</item>
+    </string-array>
+    <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
+        <item>无</item>
+        <item>询问并锁屏</item>
+        <item>立即锁屏</item>
+    </string-array>
+    <string-array name="mainActivityPatternSelection">
+        <item>默认</item>
+        <item>列表</item>
+        <item>网格</item>
+    </string-array>
+    <string-array name="uiStyleSelection">
+        <item>默认</item>
+        <item>深色</item>
+        <item>纯黑</item>
+    </string-array>
+    <string-array name="sevenDays">
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+        <item>周日</item>
+    </string-array>
+    <string-array name="triggers">
+        <item>屏幕亮起时</item>
+        <item>屏幕关闭时</item>
+        <item>打开应用时</item>
+        <item>离开应用时</item>
+        <item>解冻应用时</item>
+        <item>冻结应用时</item>
+    </string-array>
+    <string-array name="selectFUFModeSelection">
+        <item>无 ROOT（DPM 模式）</item>
+        <item>无 ROOT（设备所有者模式）</item>
+        <item>ROOT（隐藏模式）</item>
+        <item>ROOT（停用模式）</item>
+        <item>旧版（自动 DPM 或停用模式）</item>
+        <item>系统应用（停用模式）</item>
+        <item>系统应用（Disable_User 模式）</item>
+        <item>系统应用（Disable_Until_Used 模式）</item>
+        <item>Shizuku（停用模式）</item>
+        <item>Shizuku（Disable_User 模式）</item>
+        <item>Shizuku（Disable_Until_Used 模式）</item>
+    </string-array>
+    <string-array name="themeOfAutoSwitchDarkModeEntries">
+        <item>默认</item>
+        <item>深色</item>
+        <item>纯黑</item>
+    </string-array>
+    <string name="mainScreenSettings">主屏幕</string>
+    <string name="accessAndSecurity">访问与安全</string>
+    <string name="category_feedback">反馈</string>
+    <string name="category_freezeMode">模式</string>
+    <string name="category_protection">保护</string>
+    <string name="category_shortcuts">快捷方式</string>
+    <string name="category_afterUnfreeze">解冻后</string>
+    <string name="category_cache">缓存</string>
+    <string name="category_statistics">统计</string>
+    <string name="category_lists">列表</string>
+    <string name="category_settings">设置</string>
+    <string name="category_maintenance">维护</string>
+    <string name="category_help">帮助</string>
+    <string name="summary_spr_mainScreen">列表或网格、排序、点击行为</string>
+    <string name="summary_spr_appearance">主题、深色模式、语言、动画</string>
+    <string name="summary_spr_fuf">模式、保护、快捷方式、前台服务</string>
+    <string name="summary_spr_automation">计划任务、锁屏、离开应用</string>
+    <string name="summary_spr_notification">解冻后的快速通知及其行为</string>
+    <string name="summary_spr_access">锁定、桌面图标、通过拨号器进入</string>
+    <string name="summary_spr_installUninstall">与安装应用和删除 APK 文件相关的选项</string>
+    <string name="summary_spr_manageSpace">缓存、统计、清理已卸载应用的列表</string>
+    <string name="summary_spr_advance">安装应用、调试、无障碍、危险区</string>
+    <string name="dangerZoneSummary">清除 FreezeYou 数据、撤销所有者权限、卸载 FreezeYou</string>
+    <string name="summary_hToUse">原 FreezeYou 网站上的在线文档</string>
+</resources>
