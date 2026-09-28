@@ -89,8 +89,12 @@ object RunningAppsUtils {
             // survives because it stayed on the warn-but-allow list. The shell route runs the
             // same /proc scan as the root path, as the user Shizuku itself runs under (root via
             // Sui, shell via adb): no hidden API in the chain.
+            // Commands are joined with ";" and not "&&": the /proc scan loop can exit non-zero
+            // (an unreadable cmdline fails the last "read"), and "&&" would then skip the
+            // markers and ps fallbacks entirely — the same invariant the su path gets for free
+            // by writing each command on its own line.
             process = Shizuku.newProcess(
-                arrayOf("sh", "-c", ProcessUtils.RUNNING_PACKAGES_COMMANDS.joinToString(" && ")),
+                arrayOf("sh", "-c", ProcessUtils.RUNNING_PACKAGES_COMMANDS.joinToString("; ")),
                 null, null
             )
             val packages = ProcessUtils.parseRunningPackages(process.inputStream)
