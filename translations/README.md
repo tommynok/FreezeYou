@@ -1,5 +1,9 @@
 # Parked translations
 
+**2026-09-28: zh-rCN is live again** — `app/src/main/res/values-zh-rCN/` was rebuilt from
+these snapshots plus agent translations for everything the fork added (native-speaker review
+still pending). This folder stays for the record and for zh-rTW, which remains parked.
+
 Upstream's Chinese strings, snapshotted from `upstream/master` on 2026-09-27 so the original
 author's translation work survives even as the upstream repository is rewritten and the fork
 does not ship Chinese.
