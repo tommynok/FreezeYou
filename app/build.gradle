@@ -27,9 +27,10 @@ android {
             // arm64-v8a + armeabi-v7a, covers old 32-bit phones) and -PabiArm64Only=true
             // (arm64-v8a only, for modern devices). MMKV ships a v7a library, so the wider
             // filter costs under a megabyte and nothing else.
-            abiFilters (project.findProperty("abiArm64Only") == "true"
+            def abis = (project.findProperty("abiArm64Only") == "true"
                     ? ['arm64-v8a']
                     : ['arm64-v8a', 'armeabi-v7a'])
+            abiFilters(*abis)
         }
     }
     signingConfigs {
