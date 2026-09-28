@@ -75,7 +75,8 @@ public final class ProcessUtils {
      * merged into one set. Returns an empty set on any parse failure instead of throwing, since
      * the caller treats "no matches" and "unavailable" the same way.
      */
-    public static Set<String> parseRunningPackages(java.io.InputStream inputStream) {
+    public static Set<String> parseRunningPackages(java.io.InputStream inputStream)
+            throws java.io.IOException {
         Set<String> packages = new HashSet<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
