@@ -34,7 +34,6 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
-    <string name="summary_notificationBar_fuf">Settings for the quick notification shown after unfreezing an app</string>
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
@@ -58,7 +57,6 @@
     <string name="unfreeze">Unfreeze</string>
     <string name="unfreezedAndAskLaunch">Requested unfreeze, try running now?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Unfreeze succeeded but unable to find the entrance of this application, or unfreeze failed due to the insufficient permission.</string>
-    <string name="frozen">Frozen</string>
     <string name="OneKeyFreezeImmediately">Onekey Freeze</string>
     <string name="about">About</string>
     <string name="plsVisit">Please visit</string>
@@ -92,10 +90,6 @@
     <string name="manualMode">Freeze by package name</string>
     <string name="summary_manualMode">Enter a package name and freeze or unfreeze it manually — for applications that are not in the list</string>
     <string name="packageName">Package Name</string>
-    <string name="disable_MRoot">Freeze - NO-ROOT</string>
-    <string name="disable_Root">Freeze - ROOT</string>
-    <string name="enable_MRoot">Unfreeze - NO-ROOT</string>
-    <string name="enable_Root">Unfreeze - ROOT</string>
     <string name="failed">Failed</string>
     <string name="success">Success</string>
     <string name="disableAEnable">Freeze/Unfreeze/Run</string>
@@ -151,7 +145,6 @@
     <string name="disableApplications">Freeze Packages</string>
     <string name="clearIconCache">Clear Icon Cache</string>
     <string name="clearNameCache">Clear Name Cache of Applications</string>
-    <string name="refreshCache">Refresh Cache</string>
     <string name="saveOnClickFunctionStatus">Save Click Function Status</string>
     <string name="accessibility_service_description">Listen to the foreground application changes. \nUsed to active the functions to avoid freezing foreground applications when automatic freezing, automatically freeze applications when they are not the foreground applications, etc.</string>
     <string name="configureAccessibilityService">Configure Accessibility Service</string>
@@ -159,7 +152,6 @@
     <string name="freezeOnceQuitSummary">Applications in the "Freeze after leaving" list are frozen as soon as you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
     <string name="invalidArguments">Invalid parameters</string>
-    <string name="exceptionHC">An exception has occurred but the operation will continue: </string>
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>
     <string name="noRootNotActivated">Oops! The no-root mode has not been enabled now!</string>
@@ -180,7 +172,6 @@
     <string name="hourShouldBetween">The hour needs to be between 0 and 23</string>
     <string name="minutesShouldBetween">Minutes need to be between 0 and 59</string>
     <string name="requestFailedPlsRetry">Request failed, please try again</string>
-    <string name="donate">Donate</string>
     <string name="uninstall">Uninstall</string>
     <string name="triggers">Triggers</string>
     <string name="triggers_extra_parameters">Additional parameters</string>
@@ -192,7 +183,6 @@
     <string name="lesserToast">Fewer Toast Tips</string>
     <string name="avoidFreezeForegroundApplications">Avoid Freezing Foreground Applications</string>
     <string name="avoidFreezeForegroundApplicationsSummary">Skips freezing an app while it\'s currently in the foreground, so active use isn\'t interrupted. Requires enabling Accessibility Service.</string>
-    <string name="suggestUseTasksInstead">Recommend to use scheduled tasks instead</string>
     <string name="delAllScheduledTasks">Delete All Scheduled Tasks</string>
     <string name="askIfDel">Are you sure to delete?</string>
     <string name="folder">Folder</string>
@@ -224,24 +214,19 @@
     <string name="inPowerSaveMode">Power save mode is on</string>
     <string name="manageQuickFUFNoti">Manage quick freeze notifications</string>
     <string name="addToRemoveFrom">Add to/Remove from</string>
-    <string name="onClickFuncChooseActionStyle">The style of on click choose action</string>
     <string name="shortcutAutoFUF">Shortcut auto freeze or unfreeze</string>
     <string name="shortcutAutoFUFEx">Frozen unfreeze, unfrozen freeze</string>
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
     <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
-    <string name="backup">Backup</string>
-    <string name="restore">Restore</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
     <string name="showLogcat">View Logs</string>
     <string name="summary_showLogcat">Read the application\'s operation log and share it as a file</string>
-    <string name="freezeOrLaunch">Freeze/Run</string>
     <string name="askIfSave">Save?</string>
     <string name="mainActivityPattern">Home pattern</string>
-    <string name="workWithShortcutAutoFUF">Effective when \"Shortcut auto freeze or unfreeze\" is enabled</string>
     <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">Shows a confirmation prompt before freezing an app when triggered via a shortcut\'s auto freeze.</string>
     <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">Automatically opens the app right after it\'s unfrozen via a shortcut\'s auto unfreeze.</string>
     <string name="needCfmWhenFreeze">Extra confirmation when freeze</string>
@@ -267,18 +252,10 @@
     <string name="unknown">Unknown</string>
     <string name="installPackage_colon">Install Package: </string>
     <string name="requestFromPackage_colon">From Package: </string>
-    <string name="application_colon">Application: </string>
-    <string name="pkgName_colon">Package Name: </string>
-    <string name="version_colon">Version: </string>
     <string name="whetherAllow">Allow?</string>
-    <string name="cannotInstall_colon">Cannot install: </string>
     <string name="uninstallPackage_colon">Uninstall Package: </string>
     <string name="install">Install</string>
-    <string name="installing">Installing</string>
-    <string name="uninstalling">Uninstalling</string>
-    <string name="installFinished">Installation Completed</string>
     <string name="installFailed">Installation Failed</string>
-    <string name="uninstallFinished">Uninstallation Completed</string>
     <string name="uninstallFailed">Uninstallation Failed</string>
     <string name="installAndUninstall">Install and Uninstall</string>
     <string name="errorUninstallToast">An error occurred while uninstalling the app: %1$s </string>
@@ -300,7 +277,6 @@
     <string name="execute_colon">Execute: </string>
     <string name="target_colon">Target: </string>
     <string name="alwaysAllow_name">Always allow %1$s</string>
-    <string name="existed_colon">Existed: %1$s</string>
     <string name="manageUriAutoAllow">Manage URI Request Auto Allow List</string>
     <string name="manageIpaAutoAllow">Allow-list: installs without confirmation</string>
     <string name="delAllCache">Clear all Caches</string>
@@ -320,9 +296,6 @@
     <string name="ff_descending">Freeze ↓</string>
     <string name="us_ascending">Using frequency ↑</string>
     <string name="us_descending">Using frequency ↓</string>
-    <string name="clearUninstalledPkgsInOKUFList">Remove uninstalled applications from the Onekey Unfreeze list</string>
-    <string name="clearUninstalledPkgsInOKFFList">Remove uninstalled applications from the Onekey Freeze list</string>
-    <string name="clearUninstalledPkgsInFOQList">Remove uninstalled applications from the Freeze Once Quit list</string>
     <string name="impt">Import</string>
     <string name="expt">Export</string>
     <string name="saveBackupToFile">Save to file</string>
@@ -344,13 +317,6 @@
     <string name="resetUseTimes">Reset usage counter</string>
     <string name="selectAll">Select all</string>
     <string name="selectUnselected">Inverse selection</string>
-    <string name="onClickFunctionStatus">On click function status</string>
-    <string name="sortMethodStatus">Sort method status</string>
-    <string name="oneKeyFreezeList">Onekey freeze list</string>
-    <string name="oneKeyUFList">Onekey unfreeze list</string>
-    <string name="freezeOnceQuitList">Freeze once quit list</string>
-    <string name="scheduledTaskDashLineLabel">Scheduled Task - %1$s</string>
-    <string name="moreSettingsDashLineLabel">More Settings - %1$s</string>
     <string name="parseFailed">Parse failed</string>
     <string name="nothing">None</string>
     <string name="share">Share</string>
@@ -360,20 +326,16 @@
     <string name="alreadyExist">Already exists</string>
     <string name="queryStatus">Query Status</string>
     <string name="newClassification">New category</string>
-    <string name="userDefined">User Customize</string>
     <string name="displayLanguage">Display Language</string>
     <string name="emptyNotAllowed">Empty is not allowed</string>
     <string name="myCustomization">My customization</string>
     <string name="manageMyCustomization">Manage my customization</string>
-    <string name="myCustomizationDashLineLabel">My Customization - %1$s</string>
     <string name="copyAlias">Copy Alias</string>
     <string name="version_colon_vN_longVC">Version: %1$s (%2$s)</string>
     <string name="existed_colon_vN_longVC">Existed: %1$s (%2$s)</string>
     <string name="application_colon_app">Application: %1$s</string>
     <string name="pkgName_colon_pkgName">Package Name: %1$s</string>
     <string name="cannotInstall_colon_msg">Cannot install: %1$s</string>
-    <string name="uriAutoAllowList">URI Request Auto Allow List</string>
-    <string name="ipaAutoAllowList">Request Install Applications Auto Allow List</string>
     <string name="installing_app">Installing %1$s</string>
     <string name="uninstalling_app">Uninstalling %1$s</string>
     <string name="app_installFinished">%1$s has been installed</string>
@@ -388,26 +350,17 @@
     <string name="contactUs">Contact Us</string>
     <string name="email_colon">Email: %1$s </string>
     <string name="qqGroup_colon">QQ Group: %1$s </string>
-    <string name="wechatMp_colon">WeChat Official Account: %1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">Don\'t update an app while it\'s in use</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
-    <string name="enable_Root_unhide">Unfreeze - ROOT(Unhide)</string>
-    <string name="disable_Root_hide">Freeze - ROOT(Hide)</string>
-    <string name="enable_Root_enable">Unfreeze - ROOT(Enable)</string>
-    <string name="disable_Root_disable">Freeze - ROOT(Disable)</string>
-    <string name="enable_MRoot_DPM">Unfreeze - No-root(DPM)</string>
-    <string name="disable_MRoot_DPM">Freeze - No-root(DPM)</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">Follow the system dark theme</string>
     <string name="willOverrideInterfaceStyle">Will override interface style</string>
     <string name="installPerimisionCheckFailed_ifContinue">Install permission check failed, continue?</string>
     <string name="jumpToSysInstaller">Go to system installer</string>
-    <string name="displayListDivider">Display list divider</string>
     <string name="appearance">Appearance</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Create quick freeze notification after unfrozen</string>
     <string name="executionResult_colon_message">Execution result: %1$s</string>
     <string name="unknownResult_probablySuccess">Unknown result (Probably success)</string>
     <string name="unknownError">Unknown error</string>
-    <string name="packageNameIsNull">Package name is null</string>
     <string name="packageNameIsEmpty">Package name is empty</string>
     <string name="isNotDevicePolicyManager">Is not device policy manager</string>
     <string name="noSuchApiMode">No such api mode</string>
@@ -544,7 +497,6 @@
         <item>1</item>
         <item>2</item>
     </string-array>
-    <string-array name="sortBySelection">
         <item>Default</item>
         <item>No sort</item>
         <item>Unfreeze ↑</item>

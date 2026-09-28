@@ -34,7 +34,6 @@
     <string name="mayUnrootedOrOtherEx">Не надані дозволи, цілі були видалені або виникли інші винятки</string>
     <string name="nApplicationsFailedColonList">Не вдалося (%1$d): %2$s</string>
     <string name="andNMoreApplications">, і ще %1$d</string>
-    <string name="summary_notificationBar_fuf">Налаштування швидкого сповіщення, яке з\'являється після розморожування додатку</string>
     <string name="summary_notificationBar_more">Системні налаштування сповіщень FreezeYou — канали та дозвіл на показ сповіщень</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
     <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
@@ -58,7 +57,6 @@
     <string name="unfreeze">Розморозка</string>
     <string name="unfreezedAndAskLaunch">Запит на розморозку, спробувати відразу запустити?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Розморозка завершилася успішно, але не вдалося знайти вхід цього додатка, або розморозка не вдалася через нестачу прав.</string>
-    <string name="frozen">Заморожено</string>
     <string name="OneKeyFreezeImmediately">OneKEY заморозка</string>
     <string name="about">Про FreezeYou-Fork</string>
     <string name="plsVisit">Будь ласка, відвідайте</string>
@@ -92,10 +90,6 @@
     <string name="manualMode">Заморозка за ім\'ям пакета</string>
     <string name="summary_manualMode">Введення імені пакета та заморозка чи розморозка вручну — для додатків, яких немає у списку</string>
     <string name="packageName">Ім\'\я пакету</string>
-    <string name="disable_MRoot">Заморозка - без-ROOT</string>
-    <string name="disable_Root">Заморозка ROOT</string>
-    <string name="enable_MRoot">Розморозка - без-ROOT</string>
-    <string name="enable_Root">Розморозка - ROOT</string>
     <string name="failed">Не вдалося</string>
     <string name="success">Успішно</string>
     <string name="disableAEnable">Заморозка/ Розморозка / Запуск</string>
@@ -151,7 +145,6 @@
     <string name="disableApplications">Заморожені пакети</string>
     <string name="clearIconCache">Очистити кеш іконок</string>
     <string name="clearNameCache">Очистити кеш імен додатків</string>
-    <string name="refreshCache">Оновити кеш</string>
     <string name="saveOnClickFunctionStatus">Зберегти стан Дії при натисканні</string>
     <string name="accessibility_service_description">Стежити за змінами додатків переднього плану. Використовується для роботи функції, котра запобігає заморозку додатків переднього плану при автозаморозці, і для автозаморози додатків, коли вони не є додатками переднього плану, і т.д.</string>
     <string name="configureAccessibilityService">Налаштування служби спеціальних можливостей</string>
@@ -159,7 +152,6 @@
     <string name="freezeOnceQuitSummary">Додатки зі списку «Заморозка після виходу» заморожуються, щойно ви з них вийшли.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
     <string name="invalidArguments">Неправильні параметри</string>
-    <string name="exceptionHC">Стався виняток, але операція продовжиться:</string>
     <string name="plsConfirm">Будь ласка підтвердіть</string>
     <string name="removeNoRootCaution">Ви дійсно хочете скасувати дозвіл для режиму без-ROOT? Щоб уникнути непотрібних проблем, необхідно розморозити всі заморожені додатки перед відключенням цього режиму!</string>
     <string name="noRootNotActivated">На жаль режим без-ROOT не був включений зараз!</string>
@@ -180,7 +172,6 @@
     <string name="hourShouldBetween">Години мають бути між 0 і 23</string>
     <string name="minutesShouldBetween">Хвилини повинні бути від 0 до 59</string>
     <string name="requestFailedPlsRetry">Запит не вдався, спробуйте ще раз</string>
-    <string name="donate">Пожертвування</string>
     <string name="uninstall">Видалення</string>
     <string name="triggers">Тригери</string>
     <string name="triggers_extra_parameters">Додаткові параметри</string>
@@ -192,7 +183,6 @@
     <string name="lesserToast">Рідше показувати спливаючі підказки</string>
     <string name="avoidFreezeForegroundApplications">Запобігання заморозки додатків переднього плану</string>
     <string name="avoidFreezeForegroundApplicationsSummary">Пропускає заморожування додатку, поки він на передньому плані, щоб не переривати активне використання. Потребує увімкнення Спеціальних можливостей (Accessibility Service).</string>
-    <string name="suggestUseTasksInstead">Рекомендується замість цього використовувати заплановані завдання</string>
     <string name="delAllScheduledTasks">Видалити всі заплановані завдання</string>
     <string name="askIfDel">Ви впевнені, що хочете видалити?</string>
     <string name="folder">Папка</string>
@@ -224,24 +214,19 @@
     <string name="inPowerSaveMode">Режим енергозбереження включений</string>
     <string name="manageQuickFUFNoti">Керування сповіщеннями при швидкій заморозці</string>
     <string name="addToRemoveFrom">Додати в / Видалити з</string>
-    <string name="onClickFuncChooseActionStyle">Стиль пункту Дії при натисканні</string>
     <string name="shortcutAutoFUF">Ярлик автозаморозка або розморозка</string>
     <string name="shortcutAutoFUFEx">Заморозити незаморожені, розморозити заморожені</string>
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
     <string name="backupAndRestore">Бекап і відновлення</string>
     <string name="summary_backupAndRestore">Експорт налаштувань, списків, ярликів і завдань у файл та імпорт назад</string>
-    <string name="backup">Резервне копіювання</string>
-    <string name="restore">Відновити</string>
     <string name="status">Стан</string>
     <string name="debugMode">Режим налагодження</string>
     <string name="debugModeSummary">Записує в журнал внутрішні дії додатку (спроби заморожування/розморожування, виклики Shizuku/root) для діагностики проблем. Може дещо знизити продуктивність.</string>
     <string name="showLogcat">Перегляд журналу</string>
     <string name="summary_showLogcat">Перегляд журналу роботи додатку та надсилання його файлом через «Поділитися»</string>
-    <string name="freezeOrLaunch">Заморозка / Запуск</string>
     <string name="askIfSave">Зберегти?</string>
     <string name="mainActivityPattern">Вигляд стартової сторінки</string>
-    <string name="workWithShortcutAutoFUF">Діє, якщо включений ярлик Автозаморозка або розморозка</string>
     <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">Показує запит підтвердження перед заморожуванням додатку, якщо це запущено через автозаморожування за ярликом.</string>
     <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">Автоматично відкриває додаток одразу після розморожування через автозняття заморожування за ярликом.</string>
     <string name="needCfmWhenFreeze">Додаткове підтвердження при заморозці</string>
@@ -267,18 +252,10 @@
     <string name="unknown">Невідомий</string>
     <string name="installPackage_colon">Встановити пакет:</string>
     <string name="requestFromPackage_colon">З пакету:</string>
-    <string name="application_colon">Додатки:</string>
-    <string name="pkgName_colon">Ім\'\я пакету:</string>
-    <string name="version_colon">Версія:</string>
     <string name="whetherAllow">Дозволити?</string>
-    <string name="cannotInstall_colon">Неможливо встановити:</string>
     <string name="uninstallPackage_colon">Видалення пакета:</string>
     <string name="install">Установка</string>
-    <string name="installing">Установка</string>
-    <string name="uninstalling">Видалення</string>
-    <string name="installFinished">Установка завершена</string>
     <string name="installFailed">Установка не вдалася</string>
-    <string name="uninstallFinished">Видалення завершено</string>
     <string name="uninstallFailed">Помилка видалення</string>
     <string name="installAndUninstall">Установка і видалення</string>
     <string name="errorUninstallToast">Сталася помилка при видаленні програми: %1$s</string>
@@ -300,7 +277,6 @@
     <string name="execute_colon">Виконати:</string>
     <string name="target_colon">Ціль:</string>
     <string name="alwaysAllow_name">Завжди дозволяти %1$s</string>
-    <string name="existed_colon">Існуючі: %1$s</string>
     <string name="manageUriAutoAllow">Керування запитами білого списку URI</string>
     <string name="manageIpaAutoAllow">Білий список: встановлення без підтвердження</string>
     <string name="delAllCache">Очистити всі кеші</string>
@@ -320,9 +296,6 @@
     <string name="ff_descending">Заморожено ↓</string>
     <string name="us_ascending">Частота використання ↑</string>
     <string name="us_descending">Частота використання ↓</string>
-    <string name="clearUninstalledPkgsInOKUFList">Прибрати видалені додатки з OneKEY заморозка</string>
-    <string name="clearUninstalledPkgsInOKFFList">Прибрати видалені додатки з OneKEY заморозка</string>
-    <string name="clearUninstalledPkgsInFOQList">Прибрати видалені додатки з Заморозки після виходу</string>
     <string name="impt">Імпортувати</string>
     <string name="expt">Експортувати</string>
     <string name="saveBackupToFile">Зберегти у файл</string>
@@ -343,13 +316,6 @@
     <string name="resetUseTimes">Скидання лічильника використання</string>
     <string name="selectAll">Вибрати все</string>
     <string name="selectUnselected">Інвертувати</string>
-    <string name="onClickFunctionStatus">Стан Дії при натисканні</string>
-    <string name="sortMethodStatus">Стан способу сортування</string>
-    <string name="oneKeyFreezeList">Список OneKEY заморозка</string>
-    <string name="oneKeyUFList">Список OneKEY разморозка</string>
-    <string name="freezeOnceQuitList">Список Заморозка після виходу</string>
-    <string name="scheduledTaskDashLineLabel">Заплановане завдання - %1$s</string>
-    <string name="moreSettingsDashLineLabel">Додаткові налаштування %1$s</string>
     <string name="parseFailed">Збій розбору</string>
     <string name="nothing">Немає</string>
     <string name="share">Поділитися</string>
@@ -359,20 +325,16 @@
     <string name="alreadyExist">Вже існує</string>
     <string name="queryStatus">Статус запиту</string>
     <string name="newClassification">Нова категорія</string>
-    <string name="userDefined">Налаштування користувача</string>
     <string name="displayLanguage">Мова додатку</string>
     <string name="emptyNotAllowed">Порожнє не допускається</string>
     <string name="myCustomization">Моя підбірка</string>
     <string name="manageMyCustomization">Керування «Моєю підбіркою»</string>
-    <string name="myCustomizationDashLineLabel">Моя підбірка - %1$s</string>
     <string name="copyAlias">Скопіювати alias</string>
     <string name="version_colon_vN_longVC">Версія: %1$s ( %2$s)</string>
     <string name="existed_colon_vN_longVC">Існуючі: %1$s (%2$s)</string>
     <string name="application_colon_app">Додатки: %1$s</string>
     <string name="pkgName_colon_pkgName">Пакет: %1$s</string>
     <string name="cannotInstall_colon_msg">Неможливо встановити: %1$s</string>
-    <string name="uriAutoAllowList">Запит дозволених URI</string>
-    <string name="ipaAutoAllowList">Запит установки додатків БІЛОГО списку</string>
     <string name="installing_app">Установка %1$s</string>
     <string name="uninstalling_app">Видалення %1$s</string>
     <string name="app_installFinished">%1$s встановлено</string>
@@ -387,26 +349,17 @@
     <string name="contactUs">Зв\'\язатися з нами</string>
     <string name="email_colon">Email: %1$s</string>
     <string name="qqGroup_colon">QQ група: %1$s</string>
-    <string name="wechatMp_colon">WeChat офіційний акаунт: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Не оновлювати додаток під час використання</string>
     <string name="selectFUFMode">Виберіть режим заморозки і розморозки</string>
-    <string name="enable_Root_unhide">Розморозка - ROOT (показати)</string>
-    <string name="disable_Root_hide">Заморозка - ROOT (приховати)</string>
-    <string name="enable_Root_enable">Розморозка - ROOT (включити)</string>
-    <string name="disable_Root_disable">Заморозка - ROOT (відключити)</string>
-    <string name="enable_MRoot_DPM">Розморозка - без-ROOT (DPM)</string>
-    <string name="disable_MRoot_DPM">Заморозка без-ROOT (DPM)</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">Слідувати системній темній темі</string>
     <string name="willOverrideInterfaceStyle">Перевизначить стиль інтерфейсу</string>
     <string name="installPerimisionCheckFailed_ifContinue">Перевірка дозволу установки не вдалася, продовжити?</string>
     <string name="jumpToSysInstaller">Перейти до системного установника</string>
-    <string name="displayListDivider">Включити роздільник списку</string>
     <string name="appearance">Зовнішній вигляд</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Створити сповіщення про швидку заморозку після розморозки</string>
     <string name="executionResult_colon_message">Результат виконання: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат невідомий (ймовірно успіх)</string>
     <string name="unknownError">Невідома помилка</string>
-    <string name="packageNameIsNull">Ім\'\я пакету порожнє</string>
     <string name="packageNameIsEmpty">Ім\’\я пакета порожнє</string>
     <string name="isNotDevicePolicyManager">Не є диспетчером політики пристрою</string>
     <string name="noSuchApiMode">Немає такого режиму API</string>
@@ -428,6 +381,7 @@
     <string name="criticalPackagesWarning">У виділенні є пакети, від яких залежить система:\n\n%1$s\n\nЇх заморозка може залишити пристрій без рядка стану, Налаштувань або клавіатури, і повернути все буде непросто. Все одно продовжити?</string>
     <string name="runningFilterUnavailable">Фільтр «Активні» доступний лише в режимах ROOT або Shizuku. Змініть режим: Налаштування \u2192 Заморозка і розморозка \u2192 Вибрати режим.</string>
     <string name="scheduledTaskCommandsSyntax">Налаштування завдань</string>
+    <string name="correspondingAndAvailableWebsiteUrlLanguageCode" translatable="false">ru-RU</string>
     <string name="offlineHelpAssetLanguageCode" translatable="false">uk</string>
     <string name="lastInstall">Нещодавно встановлені</string>
     <string name="lastUpdate">Нещодавно оновлені</string>
@@ -493,7 +447,6 @@
         <item>При розморозці додатків</item>
         <item>При заморозці додатків</item>
     </string-array>
-    <string-array name="sortBySelection">
         <item>За замовчуванням</item>
         <item>Не сортувати</item>
         <item>Розморожено ↑</item>
