@@ -18,21 +18,21 @@
 | CommandExecutorActivity | `commandExecutionTool` | Command execution tool | Инструмент выполнения команд | Інструмент виконання команд |
 | DisableApplications | — (label не из строк) | | | |
 | EnableApplications | — (label не из строк) | | | |
-| FUFLauncherShortcutCreator | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморозка/ Розморозка / Запуск |
-| FUFNotificationsManageActivity | `manageQuickFUFNoti` | Manage quick freeze notifications | Управление уведомлениями о быстрой заморозке | Керування сповіщеннями при швидкій заморозці |
+| FUFLauncherShortcutCreator | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморожування/ Розморожування / Запуск |
+| FUFNotificationsManageActivity | `manageQuickFUFNoti` | Manage quick freeze notifications | Управление уведомлениями о быстрой заморозке | Керування сповіщеннями при швидкому заморожуванні |
 | FirstIcon | `app_name` | FreezeYou-Fork | FreezeYou-Fork | FreezeYou-Fork |
 | FirstTimeSetupActivity | — (label не из строк) | | | |
 | ForceStop | `forceStop` | Force Stop | Принудительная остановка | Примусова зупинка |
-| Freeze | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморозка/ Розморозка / Запуск |
+| Freeze | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморожування/ Розморожування / Запуск |
 | FullScreenImageViewerActivity | — (label не из строк) | | | |
 | GetDisabledApplications | — (label не из строк) | | | |
 | InstallPackagesActivity | `installAndUninstall` | Install and Uninstall | Установка и удаление | Установка і видалення |
 | LauncherShortcutConfirmAndGenerateActivity | `createLauncherShortcut` | Create Launcher Shortcut | Создать ярлык на рабочем столе | Створити ярлик на робочому столі |
 | Main | — (label не из строк) | | | |
-| ManualModeActivity | `manualMode` | Freeze by package name | Заморозка по имени пакета | Заморозка за ім\'ям пакета |
-| OneKeyFreeze | `oneKeyFreeze` | Onekey Freeze | OneKEY заморозка | OneKEY заморозка |
+| ManualModeActivity | `manualMode` | Freeze by package name | Заморозка по имени пакета | Заморожування за ім\'ям пакета |
+| OneKeyFreeze | `oneKeyFreeze` | Onekey Freeze | OneKEY заморозка | OneKEY заморожування |
 | OneKeyScreenLockImmediatelyActivity | `oneKeyLockScreen` | Lock Screen | Блокировка экрана | Блокування екрану |
-| OneKeyUF | `oneKeyUF` | Onekey Unfreeze | OneKEY разморозка | OneKEY розморозка |
+| OneKeyUF | `oneKeyUF` | Onekey Unfreeze | OneKEY разморозка | OneKEY розморожування |
 | ScheduledTaskCommandsSyntaxActivity | `scheduledTaskCommandsSyntax` | Task Setup | Настройка заданий | Налаштування завдань |
 | ScheduledTasksAddActivity | — (label не из строк) | | | |
 | ScheduledTasksManageActivity | `scheduledTasks` | Scheduled tasks | Запланированные задания | Заплановані завдання |
@@ -46,5 +46,5 @@
 | ThirdIcon | `app_name` | FreezeYou-Fork | FreezeYou-Fork | FreezeYou-Fork |
 | UninstallActivity | — (label не из строк) | | | |
 | UriAutoAllowManageActivity | `manageUriAutoAllow` | Manage URI Request Auto Allow List | Управление запросами белого списка URI | Керування запитами білого списку URI |
-| UriFreezeActivity | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморозка/ Розморозка / Запуск |
+| UriFreezeActivity | `disableAEnable` | Freeze/Unfreeze/Run | Заморозка/разморозка/запуск | Заморожування/ Розморожування / Запуск |
 | UserDefinedListsManageActivity | `manageMyCustomization` | Manage my customization | Управление списком «Моя подборка» | Керування «Моєю підбіркою» |
