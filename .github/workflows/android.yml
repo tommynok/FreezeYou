@@ -85,9 +85,7 @@ jobs:
           "FreezeYou-build${BUILD}-universal.apk" \
           --target "${{ github.sha }}" \
           --title "Build ${BUILD}" \
-          --notes "Branch \`${{ github.ref_name }}\`, commit ${{ github.sha }}.
-        - \`*-arm64.apk\` — modern 64-bit devices (smaller)
-        - \`*-universal.apk\` — arm64 + old 32-bit (armeabi-v7a) devices"
+          --notes "Branch \`${{ github.ref_name }}\`, commit ${{ github.sha }}."
         echo "url=$(gh release view "$tag" --json url --jq .url)" >> "$GITHUB_OUTPUT"
 
     - name: Upload APKs
