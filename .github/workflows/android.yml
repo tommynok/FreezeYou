@@ -49,37 +49,54 @@ jobs:
         ./gradlew :app:tasks --all --console=plain | grep -i unittest || true
         ./gradlew test --stacktrace
 
-    - name: Build with Gradle
-      # forkBuildNumber is the run number: it makes versionCode grow by one every build,
-      # so an update always installs over the previous one.
-      run: ./gradlew assembleRelease -PforkBuildNumber=${{ github.run_number }} --stacktrace
+    # Two builds, one release. forkBuildNumber is the run number: it makes versionCode grow
+    # by one every build, so an update always installs over the previous one. The universal
+    # APK (arm64-v8a + armeabi-v7a) covers old 32-bit phones; the arm64 one is for modern
+    # devices that want the smaller file. Both carry the same versionCode, so either
+    # installs as an update over the other.
+    - name: Build universal APK (arm64-v8a + armeabi-v7a)
+      env:
+        BUILD: ${{ github.run_number }}
+      run: |
+        ./gradlew assembleRelease -PforkBuildNumber=${{ github.run_number }} --stacktrace
+        cp app/build/outputs/apk/release/app-release.apk "FreezeYou-build${BUILD}-universal.apk"
 
-    # A release carries the APK itself, so it installs straight from the phone's
+    - name: Build arm64-only APK
+      env:
+        BUILD: ${{ github.run_number }}
+      run: |
+        ./gradlew clean assembleRelease -PforkBuildNumber=${{ github.run_number }} -PabiArm64Only=true --stacktrace
+        cp app/build/outputs/apk/release/app-release.apk "FreezeYou-build${BUILD}-arm64.apk"
+
+    # A release carries the APKs themselves, so they install straight from the phone's
     # browser. An artifact is a zip that has to be unpacked first, which is why
     # the release is what the summary links to.
-    - name: Publish the APK to Releases
+    - name: Publish the APKs to Releases
       id: release
       env:
         GH_TOKEN: ${{ github.token }}
         BUILD: ${{ github.run_number }}
       run: |
         set -euo pipefail
-        apk="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
-        name="FreezeYou-build${BUILD}.apk"
-        cp "$apk" "$name"
         # The run number only ever grows, so the tag is unique without any bookkeeping.
         tag="build-${BUILD}"
-        gh release create "$tag" "$name" \
+        gh release create "$tag" \
+          "FreezeYou-build${BUILD}-arm64.apk" \
+          "FreezeYou-build${BUILD}-universal.apk" \
           --target "${{ github.sha }}" \
           --title "Build ${BUILD}" \
-          --notes "Branch \`${{ github.ref_name }}\`, commit ${{ github.sha }}."
+          --notes "Branch \`${{ github.ref_name }}\`, commit ${{ github.sha }}.
+        - \`*-arm64.apk\` — modern 64-bit devices (smaller)
+        - \`*-universal.apk\` — arm64 + old 32-bit (armeabi-v7a) devices"
         echo "url=$(gh release view "$tag" --json url --jq .url)" >> "$GITHUB_OUTPUT"
 
-    - name: Upload APK
+    - name: Upload APKs
       uses: actions/upload-artifact@v4
       with:
         name: app-release
-        path: app/build/outputs/apk/release/*.apk
+        path: |
+          FreezeYou-build*-arm64.apk
+          FreezeYou-build*-universal.apk
 
     - name: Add download link to job summary
       run: |
