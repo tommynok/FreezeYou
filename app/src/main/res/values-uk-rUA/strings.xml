@@ -447,15 +447,6 @@
         <item>При розморозці додатків</item>
         <item>При заморозці додатків</item>
     </string-array>
-        <item>За замовчуванням</item>
-        <item>Не сортувати</item>
-        <item>Розморожено ↑</item>
-        <item>Розморожено ↓</item>
-        <item>Заморожено ↑</item>
-        <item>Заморожено ↓</item>
-        <item>Частота використання ↑</item>
-        <item>Частота використання ↓</item>
-    </string-array>
     <string-array name="selectFUFModeSelection">
         <item>без-ROOT (режим DPM)</item>
         <item>Без-root (режим власника профілю)</item>

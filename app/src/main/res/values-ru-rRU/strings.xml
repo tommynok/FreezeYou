@@ -447,15 +447,6 @@
         <item>При разморозке приложений</item>
         <item>При заморозке приложений</item>
     </string-array>
-        <item>По умолчанию</item>
-        <item>Не сортировать</item>
-        <item>Разморожено ↑</item>
-        <item>Разморожено ↓</item>
-        <item>Заморожено ↑</item>
-        <item>Заморожено ↓</item>
-        <item>Частота использования ↑</item>
-        <item>Частота использования ↓</item>
-    </string-array>
     <string-array name="selectFUFModeSelection">
         <item>без-ROOT (режим DPM)</item>
         <item>Без-root (режим владельца профиля)</item>

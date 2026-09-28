@@ -497,15 +497,6 @@
         <item>1</item>
         <item>2</item>
     </string-array>
-        <item>Default</item>
-        <item>No sort</item>
-        <item>Unfreeze ↑</item>
-        <item>Unfreeze ↓</item>
-        <item>Freeze ↑</item>
-        <item>Freeze ↓</item>
-        <item>Using frequency ↑</item>
-        <item>Using frequency ↓</item>
-    </string-array>
     <string-array name="sortBySelectionValues" translatable="false">
         <item>default</item>
         <item>no</item>
