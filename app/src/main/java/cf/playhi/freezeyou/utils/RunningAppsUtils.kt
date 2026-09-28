@@ -1,16 +1,12 @@
 package cf.playhi.freezeyou.utils
 
-import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
-import android.os.IBinder
 import android.util.Log
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.ShizukuProvider
-import rikka.shizuku.SystemServiceHelper
 
 /**
  * Android hides other apps' running processes from unprivileged callers since API 21, so a
@@ -41,10 +37,9 @@ object RunningAppsUtils {
 
     /**
      * The freeze mode only decides which source to *try first*. Both sources are independent of
-     * it — a device can have root granted while running in a Shizuku freeze mode, and the Shizuku
-     * path (reflection over hidden IActivityManager) returns nothing on some Android versions
-     * where the root /proc scan still works. Falling back to the other source turns that into a
-     * populated list instead of a silently empty one.
+     * it — a device can have root granted while running in a Shizuku freeze mode, and either
+     * path can come back empty (no su binary, Shizuku not granted). Falling back to the other
+     * source turns that into a populated list instead of a silently empty one.
      */
     @JvmStatic
     fun getRunningPackages(context: Context): Set<String> {
@@ -69,9 +64,9 @@ object RunningAppsUtils {
         return fallback
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun getShizukuRunningPackages(context: Context): Set<String> {
         val debug = isDebugModeEnabled()
+        var process: java.lang.Process? = null
         try {
             if (Build.VERSION.SDK_INT < 23) return emptySet()
 
@@ -88,29 +83,28 @@ object RunningAppsUtils {
                 }
             }
 
-            val am = Class.forName("android.app.IActivityManager\$Stub")
-                .getMethod("asInterface", IBinder::class.java)
-                .invoke(null, ShizukuBinderWrapper(SystemServiceHelper.getSystemService("activity")))
-                ?: return emptySet()
-
-            val processes = am.javaClass.getMethod("getRunningAppProcesses").invoke(am)
-                    as? List<ActivityManager.RunningAppProcessInfo> ?: return emptySet()
-
-            val packages = mutableSetOf<String>()
-            for (process in processes) {
-                process.pkgList?.let { packages.addAll(it) }
-            }
+            // The binder route (IActivityManager$Stub.asInterface via reflection) is a dead end:
+            // that hidden API is max-target-R, blocked outright for targetSdk 31+, so
+            // Class.getMethod throws before any binder call — IPackageManager's asInterface only
+            // survives because it stayed on the warn-but-allow list. The shell route runs the
+            // same /proc scan as the root path, as the user Shizuku itself runs under (root via
+            // Sui, shell via adb): no hidden API in the chain.
+            process = Shizuku.newProcess(
+                arrayOf("sh", "-c", ProcessUtils.RUNNING_PACKAGES_COMMANDS.joinToString(" && ")),
+                null, null
+            )
+            val packages = ProcessUtils.parseRunningPackages(process.inputStream)
+            process.waitFor()
             if (debug) {
-                Log.e(
-                    "DebugModeLogcat",
-                    "getShizukuRunningPackages: processes=${processes.size} packages=${packages.size}"
-                )
+                Log.e("DebugModeLogcat", "getShizukuRunningPackages: packages=${packages.size}")
             }
             return packages
         } catch (e: Exception) {
             e.printStackTrace()
             if (debug) Log.e("DebugModeLogcat", "getShizukuRunningPackages failed: $e")
             return emptySet()
+        } finally {
+            process?.destroy()
         }
     }
 }

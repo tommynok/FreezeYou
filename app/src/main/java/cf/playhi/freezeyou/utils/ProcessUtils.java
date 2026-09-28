@@ -49,20 +49,65 @@ public final class ProcessUtils {
     private static final String PS_FALLBACK_MARKER = "---PS-FALLBACK---";
 
     /**
-     * @return package names of currently running processes, as seen by a root shell. Requires
-     * root; returns an empty set on any failure instead of throwing, since the caller treats
-     * "no matches" and "unavailable" the same way.
-     * <p>
-     * Reads every /proc/PID/cmdline directly as the primary source: it's what "ps" itself reads
+     * The /proc/cmdline scan plus the two ps fallbacks, one command stream. Run it through a
+     * root shell (Runtime.exec("su")) or through Shizuku's shell (Shizuku.newProcess) — both
+     * carry the privileges /proc needs, and neither touches a hidden API.
+     */
+    public static final String[] RUNNING_PACKAGES_COMMANDS = {
+            "for f in /proc/[0-9]*/cmdline; do read -r line < \"$f\" 2>/dev/null && [ -n \"$line\" ] && echo \"$line\"; done",
+            "echo " + PS_PRIMARY_MARKER,
+            "ps -A -o NAME= 2>/dev/null",
+            "echo " + PS_FALLBACK_MARKER,
+            "ps -A 2>/dev/null",
+    };
+
+    /**
+     * Parses the output of {@link #RUNNING_PACKAGES_COMMANDS}: package names of currently
+     * running processes. The /proc section is the primary source — it's what "ps" itself reads
      * under the hood, so it sidesteps quirks of whichever ps binary/toolbox happens to be on the
      * device (missing "-o" support, different column layouts, etc). The loop reads each cmdline
      * file with the shell's "read" builtin rather than piping through "tr"/"head" — those spawn
      * a process per PID, which on a device with a couple hundred processes turned "list running
-     * apps" into a many-hundred-fork operation and a many-second wait. "read" runs in the su
-     * shell itself, no forking. "ps -A -o NAME=" and plain "ps -A" (last whitespace-separated
-     * column) are kept as supplementary sources in case some process' cmdline was unreadable but
-     * ps still resolved it another way; results from all three are merged into one set.
+     * apps" into a many-hundred-fork operation and a many-second wait. "read" runs in the
+     * elevated shell itself, no forking. "ps -A -o NAME=" and plain "ps -A" (last
+     * whitespace-separated column) are kept as supplementary sources in case some process'
+     * cmdline was unreadable but ps still resolved it another way; results from all three are
+     * merged into one set. Returns an empty set on any parse failure instead of throwing, since
+     * the caller treats "no matches" and "unavailable" the same way.
      */
+    public static Set<String> parseRunningPackages(java.io.InputStream inputStream) {
+        Set<String> packages = new HashSet<>();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        int section = 0; // 0 = /proc, 1 = ps -o NAME=, 2 = plain ps -A
+        boolean fallbackHeaderSkipped = false;
+        while ((line = reader.readLine()) != null) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            if (PS_PRIMARY_MARKER.equals(line)) {
+                section = 1;
+                continue;
+            }
+            if (PS_FALLBACK_MARKER.equals(line)) {
+                section = 2;
+                continue;
+            }
+            if (section == 2) {
+                // First non-empty line of plain "ps -A" is its column header (USER PID ... NAME).
+                if (!fallbackHeaderSkipped) {
+                    fallbackHeaderSkipped = true;
+                    continue;
+                }
+                String[] columns = line.split("\\s+");
+                if (columns.length == 0) continue;
+                line = columns[columns.length - 1];
+            }
+            int colonIndex = line.indexOf(':');
+            packages.add(colonIndex > 0 ? line.substring(0, colonIndex) : line);
+        }
+        return packages;
+    }
+
     public static Set<String> getRootRunningPackages() {
         Set<String> packages = new HashSet<>();
         Process process = null;
@@ -70,48 +115,15 @@ public final class ProcessUtils {
         try {
             process = Runtime.getRuntime().exec("su");
             outputStream = new DataOutputStream(process.getOutputStream());
-            outputStream.writeBytes("for f in /proc/[0-9]*/cmdline; do read -r line < \"$f\" 2>/dev/null && [ -n \"$line\" ] && echo \"$line\"; done\n");
-            outputStream.writeBytes("echo " + PS_PRIMARY_MARKER + "\n");
-            outputStream.writeBytes("ps -A -o NAME= 2>/dev/null\n");
-            outputStream.writeBytes("echo " + PS_FALLBACK_MARKER + "\n");
-            outputStream.writeBytes("ps -A 2>/dev/null\n");
+            for (String command : RUNNING_PACKAGES_COMMANDS) {
+                outputStream.writeBytes(command + "\n");
+            }
             outputStream.writeBytes("exit\n");
             outputStream.flush();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            int section = 0; // 0 = /proc, 1 = ps -o NAME=, 2 = plain ps -A
-            boolean fallbackHeaderSkipped = false;
-            int rawLineCount = 0;
-            while ((line = reader.readLine()) != null) {
-                rawLineCount++;
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                if (PS_PRIMARY_MARKER.equals(line)) {
-                    section = 1;
-                    continue;
-                }
-                if (PS_FALLBACK_MARKER.equals(line)) {
-                    section = 2;
-                    continue;
-                }
-                if (section == 2) {
-                    // First non-empty line of plain "ps -A" is its column header (USER PID ... NAME).
-                    if (!fallbackHeaderSkipped) {
-                        fallbackHeaderSkipped = true;
-                        continue;
-                    }
-                    String[] columns = line.split("\\s+");
-                    if (columns.length == 0) continue;
-                    line = columns[columns.length - 1];
-                }
-                int colonIndex = line.indexOf(':');
-                packages.add(colonIndex > 0 ? line.substring(0, colonIndex) : line);
-            }
-            process.waitFor();
+            packages = parseRunningPackages(process.getInputStream());
             if (isDebugModeEnabled()) {
-                Log.e("DebugModeLogcat", "getRootRunningPackages: rawLines=" + rawLineCount
-                        + " packages=" + packages.size());
+                Log.e("DebugModeLogcat", "getRootRunningPackages: packages=" + packages.size());
             }
         } catch (Exception e) {
             e.printStackTrace();
