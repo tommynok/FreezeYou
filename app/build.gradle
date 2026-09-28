@@ -42,10 +42,36 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // The owner's real key, provided by CI through repository secrets (the workflow
+            // decodes KEYSTORE_BASE64 into the file KEYSTORE_PATH points at). Intentionally
+            // unconfigured here when the environment is absent - the buildTypes block then
+            // falls back to the debug key so local builds keep working.
+        }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            def ksPath = System.getenv("KEYSTORE_PATH")
+            def ksPassword = System.getenv("KEYSTORE_PASSWORD")
+            def alias = System.getenv("KEY_ALIAS")
+            def keyPassword = System.getenv("KEY_PASSWORD")
+            def haveReleaseKey = ksPath != null && ksPassword != null && alias != null
+                    && keyPassword != null && rootProject.file(ksPath).exists()
+            if (ksPath != null && !haveReleaseKey) {
+                // Secrets were expected (the workflow exports them) but the keystore file
+                // did not materialize - signing with the debug key silently would be worse
+                // than failing.
+                throw new GradleException("KEYSTORE_PATH is set but ${ksPath} is missing; the release keystore was not decoded")
+            }
+            signingConfig haveReleaseKey ? signingConfigs.release : signingConfigs.debug
+            if (haveReleaseKey) {
+                signingConfigs.release {
+                    storeFile rootProject.file(ksPath)
+                    storePassword ksPassword
+                    keyAlias alias
+                    keyPassword keyPassword
+                }
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             shrinkResources true
             minifyEnabled true
