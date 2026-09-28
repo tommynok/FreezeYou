@@ -92,7 +92,7 @@
     <string name="packageName">Ім\'\я пакету</string>
     <string name="failed">Не вдалося</string>
     <string name="success">Успішно</string>
-    <string name="disableAEnable">Заморозка/ Розморозка / Запуск</string>
+    <string name="disableAEnable">Заморожування/ Розморозка / Запуск</string>
     <string name="copyPkgName">Скопіювати ім\'\ я пакета</string>
     <string name="createDisEnableShortCut">Створити ярлик заморозка / розморозка</string>
     <string name="createActivityShortcut">Створити ярлик активіті</string>
