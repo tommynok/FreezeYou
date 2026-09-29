@@ -57,8 +57,13 @@ android {
             def ksPassword = System.getenv("KEYSTORE_PASSWORD")?.trim()
             def alias = System.getenv("KEY_ALIAS")?.trim()
             def keyPwd = System.getenv("KEY_PASSWORD")?.trim()
+            // KEY_PASSWORD is optional on purpose: PKCS12 writers handle the key password
+            // differently (some ignore it entirely and encrypt the key with the store
+            // password), so the build probes both candidates below and signs with whichever
+            // decrypts the key. Mixing the two secrets up is therefore impossible to notice
+            // and impossible to matter.
             def haveReleaseKey = ksPath != null && ksPassword != null && alias != null
-                    && keyPwd != null && rootProject.file(ksPath).exists()
+                    && rootProject.file(ksPath).exists()
             if (ksPath != null && !haveReleaseKey) {
                 // Secrets were expected (the workflow exports them) but the keystore file
                 // did not materialize - signing with the debug key silently would be worse
@@ -71,11 +76,8 @@ android {
                 if (!keyStore.isKeyEntry(alias)) {
                     throw new GradleException("Alias '${alias}' is not a key entry in the release keystore")
                 }
-                // Some PKCS12 writers ignore a separate key password and encrypt the key
-                // with the store password. Try the declared key password first, then the
-                // store password, and sign with whichever actually decrypts the key.
                 def workingKeyPwd = null
-                for (def candidate : [keyPwd, ksPassword]) {
+                for (def candidate : [keyPwd, ksPassword].findAll { it != null }) {
                     try {
                         keyStore.getKey(alias, candidate.toCharArray())
                         workingKeyPwd = candidate
