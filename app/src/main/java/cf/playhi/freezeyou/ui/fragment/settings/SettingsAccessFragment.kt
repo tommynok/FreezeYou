@@ -9,7 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.annotation.Keep
 import androidx.preference.CheckBoxPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
@@ -25,7 +25,7 @@ import cf.playhi.freezeyou.utils.SettingsUtils.changeIconEntryComponentState
  * a screen holding the launcher icons. This fragment is the two of them put together.
  */
 @Keep
-class SettingsAccessFragment : PreferenceFragmentCompat() {
+class SettingsAccessFragment : CardPreferenceFragment() {
 
     private var enableAuthenticationActivityResultLauncher: ActivityResultLauncher<Intent>? = null
 

@@ -5,7 +5,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.annotation.Keep
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog
 import cf.playhi.freezeyou.utils.DataStatisticsUtils.resetTimes
@@ -16,7 +16,7 @@ import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import java.io.File
 
 @Keep
-class SettingsManageSpaceFragment : PreferenceFragmentCompat() {
+class SettingsManageSpaceFragment : CardPreferenceFragment() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.spr_manage_space, rootKey)

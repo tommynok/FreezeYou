@@ -4,13 +4,13 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.ui.BackupMainActivity
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.VersionUtils.checkUpdate
 
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : CardPreferenceFragment() {
 
     override fun onResume() {
         super.onResume()
