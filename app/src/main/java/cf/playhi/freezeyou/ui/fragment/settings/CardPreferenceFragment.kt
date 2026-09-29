@@ -17,6 +17,16 @@ abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
         super.onViewCreated(view, savedInstanceState)
         setDivider(null)
         setDividerHeight(0)
+        // The cards are painted colorSurface; tinting the screen itself colorSurfaceVariant
+        // creates the surface-on-container contrast the design reference shows - without
+        // this the cards sit on an identically colored background and stay invisible.
+        view.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(
+                com.google.android.material.color.MaterialColors.getColor(
+                    view, com.google.android.material.R.attr.colorSurfaceVariant
+                )
+            )
+        }
         listView?.addItemDecoration(PreferenceGroupCardDecoration())
     }
 }
