@@ -65,14 +65,36 @@ android {
                 // than failing.
                 throw new GradleException("KEYSTORE_PATH is set but ${ksPath} is missing; the release keystore was not decoded")
             }
-            signingConfig haveReleaseKey ? signingConfigs.release : signingConfigs.debug
             if (haveReleaseKey) {
+                def ksFile = rootProject.file(ksPath)
+                def keyStore = java.security.KeyStore.getInstance(ksFile, ksPassword.toCharArray())
+                if (!keyStore.isKeyEntry(alias)) {
+                    throw new GradleException("Alias '${alias}' is not a key entry in the release keystore")
+                }
+                // Some PKCS12 writers ignore a separate key password and encrypt the key
+                // with the store password. Try the declared key password first, then the
+                // store password, and sign with whichever actually decrypts the key.
+                def workingKeyPwd = null
+                for (def candidate : [keyPwd, ksPassword]) {
+                    try {
+                        keyStore.getKey(alias, candidate.toCharArray())
+                        workingKeyPwd = candidate
+                        break
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (workingKeyPwd == null) {
+                    throw new GradleException("Neither KEY_PASSWORD nor KEYSTORE_PASSWORD decrypts the key '${alias}'. Fix the repository secrets.")
+                }
+                signingConfig signingConfigs.release
                 signingConfigs.release {
-                    storeFile rootProject.file(ksPath)
+                    storeFile ksFile
                     storePassword ksPassword
                     keyAlias alias
-                    keyPassword keyPwd
+                    keyPassword workingKeyPwd
                 }
+            } else {
+                signingConfig signingConfigs.debug
             }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             shrinkResources true
