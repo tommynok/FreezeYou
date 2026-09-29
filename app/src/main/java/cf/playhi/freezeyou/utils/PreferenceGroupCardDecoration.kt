@@ -8,7 +8,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroupAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.color.MaterialColors
 import kotlin.math.min
 
 /**
@@ -18,7 +17,7 @@ import kotlin.math.min
  * straight edges. Rows above the first category form a group of their own, so screens
  * without any categories render as a single card.
  */
-class PreferenceGroupCardDecoration : RecyclerView.ItemDecoration() {
+class PreferenceGroupCardDecoration(private val cardColor: Int) : RecyclerView.ItemDecoration() {
 
     override fun onDraw(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
         val adapter = parent.adapter as? PreferenceGroupAdapter ?: return
@@ -49,11 +48,7 @@ class PreferenceGroupCardDecoration : RecyclerView.ItemDecoration() {
         val density = parent.resources.displayMetrics.density
         val radius = 20f * density
         val inset = 4f * density
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = MaterialColors.getColor(
-                parent, com.google.android.material.R.attr.colorSurface
-            )
-        }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cardColor }
 
         for (childIndex in 0 until parent.childCount) {
             val child = parent.getChildAt(childIndex)
