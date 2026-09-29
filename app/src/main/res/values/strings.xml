@@ -572,7 +572,7 @@
     <string name="category_help">Help</string>
     <string name="summary_spr_mainScreen">List or grid, sorting, what a tap does</string>
     <string name="dynamicColors">Dynamic colors</string>
-    <string name="summary_dynamicColors">Tints the interface with the wallpaper's colors (Material You). Applies after a restart</string>
+    <string name="summary_dynamicColors">Tints the interface with the wallpaper\'s colors (Material You). Applies after a restart</string>
     <string name="summary_spr_appearance">Theme, dark mode, language, animations</string>
     <string name="summary_spr_fuf">Mode, protection, shortcuts, background service</string>
     <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
