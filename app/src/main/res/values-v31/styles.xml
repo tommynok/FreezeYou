@@ -11,14 +11,17 @@
 
     <style name="Base.AppTheme.SplashScreen" parent="Base.V31.AppTheme.SplashScreen" />
 
-    <style name="AppTheme.Default" parent="Theme.Material3.DynamicColors.DayNight">
+    <style name="AppTheme.Default" parent="Theme.Material3.Light">
+        <!-- Always light: the upstream DayNight parent made "Default" follow the system
+             dark mode, which the owner experienced as the light option disappearing.
+             Wallpaper-based dynamic colors are applied programmatically in MainApplication. -->
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
-    <style name="AppTheme.Default.Dialog" parent="Theme.Material3.DynamicColors.DayNight">
+    <style name="AppTheme.Default.Dialog" parent="Theme.Material3.Light">
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
