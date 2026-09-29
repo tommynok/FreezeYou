@@ -11,9 +11,9 @@ import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.dynamicColors
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.languagePref
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.OneKeyListUtils
