@@ -54,9 +54,9 @@ android {
             def ksPath = System.getenv("KEYSTORE_PATH")
             def ksPassword = System.getenv("KEYSTORE_PASSWORD")
             def alias = System.getenv("KEY_ALIAS")
-            def keyPassword = System.getenv("KEY_PASSWORD")
+            def keyPwd = System.getenv("KEY_PASSWORD")
             def haveReleaseKey = ksPath != null && ksPassword != null && alias != null
-                    && keyPassword != null && rootProject.file(ksPath).exists()
+                    && keyPwd != null && rootProject.file(ksPath).exists()
             if (ksPath != null && !haveReleaseKey) {
                 // Secrets were expected (the workflow exports them) but the keystore file
                 // did not materialize - signing with the debug key silently would be worse
@@ -69,7 +69,7 @@ android {
                     storeFile rootProject.file(ksPath)
                     storePassword ksPassword
                     keyAlias alias
-                    keyPassword keyPassword
+                    keyPassword keyPwd
                 }
             }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
