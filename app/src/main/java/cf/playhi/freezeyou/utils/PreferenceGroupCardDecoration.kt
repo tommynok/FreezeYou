@@ -51,7 +51,7 @@ class PreferenceGroupCardDecoration : RecyclerView.ItemDecoration() {
         val inset = 4f * density
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = MaterialColors.getColor(
-                parent, com.google.android.material.R.attr.colorSurfaceContainerLow
+                parent, com.google.android.material.R.attr.colorSurface
             )
         }
 
