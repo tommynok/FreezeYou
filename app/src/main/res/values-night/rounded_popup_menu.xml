@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark theme variant of the rounded popup background: an elevated dark tone, lighter
+     than the dark screen surface, so the popup still reads against the background. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="#2B2B2B" />
+    <padding
+        android:bottom="4dp"
+        android:top="4dp" />
+</shape>
