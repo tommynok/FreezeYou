@@ -52,9 +52,11 @@ android {
     buildTypes {
         release {
             def ksPath = System.getenv("KEYSTORE_PATH")
-            def ksPassword = System.getenv("KEYSTORE_PASSWORD")
-            def alias = System.getenv("KEY_ALIAS")
-            def keyPwd = System.getenv("KEY_PASSWORD")
+            // GitHub secrets preserve every pasted character; trailing whitespace from a
+            // copy-paste would corrupt the passwords silently.
+            def ksPassword = System.getenv("KEYSTORE_PASSWORD")?.trim()
+            def alias = System.getenv("KEY_ALIAS")?.trim()
+            def keyPwd = System.getenv("KEY_PASSWORD")?.trim()
             def haveReleaseKey = ksPath != null && ksPassword != null && alias != null
                     && keyPwd != null && rootProject.file(ksPath).exists()
             if (ksPath != null && !haveReleaseKey) {
