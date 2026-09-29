@@ -34,6 +34,10 @@
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
+        <!-- Material attributes the card decoration reads; the AppCompat parent
+             does not define them, and their absence crashed dark settings screens. -->
+        <item name="colorSurface">#2C2E33</item>
+        <item name="colorSurfaceVariant">#1E1F22</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
     </style>
@@ -47,6 +51,7 @@
     <style name="Base.AppTheme.Dark.Black" parent="Base.AppTheme.Dark" />
 
     <style name="AppTheme.Dark.Black" parent="Base.AppTheme.Dark.Black">
+        <item name="colorSurfaceVariant">#000000</item>
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#000000</item>
         <item name="colorAccent">#1976d2</item>
@@ -66,6 +71,8 @@
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#E2E6EE</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
