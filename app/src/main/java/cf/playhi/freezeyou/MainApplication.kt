@@ -50,11 +50,6 @@ class MainApplication : Application() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-            && DefaultSharedPreferenceStorageBooleanKeys.dynamicColors.getValue(this)
-        ) {
-            DynamicColors.applyToActivitiesIfAvailable(this)
-        }
         checkAndEnableShizukuMultiProcessSupport(this)
         checkAndStartScreenLockOneKeyFreezeService()
     }
