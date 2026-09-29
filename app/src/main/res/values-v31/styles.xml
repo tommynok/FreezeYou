@@ -12,6 +12,8 @@
     <style name="Base.AppTheme.SplashScreen" parent="Base.V31.AppTheme.SplashScreen" />
 
     <style name="AppTheme.Default" parent="Theme.Material3.DynamicColors.DayNight">
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 

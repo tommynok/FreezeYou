@@ -11,6 +11,15 @@
 
     <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.AppCompat.NoActionBar" />
 
+    <!-- Rounded popup backgrounds for every menu and list popup in the app. -->
+    <style name="Widget.App.CardPopupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    </style>
+
+    <style name="Widget.App.CardListPopup" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    </style>
+
     <style name="AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -18,6 +27,8 @@
 
     <style name="Base.AppTheme.Dark" parent="Theme.AppCompat">
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
     </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
@@ -43,6 +54,8 @@
 
     <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
     </style>
 
     <style name="AppTheme.Light.Blue" parent="Base.AppTheme.Light.DarkActionBar">
