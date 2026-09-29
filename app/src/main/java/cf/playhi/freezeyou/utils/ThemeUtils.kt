@@ -157,7 +157,11 @@ internal object ThemeUtils {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.dynamicColors.getValue(context)
             ) {
-                context.theme.applyStyle(com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors, true)
+                val overlay = when (string) {
+                    "black", "dark" -> com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Dark
+                    else -> com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Light
+                }
+                context.theme.applyStyle(overlay, true)
             }
         } catch (e: Exception) {
             e.printStackTrace()
