@@ -11,7 +11,13 @@
 
     <style name="Base.AppTheme.SplashScreen" parent="Base.V31.AppTheme.SplashScreen" />
 
+    <style name="Shape.App.Small" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="AppTheme.Default" parent="Theme.Material3.Light">
+        <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <!-- Always light: the upstream DayNight parent made "Default" follow the system
              dark mode, which the owner experienced as the light option disappearing.
              Wallpaper-based dynamic colors are applied programmatically in MainApplication. -->
@@ -22,6 +28,7 @@
     </style>
 
     <style name="AppTheme.Default.Dialog" parent="Theme.Material3.Light">
+        <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>

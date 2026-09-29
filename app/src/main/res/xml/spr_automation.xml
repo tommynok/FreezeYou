@@ -2,7 +2,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Preference
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/automation">
+        <Preference
         app:iconSpaceReserved="false"
         app:singleLineTitle="false"
         app:title="@string/scheduledTasks">
@@ -38,5 +41,6 @@
         app:singleLineTitle="false"
         app:summary="@string/summary_deleteAllScheduledTasks"
         app:title="@string/delAllScheduledTasks" />
+    </PreferenceCategory>
 
 </PreferenceScreen>

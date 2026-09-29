@@ -28,7 +28,7 @@ abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
         val theme = ThemeUtils.getUiTheme(view.context)
         val (screenColor, cardColor) = when (theme) {
             "deepBlack" -> 0xFF000000.toInt() to 0xFF2C2E33.toInt()
-            "black" -> 0xFF1E1F22.toInt() to 0xFF2C2E33.toInt()
+            "black" -> 0xFF1E1F22.toInt() to 0xFF35383E.toInt()
             else -> 0xFFE2E6EE.toInt() to 0xFFFFFFFF.toInt()
         }
         view.background = GradientDrawable().apply { setColor(screenColor) }
