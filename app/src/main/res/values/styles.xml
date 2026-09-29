@@ -9,7 +9,7 @@
         <item name="android:paddingEnd">4dp</item>
     </style>
 
-    <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.AppCompat.NoActionBar" />
+    <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.Material3.DayNight.NoActionBar" />
 
     <!-- Rounded popup backgrounds for every menu and list popup in the app. -->
     <style name="Widget.App.CardPopupMenu" parent="Widget.AppCompat.PopupMenu">
@@ -33,17 +33,14 @@
         <item name="android:windowIsTranslucent">true</item>
     </style>
 
-    <style name="Base.AppTheme.Dark" parent="Theme.AppCompat">
+    <style name="Base.AppTheme.Dark" parent="Theme.Material3.Dark">
         <item name="alertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
-        <!-- Material attributes the card decoration reads; the AppCompat parent
-             does not define them, and their absence crashed dark settings screens. -->
-        <item name="colorSurface">#2C2E33</item>
-        <item name="colorSurfaceVariant">#1E1F22</item>
+
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
     </style>
@@ -57,7 +54,6 @@
     <style name="Base.AppTheme.Dark.Black" parent="Base.AppTheme.Dark" />
 
     <style name="AppTheme.Dark.Black" parent="Base.AppTheme.Dark.Black">
-        <item name="colorSurfaceVariant">#000000</item>
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#000000</item>
         <item name="colorAccent">#1976d2</item>
@@ -66,7 +62,7 @@
         <item name="android:colorBackground">@android:color/black</item>
     </style>
 
-    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.Material3.Light">
         <item name="alertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
@@ -75,14 +71,13 @@
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
-    <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
+    <style name="Base.AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
         <item name="alertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialog</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
-        <item name="colorSurface">#FFFFFF</item>
-        <item name="colorSurfaceVariant">#E2E6EE</item>
+
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
@@ -132,7 +127,7 @@
 
     <style name="AppTheme.Default" parent="AppTheme.Light.White" />
 
-    <style name="Base.AppTheme.Dark.Dialog" parent="Theme.AppCompat.Dialog">
+    <style name="Base.AppTheme.Dark.Dialog" parent="Theme.Material3.Dark.Dialog">
         <item name="windowNoTitle">true</item>
     </style>
 
@@ -156,7 +151,7 @@
         <item name="colorAccent">#1976d2</item>
     </style>
 
-    <style name="Base.AppTheme.Light.Dialog" parent="Theme.AppCompat.Light.Dialog">
+    <style name="Base.AppTheme.Light.Dialog" parent="Theme.Material3.Light.Dialog">
         <item name="windowNoTitle">true</item>
     </style>
 
