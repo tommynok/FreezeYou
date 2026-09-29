@@ -78,7 +78,6 @@ jobs:
         KEYSTORE_PATH: release-keystore.jks
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         ./gradlew assembleRelease -PforkBuildNumber=${{ github.run_number }} --stacktrace
         cp app/build/outputs/apk/release/app-release.apk "FreezeYou-build${BUILD}-universal.apk"
@@ -89,7 +88,6 @@ jobs:
         KEYSTORE_PATH: release-keystore.jks
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         ./gradlew clean assembleRelease -PforkBuildNumber=${{ github.run_number }} -PabiArm64Only=true --stacktrace
         cp app/build/outputs/apk/release/app-release.apk "FreezeYou-build${BUILD}-arm64.apk"
