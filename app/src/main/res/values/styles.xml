@@ -20,6 +20,10 @@
         <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
     </style>
 
+    <style name="Widget.App.CardOverflowPopup" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    </style>
+
     <style name="AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -27,6 +31,9 @@
 
     <style name="Base.AppTheme.Dark" parent="Theme.AppCompat">
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
     </style>
@@ -49,10 +56,16 @@
     </style>
 
     <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
+        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
