@@ -1,5 +1,7 @@
 # FreezeYou-Fork
 
+English | [Русский](README.ru.md)
+
 > **Unofficial fork** of [FreezeYou](https://github.com/FreezeYou/FreezeYou), not affiliated with the original developer.
 > No support or issue tracker here.
 
