@@ -16,21 +16,56 @@
 
     <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.Material3.DayNight.NoActionBar" />
 
-    <!-- Rounded popup backgrounds for every menu and list popup in the app. -->
-    <style name="Widget.App.CardPopupMenu" parent="Widget.AppCompat.PopupMenu">
-        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    <!-- Popups and dialogs: two explicit palettes, light and dark. The activity context
+         is wrapped in ThemeOverlay.App.Popup{Light,Dark} (ThemeUtils.popupContext) based on
+         the in-app theme switch - drawable qualifiers follow the SYSTEM theme, which is
+         exactly what broke dark popups on a light-system phone. -->
+    <style name="Widget.App.PopupMenuLight" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_light</item>
     </style>
 
-    <style name="Widget.App.CardListPopup" parent="Widget.AppCompat.ListPopupWindow">
-        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    <style name="Widget.App.ListPopupLight" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_light</item>
     </style>
 
-    <style name="ThemeOverlay.App.RoundedAlertDialog" parent="ThemeOverlay.AppCompat.Dialog.Alert">
-        <item name="android:windowBackground">@drawable/rounded_popup_menu</item>
+    <style name="Widget.App.OverflowLight" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_light</item>
     </style>
 
-    <style name="Widget.App.CardOverflowPopup" parent="Widget.AppCompat.PopupMenu.Overflow">
-        <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
+    <style name="Widget.App.PopupMenuDark" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_dark</item>
+    </style>
+
+    <style name="Widget.App.ListPopupDark" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_dark</item>
+    </style>
+
+    <style name="Widget.App.OverflowDark" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/rounded_popup_menu_dark</item>
+    </style>
+
+    <style name="ThemeOverlay.App.RoundedAlertDialogLight" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/rounded_popup_menu_light</item>
+    </style>
+
+    <style name="ThemeOverlay.App.RoundedAlertDialogDark" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/rounded_popup_menu_dark</item>
+    </style>
+
+    <style name="ThemeOverlay.App.PopupLight" parent="">
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenuLight</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopupLight</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.OverflowLight</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialogLight</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialogLight</item>
+    </style>
+
+    <style name="ThemeOverlay.App.PopupDark" parent="">
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenuDark</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopupDark</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.OverflowDark</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialogDark</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.RoundedAlertDialogDark</item>
     </style>
 
     <style name="AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar">

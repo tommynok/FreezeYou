@@ -371,7 +371,7 @@ public class Main extends FreezeYouBaseActivity {
             @Override
             public void onClick(View v) {
                 moreSettingsImageButton.setAlpha(1f);
-                PopupMenu popupMenu = new PopupMenu(Main.this, v);
+                PopupMenu popupMenu = new PopupMenu(cf.playhi.freezeyou.utils.ThemeUtils.popupContext(Main.this), v);
                 popupMenu.inflate(R.menu.menu);
                 onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -1127,7 +1127,7 @@ public class Main extends FreezeYouBaseActivity {
                     if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
                         return;
                     }
-                    PopupMenu popupMenu = new PopupMenu(Main.this, v);
+                    PopupMenu popupMenu = new PopupMenu(cf.playhi.freezeyou.utils.ThemeUtils.popupContext(Main.this), v);
                     popupMenu.inflate(R.menu.multichoicemenu);
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
