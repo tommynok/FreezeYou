@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="Shape.App.Small" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <!-- Tighter than the AppCompat default so 4 toolbar action icons can fit on more screens
          without shrinking below the ~40dp accessibility-friendly touch target. -->
     <style name="FreezeYou.ActionButton" parent="Widget.AppCompat.ActionButton">
@@ -40,9 +45,8 @@
         <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
-
-        <item name="popupMenuStyle">@style/Widget.App.CardPopupMenu</item>
-        <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
+        <item name="colorSurfaceContainerHighest">#35383E</item>
+        <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
     </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
@@ -69,6 +73,8 @@
         <item name="listPopupWindowStyle">@style/Widget.App.CardListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.CardOverflowPopup</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
+        <item name="colorSurfaceContainerHighest">#E2E6EE</item>
+        <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
     </style>
 
     <style name="Base.AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
