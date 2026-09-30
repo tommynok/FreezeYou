@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Rounded background for every app popup (menus, list popups). The appcompat default
-     background is a rectangular nine-patch; this shape replaces it theme-wide. Light theme:
-     explicit white, like the native popup background - dynamic colorSurface sits too close
-     to the screen background tone and popups stop reading. -->
+<!-- Rounded background for every app popup. The container-highest tone sits one step
+     above the screen surface in both light and dark themes, so the card reads without
+     merging into the background. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="16dp" />
-    <solid android:color="#FFFFFF" />
+    <solid android:color="?attr/colorSurfaceContainerHighest" />
     <padding
         android:bottom="4dp"
         android:top="4dp" />
