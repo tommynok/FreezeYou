@@ -484,8 +484,6 @@
     <string name="category_maintenance">维护</string>
     <string name="category_help">帮助</string>
     <string name="summary_spr_mainScreen">列表或网格、排序、点击行为</string>
-    <string name="dynamicColors">动态取色</string>
-    <string name="summary_dynamicColors">界面配色跟随壁纸颜色（Material You）。重启后生效</string>
     <string name="summary_spr_appearance">主题、深色模式、语言、动画</string>
     <string name="summary_spr_fuf">模式、保护、快捷方式、前台服务</string>
     <string name="summary_spr_automation">计划任务、锁屏、离开应用</string>

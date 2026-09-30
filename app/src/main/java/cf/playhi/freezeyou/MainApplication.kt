@@ -50,6 +50,13 @@ class MainApplication : Application() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        // Dynamic (wallpaper) colors are intentionally OFF: the in-app theme switch and the
+        // activity setTheme flow wiped the overlay in both directions we tried, and the
+        // static Material3 palettes read better on this app's screens. Revisit only with a
+        // ContextThemeWrapper-based design, not applyStyle/applyToActivities hacks.
+        if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
+        }
         checkAndEnableShizukuMultiProcessSupport(this)
         checkAndStartScreenLockOneKeyFreezeService()
     }

@@ -37,12 +37,6 @@ enum class DefaultSharedPreferenceStorageBooleanKeys : AbstractKey<Boolean> {
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_COMMON
     },
 
-    dynamicColors {
-        override fun defaultValue(): Boolean = true
-        override fun titleTextStringId(): Int = R.string.dynamicColors
-        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_APPEARANCE
-    },
-
     cacheApplicationsIcons {
         // Always on: icon caching meaningfully speeds up app-list loading, and there's no
         // real reason for a user to disable it — locked on regardless of any previously

@@ -47,13 +47,6 @@
     <PreferenceCategory
         app:iconSpaceReserved="false"
         app:title="@string/category_feedback">
-        <CheckBoxPreference
-            app:defaultValue="true"
-            app:iconSpaceReserved="false"
-            app:key="dynamicColors"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_dynamicColors"
-            app:title="@string/dynamicColors" />
 
         <CheckBoxPreference
             app:defaultValue="true"

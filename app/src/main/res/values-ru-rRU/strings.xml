@@ -479,8 +479,6 @@
     <string name="category_maintenance">Обслуживание</string>
     <string name="category_help">Справка</string>
     <string name="summary_spr_mainScreen">Список или сетка, сортировка, что делает нажатие</string>
-    <string name="dynamicColors">Динамические цвета</string>
-    <string name="summary_dynamicColors">Окрашивает интерфейс в цвета обоев (Material You). Применяется после перезапуска</string>
     <string name="summary_spr_appearance">Тема, темный режим, язык, анимации</string>
     <string name="summary_spr_fuf">Режим, защита, ярлыки, фоновая служба</string>
     <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>

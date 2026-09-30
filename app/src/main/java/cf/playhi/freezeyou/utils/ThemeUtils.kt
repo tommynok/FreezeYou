@@ -152,17 +152,6 @@ internal object ThemeUtils {
                     else -> context.setTheme(if (isDialog) R.style.AppTheme_Default_Dialog else R.style.AppTheme_Default)
                 }
             }
-            // setTheme above wipes theme overlays, so the wallpaper palette has to be
-            // (re)applied after it - applying it once at application start does nothing.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                && cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.dynamicColors.getValue(context)
-            ) {
-                val overlay = when (string) {
-                    "black", "dark" -> com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Dark
-                    else -> com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Light
-                }
-                context.theme.applyStyle(overlay, true)
-            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

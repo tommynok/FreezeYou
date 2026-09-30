@@ -479,8 +479,6 @@
     <string name="category_maintenance">Обслуговування</string>
     <string name="category_help">Довідка</string>
     <string name="summary_spr_mainScreen">Список або сітка, сортування, що робить натискання</string>
-    <string name="dynamicColors">Динамічні кольори</string>
-    <string name="summary_dynamicColors">Забарвлює інтерфейс у кольори шпалер (Material You). Застосовується після перезапуску</string>
     <string name="summary_spr_appearance">Тема, темний режим, мова, анімації</string>
     <string name="summary_spr_fuf">Режим, захист, ярлики, фонова служба</string>
     <string name="summary_spr_automation">Заплановані завдання, блокування екрана, вихід із додатка</string>
