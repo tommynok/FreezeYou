@@ -34,7 +34,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     // instead of waiting for a process restart.
     private val liveActivities = ArrayList<WeakReference<Activity>>()
 
-    @JvmStatic
     fun liveActivities(): List<Activity> {
         val list = ArrayList<Activity>()
         liveActivities.removeAll { it.get() == null || it.get()!!.isFinishing }
