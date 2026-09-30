@@ -13,11 +13,13 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.mainActivityPattern
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsFragment
 import cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
+import cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities
 
 class SettingsActivity : FreezeYouBaseActivity(),
     PreferenceFragmentCompat.OnPreferenceStartScreenCallback,
@@ -101,8 +103,11 @@ class SettingsActivity : FreezeYouBaseActivity(),
         if (languagePref.name == s
             || uiStyleSelection.name == s
             || allowFollowSystemAutoSwitchDarkMode.name == s
+            || mainActivityPattern.name == s
         ) {
-            recreate()
+            // Recreate every live activity, not just this one: the rest of the back stack
+            // used to keep the old theme/language until a full process restart.
+            recreateAllActivities(this)
         }
     }
 

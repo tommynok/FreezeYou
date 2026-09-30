@@ -49,14 +49,6 @@ object SettingsUtils {
         syncMMKVDataToMMKVWhenSharedPreferenceDataChanged(context, sharedPreferences, abstractKey)
 
         when (abstractKey) {
-            uiStyleSelection,
-            allowFollowSystemAutoSwitchDarkMode,
-            mainActivityPattern,
-            languagePref ->
-                showToast(
-                    activity,
-                    R.string.willTakeEffectsNextLaunch
-                )
             onekeyFreezeWhenLockScreen -> {
                 if (onekeyFreezeWhenLockScreen.getValue()) {
                     ServiceUtils.startService(

@@ -22,12 +22,49 @@ import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
 import com.tencent.mmkv.MMKV
 import net.grandcentrix.tray.AppPreferences
+import android.app.Activity
+import android.os.Bundle
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 
-class MainApplication : Application() {
+class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
+
+    // Live activities, tracked so a theme/language switch can recreate them all at once
+    // instead of waiting for a process restart.
+    private val liveActivities = ArrayList<WeakReference<Activity>>()
+
+    @JvmStatic
+    fun liveActivities(): List<Activity> {
+        val list = ArrayList<Activity>()
+        liveActivities.removeAll { it.get() == null || it.get()!!.isFinishing }
+        for (reference in liveActivities) {
+            reference.get()?.let { list.add(it) }
+        }
+        return list
+    }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        liveActivities.add(WeakReference(activity))
+    }
+
+    override fun onActivityDestroyed(activity: Activity) {
+        liveActivities.removeAll { it.get() === activity || it.get() == null }
+    }
+
+    override fun onActivityStarted(activity: Activity) {}
+
+    override fun onActivityResumed(activity: Activity) {}
+
+    override fun onActivityPaused(activity: Activity) {}
+
+    override fun onActivityStopped(activity: Activity) {}
+
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(this)
         CrashHandler().init(this)
 
         // Initialize MMKV,
