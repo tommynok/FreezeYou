@@ -35,7 +35,7 @@ public final class ForceStopUtils {
                 // su is not on the app's PATH there, and "am force-stop" does not need it.
                 int apiMode = -1;
                 try {
-                    String modeValue = selectFUFMode.getValue();
+                    String modeValue = selectFUFMode.getValue(context);
                     if (modeValue != null) apiMode = Integer.parseInt(modeValue);
                 } catch (NumberFormatException ignored) {
                 }
