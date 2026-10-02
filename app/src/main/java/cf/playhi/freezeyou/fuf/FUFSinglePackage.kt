@@ -224,12 +224,25 @@ open class FUFSinglePackage(
             val freeze = actionMode == ACTION_MODE_FREEZE
             // Android 14 PackageManagerService: shell uid (plain Shizuku) may only toggle a
             // whole package between ENABLED, DISABLED_USER and DEFAULT - DISABLED and
-            // DISABLED_UNTIL_USED from shell are rejected with SecurityException, which is
-            // why unfreezing packages frozen in the DISABLED state failed in shell mode.
-            // Shizuku modes therefore always freeze to DISABLED_USER: it works under both
-            // Sui-root and plain shell, and checkRootFrozen counts it as frozen.
-            val newState = if (freeze) {
+            // DISABLED_UNTIL_USED from shell are rejected with SecurityException. Root
+            // Shizuku (Sui) has no such limit, so under root the exact upstream states per
+            // mode are preserved (UNTIL_USED / USER / DISABLED); under shell everything
+            // lands on DISABLED_USER, the only shell-allowed frozen state.
+            val freezeState = if (resolveShizukuUid() == 0) {
+                when (apiMode) {
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    else -> PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                }
+            } else {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+            }
+            val newState = if (freeze) {
+                freezeState
             } else {
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             }
@@ -378,10 +391,34 @@ open class FUFSinglePackage(
     private fun invalidateCachedPackageManagerProxy() {
         cachedPackageManagerProxy = null
         cachedSetApplicationEnabledSettingMethod = null
+        shizukuUidCache = null
+    }
+
+    /**
+     * The uid the Shizuku server runs under: 0 for root (Sui), 2000 for plain shell.
+     * Probed once through the server itself ("id -u") and cached for the lifetime of the
+     * binder proxy; the shell probe is also the binder-liveness check in disguise.
+     */
+    private fun resolveShizukuUid(): Int {
+        shizukuUidCache?.let { return it }
+        val uid = try {
+            val process = Shizuku.newProcess(arrayOf("sh", "-c", "id -u"), null, null)
+            val out = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            out.toIntOrNull() ?: 2000
+        } catch (e: Exception) {
+            e.printStackTrace()
+            2000
+        }
+        shizukuUidCache = uid
+        return uid
     }
 
     companion object {
         private const val BINDER_ALIVE_CACHE_MS = 5000L
+
+        @Volatile
+        private var shizukuUidCache: Int? = null
         private const val STATE_SETTLE_POLL_MS = 50L
         private const val STATE_SETTLE_TIMEOUT_MS = 300
 
