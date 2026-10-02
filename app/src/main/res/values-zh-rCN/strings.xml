@@ -77,9 +77,9 @@
     <string name="onlySA">系统预装</string>
     <string name="onlyUA">用户应用</string>
     <string name="moreSettings">更多设置</string>
-    <string name="visitWebsite">
+    <string name="visitWebsite">原 FreezeYou 网站</string>
     <string name="checkUpdate">检查更新</string>
-    <string name="summary_checkUpdate">本分支的发布页面 - 此构建的更新渠道</string>原 FreezeYou 网站</string>
+    <string name="summary_checkUpdate">本分支的发布页面 - 此构建的更新渠道</string>
     <string name="addQQGroup">加入QQ群</string>
     <string name="dangerZone">危险区</string>
     <string name="disableMRootMode">解除免ROOT</string>

@@ -71,9 +71,9 @@
     <string name="onlySA">System</string>
     <string name="onlyUA">User</string>
     <string name="moreSettings">Settings</string>
-    <string name="visitWebsite">
+    <string name="visitWebsite">Original FreezeYou website</string>
     <string name="checkUpdate">Check for updates</string>
-    <string name="summary_checkUpdate">The fork's releases page - the update channel for this build</string>Original FreezeYou website</string>
+    <string name="summary_checkUpdate">The fork's releases page - the update channel for this build</string>
     <string name="addQQGroup">Join QQ Group</string>
     <string name="dangerZone">Danger Zone</string>
     <string name="disableMRootMode">Release no-root mode permission</string>
