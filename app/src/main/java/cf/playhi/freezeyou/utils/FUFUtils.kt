@@ -257,14 +257,13 @@ object FUFUtils {
                     // Refused because the target is not exported. Root, or the shell UID Shizuku
                     // runs as, may still be allowed to start it.
                     ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
-                }
                 } catch (e: ActivityNotFoundException) {
                     e.printStackTrace()
                     // The target vanished (an application update removed or renamed the
                     // activity): crashing the process over a stale shortcut target is
                     // worse than reporting it. The elevated path can still start some.
                     ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
-            }
+                }
         } else if (context.packageManager.getLaunchIntentForPackage(pkgName) != null) {
             val intent = Intent(
                 context.packageManager.getLaunchIntentForPackage(pkgName)

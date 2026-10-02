@@ -18,6 +18,10 @@ import net.grandcentrix.tray.AppPreferences
 
 class OneKeyFreezeService : FreezeYouBaseService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            // Restart after the process was killed: nothing to act on.
+            return super.onStartCommand(intent, flags, startId)
+        }
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 "OneKeyFreeze",
