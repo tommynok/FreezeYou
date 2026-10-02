@@ -19,15 +19,20 @@
          Widget.AppCompat.Button.Colored: that style sets android:background, and a Button in a
          Material theme is inflated as MaterialButton, which then treats the background as
          user-supplied and keeps the AppCompat shape - a rectangle with a 2 dp radius, whatever
-         shapeAppearance says. Styling MaterialButton itself is what actually rounds it. -->
+         shapeAppearance says. Styling MaterialButton itself is what actually rounds it.
+
+         The insets are part of the look, not a detail to optimise away. MaterialButton insets
+         the fill from the edges of the touch target, and that inset is what separates two
+         buttons that sit next to each other; zeroing it made the fills touch and read as one
+         long bar. Top and bottom keep the Material3 default (m3_btn_inset, 4 dp), which is what
+         separates the stacked buttons on the backup screen. Left and right are set here because
+         every row of buttons in this app is a weight-split LinearLayout with no margins. -->
     <style name="Widget.App.Button" parent="Widget.Material3.Button">
         <item name="shapeAppearance">@style/Shape.App.Small</item>
         <item name="backgroundTint">?attr/colorAccent</item>
         <item name="android:textColor">@color/app_button_text</item>
-        <!-- The backup buttons sit directly under each other in a column; the default
-             elevation insets would push them apart. -->
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">4dp</item>
+        <item name="android:insetRight">4dp</item>
     </style>
 
     <!-- Popups and menus: one drawable for every theme. Its colour is ?attr/colorSurface, which
@@ -102,7 +107,7 @@
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#212121</item>
-        <item name="colorAccent">#1976d2</item>
+        <item name="colorAccent">@color/appAccent</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Black" parent="Base.AppTheme.Dark">
@@ -113,7 +118,7 @@
     <style name="AppTheme.Dark.Black" parent="Base.AppTheme.Dark.Black">
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#000000</item>
-        <item name="colorAccent">#1976d2</item>
+        <item name="colorAccent">@color/appAccent</item>
         <item name="colorBackgroundFloating">@android:color/black</item>
         <item name="android:windowBackground">@color/appScreenBlack</item>
         <item name="android:colorBackground">@color/appScreenBlack</item>
@@ -122,6 +127,10 @@
     <!-- The two light bases carry the same items; a style can have only one parent, and the
          ActionBar / no ActionBar variants have to stay separate names. -->
     <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.Material3.Light">
+        <!-- Material3 keeps the AppCompat accent attribute, but fills it with its own
+             ?attr/colorSecondary, which is the grey purple the filled buttons and the dialog
+             labels would come out in. Point it back at the app blue. -->
+        <item name="colorAccent">@color/appAccent</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
@@ -133,6 +142,7 @@
     </style>
 
     <style name="Base.AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorAccent">@color/appAccent</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
@@ -202,7 +212,7 @@
     <style name="AppTheme.Dark.Dialog.Default" parent="Base.AppTheme.Dark.Dialog">
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#212121</item>
-        <item name="colorAccent">#1976d2</item>
+        <item name="colorAccent">@color/appAccent</item>
     </style>
 
     <!-- Not "V14" for any platform reason: this is the black palette of the dark dialog theme,
@@ -219,7 +229,7 @@
     <style name="AppTheme.Dark.Dialog.Black" parent="Base.AppTheme.Dark.Dialog.Black">
         <item name="colorPrimaryDark">#000000</item>
         <item name="colorPrimary">#000000</item>
-        <item name="colorAccent">#1976d2</item>
+        <item name="colorAccent">@color/appAccent</item>
     </style>
 
     <style name="Base.AppTheme.Light.Dialog" parent="Theme.Material3.Light.Dialog">

@@ -24,6 +24,7 @@
     <style name="AppTheme.Default.Dialog" parent="Theme.Material3.Light">
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
+        <item name="colorAccent">@color/appAccent</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>

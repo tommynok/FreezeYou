@@ -22,6 +22,14 @@
     <color name="appScreenBlack">#000000</color>
     <color name="appSurfaceBlack">#22252A</color>
 
+    <!-- Accent of the app: the fill of the action buttons and the label colour of the light
+         dialogs' actions. Material Blue 700 matches the dark palettes, which have used it for
+         years, and is close enough to the #1565C0 of the launcher and splash icons to read as
+         the same blue. Without it the light default theme fell back to the colour Material3
+         puts in colorAccent through its AppCompat bridge - ?attr/colorSecondary, a grey purple
+         - which is the dirty purple the filled buttons came out in. -->
+    <color name="appAccent">#1976D2</color>
+
     <!-- Action labels of Material dialogs in the dark themes. Material3 paints them with
          ?attr/colorPrimary, and there colorPrimary is the toolbar colour: #212121 or #000000,
          which on a dark dialog is no colour at all. -->
