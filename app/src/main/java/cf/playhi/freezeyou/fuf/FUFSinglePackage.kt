@@ -222,17 +222,14 @@ open class FUFSinglePackage(
             val binderReadyAt = System.currentTimeMillis()
 
             val freeze = actionMode == ACTION_MODE_FREEZE
+            // Android 14 PackageManagerService: shell uid (plain Shizuku) may only toggle a
+            // whole package between ENABLED, DISABLED_USER and DEFAULT - DISABLED and
+            // DISABLED_UNTIL_USED from shell are rejected with SecurityException, which is
+            // why unfreezing packages frozen in the DISABLED state failed in shell mode.
+            // Shizuku modes therefore always freeze to DISABLED_USER: it works under both
+            // Sui-root and plain shell, and checkRootFrozen counts it as frozen.
             val newState = if (freeze) {
-                when (apiMode) {
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                    else ->
-                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                }
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
             } else {
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             }
