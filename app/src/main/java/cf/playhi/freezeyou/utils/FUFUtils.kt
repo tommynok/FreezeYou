@@ -264,6 +264,7 @@ object FUFUtils {
                     // worse than reporting it. The elevated path can still start some.
                     ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
                 }
+            }
         } else if (context.packageManager.getLaunchIntentForPackage(pkgName) != null) {
             val intent = Intent(
                 context.packageManager.getLaunchIntentForPackage(pkgName)
