@@ -8,7 +8,6 @@ import androidx.preference.PreferenceFragmentCompat
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.ui.BackupMainActivity
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
-import cf.playhi.freezeyou.utils.VersionUtils.checkUpdate
 
 class SettingsFragment : PreferenceFragmentCompat() {
 
@@ -30,7 +29,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             val key = preference.key
             if (key != null) {
                 when (key) {
-                    "checkUpdate" -> checkUpdate(activity)
                     "helpTranslate" -> requestOpenWebSite(
                         activity,
                         "https://github.com/FreezeYou/FreezeYou/blob/master/README_Translation.md"

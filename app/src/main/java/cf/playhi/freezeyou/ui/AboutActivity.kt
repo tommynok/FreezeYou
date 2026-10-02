@@ -65,6 +65,9 @@ class AboutActivity : FreezeYouBaseActivity() {
             AboutMenuItem(resources.getString(R.string.visitWebsite), true) {
                 requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
             },
+            AboutMenuItem(resources.getString(R.string.checkUpdate), true) {
+                requestOpenWebSite(this@AboutActivity, "https://github.com/tommynok/FreezeYou/releases")
+            },
             // Fork has no Telegram/QQ support group — set enabled to true to restore.
             AboutMenuItem(resources.getString(R.string.contactUs), false) {
                 FreezeYouAlertDialogBuilder(this@AboutActivity)
