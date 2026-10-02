@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Popup and menu background: one drawable for light, dark and black. ?attr/colorSurface is
+    resolved against the theme of the context that opens the menu - the activity, which has the
+    in-app theme applied - so the same file follows the switch instead of the system night mode.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="?attr/colorSurface" />
+    <padding
+        android:bottom="4dp"
+        android:top="4dp" />
+</shape>

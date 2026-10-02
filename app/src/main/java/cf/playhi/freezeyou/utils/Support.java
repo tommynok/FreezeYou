@@ -77,7 +77,7 @@ public final class Support {
     }
 
     private static PopupMenu generateChooseActionPopupMenu(final Context context, final Activity activity, View view, final String pkgName, final String name, final boolean canRemoveItem, final SharedPreferences folderPkgListSp) {
-        PopupMenu popup = new PopupMenu(cf.playhi.freezeyou.utils.ThemeUtils.popupContext(context), view);
+        PopupMenu popup = new PopupMenu(context, view);
         popup.inflate(R.menu.main_single_choose_action_menu);
 
         SubMenu vmUserDefinedSubMenu = popup.getMenu().findItem(R.id.main_sca_userDefined).getSubMenu();

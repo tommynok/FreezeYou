@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Popup and menu background. The v21 copy resolves ?attr/colorSurface against the theme of
+    the activity that opens the menu; this one is the fallback for platforms that cannot
+    resolve theme attributes inside a drawable, and it uses the light surface because the
+    light palettes are the only ones those platforms can show.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="@color/appSurfaceLight" />
+    <padding
+        android:bottom="4dp"
+        android:top="4dp" />
+</shape>

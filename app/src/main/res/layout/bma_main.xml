@@ -11,14 +11,14 @@
 
         <Button
             android:id="@+id/bma_main_saveToFile_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/saveBackupToFile" />
 
         <Button
             android:id="@+id/bma_main_restoreFromFile_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/restoreBackupFromFile" />
@@ -43,28 +43,28 @@
              widths as soon as a translation was longer than "Export". -->
         <Button
             android:id="@+id/bma_main_export_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/expt" />
 
         <Button
             android:id="@+id/bma_main_copy_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@android:string/copy" />
 
         <Button
             android:id="@+id/bma_main_paste_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@android:string/paste" />
 
         <Button
             android:id="@+id/bma_main_import_button"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/impt" />

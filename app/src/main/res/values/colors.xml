@@ -3,4 +3,27 @@
     <color name="translucentBackground">#80000000</color>
     <color name="translucentGreyBackground">#80696969</color>
     <color name="realTranslucent">#00000000</color>
+
+    <!--
+        Palettes of the two dark themes and of the light one.
+
+        The screen colour is the theme's android:colorBackground (the window background of
+        every screen) and the container colour is its colorSurface: the toolbar, the menus,
+        the dialogs and - for the same reason - the cards the settings screens draw behind
+        their rows. One pair per theme is what keeps those four surfaces in agreement.
+
+        Dark is a dark grey theme with clearly lighter containers; black is the AMOLED one,
+        pure black with containers only as light as they have to be to stay visible.
+    -->
+    <color name="appScreenLight">#E2E6EE</color>
+    <color name="appSurfaceLight">#FFFFFF</color>
+    <color name="appScreenDark">#1E1F22</color>
+    <color name="appSurfaceDark">#35383E</color>
+    <color name="appScreenBlack">#000000</color>
+    <color name="appSurfaceBlack">#22252A</color>
+
+    <!-- Action labels of Material dialogs in the dark themes. Material3 paints them with
+         ?attr/colorPrimary, and there colorPrimary is the toolbar colour: #212121 or #000000,
+         which on a dark dialog is no colour at all. -->
+    <color name="appDialogActionDark">#90CAF9</color>
 </resources>

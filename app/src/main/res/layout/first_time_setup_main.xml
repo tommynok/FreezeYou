@@ -22,7 +22,7 @@
 
     <Button
         android:id="@+id/first_time_setup_main_next_button"
-        style="@style/Widget.AppCompat.Button.Colored"
+        style="@style/Widget.App.Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

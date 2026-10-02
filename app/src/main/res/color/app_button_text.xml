@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Label colour of Widget.App.Button: white on the accent-tinted fill, dimmed while the
+    button is disabled. Same colours the AppCompat coloured button this replaced used
+    (its text colour was ?android:attr/textColorPrimaryInverse, which is white on a light
+    theme and near-black on a dark one - unreadable on the blue fill the dark themes use).
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false" android:color="#66FFFFFF" />
+    <item android:color="@android:color/white" />
+</selector>

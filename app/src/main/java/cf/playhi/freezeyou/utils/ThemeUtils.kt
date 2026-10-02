@@ -162,22 +162,4 @@ internal object ThemeUtils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && uiStyleSelection.getValue() == uiStyleSelection.defaultValue()
     }
-
-    /**
-     * Wraps the context in the popup/dialog overlay matching the in-app theme switch.
-     * Popups and dialogs must NOT read their background from theme attributes: attribute
-     * resolution crossed the system theme and the two theme families unpredictably, which
-     * is what produced merged, sharp-cornered popups in the dark themes. The overlay pins
-     * explicit light/dark drawables chosen by the same switch as everything else.
-     */
-    @JvmStatic
-    fun popupContext(context: Context): Context {
-        val dark = when (getUiTheme(context)) {
-            "black", "dark", "deepBlack" -> true
-            else -> false
-        }
-        val style = if (dark) R.style.ThemeOverlay_App_PopupDark
-        else R.style.ThemeOverlay_App_PopupLight
-        return android.view.ContextThemeWrapper(context, style)
-    }
 }

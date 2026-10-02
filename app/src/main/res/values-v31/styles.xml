@@ -11,25 +11,22 @@
 
     <style name="Base.AppTheme.SplashScreen" parent="Base.V31.AppTheme.SplashScreen" />
 
-
-    <style name="AppTheme.Default" parent="Theme.Material3.Light">
+    <!-- Android 12+. The light default used to be defined here instead of in values/ precisely
+         because below 31 there was an AppCompat theme with the same name; that is gone, so this
+         only adds what is really 31+ - and it now shares the popup, button and surface items
+         with the other light themes through Base.AppTheme.Light.DarkActionBar.
+         Always light: the upstream DayNight parent made "Default" follow the system dark mode,
+         which the owner experienced as the light option disappearing. -->
+    <style name="AppTheme.Default" parent="Base.AppTheme.Light.DarkActionBar">
         <item name="android:dialogCornerRadius">16dp</item>
-        <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
-        <!-- Always light: the upstream DayNight parent made "Default" follow the system
-             dark mode, which the owner experienced as the light option disappearing.
-             Wallpaper-based dynamic colors are applied programmatically in MainApplication. -->
-        <item name="actionOverflowMenuStyle">@style/Widget.App.OverflowLight</item>
-        <item name="popupMenuStyle">@style/Widget.App.PopupMenuLight</item>
-        <item name="listPopupWindowStyle">@style/Widget.App.ListPopupLight</item>
-        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
     </style>
 
     <style name="AppTheme.Default.Dialog" parent="Theme.Material3.Light">
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
-        <item name="actionOverflowMenuStyle">@style/Widget.App.OverflowLight</item>
-        <item name="popupMenuStyle">@style/Widget.App.PopupMenuLight</item>
-        <item name="listPopupWindowStyle">@style/Widget.App.ListPopupLight</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
         <item name="windowNoTitle">true</item>
         <item name="windowActionBar">false</item>
         <item name="windowActionModeOverlay">true</item>

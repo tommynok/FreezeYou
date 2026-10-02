@@ -3,7 +3,9 @@ package cf.playhi.freezeyou.ui.fragment.settings
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceFragmentCompat
+import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.PreferenceGroupCardDecoration
 import cf.playhi.freezeyou.utils.ThemeUtils
 
@@ -13,10 +15,10 @@ import cf.playhi.freezeyou.utils.ThemeUtils
  * as one rounded card behind the rows, matching the expressive look of the design
  * reference. Purely visual - no layout or preference changes.
  *
- * Colors are constants, not theme attributes: the AppCompat-based dark and black themes
- * do not carry the Material surface attributes, and reading them through the theme is
- * what crashed these screens before. The theme switch (ThemeUtils.getUiTheme) decides
- * the palette directly.
+ * The two colours come from values/colors.xml and are the same pair the theme itself uses for
+ * android:colorBackground and colorSurface, so a card here matches the menus, the dialogs and
+ * the toolbar of the theme it is painted in. Dark and black therefore differ on this screen
+ * exactly as much as they do everywhere else, and the difference is defined in one place.
  */
 abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
 
@@ -25,13 +27,17 @@ abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
         setDivider(null)
         setDividerHeight(0)
 
-        val theme = ThemeUtils.getUiTheme(view.context)
-        val (screenColor, cardColor) = when (theme) {
-            "deepBlack" -> 0xFF000000.toInt() to 0xFF2C2E33.toInt()
-            "black" -> 0xFF1E1F22.toInt() to 0xFF35383E.toInt()
-            else -> 0xFFE2E6EE.toInt() to 0xFFFFFFFF.toInt()
+        val (screenColorRes, cardColorRes) = when (ThemeUtils.getUiTheme(view.context)) {
+            "deepBlack" -> R.color.appScreenBlack to R.color.appSurfaceBlack
+            "black" -> R.color.appScreenDark to R.color.appSurfaceDark
+            else -> R.color.appScreenLight to R.color.appSurfaceLight
         }
-        view.background = GradientDrawable().apply { setColor(screenColor) }
-        listView?.addItemDecoration(PreferenceGroupCardDecoration(cardColor))
+        val context = view.context
+        view.background = GradientDrawable().apply {
+            setColor(ContextCompat.getColor(context, screenColorRes))
+        }
+        listView?.addItemDecoration(
+            PreferenceGroupCardDecoration(ContextCompat.getColor(context, cardColorRes))
+        )
     }
 }

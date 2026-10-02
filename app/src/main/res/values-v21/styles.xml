@@ -8,22 +8,14 @@
         <item name="android:windowContentTransitions">true</item>
     </style>
 
-    <style name="Base.AppTheme.Dark" parent="Base.V21.AppTheme.Dark" />
-
-    <style name="Base.V21.AppTheme.Dark" parent="Theme.AppCompat">
-        <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
-        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
-    </style>
-
-    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
-        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
-    </style>
-
-    <style name="Base.AppTheme.Light" parent="Theme.AppCompat.Light">
-        <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
-        <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
-    </style>
+    <!-- Base.AppTheme.Dark, Base.AppTheme.Light and Base.AppTheme.Light.DarkActionBar used to be
+         re-declared here with AppCompat parents. A same-named style in a qualifier folder
+         replaces the base one completely, so on every device from API 21 up those three themes
+         threw away their Material3 parents and every Material3 item with them - surfaces,
+         shapes, popup and dialog styles. That is why dark and black ignored the rounding work
+         no matter what the base file said, while the light theme (which is declared for API 31+
+         in values-v31) looked right. The version-gated items they carried (the navigation bar
+         colour, the light status bar) now live in the base styles themselves. -->
 
     <!--    <style name="AppTheme.Default" parent="Theme.AppCompat">-->
     <!--        <item name="android:actionOverflowButtonStyle">@style/OverflowStyle</item>-->
