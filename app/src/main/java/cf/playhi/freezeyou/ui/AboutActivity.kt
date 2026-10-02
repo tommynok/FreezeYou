@@ -132,14 +132,9 @@ class AboutActivity : FreezeYouBaseActivity() {
             }
 
         aboutSlogan.text = String.format("V %s", getVersionCode(this@AboutActivity))
-        aboutSlogan.setOnClickListener {
-            requestOpenWebSite(
-                this@AboutActivity, String.format(
-                    "https://www.zidon.net/%1\$s/changelog/",
-                    getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                )
-            )
-        }
+        // The version used to open the original developer's changelog site; the fork has no
+        // site of its own, so the version is plain text now. A link to the fork's GitHub
+        // releases may replace it someday.
 
         aboutAppName.setOnClickListener {
             FreezeYouAlertDialogBuilder(this@AboutActivity)
