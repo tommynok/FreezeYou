@@ -89,7 +89,16 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             DynamicColors.applyToActivitiesIfAvailable(this)
         }
         checkAndEnableShizukuMultiProcessSupport(this)
-        checkAndStartScreenLockOneKeyFreezeService()
+        try {
+            // The process can be started by a provider/binder call from another app: on
+            // Android 12+ starting a foreground service from that background state throws
+            // ForegroundServiceStartNotAllowedException. The service is started by its own
+            // triggers anyway; this call only covers the case where the app was launched
+            // from the launcher with the screen-lock automation enabled.
+            checkAndStartScreenLockOneKeyFreezeService()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun migrateOneKeyConfig() {

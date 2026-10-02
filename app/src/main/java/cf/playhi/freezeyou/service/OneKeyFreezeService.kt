@@ -17,7 +17,7 @@ import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import net.grandcentrix.tray.AppPreferences
 
 class OneKeyFreezeService : FreezeYouBaseService() {
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 "OneKeyFreeze",
@@ -36,7 +36,7 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
         val pref = AppPreferences(applicationContext)
         val pkgNames = pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
-        if (pkgNames != null) {
+        if (!pkgNames.isNullOrEmpty()) {
             oneKeyAction(
                 this, true,
                 pkgNames.trim(',').split(",").toTypedArray(),

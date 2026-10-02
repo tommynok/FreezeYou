@@ -140,7 +140,6 @@ class Unfreeze : ContentProvider() {
                         bundle.putInt("result", 999)
                     }
                 }
-                bundle.putInt("result", 0)
                 bundle
             }
             FUFMode.MODE_DPM -> {

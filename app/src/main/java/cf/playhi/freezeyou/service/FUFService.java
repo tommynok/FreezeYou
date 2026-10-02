@@ -30,6 +30,9 @@ public class FUFService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) {
+            return super.onStartCommand(null, flags, startId);
+        }
         boolean freeze = intent.getBooleanExtra("freeze", false);
         Context context = getApplicationContext();
         int apiMode = Integer.parseInt(Objects.requireNonNull(selectFUFMode.getValue(null)));
