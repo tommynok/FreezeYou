@@ -19,7 +19,7 @@ jobs:
     env:
       JAVA_TOOL_OPTIONS: -XX:-UseContainerSupport
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     # The owner's release key, stored as a base64 repository secret. When the secret is
     # absent (e.g. a fork running its own dispatch) the build falls back to the checked-in
@@ -40,7 +40,7 @@ jobs:
         fi
 
     - name: set up JDK 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         distribution: 'temurin'
         java-version: '21'
@@ -50,7 +50,7 @@ jobs:
     # and prunes stale entries so the cache does not grow without bound.
     # The two must not be combined; setup-java's gradle cache is removed above.
     - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v6
       with:
         # Without this the cache is read-only on every branch except the default
         # one, so it is restored but never written and never actually speeds
@@ -70,7 +70,7 @@ jobs:
     # into the Maven cache rather than into Gradle's. Without this step every run pays for the
     # download again; with it only the first run after a version bump does.
     - name: Cache Robolectric jars
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.m2/repository/org/robolectric
         key: robolectric-${{ runner.os }}-4.17
@@ -225,7 +225,7 @@ jobs:
         echo "url=$(gh release view "$tag" --json url --jq .url)" >> "$GITHUB_OUTPUT"
 
     - name: Upload APKs
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: app-release
         path: |
