@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.ui.AskLockScreenActivity
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
+import cf.playhi.freezeyou.utils.PackageListUtils
 import net.grandcentrix.tray.AppPreferences
 
 class OneKeyFreezeService : FreezeYouBaseService() {
@@ -39,11 +40,13 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         }
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
         val pref = AppPreferences(applicationContext)
-        val pkgNames = pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
-        if (!pkgNames.isNullOrEmpty()) {
+        val pkgNames = PackageListUtils.parse(
+            pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
+        )
+        if (pkgNames.isNotEmpty()) {
             oneKeyAction(
                 this, true,
-                pkgNames.trim(',').split(",").toTypedArray(),
+                pkgNames,
                 selectFUFMode.getValue()!!.toInt()
             )
             checkAuto(auto, this)

@@ -17,16 +17,33 @@ object CriticalPackagesUtils {
     private const val AOSP_SYSTEM_UI = "com.android.systemui"
 
     /**
+     * Critical on every device, whatever the OEM: the system image itself and the status bar with
+     * navigation, which is what a user would reach for to undo a freeze.
+     */
+    @JvmStatic
+    fun alwaysCriticalPackages(): Set<String> = setOf(ANDROID_SYSTEM, AOSP_SYSTEM_UI)
+
+    /**
      * @return the subset of [packages] considered critical, in the order given.
      */
     @JvmStatic
     fun findCriticalPackages(context: Context, packages: Collection<String>): List<String> {
-        val critical = buildCriticalSet(context)
+        return findCriticalPackages(packages, buildCriticalSet(context))
+    }
+
+    /**
+     * The decision itself, with the two device-dependent names passed in rather than resolved:
+     * a plain JVM test can check it that way, the same as with FUFUtils.normalizeSelectedTarget.
+     *
+     * @return the subset of [packages] present in [critical], in the order given.
+     */
+    @JvmStatic
+    fun findCriticalPackages(packages: Collection<String>, critical: Set<String>): List<String> {
         return packages.filter { it in critical }
     }
 
     private fun buildCriticalSet(context: Context): Set<String> {
-        val critical = mutableSetOf(ANDROID_SYSTEM, AOSP_SYSTEM_UI)
+        val critical = alwaysCriticalPackages().toMutableSet()
         // Resolved rather than hardcoded: OEM builds ship Settings and the keyboard under their
         // own package names, and a stale hardcoded list would silently protect nothing.
         resolveSettingsPackage(context)?.let { critical.add(it) }

@@ -10,6 +10,7 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouBaseService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
+import cf.playhi.freezeyou.utils.PackageListUtils
 import net.grandcentrix.tray.AppPreferences
 
 class OneKeyUFService : FreezeYouBaseService() {
@@ -33,11 +34,13 @@ class OneKeyUFService : FreezeYouBaseService() {
             startForeground(3, Notification())
         }
         val pref = AppPreferences(applicationContext)
-        val pkgNames: String? = pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
-        if (!pkgNames.isNullOrEmpty()) {
+        val pkgNames = PackageListUtils.parse(
+            pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
+        )
+        if (pkgNames.isNotEmpty()) {
             oneKeyAction(
                 this, false,
-                pkgNames.trim(',').split(",").toTypedArray(),
+                pkgNames,
                 selectFUFMode.getValue()!!.toInt()
             )
             doFinish()

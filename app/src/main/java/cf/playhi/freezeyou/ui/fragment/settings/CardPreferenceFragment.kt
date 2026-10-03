@@ -5,8 +5,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceFragmentCompat
-import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.PreferenceGroupCardDecoration
+import cf.playhi.freezeyou.utils.ThemePalettes
 import cf.playhi.freezeyou.utils.ThemeUtils
 
 /**
@@ -27,11 +27,7 @@ abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
         setDivider(null)
         setDividerHeight(0)
 
-        val (screenColorRes, cardColorRes) = when (ThemeUtils.getUiTheme(view.context)) {
-            "deepBlack" -> R.color.appScreenBlack to R.color.appSurfaceBlack
-            "black" -> R.color.appScreenDark to R.color.appSurfaceDark
-            else -> R.color.appScreenLight to R.color.appSurfaceLight
-        }
+        val (screenColorRes, cardColorRes) = ThemePalettes.of(ThemeUtils.getUiTheme(view.context))
         val context = view.context
         view.background = GradientDrawable().apply {
             setColor(ContextCompat.getColor(context, screenColorRes))
