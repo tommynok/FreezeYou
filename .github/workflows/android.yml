@@ -115,17 +115,23 @@ jobs:
                             line.strip() for line in message.splitlines() if line.strip()
                         )[:900]
                         lines.append("FAIL: %s: %s" % (where, head))
-                out = case.find("system-out")
-                if out is not None and out.text:
-                    for line in out.text.splitlines():
-                        if line.startswith("GEOM:"):
-                            lines.append(line)
+            # Gradle writes a test's output at the level of the test suite, not of the test case,
+            # so the whole document is searched: looking inside the testcase alone found nothing,
+            # and a green run reported no measurements at all.
+            for out in root.iter("system-out"):
+                for line in (out.text or "").splitlines():
+                    if line.startswith("GEOM:"):
+                        lines.append(line)
         print("\n".join(lines))
         PY
         grep -h "^FAIL:" /tmp/unit-diag.txt | head -20 | while IFS= read -r line; do
           echo "::error title=Unit test failure::${line#FAIL: }"
         done || true
-        grep -h "^GEOM:" /tmp/unit-diag.txt | head -20 | while IFS= read -r line; do
+        # The console log carries the same lines when the XML does not: a measurement is never
+        # worth losing, because it is the only thing that can be checked without the screenshots.
+        for source in /tmp/unit-diag.txt unit-tests.log; do
+          grep -h "^GEOM:" "$source" 2>/dev/null || true
+        done | sort -u | head -20 | while IFS= read -r line; do
           echo "::notice title=Measured geometry::${line#GEOM: }"
         done || true
 
