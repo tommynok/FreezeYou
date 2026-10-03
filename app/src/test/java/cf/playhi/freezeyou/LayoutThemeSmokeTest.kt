@@ -63,8 +63,16 @@ class LayoutThemeSmokeTest {
                     // without it, and for every other layout it merely fills the throwaway root.
                     LayoutInflater.from(themed).inflate(layoutId, FrameLayout(themed), true)
                 } catch (t: Throwable) {
-                    failures += "SDK $sdk, ${field.name}, $themeName theme: " +
-                        "${t.javaClass.name}: ${t.message}"
+                    // One line per combination, carrying the root cause: for a Material widget
+                    // under a theme that is not a Material one the useful line is the deepest
+                    // "requires your app theme to be ...", and for a missing resource it is the
+                    // Resources.NotFoundException naming the id. The "FAIL:" prefix keeps these
+                    // greppable in a CI log.
+                    val root = generateSequence(t) { it.cause }.last()
+                    val rootNote =
+                        if (root !== t) " (root: ${root.javaClass.simpleName}: ${root.message})" else ""
+                    failures += "FAIL: SDK $sdk, ${field.name}, $themeName theme: " +
+                        "${t.javaClass.simpleName}: ${t.message}$rootNote"
                 }
             }
         }

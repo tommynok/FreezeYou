@@ -91,6 +91,15 @@ jobs:
         status=${PIPESTATUS[0]}
         set -e
         if [ "$status" -ne 0 ]; then
+          # The essentials go out as an annotation as well as into the summary. Annotations are
+          # the one channel that comes back through the API on a machine where the log download
+          # host is unreachable, which is how the reason for this very failure was found.
+          # Newlines have to be escaped for a workflow command (%0A), and % itself first (%25).
+          report=$(grep -E "^FAIL:|Caused by:|requires your app theme|InflateException|NotFoundException|ClassNotFound|NoClassDefFound" \
+            unit-tests.log | head -40 || true)
+          [ -z "$report" ] && report=$(grep -E "FAILED|error:|What went wrong|Could not" unit-tests.log | head -20 || true)
+          report=$(printf '%s' "$report" | sed -e 's/%/%25/g' -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+          echo "::error title=Unit test details::${report:0:60000}"
           {
             echo "## Unit tests failed"
             echo
