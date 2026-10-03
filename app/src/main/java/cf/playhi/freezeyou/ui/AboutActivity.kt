@@ -65,6 +65,9 @@ class AboutActivity : FreezeYouBaseActivity() {
             AboutMenuItem(resources.getString(R.string.visitWebsite), true) {
                 requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
             },
+            AboutMenuItem(resources.getString(R.string.checkUpdate), true) {
+                requestOpenWebSite(this@AboutActivity, "https://github.com/tommynok/FreezeYou/releases")
+            },
             // Fork has no Telegram/QQ support group — set enabled to true to restore.
             AboutMenuItem(resources.getString(R.string.contactUs), false) {
                 FreezeYouAlertDialogBuilder(this@AboutActivity)
@@ -132,8 +135,9 @@ class AboutActivity : FreezeYouBaseActivity() {
             }
 
         aboutSlogan.text = String.format("V %s", getVersionCode(this@AboutActivity))
-        // The version used to open the original's changelog site; the fork has no site of
-        // its own, so the version is plain text now. A GitHub link may replace it someday.
+        // The version used to open the original developer's changelog site; the fork has no
+        // site of its own, so the version is plain text now. A link to the fork's GitHub
+        // releases may replace it someday.
 
         aboutAppName.setOnClickListener {
             FreezeYouAlertDialogBuilder(this@AboutActivity)

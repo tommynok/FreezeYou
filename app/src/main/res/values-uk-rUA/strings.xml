@@ -72,6 +72,8 @@
     <string name="onlyUA">Додатки користувача</string>
     <string name="moreSettings">Налаштування</string>
     <string name="visitWebsite">Вебсайт оригінального FreezeYou</string>
+    <string name="checkUpdate">Перевірити оновлення</string>
+    <string name="summary_checkUpdate">Сторінка релізів форку - канал оновлень цієї збірки</string>
     <string name="addQQGroup">Приєднатися до QQ групи</string>
     <string name="dangerZone">Небезпечна зона</string>
     <string name="disableMRootMode">Відключити режим без-ROOT</string>

@@ -146,7 +146,6 @@ class Freeze : ContentProvider() {
                         }
                     }
                 }
-                bundle.putInt("result", 0)
                 bundle
             }
             FUFMode.MODE_DPM -> {

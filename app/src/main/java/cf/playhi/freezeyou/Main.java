@@ -1567,7 +1567,7 @@ public class Main extends FreezeYouBaseActivity {
                 //检查是否已卸载
                 if (applicationInfo == null) {
                     hm.put("Name", getString(R.string.uninstalled));
-                    break;
+                    continue;
                 }
 
                 //更新冻结状态点与置灰标记。图标本身不再重新生成，置灰由适配器完成。

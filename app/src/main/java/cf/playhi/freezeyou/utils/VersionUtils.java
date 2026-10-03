@@ -55,26 +55,10 @@ final public class VersionUtils {
     }
 
     public static void checkUpdate(final Activity activity) {
-        //"https://play.google.com/store/apps/details?id=cf.playhi.freezeyou"
-        //"https://freezeyou.playhi.net/checkupdate.php?v=" + getVersionCode(context)
-        AlertDialogUtils.buildAlertDialog(
-                        activity,
-                        R.mipmap.ic_launcher_new_round,
-                        R.string.plsSelect,
-                        R.string.notice)
-                .setPositiveButton(R.string.appStore, (dialogInterface, i) -> {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details/?id=cf.playhi.freezeyou"));
-                    String title = activity.getString(R.string.plsSelect);
-                    Intent chooser = Intent.createChooser(intent, title);
-                    if (intent.resolveActivity(activity.getPackageManager()) != null) {
-                        activity.startActivity(chooser);
-                    }
-                })
-                .setNeutralButton(R.string.visitWebsite, (dialog, i) -> requestOpenWebSite(activity,
-                        isGooglePlayVersion(activity) ?
-                                "https://play.google.com/store/apps/details?id=cf.playhi.freezeyou" :
-                                "https://freezeyou.playhi.net/checkupdate.php?v=" + getVersionCode(activity)))
-                .show();
+        // The fork is signed with a different key than the original: neither the original's
+        // store listing nor its update check can update this build. The fork's releases are
+        // the update channel.
+        requestOpenWebSite(activity, "https://github.com/tommynok/FreezeYou/releases");
     }
 
     /**

@@ -162,4 +162,21 @@ internal object ThemeUtils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && uiStyleSelection.getValue() == uiStyleSelection.defaultValue()
     }
+
+    /**
+     * Recreates every live activity, so a theme, language or main-screen-pattern switch
+     * applies immediately instead of waiting for a process restart. Each activity picks
+     * the new values up in its own onCreate via processSetTheme and attachBaseContext.
+     */
+    @JvmStatic
+    fun recreateAllActivities(context: Context) {
+        val application = context.applicationContext
+        if (application is cf.playhi.freezeyou.MainApplication) {
+            for (activity in application.liveActivities()) {
+                if (!activity.isFinishing) {
+                    activity.recreate()
+                }
+            }
+        }
+    }
 }

@@ -16,6 +16,11 @@ public class ForceStopService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) {
+            // Restart after the process was killed: nothing to act on.
+            stopSelf();
+            return super.onStartCommand(null, flags, startId);
+        }
         Context context = getApplicationContext();
 
         String[] packages = intent.getStringArrayExtra("packages");

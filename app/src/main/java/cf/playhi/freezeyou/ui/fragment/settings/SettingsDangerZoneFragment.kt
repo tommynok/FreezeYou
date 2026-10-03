@@ -17,7 +17,6 @@ import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isProfileOwner
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
-import cf.playhi.freezeyou.utils.VersionUtils.checkUpdate
 
 @Keep
 class SettingsDangerZoneFragment : CardPreferenceFragment() {
@@ -97,9 +96,6 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                     }
                 }
                 .setNegativeButton(R.string.no, null)
-                .setNeutralButton(R.string.update) { _, _ ->
-                    checkUpdate(requireActivity())
-                }
                 .show()
             true
         }
