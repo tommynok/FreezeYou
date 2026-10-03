@@ -52,6 +52,15 @@
         <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
     </style>
 
+    <!-- Popup and menu item text. The dark themes need a colour of their own here: AppCompat's
+         popup item layout takes its title appearance from ?attr/textAppearanceLargePopupMenu, and
+         the Material3 appearance it points at carries no colour, so the text falls back to the
+         theme's default - which is why the menus read grey next to the dialog labels. Same white
+         as the app bar and the dialog actions. -->
+    <style name="TextAppearance.App.PopupMenu.Dark" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/appOnDarkSurface</item>
+    </style>
+
     <!-- Material3 draws the dialog itself: rounded, on ?attr/colorSurface, with insets for the
          shadow. What it takes from the theme is the action label colour - ?attr/colorPrimary -
          and the dark palettes below are near black there, which is how "Cancel" ended up dim on
@@ -124,6 +133,9 @@
         <item name="colorControlNormal">@color/appOnDarkSurface</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
         <item name="colorOnPrimary">@color/appScreenDark</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
+        <item name="actionMenuTextColor">@color/appOnDarkSurface</item>
     </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
@@ -232,6 +244,13 @@
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
         <item name="colorOnPrimary">@color/appScreenDark</item>
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
+        <item name="colorControlNormal">@color/appOnDarkSurface</item>
+        <item name="toolbarStyle">@style/Widget.App.Toolbar.Dark</item>
     </style>
 
     <style name="AppTheme.Dark.Dialog.Default" parent="Base.AppTheme.Dark.Dialog">
@@ -260,6 +279,9 @@
         <item name="windowNoTitle">true</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="android:dialogCornerRadius">16dp</item>
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
     </style>
 
     <style name="AppTheme.Light.Dialog.Blue" parent="Base.AppTheme.Light.Dialog">

@@ -30,10 +30,12 @@
          - which is the dirty purple the filled buttons came out in. -->
     <color name="appAccent">#1976D2</color>
 
-    <!-- Foreground of everything Material paints with ?attr/colorPrimary in the dark themes:
-         the app bar title, menu and app bar icons, the checked checkbox and its tick, the labels
-         of dialog actions. Material3 defaults are what made those either grey (colorOnSurfaceVariant,
-         nv80) or dark on dark (colorPrimary #212121, colorOnPrimary #381E72 - a dark purple, which
-         is the tick nobody could see). -->
-    <color name="appOnDarkSurface">#F5F5F5</color>
+    <!-- Foreground of everything Material paints with ?attr/colorPrimary in the dark themes, and
+         of the app bar. Pure white, one value for all of it: the app bar title and its icons, the
+         checked checkbox and its tick, the labels of dialog actions, the text of popup menus. The
+         Material3 defaults are what made those either grey (colorOnSurfaceVariant, nv80) or dark
+         on dark (colorPrimary #212121, colorOnPrimary #381E72 - a dark purple, which is the tick
+         nobody could see). Seconds apart in value, visibly apart on screen: the title looked
+         brighter than the icons next to it even when both came from the same near white. -->
+    <color name="appOnDarkSurface">#FFFFFF</color>
 </resources>
