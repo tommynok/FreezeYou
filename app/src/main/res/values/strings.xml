@@ -385,7 +385,13 @@
     <string name="criticalPackagesWarning">The selection includes packages the system depends on:\n\n%1$s\n\nFreezing these can leave the device without a status bar, Settings or a keyboard, and hard to recover. Continue anyway?</string>
     <string name="runningFilterUnavailable">The Running filter needs a ROOT or Shizuku freeze mode. Change it in Settings \u2192 Freeze and unfreeze \u2192 Select freeze mode.</string>
     <string name="scheduledTaskCommandsSyntax">Task Setup</string>
-    <string name="offlineHelpAssetLanguageCode" translatable="false">en</string>
+    <!-- The language code of the offline help page: assets/help/scheduled_task_commands_<value>.html.
+         It IS translated - ru and uk name their own page - and a language without a page of its
+         own leaves this out and falls back to the English one, as Simplified Chinese does. The
+         flag used to say translatable="false" while ru and uk carried translations, which is the
+         kind of contradiction a translation pass would have "fixed" by deleting those values, and
+         then the Russian help screen would quietly open the English page. -->
+    <string name="offlineHelpAssetLanguageCode">en</string>
     <string name="lastInstall">Recently Installed</string>
     <string name="lastUpdate">Recently Updated</string>
     <string name="alphabetical">Alphabetical</string>
