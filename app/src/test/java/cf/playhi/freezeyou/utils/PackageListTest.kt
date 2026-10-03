@@ -1,7 +1,7 @@
 package cf.playhi.freezeyou.utils
 
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -15,14 +15,14 @@ class PackageListTest {
 
     @Test
     fun `no preference and an empty preference both yield no packages`() {
-        assertEquals(0, PackageListUtils.parse(null).size)
-        assertEquals(0, PackageListUtils.parse("").size)
+        assertTrue(PackageListUtils.parse(null).isEmpty())
+        assertTrue(PackageListUtils.parse("").isEmpty())
     }
 
     @Test
     fun `a list of nothing but separators yields no packages`() {
-        assertEquals(0, PackageListUtils.parse(",").size)
-        assertEquals(0, PackageListUtils.parse(",,,").size)
+        assertTrue(PackageListUtils.parse(",").isEmpty())
+        assertTrue(PackageListUtils.parse(",,,").isEmpty())
     }
 
     @Test
