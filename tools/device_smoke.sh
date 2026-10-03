@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# Windows: this is the Linux/macOS twin. On Windows run tools/device_smoke.ps1 instead -
+# PowerShell cannot read this file and stops with a screenful of parse errors if fed it.
+#
 # Opens every screen of the installed build once, takes a screenshot of each, and then looks at
 # the log for crashes and inflation failures. It taps nothing: opening a screen cannot freeze,
 # uninstall or delete anything, which is what makes this the safe half of a smoke test. The
@@ -58,7 +61,7 @@ SCREENS=(
 )
 
 usage() {
-    sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '5,27p' "$0" | sed 's/^# \{0,1\}//'
     exit "${1:-0}"
 }
 

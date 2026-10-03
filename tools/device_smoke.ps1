@@ -1,3 +1,6 @@
+# device_smoke.ps1 - the Windows one. If this first line does not say "device_smoke.ps1",
+# you were given the Linux twin (tools/device_smoke.sh, it starts with "#!/usr/bin/env bash");
+# PowerShell cannot run that one and stops with a screenful of parse errors.
 <#
     device_smoke.ps1 - the Windows twin of tools/device_smoke.sh.
 
@@ -43,6 +46,9 @@ param(
 $ErrorActionPreference = "Stop"
 $Package = "cf.playhi.freezeyou"
 $Settle = 1.5
+
+Write-Host "device_smoke.ps1 (Windows) - opens screens, taps nothing. Twin: tools/device_smoke.sh" `
+    -ForegroundColor DarkGray
 
 # Screens that only display something, so opening them is safe whatever privileges the build
 # holds. Activities that need an intent to mean anything (a URI to freeze, a package to
@@ -262,7 +268,7 @@ if ($notOpened.Count -gt 0) {
     Write-Host "Screenshots are in $Out. Looking through them is the part that catches a theme or" -ForegroundColor Green
     Write-Host "a colour that went wrong without crashing anything." -ForegroundColor Green
 }
-Start-Process $Out
+try { Start-Process $Out } catch { Write-Host "Open the folder by hand: $Out" -ForegroundColor DarkYellow }
 
 if ($hasFindings) { exit 1 }
 if ($notOpened.Count -gt 0) { exit 2 }
