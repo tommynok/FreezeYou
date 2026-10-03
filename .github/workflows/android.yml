@@ -72,10 +72,40 @@ jobs:
     # test under Robolectric adds the resource build and, on a cache miss, that download.
     # `test` is the anchor task that runs whichever unit test variants this AGP
     # version creates, rather than naming one that may not exist.
+    #
+    # A failure prints itself into the job summary as well as into the log: the summary is what
+    # the run page shows first, it is readable through the API on a machine where the log
+    # download host is unreachable, and it is what a person actually looks at on a phone.
     - name: Unit tests
       run: |
         ./gradlew :app:tasks --all --console=plain | grep -i unittest || true
-        ./gradlew test --stacktrace
+        set +e
+        ./gradlew test --stacktrace 2>&1 | tee unit-tests.log
+        status=${PIPESTATUS[0]}
+        set -e
+        if [ "$status" -ne 0 ]; then
+          {
+            echo "## Unit tests failed"
+            echo
+            echo "Failing tests and first exceptions:"
+            echo '```'
+            grep -E "FAILED|AssertionError|Exception|Caused by:|error:|e: |What went wrong|Could not|Unresolved" \
+              unit-tests.log | head -80 || true
+            echo '```'
+            echo "<details><summary>Last 150 lines of the log</summary>"
+            echo
+            echo '```'
+            tail -150 unit-tests.log || true
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # A one-line pointer as an annotation, so the failure is visible on the run page too.
+          # Every command here is allowed to fail: the summary is worth writing even when the
+          # log has nothing that matches these patterns.
+          first=$(grep -m1 -E "FAILED|AssertionError|error:|What went wrong" unit-tests.log | cut -c1-180 || true)
+          echo "::error title=Unit tests failed::${first:-see the job summary}"
+          exit 1
+        fi
 
     # Two builds, one release. forkBuildNumber is the run number: it makes versionCode grow
     # by one every build, so an update always installs over the previous one. The universal

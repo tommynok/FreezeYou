@@ -128,6 +128,15 @@ android {
         // Robolectric documentation. It applies to the plain JVM tests too, where it costs
         // nothing: they never open those packages.
         unitTests.all {
+            // The full "Caused by:" chain of a failing test, in the log and therefore in the CI
+            // job summary: for a layout that does not inflate, the first cause names the missing
+            // resource or theme attribute, and the tail of the chain is noise.
+            testLogging {
+                exceptionFormat = 'full'
+                events 'failed'
+                showCauses = true
+                showStackTraces = true
+            }
             jvmArgs += [
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
                 "--add-opens=java.base/java.util=ALL-UNNAMED",
