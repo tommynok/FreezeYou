@@ -90,10 +90,42 @@ jobs:
         ./gradlew test --stacktrace 2>&1 | tee unit-tests.log
         status=${PIPESTATUS[0]}
         set -e
-        # What the geometry tests measured, as notices: annotations come back through the API on
-        # a machine where the log download host is unreachable, and notices appear on green runs
-        # too, so a fix can be confirmed by numbers instead of by a screenshot.
-        grep -h "^GEOM:" unit-tests.log | head -20 | while IFS= read -r line; do
+        # The console log is not always a usable channel - on the machine that maintains this
+        # project the log download host is unreachable, and a failing test's message may not
+        # reach the console at all. The JUnit XML that Gradle writes next to the report always
+        # carries both the failure message and the test's own output, so the readout is built
+        # from it: failures and measurements become annotations, which do come back through the
+        # API. Notices appear on green runs too, so a fix can be confirmed by numbers rather
+        # than by a screenshot.
+        python3 - > /tmp/unit-diag.txt <<'PY' || true
+        import glob
+        import xml.etree.ElementTree as ET
+
+        lines = []
+        for path in sorted(glob.glob("app/build/test-results/*/TEST-*.xml")):
+            root = ET.parse(path).getroot()
+            for case in root.iter("testcase"):
+                where = "%s.%s" % (case.get("classname", "?"), case.get("name", "?"))
+                for tag in ("failure", "error"):
+                    for node in case.findall(tag):
+                        message = (node.get("message") or node.text or "").strip()
+                        if not message and node.text:
+                            message = node.text.strip()
+                        head = " / ".join(
+                            line.strip() for line in message.splitlines() if line.strip()
+                        )[:900]
+                        lines.append("FAIL: %s: %s" % (where, head))
+                out = case.find("system-out")
+                if out is not None and out.text:
+                    for line in out.text.splitlines():
+                        if line.startswith("GEOM:"):
+                            lines.append(line)
+        print("\n".join(lines))
+        PY
+        grep -h "^FAIL:" /tmp/unit-diag.txt | head -20 | while IFS= read -r line; do
+          echo "::error title=Unit test failure::${line#FAIL: }"
+        done || true
+        grep -h "^GEOM:" /tmp/unit-diag.txt | head -20 | while IFS= read -r line; do
           echo "::notice title=Measured geometry::${line#GEOM: }"
         done || true
 
