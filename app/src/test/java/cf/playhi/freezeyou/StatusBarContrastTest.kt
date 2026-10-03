@@ -22,6 +22,13 @@ import org.robolectric.annotation.Config
  * colorPrimaryDark = colorPrimary, which is why it changed to purple when the design work moved
  * the light themes onto Material 3 parents.
  *
+ * Six configurations: the three themes the application offers - light (the one called "Default"
+ * in the menu), dark and black - and the dialog form of each, because the dialog screens call
+ * processSetTheme(this, true) and run under AppTheme.*.Dialog. The coloured palettes (blue,
+ * pink, ...) that used to be in that menu are not here: they are gone from it, and a test that
+ * keeps covering styles nobody can select only keeps dead code alive. Deleting them is separate,
+ * low-priority work; until then they inherit the fixes that live in the shared light base.
+ *
  * Both API levels are checked because the same theme name resolves differently: at 23 the light
  * default is an AppCompat-era style with a light grey bar, at 34 it is the Material 3 one with
  * the purple bar, so the two need opposite icon colours.
@@ -31,15 +38,12 @@ import org.robolectric.annotation.Config
 class StatusBarContrastTest {
 
     private val themes = linkedMapOf(
-        "light, default" to R.style.AppTheme_Default,
-        "light, white" to R.style.AppTheme_Light_White,
-        "light, blue" to R.style.AppTheme_Light_Blue,
-        "dark, grey" to R.style.AppTheme_Dark_Default,
+        "light (default)" to R.style.AppTheme_Default,
+        "dark" to R.style.AppTheme_Dark_Default,
         "black" to R.style.AppTheme_Dark_Black,
-        "light dialog, default" to R.style.AppTheme_Default_Dialog,
-        "light dialog, white" to R.style.AppTheme_Light_Dialog_White,
-        "dark dialog" to R.style.AppTheme_Dark_Dialog_Default,
-        "black dialog" to R.style.AppTheme_Dark_Dialog_Black,
+        "light, dialog" to R.style.AppTheme_Default_Dialog,
+        "dark, dialog" to R.style.AppTheme_Dark_Dialog_Default,
+        "black, dialog" to R.style.AppTheme_Dark_Dialog_Black,
     )
 
     @Test
