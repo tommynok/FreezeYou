@@ -1,0 +1,15 @@
+<!--
+    Same icon as the drawable/ copy, but tinted from the theme: the plain #FFF of that copy is
+    the colour of nothing on a light app bar and the brightest thing on a dark one, which is why
+    the grid/list toggle never matched the filter, sort and overflow icons next to it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="?android:colorForeground"
+        android:pathData="M4,11h5V5H4v6zM4,18h5v-6H4v6zM10,18h5v-6h-5v6zM16,18h5v-6h-5v6zM10,11h5V5h-5v6zM16,5v6h5V5h-5z" />
+</vector>

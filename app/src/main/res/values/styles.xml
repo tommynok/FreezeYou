@@ -53,11 +53,28 @@
     </style>
 
     <!-- Material3 draws the dialog itself: rounded, on ?attr/colorSurface, with insets for the
-         shadow. The one thing it gets wrong in the palettes below is the action label colour -
-         Material3 uses ?attr/colorPrimary, which in AppTheme.Dark.* is the near-black toolbar
-         colour and would be unreadable on a dark dialog. These two overlays replace only that. -->
+         shadow. What it takes from the theme is the action label colour - ?attr/colorPrimary -
+         and the dark palettes below are near black there, which is how "Cancel" ended up dim on
+         a dim dialog. This overlay is what those dialogs are built with; it does not have to wait
+         for the activity theme, because the app also has dialogs that are windows of their own. -->
+    <!-- The action bar hands its overflow menu - and every submenu opened from it - the theme in
+         ?attr/actionBarPopupTheme. Material3 points that at ThemeOverlay.Material3.Dark, a full
+         colour overlay whose colorSurface is the stock Material surface #1C1B1F, so the three dot
+         menu came out darker than the one the "+" button opens with the activity theme. An empty
+         overlay keeps the popup on the activity theme, and then every menu in the app is painted
+         by the palette of the theme that opened it. -->
+    <style name="ThemeOverlay.App.ActionBarPopup" parent="" />
+
+    <!-- The app bar carries its own title colour. Material3 leaves the title to the default text
+         colour, which on a dark theme is dimmer than the icons next to it; here it is the same
+         near white as the icons. -->
+    <style name="Widget.App.Toolbar.Dark" parent="Widget.Material3.Toolbar">
+        <item name="titleTextColor">@color/appOnDarkSurface</item>
+        <item name="subtitleTextColor">@color/appOnDarkSurface</item>
+    </style>
+
     <style name="ThemeOverlay.App.Dialog.Dark" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorPrimary">@color/appDialogActionDark</item>
+        <item name="colorPrimary">@color/appOnDarkSurface</item>
     </style>
 
     <style name="ThemeOverlay.App.Dialog.Light" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -102,22 +119,26 @@
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
+        <item name="toolbarStyle">@style/Widget.App.Toolbar.Dark</item>
+        <item name="colorControlNormal">@color/appOnDarkSurface</item>
+        <item name="colorPrimary">@color/appOnDarkSurface</item>
+        <item name="colorOnPrimary">@color/appScreenDark</item>
     </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
         <item name="colorPrimaryDark">#000000</item>
-        <item name="colorPrimary">#212121</item>
         <item name="colorAccent">@color/appAccent</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Black" parent="Base.AppTheme.Dark">
         <item name="android:colorBackground">@color/appScreenBlack</item>
         <item name="colorSurface">@color/appSurfaceBlack</item>
+        <item name="colorOnPrimary">@color/appScreenBlack</item>
     </style>
 
     <style name="AppTheme.Dark.Black" parent="Base.AppTheme.Dark.Black">
         <item name="colorPrimaryDark">#000000</item>
-        <item name="colorPrimary">#000000</item>
         <item name="colorAccent">@color/appAccent</item>
         <item name="colorBackgroundFloating">@android:color/black</item>
         <item name="android:windowBackground">@color/appScreenBlack</item>
@@ -139,6 +160,7 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
     </style>
 
     <style name="Base.AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
@@ -151,6 +173,7 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
     </style>
 
     <style name="AppTheme.Light.Blue" parent="Base.AppTheme.Light.DarkActionBar">
@@ -207,11 +230,12 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Dark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
         <item name="android:dialogCornerRadius">16dp</item>
+        <item name="colorPrimary">@color/appOnDarkSurface</item>
+        <item name="colorOnPrimary">@color/appScreenDark</item>
     </style>
 
     <style name="AppTheme.Dark.Dialog.Default" parent="Base.AppTheme.Dark.Dialog">
         <item name="colorPrimaryDark">#000000</item>
-        <item name="colorPrimary">#212121</item>
         <item name="colorAccent">@color/appAccent</item>
     </style>
 
@@ -222,13 +246,13 @@
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <item name="colorSurface">@color/appSurfaceBlack</item>
+        <item name="colorOnPrimary">@color/appScreenBlack</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Dialog.Black" parent="Base.V14.AppTheme.Dark.Dialog" />
 
     <style name="AppTheme.Dark.Dialog.Black" parent="Base.AppTheme.Dark.Dialog.Black">
         <item name="colorPrimaryDark">#000000</item>
-        <item name="colorPrimary">#000000</item>
         <item name="colorAccent">@color/appAccent</item>
     </style>
 

@@ -30,8 +30,10 @@
          - which is the dirty purple the filled buttons came out in. -->
     <color name="appAccent">#1976D2</color>
 
-    <!-- Action labels of Material dialogs in the dark themes. Material3 paints them with
-         ?attr/colorPrimary, and there colorPrimary is the toolbar colour: #212121 or #000000,
-         which on a dark dialog is no colour at all. -->
-    <color name="appDialogActionDark">#90CAF9</color>
+    <!-- Foreground of everything Material paints with ?attr/colorPrimary in the dark themes:
+         the app bar title, menu and app bar icons, the checked checkbox and its tick, the labels
+         of dialog actions. Material3 defaults are what made those either grey (colorOnSurfaceVariant,
+         nv80) or dark on dark (colorPrimary #212121, colorOnPrimary #381E72 - a dark purple, which
+         is the tick nobody could see). -->
+    <color name="appOnDarkSurface">#F5F5F5</color>
 </resources>
