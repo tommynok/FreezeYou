@@ -169,7 +169,11 @@
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <!-- No android:windowLightStatusBar here: this family's bar is the dark one. On Android
+             12+ it is the Material 3 purple that arrives through colorPrimaryDark = colorPrimary,
+             below that it is the accent of the chosen palette, and dark icons on it were the
+             unreadable pair the owner saw next to the original application, where they are white.
+             The light grey bar of AppTheme.Light.White asks for dark icons in its own style. -->
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
@@ -233,6 +237,8 @@
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
         <item name="colorAccent">#424242</item>
+        <!-- #eeeeee is a light bar, so this one theme of the light family wants dark icons. -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="AppTheme.Default" parent="AppTheme.Light.White" />
@@ -324,6 +330,8 @@
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
         <item name="colorAccent">#424242</item>
+        <!-- Same light grey bar as AppTheme.Light.White, and the same need for dark icons. -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="AppTheme.Default.Dialog" parent="AppTheme.Light.Dialog.White" />
