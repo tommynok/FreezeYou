@@ -81,16 +81,48 @@ class LauncherShortcutGeometryTest {
             val lineWidth = if (lines >= 1) button.layout.getLineWidth(0) else 0f
             val contentWidth = (button.width - button.paddingLeft - button.paddingRight).toFloat()
             val centreOffset = (button.top + button.height / 2f) - (field.top + field.height / 2f)
+            // Where the dots sit inside the button, which is the one thing the owner judges by eye:
+            // their own centre against the button's centre, and their baseline against the field's
+            // text. Both are printed rather than asserted - the original centred its label, and how
+            // that looks is not something a number can decide.
+            val dotsCentreX = if (lines >= 1) {
+                button.paddingLeft +
+                    (button.layout.getLineLeft(0) + button.layout.getLineRight(0)) / 2f
+            } else {
+                button.width / 2f
+            }
+            val dotsOffsetX = dotsCentreX - button.width / 2f
+            val dotsBaseline = if (lines >= 1) {
+                (button.top + button.compoundPaddingTop + button.layout.getLineBaseline(0)).toFloat()
+            } else {
+                button.top + button.height / 2f
+            }
+            val fieldLayout = field.layout
+            val fieldBaseline = if (fieldLayout != null && fieldLayout.lineCount >= 1) {
+                (field.top + field.compoundPaddingTop +
+                    fieldLayout.getLineBaseline(0)).toFloat()
+            } else {
+                field.top + field.height / 2f
+            }
+            val baselineOffset = dotsBaseline - fieldBaseline
 
             val where = row.name
             report += "GEOM: $where row: field ${field.width}x${field.height}px " +
                 "(${dp(field.height.toFloat(), density)}dp tall), " +
                 "button ${button.width}x${button.height}px " +
-                "(${dp(button.height.toFloat(), density)}dp tall), " +
-                "padding ${button.paddingLeft}/${button.paddingRight}px " +
-                "(${dp(button.paddingTop.toFloat(), density)}/${dp(button.paddingBottom.toFloat(), density)}dp), " +
-                "lines $lines, text ${dp(lineWidth, density)}dp in " +
-                "${dp(contentWidth, density)}dp, centre offset ${dp(centreOffset, density)}dp"
+                "(${dp(button.width.toFloat(), density)}x${dp(button.height.toFloat(), density)}dp, " +
+                "${button.javaClass.simpleName}), " +
+                "padding L/R ${button.paddingLeft}/${button.paddingRight}px " +
+                "(${dp(button.paddingLeft.toFloat(), density)}/" +
+                "${dp(button.paddingRight.toFloat(), density)}dp), " +
+                "padding T/B ${button.paddingTop}/${button.paddingBottom}px " +
+                "(${dp(button.paddingTop.toFloat(), density)}/" +
+                "${dp(button.paddingBottom.toFloat(), density)}dp), " +
+                "lines $lines, dots ${dp(lineWidth, density)}dp wide in " +
+                "${dp(contentWidth, density)}dp of content, " +
+                "dots centre ${dp(dotsOffsetX, density)}dp from button centre, " +
+                "dots baseline ${dp(baselineOffset, density)}dp against the field's text, " +
+                "button centre ${dp(centreOffset, density)}dp from field centre"
 
             // Real glyph metrics, not the stand-in a fake graphics mode returns: with zero-width
             // text every fit check below would pass while proving nothing.
