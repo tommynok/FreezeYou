@@ -23,7 +23,10 @@ import javax.xml.parsers.DocumentBuilderFactory
  *   1. the two arrays - labels for the menu and the values written to storage - drift apart;
  *   2. a translation of the menu lists a different number of themes than the default one;
  *   3. a theme is offered but has no dialog counterpart, so the dialog screens of that theme fall
- *      back to something else by way of the `else` branch.
+ *      back to something else by way of the `else` branch;
+ *   4. a dialog theme is rebuilt on an outside Material3 parent on a higher API level and loses
+ *      the app's alert-dialog overlay, which is how the action labels of every dialog turned the
+ *      baseline Material3 purple on Android 12+ - the owner saw it on a device.
  */
 class ThemeSelectionTest {
 
@@ -173,6 +176,60 @@ class ThemeSelectionTest {
             "ThemeUtils no longer has an else branch in processSetTheme, so a stored value with " +
                 "no branch (the default, or a palette from an older version) would apply no theme.",
             "else -> context.setTheme(" in themeUtils
+        )
+    }
+
+    /**
+     * Dialogs are built with MaterialAlertDialogBuilder, and it takes the colours of its action
+     * labels from `materialAlertDialogTheme`. A theme that replaces one of ours on a higher API
+     * level - as AppTheme.Default.Dialog does in values-v31 - inherits from an outside Material3
+     * theme instead, so unless it sets that attribute itself the labels fall back to the Material3
+     * default overlay and come out baseline purple: not the app's accent, and not what the other
+     * light dialog themes print. Only a declaration whose parent is an outside Material3 theme is
+     * checked, because a declaration that inherits from one of ours already carries the attribute.
+     */
+    @Test
+    fun aDialogThemeRebuiltOnAnOutsideParentKeepsTheAppsActionColours() {
+        val resDir = File(moduleDir(), "src/main/res")
+        val dialogStyles = expectedStyles.values.map { it.second }.toSet()
+
+        val problems = mutableListOf<String>()
+        var checked = 0
+
+        resDir.walkTopDown()
+            .filter { it.isFile && it.parentFile.name.startsWith("values") && it.extension == "xml" }
+            .sortedBy { it.path }
+            .forEach { file ->
+                val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+                val styles = document.getElementsByTagName("style")
+                for (i in 0 until styles.length) {
+                    val style = styles.item(i) as Element
+                    val name = style.getAttribute("name")
+                    val parent = style.getAttribute("parent")
+                    if (name !in dialogStyles) continue
+                    if (parent.isEmpty() || !parent.startsWith("Theme.Material3")) continue
+
+                    checked++
+                    val items = style.getElementsByTagName("item")
+                    val itemNames = (0 until items.length)
+                        .map { (items.item(it) as Element).getAttribute("name") }
+                    if ("materialAlertDialogTheme" !in itemNames) {
+                        problems += "$name in ${file.parentFile.name}/${file.name} inherits from " +
+                            "$parent and does not set materialAlertDialogTheme"
+                    }
+                }
+            }
+
+        assertTrue(
+            "A dialog theme rebuilt on an outside Material3 parent without materialAlertDialogTheme " +
+                "- every dialog's action labels will be baseline purple instead of the app's accent:\n- " +
+                problems.joinToString("\n- "),
+            problems.isEmpty()
+        )
+        assertTrue(
+            "No dialog theme rebuilding one of ours on an outside parent was found, so this test " +
+                "checked nothing. Expected AppTheme.Default.Dialog in values-v31.",
+            checked >= 1
         )
     }
 }
