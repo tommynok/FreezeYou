@@ -4,7 +4,8 @@
 <#
     device_smoke.ps1 - the Windows twin of tools/device_smoke.sh.
 
-    Opens every screen of the installed build once, saves a screenshot of each, then reads the
+    Opens every screen of the installed build once, saves a screenshot of each that stays on top,
+    then reads the
     log for crashes and inflation failures. It taps nothing, so it cannot freeze, uninstall or
     delete anything even on a build that holds root. The random-tap half (monkey) is a separate,
     opt-in switch with a warning, because a stray tap in this application can select packages
@@ -55,6 +56,15 @@ Write-Host "device_smoke.ps1 (Windows) - opens screens, taps nothing. Twin: tool
 # uninstall, a shortcut to create) are deliberately absent: without their intent they close at
 # once and prove nothing. Only ScheduledTasksManageActivity, ShortcutLauncherFolderActivity and
 # SettingsActivity are exported; the rest need root, see the note above.
+# One screen in the list needs an intent extra to show anything: started bare it builds its
+# layout and closes at once. That is its behaviour, not a failure - see doShowFolderContent()
+# in ShortcutLauncherFolderActivity: no uuid extra, so a toast and finish(). The walk still
+# opens it (building its layout under a theme is the point), but reports it as such instead of
+# counting it as a screen that was missed.
+$SelfClosing = @(
+    ".ui.ShortcutLauncherFolderActivity"
+)
+
 $Screens = @(
     ".ui.AboutActivity",
     ".ui.BackupMainActivity",
@@ -178,12 +188,25 @@ Start-Sleep -Seconds 1
 & adb @adbArgs shell input keyevent KEYCODE_BACK | Out-Null
 
 $notOpened = New-Object System.Collections.ArrayList
+$selfClosed = New-Object System.Collections.ArrayList
 $opened = 0
+
+# A dialog screen (ShowSimpleDialogActivity) spends the BACK press on its own dialog and stays,
+# so the next screen would be photographed over the leftovers. One extra BACK clears it.
+function Clear-PreviousScreen() {
+    $foreground = Get-Foreground
+    if ($foreground -like "$Package/*" -and $foreground -notlike "*/.Main") {
+        & adb @adbArgs shell input keyevent KEYCODE_BACK | Out-Null
+        Start-Sleep -Milliseconds 500
+    }
+}
 
 foreach ($screen in $Screens) {
     $name = ($screen -split "\.")[-1]
     $target = "$Package/$screen"
     $route = "plain adb"
+
+    Clear-PreviousScreen
 
     $result = Start-Screen $target $false
     if (-not $result.Ok -and $suAvailable) {
@@ -206,25 +229,31 @@ foreach ($screen in $Screens) {
     }
 
     Start-Sleep -Seconds $Settle
-    $shot = Join-Path $Out "$name.png"
-    # Binary screenshot: redirection has to happen inside cmd, PowerShell would corrupt the bytes.
-    & cmd /c "adb $($adbArgs -join ' ') exec-out screencap -p > `"$shot`""
 
     $foreground = Get-Foreground
     $expected = $screen.TrimStart(".")
     $onScreen = ($foreground -ne "") -and (($foreground -split "/")[-1].EndsWith($expected))
-    & adb @adbArgs shell input keyevent KEYCODE_BACK | Out-Null
-    Start-Sleep -Milliseconds 500
 
     if ($onScreen) {
+        # The screenshot is taken only of a screen that is really on top: a picture of leftovers
+        # would show the wrong screen under the right name.
+        $shot = Join-Path $Out "$name.png"
+        # Binary screenshot: redirection has to happen inside cmd, PowerShell would corrupt the bytes.
+        & cmd /c "adb $($adbArgs -join ' ') exec-out screencap -p > `"$shot`""
         $opened++
         Write-Host ("  {0,-36} opened ({1})" -f $name, $route)
+    } elseif ($SelfClosing -contains $screen) {
+        [void]$selfClosed.Add($screen)
+        Write-Host ("  {0,-36} started and closed itself, as it does without its intent" -f $name)
     } else {
         $what = if ($foreground) { $foreground } else { "unknown" }
         $reason = "opened, then closed at once (on screen: $what)"
         Write-Host ("  {0,-36} {1}" -f $name, $reason) -ForegroundColor DarkYellow
         [void]$notOpened.Add([pscustomobject]@{ Screen = $name; Reason = $reason })
     }
+
+    & adb @adbArgs shell input keyevent KEYCODE_BACK | Out-Null
+    Start-Sleep -Milliseconds 500
 }
 
 if ($Monkey -gt 0) {
@@ -257,6 +286,11 @@ if ($hasFindings) {
     Write-Host ""
 }
 
+if ($selfClosed.Count -gt 0) {
+    Write-Host "Started, built their layout and closed themselves - this is how they behave without an" -ForegroundColor DarkYellow
+    Write-Host "intent, and there is nothing to look at on them:" -ForegroundColor DarkYellow
+    foreach ($closed in $selfClosed) { Write-Host "  $closed" -ForegroundColor DarkYellow }
+}
 Write-Host ("Covered {0} screen(s) of {1}." -f $opened, $Screens.Count)
 if ($notOpened.Count -gt 0) {
     Write-Host "Not covered - the log above says nothing about these:" -ForegroundColor Yellow
@@ -265,8 +299,8 @@ if ($notOpened.Count -gt 0) {
     }
     Write-Host "Open them by hand, or run again with root allowed. Screenshots are in $Out." -ForegroundColor Yellow
 } else {
-    Write-Host "Screenshots are in $Out. Looking through them is the part that catches a theme or" -ForegroundColor Green
-    Write-Host "a colour that went wrong without crashing anything." -ForegroundColor Green
+    Write-Host "Screenshots of the covered screens are in $Out. Looking through them is the part that" -ForegroundColor Green
+    Write-Host "catches a theme or a colour that went wrong without crashing anything." -ForegroundColor Green
 }
 try { Start-Process $Out } catch { Write-Host "Open the folder by hand: $Out" -ForegroundColor DarkYellow }
 

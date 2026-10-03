@@ -3,8 +3,8 @@
 # Windows: this is the Linux/macOS twin. On Windows run tools/device_smoke.ps1 instead -
 # PowerShell cannot read this file and stops with a screenful of parse errors if fed it.
 #
-# Opens every screen of the installed build once, takes a screenshot of each, and then looks at
-# the log for crashes and inflation failures. It taps nothing: opening a screen cannot freeze,
+# Opens every screen of the installed build once, screenshots each one that stays on top, and then
+# looks at the log for crashes and inflation failures. It taps nothing: opening a screen cannot freeze,
 # uninstall or delete anything, which is what makes this the safe half of a smoke test. The
 # random-tap half (monkey) lives in a separate mode below, and it is the one that can misbehave
 # on a build that holds root, so it is opt-in and refuses to run without --monkey.
@@ -16,7 +16,7 @@
 # stayed closed instead of pretending the walk was complete.
 #
 # Usage:
-#   tools/device_smoke.sh                       # walk the screens of the default package
+#   tools/device_smoke.sh                       # walk the 16 listed screens of the package
 #   tools/device_smoke.sh --out /tmp/smoke      # where the screenshots go
 #   tools/device_smoke.sh --serial ABC123       # pick a device when several are attached
 #   tools/device_smoke.sh --monkey 500          # also tap randomly N times (reads the warning)
@@ -41,6 +41,15 @@ MANIFEST="$(cd "$(dirname "$0")/.." && pwd)/app/src/main/AndroidManifest.xml"
 # might hold. Activities that need an intent to mean anything (a URI to freeze, a package to
 # uninstall, a shortcut to create) are deliberately not here: without their intent they close
 # immediately and prove nothing.
+# One screen in the list needs an intent extra to show anything: started bare it builds its
+# layout and closes at once. That is its behaviour, not a failure - see doShowFolderContent()
+# in ShortcutLauncherFolderActivity: no uuid extra, so a toast and finish(). The walk still
+# opens it (building its layout under a theme is the point), but reports it as such instead of
+# counting it as a screen that was missed.
+SELF_CLOSING=(
+    ".ui.ShortcutLauncherFolderActivity"
+)
+
 SCREENS=(
     ".ui.AboutActivity"
     ".ui.BackupMainActivity"
@@ -177,12 +186,40 @@ sleep 1
 "${ADB[@]}" shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
 
 opened=0
+self_closed=()
 not_opened=()
 
+is_self_closing() {
+    local candidate="$1" entry
+    for entry in "${SELF_CLOSING[@]}"; do
+        [ "$entry" = "$candidate" ] && return 0
+    done
+    return 1
+}
+
+# A dialog screen (ShowSimpleDialogActivity) spends the BACK press on its own dialog and stays,
+# so the next screen would be photographed over the leftovers. One extra BACK clears it.
+leave_previous_screen() {
+    local foreground
+    foreground=$(foreground_activity)
+    case "$foreground" in
+        "$PACKAGE/"*)
+            case "$foreground" in
+                *"/.Main") return 0 ;;
+            esac
+            "${ADB[@]}" shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+            sleep 0.5
+            ;;
+    esac
+    return 0
+}
+
 for screen in "${SCREENS[@]}"; do
-    name=$(basename "$screen")
+    name="${screen##*.}"
     target="$PACKAGE/$screen"
     route="plain adb"
+
+    leave_previous_screen
 
     start_screen "$target" 0
     if [ "$START_OK" -eq 0 ] && [ "$SU_AVAILABLE" -eq 1 ]; then
@@ -206,7 +243,6 @@ for screen in "${SCREENS[@]}"; do
     fi
 
     sleep "$SETTLE"
-    "${ADB[@]}" exec-out screencap -p > "$OUT_DIR/$name.png" 2>/dev/null
 
     foreground=$(foreground_activity)
     expected="${screen#.}"
@@ -214,17 +250,24 @@ for screen in "${SCREENS[@]}"; do
     case "${foreground#*/}" in
         *"$expected") on_screen=1 ;;
     esac
-    "${ADB[@]}" shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-    sleep 0.5
 
     if [ "$on_screen" -eq 1 ]; then
+        # The screenshot is taken only of a screen that is really on top: a picture of leftovers
+        # would show the wrong screen under the right name.
+        "${ADB[@]}" exec-out screencap -p > "$OUT_DIR/$name.png" 2>/dev/null
         opened=$((opened + 1))
         printf '  %-36s opened (%s)\n' "$name" "$route"
+    elif is_self_closing "$screen"; then
+        self_closed+=("$name")
+        printf '  %-36s started and closed itself, as it does without its intent\n' "$name"
     else
         reason="opened, then closed at once (on screen: ${foreground:-unknown})"
         printf '  %-36s %s\n' "$name" "$reason"
         not_opened+=("$name|$reason")
     fi
+
+    "${ADB[@]}" shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+    sleep 0.5
 done
 
 if [ "$MONKEY_EVENTS" -gt 0 ]; then
@@ -264,6 +307,11 @@ else
 fi
 
 echo
+if [ "${#self_closed[@]}" -gt 0 ]; then
+    echo "Started, built their layout and closed themselves - this is how they behave without an intent,"
+    echo "and there is nothing to look at on them:"
+    printf '  %s\n' "${self_closed[@]}"
+fi
 echo "Covered $opened screen(s) of ${#SCREENS[@]}."
 if [ "${#not_opened[@]}" -gt 0 ]; then
     echo "Not covered - the log above says nothing about these:"
@@ -272,8 +320,8 @@ if [ "${#not_opened[@]}" -gt 0 ]; then
     done
     echo "Open them by hand, or run again with root allowed. Screenshots are in $OUT_DIR."
 else
-    echo "Screenshots are in $OUT_DIR. The log cannot tell you whether a screen looks right -"
-    echo "that part is the owner's eye on those images."
+    echo "Screenshots of the covered screens are in $OUT_DIR."
+    echo "The log cannot tell you whether a screen looks right - that part is your eye on those images."
 fi
 
 if [ -n "$crashes" ]; then exit 1; fi
