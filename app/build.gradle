@@ -118,6 +118,27 @@ android {
             // Returning defaults instead lets a test stand up a Context and override only the
             // one method it needs, rather than pulling in a mocking library for it.
             returnDefaultValues = true
+            // Robolectric inflates real layouts, so it needs the merged resources and the
+            // generated R class on the unit test classpath. Without this every inflate() fails
+            // with a missing resource and the layout test proves nothing.
+            includeAndroidResources = true
+        }
+        // Robolectric reaches into the JDK's own packages (java.lang, java.io, java.net, ...),
+        // and Java 17 and newer keep those closed unless asked. This is the list from the
+        // Robolectric documentation. It applies to the plain JVM tests too, where it costs
+        // nothing: they never open those packages.
+        unitTests.all {
+            jvmArgs += [
+                "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                "--add-opens=java.base/java.util=ALL-UNNAMED",
+                "--add-opens=java.base/java.io=ALL-UNNAMED",
+                "--add-opens=java.base/java.net=ALL-UNNAMED",
+                "--add-opens=java.base/java.security=ALL-UNNAMED",
+                "--add-opens=java.base/java.text=ALL-UNNAMED",
+                "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+                "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+                "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            ]
         }
     }
 
@@ -179,4 +200,9 @@ dependencies {
 //    implementation 'com.google.zxing:core:3.3.3' 先把文本方式稳定下来，再做 QRCode
 
     testImplementation "junit:junit:4.13.2"
+    // Runs the Android framework on the JVM, so layouts and themes can be inflated for real
+    // without a device or an emulator (see LayoutThemeSmokeTest). 4.17 understands the
+    // resources of compileSdk 37; 4.16 dropped API 21 and 22, so 23 is the oldest level a
+    // Robolectric test may ask for.
+    testImplementation "org.robolectric:robolectric:4.17"
 }

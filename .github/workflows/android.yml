@@ -59,7 +59,17 @@ jobs:
     - name: Grant Permission
       run: chmod +x ./gradlew
 
-    # Runs on the JVM, no device or emulator involved, so it costs seconds.
+    # Robolectric downloads one android-all jar per API level it runs on (tens of megabytes),
+    # into the Maven cache rather than into Gradle's. Without this step every run pays for the
+    # download again; with it only the first run after a version bump does.
+    - name: Cache Robolectric jars
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository/org/robolectric
+        key: robolectric-${{ runner.os }}-4.17
+
+    # Runs on the JVM, no device or emulator involved. Most of it costs seconds; the layout
+    # test under Robolectric adds the resource build and, on a cache miss, that download.
     # `test` is the anchor task that runs whichever unit test variants this AGP
     # version creates, rather than naming one that may not exist.
     - name: Unit tests
