@@ -10,6 +10,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 
 /**
  * Inflates every layout of the application once per theme family, on API 23 and on API 34.
@@ -49,13 +50,49 @@ class LayoutThemeSmokeTest {
         "dark" to R.style.AppTheme_Dark_Default,
     )
 
+    /**
+     * The layouts that belong to the application, taken from its own res/layout* directories.
+     *
+     * R.layout is not the same list: it also carries the layouts of every library (Material's
+     * m3_alert_dialog, its clock period toggle, its time picker among them), which those widgets
+     * inflate themselves, with their own arguments, and which are not all inflatable standalone
+     * on an old API level. The first version of this test walked R.layout and failed on five
+     * library layouts on API 23 while saying nothing about the application at all. Reading the
+     * directory keeps the subject of the test what it claims to be - the screens we ship - and
+     * stops a library update from turning the test red.
+     */
+    private fun applicationLayouts(): List<Pair<String, Int>> {
+        val resDir = File("src/main/res")
+        val dirs = resDir.listFiles { file -> file.isDirectory && file.name.startsWith("layout") }
+            ?: emptyArray()
+        val names = dirs
+            .flatMap { dir -> dir.listFiles { file -> file.extension == "xml" }?.toList() ?: emptyList() }
+            .map { it.nameWithoutExtension }
+            .distinct()
+            .sorted()
+        return names.map { name -> name to R.layout::class.java.getField(name).getInt(null) }
+    }
+
     @Test
     fun everyLayoutInflatesInEveryTheme() {
+        val layouts = applicationLayouts()
+        // A silent empty list would make this test pass while checking nothing, and a wrong
+        // working directory would quietly shrink the matrix. Both have to be loud instead.
+        assertTrue(
+            "No layouts found under ${File("src/main/res").absolutePath}: the test's working " +
+                "directory is not the module directory.",
+            layouts.isNotEmpty()
+        )
+        assertTrue(
+            "Only ${layouts.size} layouts found; the application has around forty. The list is " +
+                "taken from res/layout* and something is cutting it short.",
+            layouts.size >= 30
+        )
+
         val failures = mutableListOf<String>()
         val application = RuntimeEnvironment.getApplication()
         val sdk = Build.VERSION.SDK_INT
-        for (field in R.layout::class.java.declaredFields) {
-            val layoutId = field.getInt(null)
+        for ((layoutName, layoutId) in layouts) {
             for ((themeName, themeId) in themes) {
                 try {
                     val themed = ContextThemeWrapper(application, themeId)
@@ -71,7 +108,7 @@ class LayoutThemeSmokeTest {
                     val root = generateSequence(t) { it.cause }.last()
                     val rootNote =
                         if (root !== t) " (root: ${root.javaClass.simpleName}: ${root.message})" else ""
-                    failures += "FAIL: SDK $sdk, ${field.name}, $themeName theme: " +
+                    failures += "FAIL: SDK $sdk, $layoutName, $themeName theme: " +
                         "${t.javaClass.simpleName}: ${t.message}$rootNote"
                 }
             }
