@@ -1,7 +1,14 @@
 name: Android CI
 
 on:
+  # The owner starts a build from the Actions page. Pushing a `ci-*` tag starts one too: that is
+  # how a machine (or a terminal, or the agent working on this branch) asks for a build without
+  # the Actions permission, which an installation token does not have. A tag run is an ordinary
+  # run - same tests, same two APKs, same release - and the tag itself is disposable.
   workflow_dispatch:
+  push:
+    tags:
+      - 'ci-*'
 
 jobs:
   build:

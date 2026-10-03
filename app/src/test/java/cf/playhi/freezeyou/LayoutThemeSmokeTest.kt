@@ -30,7 +30,16 @@ import org.robolectric.annotation.Config
  * all the broken combinations at once rather than one per run.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 34])
+@Config(
+    sdk = [23, 34],
+    // The plain framework Application, not the one from the manifest. Robolectric would
+    // otherwise build MainApplication, and its onCreate loads the native MMKV libraries through
+    // ReLinker, opens the multi-process stores, starts Shizuku support and starts a service -
+    // none of which exists on the JVM, and none of which inflating a layout needs. That failure
+    // would also happen before any test body runs, so the per-layout try/catch could not report
+    // it, and it would read as a crash of the whole class rather than of one combination.
+    application = android.app.Application::class
+)
 class LayoutThemeSmokeTest {
 
     // The owner's order: light is the default, black and dark follow.
