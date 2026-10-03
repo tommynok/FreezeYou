@@ -140,6 +140,12 @@ jobs:
           report=$(grep -E "^[[:space:]]*(FAIL:|AssertionError|Caused by:)|requires your app theme|InflateException|NotFoundException|ClassNotFound|NoClassDefFound" \
             unit-tests.log | head -40 || true)
           [ -z "$report" ] && report=$(grep -E "FAILED|error:|What went wrong|Could not" unit-tests.log | head -20 || true)
+          # A Kotlin compile error never reaches the JUnit XML, and it is the one failure that
+          # cannot be diagnosed from anywhere else, so it is read straight from the log.
+          compile=$(grep -E "^e: |Compilation error" unit-tests.log | head -10 || true)
+          if [ -n "$compile" ]; then
+            report=$(printf '%s\n%s' "$compile" "$report")
+          fi
           # Last resort: the failure block itself, indentation and all.
           [ -z "$report" ] && report=$(grep -A 20 -m1 "FAILED" unit-tests.log | head -25 || true)
           report=$(printf '%s' "$report" | sed -e 's/%/%25/g' -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')

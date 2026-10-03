@@ -1,7 +1,5 @@
 package cf.playhi.freezeyou
 
-import android.graphics.Rect
-import android.graphics.drawable.InsetDrawable
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
@@ -83,16 +81,16 @@ class LauncherShortcutGeometryTest {
             val lineWidth = if (lines >= 1) button.layout.getLineWidth(0) else 0f
             val contentWidth = (button.width - button.paddingLeft - button.paddingRight).toFloat()
             val centreOffset = (button.top + button.height / 2f) - (field.top + field.height / 2f)
-            val insets = Rect()
-            (button.background as? InsetDrawable)?.getInsets(insets)
 
             val where = row.name
             report += "GEOM: $where row: field ${field.width}x${field.height}px " +
-                "(${dp(field.height, density)}dp tall), button ${button.width}x${button.height}px " +
-                "(${dp(button.height, density)}dp tall, insets ${dp(insets.top, density)}/" +
-                "${dp(insets.bottom, density)}dp), padding ${button.paddingLeft}/${button.paddingRight}px, " +
-                "lines $lines, text ${dp(lineWidth, density)}dp in ${dp(contentWidth, density)}dp, " +
-                "centre offset ${dp(centreOffset, density)}dp"
+                "(${dp(field.height.toFloat(), density)}dp tall), " +
+                "button ${button.width}x${button.height}px " +
+                "(${dp(button.height.toFloat(), density)}dp tall), " +
+                "padding ${button.paddingLeft}/${button.paddingRight}px " +
+                "(${dp(button.paddingTop.toFloat(), density)}/${dp(button.paddingBottom.toFloat(), density)}dp), " +
+                "lines $lines, text ${dp(lineWidth, density)}dp in " +
+                "${dp(contentWidth, density)}dp, centre offset ${dp(centreOffset, density)}dp"
 
             // Real glyph metrics, not the stand-in a fake graphics mode returns: with zero-width
             // text every fit check below would pass while proving nothing.
