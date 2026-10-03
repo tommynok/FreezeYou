@@ -11,13 +11,13 @@ import javax.xml.parsers.DocumentBuilderFactory
  * The menu offers three themes, and this test is where that agreement is written down.
  *
  * Light (called "Default" in the menu), dark and black. The coloured palettes - blue, yellow,
- * orange, green, pink, red - are settled as gone: they are not in the menu in any of the four
- * languages, they are not to be tested, and deleting them from the code is separate, low-priority
- * hygiene. The reason deletion is not a one-liner is worth knowing before anyone starts: below
- * API 31 the live light theme is defined as a child of AppTheme.Light.White, and its dialog form
- * as a child of AppTheme.Light.Dialog.White, so two of the "dead" styles are load-bearing. On top
- * of that an installation that once stored the value "blue" still carries it, and ThemeUtils still
- * maps it to a style - no migration ever rewrote it.
+ * orange, green, pink, red - are gone: the menu stopped offering them, and then the styles, the
+ * ThemeUtils branches and the coloured dot drawables were deleted. Below API 31 the values those
+ * palettes carried for the light theme moved into AppTheme.Default and AppTheme.Default.Dialog,
+ * where they were load-bearing (the "white" palette WAS the light theme), so nothing about the
+ * light theme changed. An installation that once stored the value "blue" still carries it in
+ * storage: there is no migration, and there does not need to be one - it falls into the else
+ * branch of ThemeUtils and comes up as the light theme.
  *
  * Three things can go wrong silently, and each has its own check below:
  *   1. the two arrays - labels for the menu and the values written to storage - drift apart;
@@ -176,6 +176,40 @@ class ThemeSelectionTest {
             "ThemeUtils no longer has an else branch in processSetTheme, so a stored value with " +
                 "no branch (the default, or a palette from an older version) would apply no theme.",
             "else -> context.setTheme(" in themeUtils
+        )
+    }
+
+    /**
+     * The coloured palettes are deleted, not merely hidden. A style that survives is a style
+     * somebody will later fix, translate and test again - that is what the coloured themes cost
+     * before they were removed - so their absence is worth a check of its own. The list of names
+     * to look for is the same one the menu check uses: a palette may not exist as a screen style,
+     * as a dialog style, or as a branch that maps a stored value to a style.
+     */
+    @Test
+    fun theColouredPaletteStylesAreGone() {
+        val resDir = File(moduleDir(), "src/main/res")
+        val styles = styleNames(resDir)
+
+        val offenders = styles.filter { name ->
+            palettesThatShouldNotBeOffered.any { palette ->
+                name.endsWith("." + palette.replaceFirstChar { it.uppercaseChar() })
+            }
+        }.sorted()
+        assertTrue(
+            "These styles of deleted palettes are back: ${offenders.joinToString(", ")}. The menu " +
+                "offers three themes and no colour choice; a palette style that is not offered is " +
+                "code that has to be kept correct for nobody.",
+            offenders.isEmpty()
+        )
+
+        val themeUtils = File(moduleDir(), "src/main/java/cf/playhi/freezeyou/utils/ThemeUtils.kt")
+            .readText()
+        val strayBranches = palettesThatShouldNotBeOffered.filter { "\"$it\" ->" in themeUtils }
+        assertTrue(
+            "ThemeUtils still maps a deleted palette to something: ${strayBranches.joinToString(", ")}. " +
+                "A stored value of a palette belongs in the else branch, which brings up the light theme.",
+            strayBranches.isEmpty()
         )
     }
 

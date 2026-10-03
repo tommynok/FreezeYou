@@ -148,8 +148,9 @@ def find_recreated_themes(styles):
 
 # Theme -> the attributes that must resolve to this fork's values, and what they must be.
 # "apis" narrows an expectation to a range, for attributes that legitimately differ by platform
-# version: AppTheme.Default is the old white palette below API 31 and a Material3 light theme
-# from 31 on, and those two carry different accents.
+# version: AppTheme.Default is the light theme with the stock light values below API 31 and a
+# Material3 light theme from 31 on, and those two carry different accents. (The values came from
+# the deleted "white" palette, whose style was the light theme; see ROADMAP.)
 EXPECTATIONS = {
     "AppTheme.Dark.Default": {
         "colorPrimary": "#FFFFFF",
@@ -225,7 +226,7 @@ def check(res_dir, apis, strict):
             base = chain[-1].split(" (")[0]
             for attr, want in expected.items():
                 if attr == "colorAccent" and theme == "AppTheme.Default" and api < 31:
-                    want = "#424242"  # the white palette below API 31, unchanged from stock
+                    want = "#424242"  # the stock light values below API 31, unchanged from stock
                 value = items.get(attr)
                 if value is None:
                     findings.append(

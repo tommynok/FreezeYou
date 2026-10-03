@@ -41,7 +41,9 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public class FUFLauncherShortcutCreator extends FreezeYouBaseActivity {
 
-    private int customThemeDisabledDot = R.drawable.shapedotblue;
+    // Both are replaced in onCreate by the theme's own dots; the initial value must not name a
+    // coloured palette that the themes no longer have.
+    private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
 
     @Override

@@ -187,9 +187,9 @@
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
         <!-- No android:windowLightStatusBar here: this family's bar is the dark one. On Android
              12+ it is the Material 3 purple that arrives through colorPrimaryDark = colorPrimary,
-             below that it is the accent of the chosen palette, and dark icons on it were the
-             unreadable pair the owner saw next to the original application, where they are white.
-             The light grey bar of AppTheme.Light.White asks for dark icons in its own style. -->
+             below that it is the app accent, and dark icons on it were the unreadable pair the
+             owner saw next to the original application, where they are white. The light grey bar
+             of AppTheme.Default asks for dark icons in its own style. -->
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
@@ -208,47 +208,15 @@
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
     </style>
 
-    <style name="AppTheme.Light.Blue" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#026FDE</item>
-        <item name="colorPrimary">#0383E9</item>
-        <item name="colorAccent">#0300EF</item>
-    </style>
-
-    <style name="AppTheme.Light.Yellow" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#f7a500</item>
-        <item name="colorPrimary">#ffbf00</item>
-        <item name="colorAccent">#ffbf00</item>
-    </style>
-
-    <style name="AppTheme.Light.Orange" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#c43e00</item>
-        <item name="colorPrimary">#ff6f00</item>
-        <item name="colorAccent">#ff5500</item>
-    </style>
-
-    <style name="AppTheme.Light.Green" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#009624</item>
-        <item name="colorPrimary">#00c853</item>
-        <item name="colorAccent">#00aa00</item>
-    </style>
-
-    <style name="AppTheme.Light.Pink" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#ec407a</item>
-        <item name="colorPrimary">#FF4081</item>
-        <item name="colorAccent">#FF4081</item>
-    </style>
-
-    <style name="AppTheme.Light.Red" parent="Base.AppTheme.Light.DarkActionBar">
-        <item name="colorPrimaryDark">#9b0000</item>
-        <item name="colorPrimary">#d50000</item>
-        <item name="colorAccent">#d50000</item>
-    </style>
-
-    <!-- colorPrimary is nearly white here, so Material dialogs would print their action labels in
-         it and they would be invisible on a light dialog; the overlay replaces that one colour
-         with the accent. The palette is only reachable on API < 31 - from Android 12 on,
-         AppTheme.Default is the Material3 light theme (see values-v31). -->
-    <style name="AppTheme.Light.White" parent="Base.AppTheme.Light">
+    <!-- The light theme, and it is the only light one: the coloured palettes (blue, yellow,
+         orange, green, pink, red) used to be siblings here and are gone, since the menu stopped
+         offering them in every language. Their values moved into this style, so below API 31 the
+         theme resolves to exactly what it did before - the white palette WAS the light theme.
+         colorPrimary is nearly white, so Material dialogs would print their action labels in it
+         and they would be invisible on a light dialog; the overlay replaces that one colour with
+         the accent. From Android 12 on this style is redefined in values-v31 as the Material3
+         light theme. -->
+    <style name="AppTheme.Default" parent="Base.AppTheme.Light">
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
@@ -256,8 +224,6 @@
         <!-- #eeeeee is a light bar, so this one theme of the light family wants dark icons. -->
         <item name="android:windowLightStatusBar">true</item>
     </style>
-
-    <style name="AppTheme.Default" parent="AppTheme.Light.White" />
 
     <style name="Base.AppTheme.Dark.Dialog" parent="Theme.Material3.Dark.Dialog">
         <item name="windowNoTitle">true</item>
@@ -306,51 +272,16 @@
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
     </style>
 
-    <style name="AppTheme.Light.Dialog.Blue" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#026FDE</item>
-        <item name="colorPrimary">#0383E9</item>
-        <item name="colorAccent">#0300EF</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.Yellow" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#f7a500</item>
-        <item name="colorPrimary">#ffbf00</item>
-        <item name="colorAccent">#ffbf00</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.Orange" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#c43e00</item>
-        <item name="colorPrimary">#ff6f00</item>
-        <item name="colorAccent">#ff5500</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.Green" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#009624</item>
-        <item name="colorPrimary">#00c853</item>
-        <item name="colorAccent">#00aa00</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.Pink" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#ec407a</item>
-        <item name="colorPrimary">#FF4081</item>
-        <item name="colorAccent">#FF4081</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.Red" parent="Base.AppTheme.Light.Dialog">
-        <item name="colorPrimaryDark">#9b0000</item>
-        <item name="colorPrimary">#d50000</item>
-        <item name="colorAccent">#d50000</item>
-    </style>
-
-    <style name="AppTheme.Light.Dialog.White" parent="Base.AppTheme.Light.Dialog">
+    <!-- The dialog form of the light theme, and again the only one: the coloured dialog styles are
+         gone with their screen forms, and this style now carries the values that used to live in
+         AppTheme.Light.Dialog.White, so below API 31 a light dialog resolves as it did before. -->
+    <style name="AppTheme.Default.Dialog" parent="Base.AppTheme.Light.Dialog">
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
         <item name="colorAccent">#424242</item>
-        <!-- Same light grey bar as AppTheme.Light.White, and the same need for dark icons. -->
+        <!-- Same light grey bar as AppTheme.Default, and the same need for dark icons. -->
         <item name="android:windowLightStatusBar">true</item>
     </style>
-
-    <style name="AppTheme.Default.Dialog" parent="AppTheme.Light.Dialog.White" />
 
     <style name="Base.AppTheme.SplashScreen" parent="Base.V14.AppTheme.SplashScreen" />
 

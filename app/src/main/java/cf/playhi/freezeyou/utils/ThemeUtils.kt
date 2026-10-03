@@ -24,15 +24,11 @@ internal object ThemeUtils {
 
         val string = getUiTheme(context)
         return if (string != null) {
+            // Only the three themes remain, and below API 21 the dot of the two dark ones is the
+            // light shape while everything else - the light theme, and any palette value stored by
+            // an older version of the application - gets the dark one.
             when (string) {
-                "blue" -> R.drawable.shapedotblue
-                "orange" -> R.drawable.shapedotorange
-                "green" -> R.drawable.shapedotgreen
-                "pink" -> R.drawable.shapedotpink
-                "yellow" -> R.drawable.shapedotyellow
-                "red" -> R.drawable.shapedotred
                 "black", "deepBlack" -> R.drawable.shapedotwhite
-                "white" -> R.drawable.shapedotblack
                 else -> R.drawable.shapedotblack
             }
         } else {
@@ -58,23 +54,15 @@ internal object ThemeUtils {
         return R.drawable.shapedot_transparent
     }
 
+    /**
+     * The round background behind the floating button, below API 21 where there is no ripple
+     * drawable to use instead. Every remaining theme wants the same dark circle: the coloured
+     * palettes are gone, and a value they left in storage gets it too.
+     */
+    @Suppress("UNUSED_PARAMETER")
     @JvmStatic
     fun getThemeFabDotBackground(@NonNull context: Context): Int {
-        val string = getUiTheme(context)
-        return if (string != null) {
-            when (string) {
-                "pink" -> R.drawable.shapedotpink
-                "blue" -> R.drawable.shapedotblue
-                "orange" -> R.drawable.shapedotorange
-                "green" -> R.drawable.shapedotgreen
-                "yellow" -> R.drawable.shapedotyellow
-                "red" -> R.drawable.shapedotred
-                "black", "white" -> R.drawable.shapedotblack
-                else -> R.drawable.shapedotblack
-            }
-        } else {
-            R.drawable.shapedotblack
-        }
+        return R.drawable.shapedotblack
     }
 
     @JvmStatic
@@ -140,15 +128,11 @@ internal object ThemeUtils {
             val string = getUiTheme(context)
             if (string != null) {
                 when (string) {
-                    "blue" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Blue else R.style.AppTheme_Light_Blue)
-                    "orange" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Orange else R.style.AppTheme_Light_Orange)
-                    "green" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Green else R.style.AppTheme_Light_Green)
-                    "pink" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Pink else R.style.AppTheme_Light_Pink)
-                    "yellow" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Yellow else R.style.AppTheme_Light_Yellow)
                     "black" -> context.setTheme(if (isDialog) R.style.AppTheme_Dark_Dialog_Default else R.style.AppTheme_Dark_Default)
-                    "red" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_Red else R.style.AppTheme_Light_Red)
                     "deepBlack" -> context.setTheme(if (isDialog) R.style.AppTheme_Dark_Dialog_Black else R.style.AppTheme_Dark_Black)
-                    "white" -> context.setTheme(if (isDialog) R.style.AppTheme_Light_Dialog_White else R.style.AppTheme_Light_White)
+                    // "default", and anything a palette left in storage: the coloured themes are
+                    // gone from the code, and an installation that once stored "blue" simply comes
+                    // up as the light theme rather than as a screen with no theme at all.
                     else -> context.setTheme(if (isDialog) R.style.AppTheme_Default_Dialog else R.style.AppTheme_Default)
                 }
             }

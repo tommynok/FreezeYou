@@ -150,7 +150,9 @@ public class Main extends FreezeYouBaseActivity {
     private ActionMode currentSelectionActionMode;
     private AbsListView.MultiChoiceModeListener currentMultiChoiceModeListener;
     private int appListViewOnClickMode = APPListViewOnClickMode_chooseAction;
-    private int customThemeDisabledDot = R.drawable.shapedotblue;
+    // Both are replaced in onCreate by the theme's own dots; these are only what the row uses if
+    // that call fails, so they no longer name a coloured palette that the themes no longer have.
+    private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
     private String currentFilter = "all";
