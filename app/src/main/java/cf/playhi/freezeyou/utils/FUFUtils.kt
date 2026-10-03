@@ -288,6 +288,8 @@ object FUFUtils {
         context: Context, freeze: Boolean, pkgNameList: Array<String>?,
         disableModeTrueOrHideModeFalse: Boolean = true
     ) {
+        // Same reason as in oneKeyAction: an empty list must not end in the "executed" toast.
+        if (pkgNameList.isNullOrEmpty()) return
         if (pkgNameList != null) {
             var currentPackage: String? = " "
             if (DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeForegroundApplications.getValue()) {
@@ -421,6 +423,11 @@ object FUFUtils {
 
     @JvmStatic
     fun oneKeyAction(context: Context, freeze: Boolean, pkgNameList: Array<String>?, apiMode: Int) {
+        // Nothing to act on: without this the empty list walks through the loop below, finds no
+        // failures and reports success - the "executed" toast for a freeze that never happened.
+        // An empty array reaches here from the batch service and from a list that is empty or
+        // holds only separators.
+        if (pkgNameList.isNullOrEmpty()) return
         when (apiMode) {
             FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE -> oneKeyActionRoot(
                 context,
@@ -564,6 +571,8 @@ object FUFUtils {
      */
     @JvmStatic
     fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
+        // An empty batch has nothing to do and must not report success; see oneKeyAction.
+        if (packages.isEmpty()) return
         val apiMode = try {
             DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.getValue(context)!!.toInt()
         } catch (e: Exception) {
