@@ -36,6 +36,7 @@
                     android:id="@+id/lscaga_package_editText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
                     android:layout_weight="2"
                     android:focusable="false"
                     android:hint="@string/application"
@@ -44,9 +45,10 @@
 
                 <Button
                     android:id="@+id/lscaga_package_button"
-                    style="@style/Widget.App.Button"
+                    style="@style/Widget.App.Button.Compact"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
                     android:layout_weight="0.8"
                     android:text="..."
                     tools:ignore="HardcodedText" />
@@ -118,6 +120,7 @@
                     android:id="@+id/lscaga_target_editText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
                     android:layout_weight="2"
                     android:focusable="false"
                     android:hint="@string/target"
@@ -126,9 +129,10 @@
 
                 <Button
                     android:id="@+id/lscaga_target_button"
-                    style="@style/Widget.App.Button"
+                    style="@style/Widget.App.Button.Compact"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
                     android:layout_weight="0.8"
                     android:text="..."
                     tools:ignore="HardcodedText" />

@@ -35,6 +35,22 @@
         <item name="android:insetRight">4dp</item>
     </style>
 
+    <!-- The "..." buttons that sit next to a field, as on the activity-shortcut screen. The
+         AppCompat coloured button that screen used before was compact: 6dp of vertical inset
+         inside the 48dp touch target, so the drawn shape was 36dp tall, with 8dp of padding
+         around the text. The Material 3 button that replaced it carries 24dp of horizontal
+         padding, and on this row the weight arithmetic leaves the button about 63dp wide - so
+         the three dots no longer fitted, wrapped onto a second line, and the button grew tall
+         instead of staying level with the field. These numbers put the box back, and maxLines
+         keeps the ellipsis horizontal whatever the width does later. -->
+    <style name="Widget.App.Button.Compact" parent="Widget.App.Button">
+        <item name="android:insetTop">6dp</item>
+        <item name="android:insetBottom">6dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
     <!-- Popups and menus: one drawable for every theme. Its colour is ?attr/colorSurface, which
          resolves against the theme of the activity that opens the menu - that is, against the
          in-app switch. A night-qualified drawable or a second palette would follow the system

@@ -136,6 +136,10 @@ android {
                 events 'failed'
                 showCauses = true
                 showStackTraces = true
+                // The geometry tests print what they measured ("GEOM:" lines). Printing them into
+                // the log is what lets a run be read from a machine where the log download host
+                // is unreachable, and it is also how the owner sees the numbers behind a fix.
+                showStandardStreams = true
             }
             jvmArgs += [
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",

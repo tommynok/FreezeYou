@@ -90,6 +90,13 @@ jobs:
         ./gradlew test --stacktrace 2>&1 | tee unit-tests.log
         status=${PIPESTATUS[0]}
         set -e
+        # What the geometry tests measured, as notices: annotations come back through the API on
+        # a machine where the log download host is unreachable, and notices appear on green runs
+        # too, so a fix can be confirmed by numbers instead of by a screenshot.
+        grep -h "^GEOM:" unit-tests.log | head -20 | while IFS= read -r line; do
+          echo "::notice title=Measured geometry::${line#GEOM: }"
+        done || true
+
         if [ "$status" -ne 0 ]; then
           # The essentials go out as an annotation as well as into the summary. Annotations are
           # the one channel that comes back through the API on a machine where the log download
