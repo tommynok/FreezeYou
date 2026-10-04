@@ -77,6 +77,7 @@
         <item name="android:textColor">@color/appOnDarkSurface</item>
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <!-- Material3 draws the dialog itself: rounded, on ?attr/colorSurface, with insets for the
@@ -409,81 +410,97 @@
     <style name="TextAppearance.App.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.BodySmall" parent="TextAppearance.Material3.BodySmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <style name="TextAppearance.App.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 
     <!-- Light popups keep the stock size and colour; only the family changes. -->
     <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:textFontWeight">500</item>
     </style>
 </resources>
