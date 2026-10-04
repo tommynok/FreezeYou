@@ -67,12 +67,12 @@
     <string name="notAvailable">Н/Д</string>
     <string name="displayAll">Показать все</string>
     <string name="onlyOnekey">OneKEY заморозка</string>
-    <string name="uninstalled">Удаленный</string>
+    <string name="uninstalled">Удаленные</string>
     <string name="onlySA">Системные</string>
     <string name="onlyUA">Пользовательские</string>
     <string name="moreSettings">Настройки</string>
     <string name="visitWebsite">Вебсайт оригинального FreezeYou</string>
-    <string name="checkUpdate">Проверить обновление</string>
+    <string name="checkUpdate">Проверить обновления</string>
     <string name="summary_checkUpdate">Страница релизов форка - канал обновлений этой сборки</string>
     <string name="addQQGroup">Присоединиться к QQ группе</string>
     <string name="dangerZone">Опасная зона</string>
@@ -96,7 +96,7 @@
     <string name="success">Успешно</string>
     <string name="disableAEnable">Заморозка/разморозка/запуск</string>
     <string name="copyPkgName">Скопировать имя пакета</string>
-    <string name="createDisEnableShortCut">Создать ярлык заморозка/разморозка</string>
+    <string name="createDisEnableShortCut">Создать ярлык заморозки/разморозки</string>
     <string name="createActivityShortcut">Создать ярлык активити</string>
     <string name="cannotFindTheEntrance">У этого приложения не нашлось точки входа</string>
     <string name="unfreezeAndLaunchActivity">Приложение заморожено — активити не запустится. Разморозить? Оно останется размороженным. Если нужно замораживать приложение через ярлык — создайте его через пункт «%1$s».</string>
@@ -144,7 +144,7 @@
     <string name="serviceLongerEx">Снизит вероятность сбоя фонового сервиса</string>
     <string name="getDisabledApplications">Получить список замороженных приложений</string>
     <string name="enableApplications">Разморозить пакеты</string>
-    <string name="disableApplications">Замороженные пакеты</string>
+    <string name="disableApplications">Заморозить пакеты</string>
     <string name="clearIconCache">Очистить кэш иконок</string>
     <string name="clearNameCache">Очистить кэш имен приложений</string>
     <string name="saveOnClickFunctionStatus">Сохранить состояние «Действия при нажатии»</string>
@@ -154,7 +154,7 @@
     <string name="freezeOnceQuitSummary">Приложения из списка «Заморозка после выхода» замораживаются, как только вы из них вышли.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
     <string name="invalidArguments">Неверные параметры</string>
-    <string name="plsConfirm">Пожалуйста подтвердите</string>
+    <string name="plsConfirm">Пожалуйста, подтвердите</string>
     <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-ROOT? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
     <string name="noRootNotActivated">К сожалению режим без-ROOT не был включен сейчас!</string>
     <string name="faq">ЧАВО</string>
@@ -179,7 +179,7 @@
     <string name="triggers_extra_parameters">Дополнительные параметры</string>
     <string name="delete">Удалить</string>
     <string name="copyAfterBeingFormatted">Копировать имена пакетов</string>
-    <string name="showInRecents">Показать в недавних</string>
+    <string name="showInRecents">Показывать в недавних</string>
     <string name="showInRecentsSummary">Оставляет FreezeYou видимым в списке недавних приложений (многозадачность).</string>
     <string name="mayHaveNoEffectsL">Может не иметь никакого эффекта на Android 4.4 и ниже</string>
     <string name="lesserToast">Реже показывать всплывающие сообщения</string>
@@ -201,15 +201,15 @@
     <string name="ACBSNotEnabled">Служба специальных возможностей не включена</string>
     <string name="affect">Влияет на</string>
     <string name="etc">и т.д.</string>
-    <string name="mayCannotNotify">Может не отправлять уведомления</string>
+    <string name="mayCannotNotify">Уведомления могут не отправляться</string>
     <string name="noNotifyPermission">Разрешение на отправку уведомления не предоставлено</string>
     <string name="noNotificationListenerPermission">Разрешение отслеживания уведомлений не предоставлено</string>
     <string name="noProblemsFound">Проблем не найдено</string>
-    <string name="everySeemsAllRight">Кажется все в порядке</string>
+    <string name="everySeemsAllRight">Кажется, все в порядке</string>
     <string name="noMRootPermission">Режим без-ROOT не предоставлен</string>
     <string name="someFuncMayRestrict">Некоторые функции могут быть ограничены</string>
     <string name="noRootPermission">Разрешение ROOT не предоставлено</string>
-    <string name="noIgnoringBO">Отключите оптимизацию батареи</string>
+    <string name="noIgnoringBO">Оптимизация батареи не отключена</string>
     <string name="someFuncMayBeAff">Некоторые функции могут быть затронуты</string>
     <string name="notUpdatedForALongTime">Давно не обновлялось</string>
     <string name="someNewFuncMayPub">Некоторые новые функции могли быть реализованы</string>
@@ -239,7 +239,7 @@
     <string name="target">Цель</string>
     <string name="shortcutTargetFieldHint">По умолчанию ярлык запускает приложение. Нажмите «...», чтобы выбрать другое активити (экран) из списка доступных к запуску.</string>
     <string name="generate">Создать</string>
-    <string name="plsSelect">Пожалуйста выберите</string>
+    <string name="plsSelect">Пожалуйста, выберите</string>
     <string name="application">Приложения</string>
     <string name="shortcutPackageFieldHint">Нажмите «...», чтобы выбрать любое приложение из полного списка, а не только то, с которого вы начали.</string>
     <string name="allowEditWhCreateShortcut">Разрешить редактирование при создании ярлыков</string>
@@ -275,7 +275,7 @@
     <string name="retry">Повтор</string>
     <string name="enableInstallPkgFunc">Устанавливать APK через FreezeYou</string>
     <string name="allow">Разрешить</string>
-    <string name="reject">Отклонено</string>
+    <string name="reject">Отклонить</string>
     <string name="execute_colon">Выполнить:</string>
     <string name="target_colon">Цель:</string>
     <string name="alwaysAllow_name">Всегда разрешать %1$s</string>
@@ -328,14 +328,14 @@
     <string name="queryStatus">Статус запроса</string>
     <string name="newClassification">Новая категория</string>
     <string name="displayLanguage">Язык приложения</string>
-    <string name="emptyNotAllowed">Пусто не допускается</string>
+    <string name="emptyNotAllowed">Поле не может быть пустым</string>
     <string name="myCustomization">Моя подборка</string>
     <string name="manageMyCustomization">Управление списком «Моя подборка»</string>
-    <string name="copyAlias">Скопировать alias</string>
+    <string name="copyAlias">Скопировать псевдоним</string>
     <string name="version_colon_vN_longVC">Версия: %1$s (%2$s)</string>
-    <string name="existed_colon_vN_longVC">Существовавшие: %1$s (%2$s)</string>
-    <string name="application_colon_app">Приложения : %1$s</string>
-    <string name="pkgName_colon_pkgName">Пакет:%1$s</string>
+    <string name="existed_colon_vN_longVC">Уже установлено: %1$s (%2$s)</string>
+    <string name="application_colon_app">Приложение: %1$s</string>
+    <string name="pkgName_colon_pkgName">Пакет: %1$s</string>
     <string name="cannotInstall_colon_msg">Не удается установить: %1$s</string>
     <string name="installing_app">Установка %1$s</string>
     <string name="uninstalling_app">Удаление %1$s</string>
@@ -400,7 +400,7 @@
     <string name="getBackupData">Получить резервные данные</string>
     <string name="theAppHasNotificationInTheNotificationBar">Приложение имеет уведомления в панели уведомлений</string>
     <string name="theAppIsCurrentlyTheForegroundApp">В настоящее время на переднем плане</string>
-    <string name="operationOnFreezeYouIsNotAllowed">Операция на FreezeYou не разрешена</string>
+    <string name="operationOnFreezeYouIsNotAllowed">Операции с FreezeYou запрещены</string>
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
@@ -469,7 +469,7 @@
     </string-array>
     <string name="mainScreenSettings">Главный экран</string>
     <string name="accessAndSecurity">Вход и безопасность</string>
-    <string name="category_feedback">Отклик</string>
+    <string name="category_feedback">Обратная связь</string>
     <string name="category_freezeMode">Режим</string>
     <string name="category_protection">Защита</string>
     <string name="category_shortcuts">Ярлыки</string>
