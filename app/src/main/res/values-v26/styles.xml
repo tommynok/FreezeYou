@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- API 26+ only: the framework resolves @font references natively here. Below v26 the
+     values/ styles keep the system sans-serif-condensed string, and Robolectric's old-SDK
+     shadows (which cannot create native FontFamily from resources) stay out of the crash path. -->
+<resources>
+
+    <style name="TextAppearance.App.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.PopupMenu.Dark" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/appOnDarkSurface</item>
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+</resources>
