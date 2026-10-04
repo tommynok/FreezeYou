@@ -279,7 +279,7 @@
     <string name="execute_colon">Виконати:</string>
     <string name="target_colon">Ціль:</string>
     <string name="alwaysAllow_name">Завжди дозволяти %1$s</string>
-    <string name="manageUriAutoAllow">Керування запитами білого списку URI</string>
+    <string name="manageUriAutoAllow">Білий список URI: запити без підтвердження</string>
     <string name="manageIpaAutoAllow">Білий список: встановлення без підтвердження</string>
     <string name="delAllCache">Очистити всі кеші</string>
     <string name="needStoragePermission">Потрібен дозвіл на доступ до пам\'яті</string>
