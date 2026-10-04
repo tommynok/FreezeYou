@@ -279,7 +279,7 @@
     <string name="execute_colon">Выполнить:</string>
     <string name="target_colon">Цель:</string>
     <string name="alwaysAllow_name">Всегда разрешать %1$s</string>
-    <string name="manageUriAutoAllow">Управление запросами белого списка URI</string>
+    <string name="manageUriAutoAllow">Белый список URI: запросы без подтверждения</string>
     <string name="manageIpaAutoAllow">Белый список: установка без подтверждения</string>
     <string name="delAllCache">Очистить все кеши</string>
     <string name="needStoragePermission">Требуется разрешение на доступ к памяти</string>
