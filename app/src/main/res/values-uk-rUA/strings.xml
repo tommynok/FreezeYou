@@ -216,8 +216,8 @@
     <string name="inPowerSaveMode">Режим енергозбереження включений</string>
     <string name="manageQuickFUFNoti">Керування сповіщеннями при швидкому заморожуванні</string>
     <string name="addToRemoveFrom">Додати в / Видалити з</string>
-    <string name="shortcutAutoFUF">Ярлик автозаморожування або розморожування</string>
-    <string name="shortcutAutoFUFEx">Заморозити незаморожені, розморозити заморожені</string>
+    <string name="shortcutAutoFUF">Автозаморожування або розморожування за ярликом</string>
+    <string name="shortcutAutoFUFEx">Ярлик-перемикач: заморожений розморожує, розморожений заморожує.</string>
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
     <string name="backupAndRestore">Бекап і відновлення</string>
