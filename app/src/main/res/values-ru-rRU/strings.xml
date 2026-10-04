@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FreezeYou-Fork</string>
-    <string name="oneKeyFreeze">OneKEY заморозка</string>
-    <string name="oneKeyUF">OneKEY разморозка</string>
+    <string name="oneKeyFreeze">OneKey-заморозка</string>
+    <string name="oneKeyUF">OneKey-разморозка</string>
     <string name="alertT1">Внимание! Не замораживайте важные для системы приложения. Это может привести к сбою системы!</string>
     <string name="cancel">Отмена</string>
     <string name="chooseDetailAction">Пожалуйста, выберите действие</string>
@@ -11,13 +11,13 @@
     <string name="freeze">Заморозка</string>
     <string name="more">Дополнительно</string>
     <string name="appDetail">Сведения о приложении</string>
-    <string name="removeFromOneKeyList">Удалить из OneKEY заморозка</string>
-    <string name="removeFromOneKeyUFList">Удалить из OneKEY разморозка</string>
+    <string name="removeFromOneKeyList">Удалить из OneKey-заморозки</string>
+    <string name="removeFromOneKeyUFList">Удалить из OneKey-разморозки</string>
     <string name="removeFromFreezeOnceQuit">Удалить из «Заморозка после выхода»</string>
     <string name="removed">Удалено</string>
     <string name="removeFailed">Не удалось удалить</string>
-    <string name="addToOneKeyList">Добавить в OneKEY заморозка</string>
-    <string name="addToOneKeyUFList">Добавить в OneKEY разморозка</string>
+    <string name="addToOneKeyList">Добавить в OneKey-заморозку</string>
+    <string name="addToOneKeyUFList">Добавить в OneKey-разморозку</string>
     <string name="addToFreezeOnceQuit">Добавить в «Заморозка после выхода»</string>
     <string name="addFailed">Не удалось добавить</string>
     <string name="caution">ВНИМАНИЕ</string>
@@ -26,11 +26,11 @@
     <string name="no">Нет</string>
     <string name="requested">Запрос</string>
     <string name="requestFailed">Не удалось создать запрос:</string>
-    <string name="createOneKeyFreezeShortcut">OneKEY заморозка</string>
+    <string name="createOneKeyFreezeShortcut">OneKey-заморозка</string>
     <string name="executed">Выполнено</string>
     <string name="exception">Исключение:</string>
     <string name="launch">Запуск</string>
-    <string name="mayUnrooted">Нет ROOT прав, или режим без-ROOT не был включен</string>
+    <string name="mayUnrooted">Нет root прав, или режим без-root не был включен</string>
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и ещё %1$d</string>
@@ -44,8 +44,8 @@
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
     <string name="summary_clearUninstalledPkgsInList">* Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
-    <string name="clearUninstalledPkgsInOKFFListAsterisk">Убрать удаленные приложения из OneKEY заморозка *</string>
-    <string name="clearUninstalledPkgsInOKUFListAsterisk">Убрать удаленные приложения из OneKEY разморозка *</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">Убрать удаленные приложения из OneKey-заморозки *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">Убрать удаленные приложения из OneKey-разморозки *</string>
     <string name="clearUninstalledPkgsInFOQListAsterisk">Убрать удаленные приложения из «Заморозка после выхода» *</string>
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
@@ -57,7 +57,7 @@
     <string name="unfreeze">Разморозка</string>
     <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за нехватки прав.</string>
-    <string name="OneKeyFreezeImmediately">OneKEY заморозка</string>
+    <string name="OneKeyFreezeImmediately">OneKey-заморозка</string>
     <string name="about">О FreezeYou-Fork</string>
     <string name="plsVisit">Пожалуйста, посетите</string>
     <string name="viewMode">Режим просмотра</string>
@@ -66,7 +66,7 @@
     <string name="shortCut">Ярлыки</string>
     <string name="notAvailable">Н/Д</string>
     <string name="displayAll">Показать все</string>
-    <string name="onlyOnekey">OneKEY заморозка</string>
+    <string name="onlyOnekey">OneKey-заморозка</string>
     <string name="uninstalled">Удаленные</string>
     <string name="onlySA">Системные</string>
     <string name="onlyUA">Пользовательские</string>
@@ -76,8 +76,8 @@
     <string name="summary_checkUpdate">Страница релизов форка - канал обновлений этой сборки</string>
     <string name="addQQGroup">Присоединиться к QQ группе</string>
     <string name="dangerZone">Опасная зона</string>
-    <string name="disableMRootMode">Отключить режим без-ROOT</string>
-    <string name="disableMRootModeEx">Если вы включили режим без-ROOT, вам необходимо отключить его перед удалением FreezeYou-Fork</string>
+    <string name="disableMRootMode">Отключить режим без-root</string>
+    <string name="disableMRootModeEx">Если вы включили режим без-root, вам необходимо отключить его перед удалением FreezeYou-Fork</string>
     <string name="update">Обновить</string>
     <string name="common">Общие настройки</string>
     <string name="openImmediately">Открыть немедленно</string>
@@ -120,7 +120,7 @@
     <string name="autoUFOrFreezeAndRun">Автозаморозка или разморозка и запуск</string>
     <string name="freezeCompleted">Заморожено</string>
     <string name="UFCompleted">Разморожено</string>
-    <string name="shortCutOneKeyFreezeAdditionalOptions">Дополнительные параметры ярлыка OneKEY заморозка</string>
+    <string name="shortCutOneKeyFreezeAdditionalOptions">Дополнительные параметры ярлыка OneKey-заморозки</string>
     <string name="askIfLockScreen">Вы хотите заблокировать экран сейчас?</string>
     <string name="devicePolicyManagerNotFound">Диспетчер политики устройств не обнаружен</string>
     <string name="activated">Активировано</string>
@@ -137,8 +137,8 @@
     <string name="helpTranslate">Помогите перевести это приложение</string>
     <string name="thanksList">Благодарности участникам проекта</string>
     <string name="automation">Автоматизация</string>
-    <string name="freezeAfterScreenLock">Запускать OneKEY заморозку при выключении экрана</string>
-    <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKEY заморозка» каждый раз, когда гаснет экран.</string>
+    <string name="freezeAfterScreenLock">Запускать OneKey-заморозку при выключении экрана</string>
+    <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKey-заморозка» каждый раз, когда гаснет экран.</string>
     <string name="backgroundService">Фоновый сервис</string>
     <string name="useForegroundService">Использовать сервис переднего плана</string>
     <string name="serviceLongerEx">Снизит вероятность сбоя фонового сервиса</string>
@@ -155,8 +155,8 @@
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="plsConfirm">Пожалуйста, подтвердите</string>
-    <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-ROOT? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
-    <string name="noRootNotActivated">К сожалению режим без-ROOT не был включен сейчас!</string>
+    <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-root? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
+    <string name="noRootNotActivated">К сожалению, режим без-root сейчас не включен!</string>
     <string name="faq">ЧАВО</string>
     <string name="executeImmediately">Выполнить</string>
     <string name="oneKeyLockScreen">Блокировка экрана</string>
@@ -189,7 +189,7 @@
     <string name="askIfDel">Вы уверены, что хотите удалить?</string>
     <string name="folder">Папка</string>
     <string name="later">Потом</string>
-    <string name="onlyMROOTModeUse">Используется только в режиме без-Root</string>
+    <string name="onlyMROOTModeUse">Используется только в режиме без-root</string>
     <string name="organizationName">Название организации</string>
     <string name="avoidFreezeNotifyingApplications">Предотвращение заморозки приложений с уведомлениями</string>
     <string name="avoidFreezeNotifyingApplicationsSummary">Пропускает заморозку приложения, пока у него есть активное уведомление (например, воспроизведение музыки, загрузки), чтобы оно продолжало работать.</string>
@@ -206,9 +206,9 @@
     <string name="noNotificationListenerPermission">Разрешение отслеживания уведомлений не предоставлено</string>
     <string name="noProblemsFound">Проблем не найдено</string>
     <string name="everySeemsAllRight">Кажется, все в порядке</string>
-    <string name="noMRootPermission">Режим без-ROOT не предоставлен</string>
+    <string name="noMRootPermission">Режим без-root не предоставлен</string>
     <string name="someFuncMayRestrict">Некоторые функции могут быть ограничены</string>
-    <string name="noRootPermission">Разрешение ROOT не предоставлено</string>
+    <string name="noRootPermission">Разрешение root не предоставлено</string>
     <string name="noIgnoringBO">Оптимизация батареи не отключена</string>
     <string name="someFuncMayBeAff">Некоторые функции могут быть затронуты</string>
     <string name="notUpdatedForALongTime">Давно не обновлялось</string>
@@ -303,7 +303,7 @@
     <string name="saveBackupToFile">Сохранить в файл</string>
     <string name="restoreBackupFromFile">Восстановить из файла</string>
     <string name="backupViaTextHint">Либо перенести текстом через буфер обмена:</string>
-    <string name="backupGroupOneKeyLists">Списки OneKEY</string>
+    <string name="backupGroupOneKeyLists">Списки OneKey</string>
     <string name="backupGroupAllowLists">Белые списки</string>
     <string name="appStore">Магазин приложений</string>
     <string name="finish">Готово</string>
@@ -382,7 +382,7 @@
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
     <string name="criticalPackagesWarning">В выделении есть пакеты, от которых зависит система:\n\n%1$s\n\nИх заморозка может оставить устройство без строки состояния, Настроек или клавиатуры, и вернуть всё будет непросто. Всё равно продолжить?</string>
-    <string name="runningFilterUnavailable">Фильтр «Работающие» доступен только в режимах ROOT или Shizuku. Смените режим: Настройки \u2192 Заморозка и разморозка \u2192 Выбрать режим.</string>
+    <string name="runningFilterUnavailable">Фильтр «Работающие» доступен только в режимах root или Shizuku. Смените режим: Настройки \u2192 Заморозка и разморозка \u2192 Выбрать режим.</string>
     <string name="scheduledTaskCommandsSyntax">Настройка заданий</string>
     <string name="offlineHelpAssetLanguageCode">ru</string>
     <string name="lastInstall">Недавно установленные</string>
@@ -394,8 +394,8 @@
     <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Возможно, не удастся использовать запланированные задачи для включения или отключения Bluetooth</string>
     <string name="gotoStore">Перейти в магазин приложений</string>
     <string name="selfRevokeProfileOwner">Отключить режим владельца профиля</string>
-    <string name="selfRevokeProfileOwnerSummary">Нужно только если вы использовали режим Без root (Владелец профиля). Отзывает право владельца профиля — иначе удаление FreezeYou может не сработать.</string>
-    <string name="uninstallSummary">Удаляет FreezeYou. Если вы использовали режим Без root (Владелец профиля), сначала отзовите его выше — иначе удаление может не сработать.</string>
+    <string name="selfRevokeProfileOwnerSummary">Нужно только если вы использовали режим без-root (владелец профиля). Отзывает право владельца профиля — иначе удаление FreezeYou может не сработать.</string>
+    <string name="uninstallSummary">Удаляет FreezeYou. Если вы использовали режим без-root (владелец профиля), сначала отзовите его выше — иначе удаление может не сработать.</string>
     <string name="isNotProfileOwner">Это не профиль владельца устройства</string>
     <string name="getBackupData">Получить резервные данные</string>
     <string name="theAppHasNotificationInTheNotificationBar">Приложение имеет уведомления в панели уведомлений</string>
@@ -413,8 +413,8 @@
         <item>Незамороженные</item>
         <item>Системные приложения</item>
         <item>Пользовательские приложения</item>
-        <item>OneKEY заморозка</item>
-        <item>OneKEY разморозка</item>
+        <item>OneKey-заморозка</item>
+        <item>OneKey-разморозка</item>
         <item>Заморозка после выхода</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
@@ -450,10 +450,10 @@
         <item>При заморозке приложений</item>
     </string-array>
     <string-array name="selectFUFModeSelection">
-        <item>без-ROOT (режим DPM)</item>
+        <item>Без-root (режим DPM)</item>
         <item>Без-root (режим владельца профиля)</item>
-        <item>ROOT (режим скрытия)</item>
-        <item>ROOT (режим отключения)</item>
+        <item>Root (режим скрытия)</item>
+        <item>Root (режим отключения)</item>
         <item>Legacy (автоматический DPM или режим отключения)</item>
         <item>Системное (режим DISABLE)</item>
         <item>Системное (режим Disable_User)</item>
@@ -469,7 +469,7 @@
     </string-array>
     <string name="mainScreenSettings">Главный экран</string>
     <string name="accessAndSecurity">Вход и безопасность</string>
-    <string name="category_feedback">Обратная связь</string>
+    <string name="category_feedback">Отклик интерфейса</string>
     <string name="category_freezeMode">Режим</string>
     <string name="category_protection">Защита</string>
     <string name="category_shortcuts">Ярлыки</string>
