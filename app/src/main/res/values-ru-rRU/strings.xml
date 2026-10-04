@@ -7,7 +7,7 @@
     <string name="cancel">Отмена</string>
     <string name="chooseDetailAction">Пожалуйста, выберите действие</string>
     <string name="added">Добавлен</string>
-    <string name="notice">Подсказка</string>
+    <string name="notice">Внимание</string>
     <string name="freeze">Заморозка</string>
     <string name="more">Дополнительно</string>
     <string name="appDetail">Сведения о приложении</string>
@@ -111,7 +111,7 @@
     <string name="launchMode">Вид при запуске</string>
     <string name="freezeImmediately">Заморозка немедленно</string>
     <string name="UFImmediately">Разморозка немедленно</string>
-    <string name="plsRemoveUninstalledApplications">[Подсказка] Вы можете убрать удаленные приложения из списка</string>
+    <string name="plsRemoveUninstalledApplications">Удаленные приложения можно убрать из списка</string>
     <string name="notificationBarFreezeImmediately">Заморозка сразу после нажатия на уведомление о заморозке/разморозке</string>
     <string name="onClickFunction">Действия при нажатии</string>
     <string name="chooseAction">Выбрать действие</string>
@@ -182,7 +182,7 @@
     <string name="showInRecents">Показать в недавних</string>
     <string name="showInRecentsSummary">Оставляет FreezeYou видимым в списке недавних приложений (многозадачность).</string>
     <string name="mayHaveNoEffectsL">Может не иметь никакого эффекта на Android 4.4 и ниже</string>
-    <string name="lesserToast">Реже показывать всплывающие подсказки</string>
+    <string name="lesserToast">Реже показывать всплывающие сообщения</string>
     <string name="avoidFreezeForegroundApplications">Предотвращение заморозки приложений переднего плана</string>
     <string name="avoidFreezeForegroundApplicationsSummary">Пропускает заморозку приложения, пока оно находится на переднем плане, чтобы не прерывать активное использование. Требует включения Специальных возможностей (Accessibility Service).</string>
     <string name="delAllScheduledTasks">Удалить все запланированные задачи</string>
