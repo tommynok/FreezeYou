@@ -76,8 +76,7 @@
     <style name="TextAppearance.App.PopupMenu.Dark" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:textColor">@color/appOnDarkSurface</item>
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <!-- Material3 draws the dialog itself: rounded, on ?attr/colorSurface, with insets for the
@@ -111,7 +110,7 @@
 
     <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -175,7 +174,7 @@
         <item name="actionMenuTextColor">@color/appOnDarkSurface</item>
         <!-- The compact typeface experiment: one commit, one revert. -->
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -234,7 +233,7 @@
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
         <!-- The compact typeface experiment: one commit, one revert. -->
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -267,7 +266,7 @@
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
         <!-- The compact typeface experiment: one commit, one revert. -->
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -320,7 +319,7 @@
         <item name="toolbarStyle">@style/Widget.App.Toolbar.Dark</item>
         <!-- The compact typeface experiment: one commit, one revert. -->
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -369,7 +368,7 @@
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <!-- The compact typeface experiment: one commit, one revert. -->
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -409,98 +408,82 @@
 
     <style name="TextAppearance.App.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.BodySmall" parent="TextAppearance.Material3.BodySmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <style name="TextAppearance.App.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
     <!-- Light popups keep the stock size and colour; only the family changes. -->
     <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-        <item name="android:textFontWeight">500</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 </resources>
