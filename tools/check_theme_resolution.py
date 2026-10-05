@@ -203,8 +203,13 @@ EXPECTATIONS = {
     },
     "AppTheme.Default.Main": {
         "colorSurface": "#DCDCDE",
-        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Main.Light",
         "actionBarPopupTheme": "ThemeOverlay.App.Popup.Main.Light",
+    },
+    "ThemeOverlay.App.Dialog.Main.Light": {
+        "colorSurface": "#F0EFF7",
+        "colorPrimary": "#1976D2",
+        "elevationOverlayEnabled": "false",
     },
     "ThemeOverlay.App.Popup.Main.Light": {
         "colorSurface": "#F0EFF7",
@@ -247,6 +252,22 @@ M3_PARENTS = ("Theme.Material3.", "ThemeOverlay.Material3.", "Widget.Material3."
 def check(res_dir, apis, strict):
     styles, colors = parse_resources(res_dir)
     findings = []
+
+    main_dialog_overlay = effective(styles, "ThemeOverlay.App.Dialog.Main.Light", max(apis))
+    if not main_dialog_overlay:
+        findings.append(("main-dialog-overlay", "ThemeOverlay.App.Dialog.Main.Light is not defined"))
+    else:
+        _, body = main_dialog_overlay
+        if body["parent"] != "ThemeOverlay.App.Dialog.Light":
+            findings.append((
+                "main-dialog-overlay",
+                "ThemeOverlay.App.Dialog.Main.Light must inherit ThemeOverlay.App.Dialog.Light",
+            ))
+        if body["items"] != {"colorSurface": "@color/appMainPopupLight"}:
+            findings.append((
+                "main-dialog-overlay",
+                "ThemeOverlay.App.Dialog.Main.Light must override only colorSurface with appMainPopupLight",
+            ))
 
     for name, places in sorted(find_overridden_styles(styles).items()):
         dirs = sorted({q for q, _ in places})

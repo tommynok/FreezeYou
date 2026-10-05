@@ -91,6 +91,24 @@ class ThemeSelectionTest {
         return names
     }
 
+    private fun styleElement(file: File, name: String): Element? {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val styles = document.getElementsByTagName("style")
+        for (i in 0 until styles.length) {
+            val style = styles.item(i) as Element
+            if (style.getAttribute("name") == name) return style
+        }
+        return null
+    }
+
+    private fun styleItems(style: Element): Map<String, String> {
+        val items = style.getElementsByTagName("item")
+        return (0 until items.length).associate { index ->
+            val item = items.item(index) as Element
+            item.getAttribute("name") to item.textContent.trim()
+        }
+    }
+
     @Test
     fun theMenuOffersTheAgreedThreeThemes() {
         val resDir = File(moduleDir(), "src/main/res")
@@ -176,6 +194,37 @@ class ThemeSelectionTest {
             "ThemeUtils no longer has an else branch in processSetTheme, so a stored value with " +
                 "no branch (the default, or a palette from an older version) would apply no theme.",
             "else -> context.setTheme(" in themeUtils
+        )
+    }
+
+    @Test
+    fun mainDialogsUsePopupSurfaceWithoutChangingSettingsDialogs() {
+        val stylesFile = File(moduleDir(), "src/main/res/values/styles.xml")
+        fun style(name: String): Element =
+            styleElement(stylesFile, name) ?: throw AssertionError("Missing style $name")
+
+        val mainTheme = style("AppTheme.Default.Main")
+        assertEquals("AppTheme.Default", mainTheme.getAttribute("parent"))
+        assertEquals(
+            "@style/ThemeOverlay.App.Dialog.Main.Light",
+            styleItems(mainTheme)["materialAlertDialogTheme"]
+        )
+
+        val mainDialog = style("ThemeOverlay.App.Dialog.Main.Light")
+        assertEquals("ThemeOverlay.App.Dialog.Light", mainDialog.getAttribute("parent"))
+        assertEquals(
+            mapOf("colorSurface" to "@color/appMainPopupLight"),
+            styleItems(mainDialog)
+        )
+
+        val settingsTheme = style("AppTheme.Default")
+        assertEquals(
+            "@style/ThemeOverlay.App.Dialog.Light",
+            styleItems(settingsTheme)["materialAlertDialogTheme"]
+        )
+        assertEquals(
+            "@color/appSurfaceLight",
+            styleItems(style("ThemeOverlay.App.Dialog.Light"))["colorSurface"]
         )
     }
 
