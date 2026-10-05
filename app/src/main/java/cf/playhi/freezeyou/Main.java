@@ -40,6 +40,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -171,6 +172,7 @@ public class Main extends FreezeYouBaseActivity {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        applyOriginalLightMainBackground();
         try {
             manageCrashLog();
         } catch (Exception e) {
@@ -180,6 +182,24 @@ public class Main extends FreezeYouBaseActivity {
 //        throw new RuntimeException("自定义异常：仅于异常上报测试中使用");//发版前务必注释
     }
 
+    /**
+     * The stable-fork light theme left its home page on AppCompat's near-white background.
+     * Restore that colour on Main only; settings keep their separate grey palette, and the two
+     * dark themes continue to use the window background supplied by their theme.
+     */
+    private void applyOriginalLightMainBackground() {
+        String selectedTheme = getUiTheme(this);
+        if (selectedTheme == null
+                || "black".equals(selectedTheme)
+                || "deepBlack".equals(selectedTheme)) {
+            return;
+        }
+
+        View content = findViewById(android.R.id.content);
+        if (content != null) {
+            content.setBackgroundColor(ContextCompat.getColor(this, R.color.appMainScreenLight));
+        }
+    }
 
 //    @Override
 //    protected void onNewIntent(Intent intent) {

@@ -34,6 +34,9 @@
         pure black with containers only as light as they have to be to stay visible.
     -->
     <color name="appScreenLight">#E4E4E7</color>
+    <!-- The original stable-fork light theme used AppCompat's near-white on the home page.
+         Isolate it here so the settings screens keep their agreed grey background. -->
+    <color name="appMainScreenLight">#FAFAFA</color>
     <color name="appSurfaceLight">#DCDCDE</color>
     <!-- Only the settings screens paint with this one (see ThemePalettes): their cards are light
          on the grey screen, the way the builds before 05.10 had them. Near white rather than
