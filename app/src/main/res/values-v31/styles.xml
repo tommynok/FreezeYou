@@ -23,6 +23,30 @@
 
     <style name="AppTheme.Default.Dialog" parent="Theme.Material3.Light">
         <item name="android:dialogCornerRadius">16dp</item>
+        <!-- The typeface block, repeated for the same reason the popup styles below are repeated:
+             this theme's parent is an outside Material3 one, so it inherits none of ours. Without
+             these the light dialogs on Android 12+ were the one surface in the app still set in the
+             system regular - title, message and action labels - while every screen behind them was
+             condensed. -->
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.App.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.App.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.App.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.App.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.App.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.App.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.App.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.App.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.App.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <!-- This theme's parent is an outside Material3 one, so it does not inherit the pair from
              Base.AppTheme.Light.Dialog the way it does below API 31. A dialog is a container, and
              the container is the colour the Material dialog paints itself with. -->

@@ -90,4 +90,38 @@
         <item name="fontFamily">@font/roboto_condensed</item>
     </style>
 
+    <!-- The app-wide typeface on API 26+, where the framework resolves @font natively. This is the
+         same leaf style values/ declares - a same-named style here replaces that one entirely - so
+         the font is the only thing that changes with the API level and the rest of each theme still
+         arrives through its .Core parent. Without this file the theme-level font stayed the system
+         string on every device, and the text that does not come through one of the appearances above
+         (plain views, fields, the labels of switches and checkboxes) kept the system condensed while
+         the buttons and the dialogs had the bundled one: two typefaces in one row. Below 26 nothing
+         here applies and the theme keeps the system family, which is also what keeps Robolectric's
+         old-SDK shadows out of the way. -->
+    <style name="Base.AppTheme.Dark" parent="Base.AppTheme.Dark.Core">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="Base.AppTheme.Dark.Dialog" parent="Base.AppTheme.Dark.Dialog.Core">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="Base.AppTheme.Light.DarkActionBar" parent="Base.AppTheme.Light.DarkActionBar.Core">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="Base.AppTheme.Light" parent="Base.AppTheme.Light.Core">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="Base.AppTheme.Light.Dialog" parent="Base.AppTheme.Light.Dialog.Core">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
 </resources>

@@ -108,9 +108,7 @@
         <item name="colorPrimary">?attr/colorAccent</item>
     </style>
 
-    <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
+    <style name="Base.AppTheme.Translucent.NoTitleBar.Core" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -126,6 +124,17 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+    </style>
+
+        <!-- The app-wide typeface. This base is the one theme that is not given a values-v26
+             leaf of its own: values-v19 and values-v21 redefine it with an outside parent, so
+             at API 19 and up the most specific definition of this name wins and this leaf is
+             not it. Adding a v26 leaf here would take the theme back over on 26+ and hand its
+             eight activities their Material3 attributes - a fix, but a different one, and it
+             has to be made on purpose. Until then the font is only missing on 19+, as it was. -->
+    <style name="Base.AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
     </style>
 
     <style name="AppTheme.Translucent.NoTitleBar" parent="Base.AppTheme.Translucent.NoTitleBar">
@@ -153,7 +162,7 @@
         colorAccent is kept as the app's accent: it is what the action buttons are tinted with,
         and it is set per palette in the AppTheme.* styles below.
     -->
-    <style name="Base.AppTheme.Dark" parent="Theme.Material3.Dark">
+    <style name="Base.AppTheme.Dark.Core" parent="Theme.Material3.Dark">
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Dark</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
@@ -172,9 +181,6 @@
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
         <item name="actionMenuTextColor">@color/appOnDarkSurface</item>
-        <!-- The compact typeface experiment: one commit, one revert. -->
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -190,6 +196,15 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+    </style>
+
+        <!-- The app-wide typeface, and the only thing about these themes that differs by API
+             level. It lives in a style of its own because a same-named style in a version
+             folder replaces this one entirely: the rest of the theme stays in the .Core style
+             above, and values-v26 repoints just the font at the bundled family. -->
+    <style name="Base.AppTheme.Dark" parent="Base.AppTheme.Dark.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
     </style>
 
     <style name="AppTheme.Dark.Default" parent="Base.AppTheme.Dark">
@@ -213,7 +228,7 @@
 
     <!-- The two light bases carry the same items; a style can have only one parent, and the
          ActionBar / no ActionBar variants have to stay separate names. -->
-    <style name="Base.AppTheme.Light.DarkActionBar" parent="Theme.Material3.Light">
+    <style name="Base.AppTheme.Light.DarkActionBar.Core" parent="Theme.Material3.Light">
         <!-- Material3 keeps the AppCompat accent attribute, but fills it with its own
              ?attr/colorSecondary, which is the grey purple the filled buttons and the dialog
              labels would come out in. Point it back at the app blue. -->
@@ -237,9 +252,6 @@
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
-        <!-- The compact typeface experiment: one commit, one revert. -->
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -259,7 +271,16 @@
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
     </style>
 
-    <style name="Base.AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
+        <!-- The app-wide typeface, and the only thing about these themes that differs by API
+             level. It lives in a style of its own because a same-named style in a version
+             folder replaces this one entirely: the rest of the theme stays in the .Core style
+             above, and values-v26 repoints just the font at the bundled family. -->
+    <style name="Base.AppTheme.Light.DarkActionBar" parent="Base.AppTheme.Light.DarkActionBar.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
+    </style>
+
+    <style name="Base.AppTheme.Light.Core" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorAccent">@color/appAccent</item>
         <!-- The light family's own pair, declared the way the dark ones declare theirs. Without
              these two the theme inherited Material3's near white for both the screen and the
@@ -276,9 +297,6 @@
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.ActionBarPopup</item>
-        <!-- The compact typeface experiment: one commit, one revert. -->
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -296,6 +314,15 @@
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
+    </style>
+
+        <!-- The app-wide typeface, and the only thing about these themes that differs by API
+             level. It lives in a style of its own because a same-named style in a version
+             folder replaces this one entirely: the rest of the theme stays in the .Core style
+             above, and values-v26 repoints just the font at the bundled family. -->
+    <style name="Base.AppTheme.Light" parent="Base.AppTheme.Light.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
     </style>
 
     <!-- The light theme, and it is the only light one: the coloured palettes (blue, yellow,
@@ -315,7 +342,7 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="Base.AppTheme.Dark.Dialog" parent="Theme.Material3.Dark.Dialog">
+    <style name="Base.AppTheme.Dark.Dialog.Core" parent="Theme.Material3.Dark.Dialog">
         <item name="windowNoTitle">true</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Dark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
@@ -329,9 +356,6 @@
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Dark</item>
         <item name="colorControlNormal">@color/appOnDarkSurface</item>
         <item name="toolbarStyle">@style/Widget.App.Toolbar.Dark</item>
-        <!-- The compact typeface experiment: one commit, one revert. -->
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -347,6 +371,15 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+    </style>
+
+        <!-- The app-wide typeface, and the only thing about these themes that differs by API
+             level. It lives in a style of its own because a same-named style in a version
+             folder replaces this one entirely: the rest of the theme stays in the .Core style
+             above, and values-v26 repoints just the font at the bundled family. -->
+    <style name="Base.AppTheme.Dark.Dialog" parent="Base.AppTheme.Dark.Dialog.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
     </style>
 
     <style name="AppTheme.Dark.Dialog.Default" parent="Base.AppTheme.Dark.Dialog">
@@ -371,7 +404,7 @@
         <item name="colorAccent">@color/appAccent</item>
     </style>
 
-    <style name="Base.AppTheme.Light.Dialog" parent="Theme.Material3.Light.Dialog">
+    <style name="Base.AppTheme.Light.Dialog.Core" parent="Theme.Material3.Light.Dialog">
         <item name="windowNoTitle">true</item>
         <!-- Same pair as the light screens: a dialog is a container, and the container is the
              colour the Material dialog itself paints with (?attr/colorSurface). -->
@@ -381,9 +414,6 @@
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
-        <!-- The compact typeface experiment: one commit, one revert. -->
-        <item name="android:fontFamily">sans-serif-condensed</item>
-        <item name="fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>
@@ -401,6 +431,15 @@
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
+    </style>
+
+        <!-- The app-wide typeface, and the only thing about these themes that differs by API
+             level. It lives in a style of its own because a same-named style in a version
+             folder replaces this one entirely: the rest of the theme stays in the .Core style
+             above, and values-v26 repoints just the font at the bundled family. -->
+    <style name="Base.AppTheme.Light.Dialog" parent="Base.AppTheme.Light.Dialog.Core">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="fontFamily">sans-serif-condensed</item>
     </style>
 
     <!-- The dialog form of the light theme, and again the only one: the coloured dialog styles are
