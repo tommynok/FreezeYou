@@ -113,11 +113,16 @@
         <item name="subtitleTextColor">@color/appOnDarkSurface</item>
     </style>
 
+    <!-- Material3 applies a surface/elevation tint to MaterialAlertDialog shapes, while the
+         popup menus use a flat colorSurface drawable. Disable that tint so both surfaces have
+         the same palette colour. -->
     <style name="ThemeOverlay.App.Dialog.Dark" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="elevationOverlayEnabled">false</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
     </style>
 
     <style name="ThemeOverlay.App.Dialog.Light" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="elevationOverlayEnabled">false</item>
         <item name="colorPrimary">?attr/colorAccent</item>
     </style>
 
