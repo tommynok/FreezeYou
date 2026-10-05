@@ -174,7 +174,7 @@
     <string name="hourShouldBetween">Години мають бути між 0 і 23</string>
     <string name="minutesShouldBetween">Хвилини повинні бути від 0 до 59</string>
     <string name="requestFailedPlsRetry">Запит не вдався, спробуйте ще раз</string>
-    <string name="uninstall">Видалення</string>
+    <string name="uninstall">Видалити застосунок</string>
     <string name="triggers">Тригери</string>
     <string name="triggers_extra_parameters">Додаткові параметри</string>
     <string name="delete">Видалити</string>

@@ -53,14 +53,10 @@
         android:id="@+id/main_sca_menu_removeFromTheList"
         android:title="@string/remove" />
 
-    <item android:title="@string/more">
-        <menu>
-            <item
-                android:id="@+id/main_sca_menu_gotoStore"
-                android:title="@string/gotoStore" />
-            <item
-                android:id="@+id/main_sca_menu_uninstall"
-                android:title="@string/uninstall" />
-        </menu>
-    </item>
+    <item
+        android:id="@+id/main_sca_menu_gotoStore"
+        android:title="@string/gotoStore" />
+    <item
+        android:id="@+id/main_sca_menu_uninstall"
+        android:title="@string/uninstall" />
 </menu>
