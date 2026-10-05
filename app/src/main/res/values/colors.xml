@@ -9,13 +9,22 @@
         The screen colour is the theme's android:colorBackground (the window background of
         every screen) and the container colour is its colorSurface: the toolbar, the menus,
         the dialogs and - for the same reason - the cards the settings screens draw behind
-        their rows. One pair per theme is what keeps those four surfaces in agreement.
+        their rows. One pair per theme is what keeps those four surfaces in agreement, and
+        every theme now declares both attributes. The light ones used to declare neither: the
+        light screens and dialogs came out in Material3's near white (#FFFBFE) while the
+        settings screens painted themselves with these values, so the app disagreed with itself
+        and the owner read the near-white screen as glare.
+
+        Light is the only family whose container is a little DARKER than its screen, and that
+        is the stock relationship the owner asked for: a slightly grey screen, with menus,
+        dialogs and cards a touch greyer and cooler on top of it so they read as surfaces
+        instead of holes. The step is about 8% of luminance - visible, not glaring.
 
         Dark is a dark grey theme with clearly lighter containers; black is the AMOLED one,
         pure black with containers only as light as they have to be to stay visible.
     -->
-    <color name="appScreenLight">#E2E6EE</color>
-    <color name="appSurfaceLight">#FFFFFF</color>
+    <color name="appScreenLight">#F6F6FA</color>
+    <color name="appSurfaceLight">#F0EFF6</color>
     <color name="appScreenDark">#1E1F22</color>
     <color name="appSurfaceDark">#35383E</color>
     <color name="appScreenBlack">#000000</color>
