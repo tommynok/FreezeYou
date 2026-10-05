@@ -37,6 +37,9 @@
     <!-- The original stable-fork light theme used AppCompat's near-white on the home page.
          Isolate it here so the settings screens keep their agreed grey background. -->
     <color name="appMainScreenLight">#FAFAFA</color>
+    <!-- Original home-page popup tone, measured from the owner's stock screenshot. It is applied
+         only to app action popups; settings menus and all dialog surfaces keep their own colors. -->
+    <color name="appMainPopupLight">#F0EFF7</color>
     <color name="appSurfaceLight">#DCDCDE</color>
     <!-- Only the settings screens paint with this one (see ThemePalettes): their cards are light
          on the grey screen, the way the builds before 05.10 had them. Near white rather than

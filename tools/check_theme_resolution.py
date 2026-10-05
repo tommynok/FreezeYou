@@ -199,6 +199,27 @@ EXPECTATIONS = {
         "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
         "popupMenuStyle": "Widget.App.PopupMenu",
         "actionOverflowMenuStyle": "Widget.App.Overflow",
+        "actionBarPopupTheme": "ThemeOverlay.App.ActionBarPopup",
+    },
+    "AppTheme.Default.Main": {
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "actionBarPopupTheme": "ThemeOverlay.App.Popup.Main.Light",
+    },
+    "ThemeOverlay.App.Popup.Main.Light": {
+        "colorSurface": "#F0EFF7",
+        "popupMenuStyle": "Widget.App.PopupMenu.Main",
+        "listPopupWindowStyle": "Widget.App.ListPopup.Main",
+        "actionOverflowMenuStyle": "Widget.App.Overflow.Main",
+    },
+    "Widget.App.PopupMenu.Main": {
+        "android:popupBackground": "@drawable/rounded_main_popup_menu",
+    },
+    "Widget.App.ListPopup.Main": {
+        "android:popupBackground": "@drawable/rounded_main_popup_menu",
+    },
+    "Widget.App.Overflow.Main": {
+        "android:popupBackground": "@drawable/rounded_main_popup_menu",
     },
     "AppTheme.Default.Dialog": {
         "colorSurface": "#DCDCDE",

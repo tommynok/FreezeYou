@@ -110,7 +110,9 @@ import static cf.playhi.freezeyou.utils.Support.showChooseActionPopupMenu;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeDot;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeFabDotBackground;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeSecondDot;
+import static cf.playhi.freezeyou.utils.ThemeUtils.getLightPopupContext;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getUiTheme;
+import static cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
@@ -170,6 +172,9 @@ public class Main extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
+        if (isLightUiTheme(this)) {
+            setTheme(R.style.AppTheme_Default_Main);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         applyOriginalLightMainBackground();
@@ -188,10 +193,7 @@ public class Main extends FreezeYouBaseActivity {
      * dark themes continue to use the window background supplied by their theme.
      */
     private void applyOriginalLightMainBackground() {
-        String selectedTheme = getUiTheme(this);
-        if (selectedTheme == null
-                || "black".equals(selectedTheme)
-                || "deepBlack".equals(selectedTheme)) {
+        if (!isLightUiTheme(this)) {
             return;
         }
 
@@ -393,7 +395,7 @@ public class Main extends FreezeYouBaseActivity {
             @Override
             public void onClick(View v) {
                 moreSettingsImageButton.setAlpha(1f);
-                PopupMenu popupMenu = new PopupMenu(Main.this, v);
+                PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
                 popupMenu.inflate(R.menu.menu);
                 onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -1149,7 +1151,7 @@ public class Main extends FreezeYouBaseActivity {
                     if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
                         return;
                     }
-                    PopupMenu popupMenu = new PopupMenu(Main.this, v);
+                    PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
                     popupMenu.inflate(R.menu.multichoicemenu);
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
@@ -1169,7 +1171,8 @@ public class Main extends FreezeYouBaseActivity {
             if (!getString(R.string.notAvailable).equals(name)) {
                 switch (appListViewOnClickMode) {
                     case APPListViewOnClickMode_chooseAction:
-                        showChooseActionPopupMenu(Main.this, Main.this, view, pkgName, name);
+                        showChooseActionPopupMenu(
+                                getLightPopupContext(Main.this), Main.this, view, pkgName, name);
                         break;
                     case APPListViewOnClickMode_autoUFOrFreeze:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {

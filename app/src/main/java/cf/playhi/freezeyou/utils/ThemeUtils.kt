@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
+import android.view.ContextThemeWrapper
 import android.view.Window
 import android.view.WindowManager
 import androidx.annotation.NonNull
@@ -83,6 +84,25 @@ internal object ThemeUtils {
             else uiStyleSelection.getValue()
         } else {
             uiStyleSelection.getValue()
+        }
+    }
+
+    @JvmStatic
+    fun isLightUiTheme(@NonNull context: Context): Boolean {
+        val selectedTheme = getUiTheme(context) ?: return false
+        return selectedTheme != "black" && selectedTheme != "deepBlack"
+    }
+
+    /**
+     * Use only for Main-screen popups: the wrapper gives the popup the original light surface
+     * without changing the activity theme, Settings popups, or any Material alert-dialog surface.
+     */
+    @JvmStatic
+    fun getLightPopupContext(@NonNull context: Context): Context {
+        return if (isLightUiTheme(context)) {
+            ContextThemeWrapper(context, R.style.ThemeOverlay_App_Popup_Main_Light)
+        } else {
+            context
         }
     }
 

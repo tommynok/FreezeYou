@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original light home-menu tone, isolated from the shared settings/dialog surface. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="@color/appMainPopupLight" />
+    <padding
+        android:bottom="4dp"
+        android:top="4dp" />
+</shape>

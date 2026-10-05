@@ -68,6 +68,19 @@
         <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
     </style>
 
+    <!-- A brighter, home-only version. Settings menus keep the regular style; dialogs use their own overlay. -->
+    <style name="Widget.App.PopupMenu.Main" parent="Widget.App.PopupMenu">
+        <item name="android:popupBackground">@drawable/rounded_main_popup_menu</item>
+    </style>
+
+    <style name="Widget.App.ListPopup.Main" parent="Widget.App.ListPopup">
+        <item name="android:popupBackground">@drawable/rounded_main_popup_menu</item>
+    </style>
+
+    <style name="Widget.App.Overflow.Main" parent="Widget.App.Overflow">
+        <item name="android:popupBackground">@drawable/rounded_main_popup_menu</item>
+    </style>
+
     <!-- PreferenceCategory's framework separator style brings all-caps text and a private divider
          background. Rebuild it so section labels follow the app type scale and sit cleanly inside
          the rounded preference-group cards. -->
@@ -104,6 +117,14 @@
          overlay keeps the popup on the activity theme, and then every menu in the app is painted
          by the palette of the theme that opened it. -->
     <style name="ThemeOverlay.App.ActionBarPopup" parent="" />
+
+    <!-- Main-page popups opt in; Settings keeps the shared popup surface. -->
+    <style name="ThemeOverlay.App.Popup.Main.Light" parent="ThemeOverlay.App.ActionBarPopup">
+        <item name="colorSurface">@color/appMainPopupLight</item>
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu.Main</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopup.Main</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow.Main</item>
+    </style>
 
     <!-- The app bar carries its own title colour. Material3 leaves the title to the default text
          colour, which on a dark theme is dimmer than the icons next to it; here it is the same
@@ -372,6 +393,11 @@
         <item name="colorAccent">#424242</item>
         <!-- #eeeeee is a light bar, so this one theme of the light family wants dark icons. -->
         <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- The home screen alone gives its action-bar overflow the lighter original popup surface. -->
+    <style name="AppTheme.Default.Main" parent="AppTheme.Default">
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.App.Popup.Main.Light</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Dialog.Core" parent="Theme.Material3.Dark.Dialog">
