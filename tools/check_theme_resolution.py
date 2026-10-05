@@ -191,7 +191,7 @@ EXPECTATIONS = {
     },
     "Base.AppTheme.Light.Dialog.Core": {
         "colorSurface": "#DCDCDE",
-        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Main.Light",
     },
     "AppTheme.Default": {
         "colorAccent": "#1976D2",  # values-v31 and up
@@ -228,7 +228,7 @@ EXPECTATIONS = {
     },
     "AppTheme.Default.Dialog": {
         "colorSurface": "#DCDCDE",
-        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Main.Light",
         "popupMenuStyle": "Widget.App.PopupMenu",
         "actionOverflowMenuStyle": "Widget.App.Overflow",
     },

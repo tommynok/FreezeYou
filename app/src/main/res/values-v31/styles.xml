@@ -55,11 +55,10 @@
         <item name="colorAccent">@color/appAccent</item>
         <!-- This theme replaces Base.AppTheme.Light.Dialog on Android 12+, and it is the only
              dialog theme here whose parent is an outside Material3 theme rather than ours, so it
-             does not inherit materialAlertDialogTheme. Dialogs are built with
-             MaterialAlertDialogBuilder, which reads exactly that attribute for its action labels;
-             without it they fall back to the Material3 default overlay and print in the baseline
-             purple instead of the app's accent. Same overlay the other light dialog themes use. -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
+             does not inherit materialAlertDialogTheme. Keep the Main dialog overlay explicit: this
+             leaf activity must match the home popup surface, while SettingsActivity uses the
+             screen theme and keeps ThemeOverlay.App.Dialog.Light. -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Main.Light</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>

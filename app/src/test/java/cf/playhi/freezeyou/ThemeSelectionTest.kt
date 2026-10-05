@@ -198,7 +198,7 @@ class ThemeSelectionTest {
     }
 
     @Test
-    fun mainDialogsUsePopupSurfaceWithoutChangingSettingsDialogs() {
+    fun mainAndDialogActivitiesUsePopupSurfaceWithoutChangingSettingsScreen() {
         val stylesFile = File(moduleDir(), "src/main/res/values/styles.xml")
         fun style(name: String): Element =
             styleElement(stylesFile, name) ?: throw AssertionError("Missing style $name")
@@ -215,6 +215,23 @@ class ThemeSelectionTest {
         assertEquals(
             mapOf("colorSurface" to "@color/appMainPopupLight"),
             styleItems(mainDialog)
+        )
+
+        val lightDialogCore = style("Base.AppTheme.Light.Dialog.Core")
+        assertEquals(
+            "@style/ThemeOverlay.App.Dialog.Main.Light",
+            styleItems(lightDialogCore)["materialAlertDialogTheme"]
+        )
+        assertEquals(
+            "Base.AppTheme.Light.Dialog",
+            style("AppTheme.Default.Dialog").getAttribute("parent")
+        )
+        val v31StylesFile = File(moduleDir(), "src/main/res/values-v31/styles.xml")
+        val v31DialogLeaf = styleElement(v31StylesFile, "AppTheme.Default.Dialog")
+            ?: throw AssertionError("Missing values-v31/AppTheme.Default.Dialog")
+        assertEquals(
+            "@style/ThemeOverlay.App.Dialog.Main.Light",
+            styleItems(v31DialogLeaf)["materialAlertDialogTheme"]
         )
 
         val settingsTheme = style("AppTheme.Default")
