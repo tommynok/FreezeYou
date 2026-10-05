@@ -122,8 +122,11 @@
     </style>
 
     <style name="ThemeOverlay.App.Dialog.Light" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <!-- Match the flat popup surface and blue action accent even when a versioned screen theme
+             replaces its base style or the legacy light leaf uses a different colorAccent. -->
+        <item name="colorSurface">@color/appSurfaceLight</item>
         <item name="elevationOverlayEnabled">false</item>
-        <item name="colorPrimary">?attr/colorAccent</item>
+        <item name="colorPrimary">@color/appAccent</item>
     </style>
 
     <style name="Base.AppTheme.Translucent.NoTitleBar.Core" parent="Theme.Material3.DayNight.NoActionBar">
@@ -250,9 +253,9 @@
     <!-- The two light bases carry the same items; a style can have only one parent, and the
          ActionBar / no ActionBar variants have to stay separate names. -->
     <style name="Base.AppTheme.Light.DarkActionBar.Core" parent="Theme.Material3.Light">
-        <!-- Material3 keeps the AppCompat accent attribute, but fills it with its own
-             ?attr/colorSecondary, which is the grey purple the filled buttons and the dialog
-             labels would come out in. Point it back at the app blue. -->
+        <!-- Material3 fills the legacy AppCompat accent from its grey-purple colorSecondary.
+             Keep this core's accent blue; the explicit dialog overlay below also keeps alert
+             actions blue when a light leaf theme overrides colorAccent. -->
         <item name="colorAccent">@color/appAccent</item>
         <!-- The light family's own pair, declared the way the dark ones declare theirs. Without
              these two the theme inherited Material3's near white for both the screen and the
@@ -260,6 +263,7 @@
              were the only light surfaces in the app that were not blinding. -->
         <item name="android:colorBackground">@color/appScreenLight</item>
         <item name="colorSurface">@color/appSurfaceLight</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>
@@ -312,6 +316,7 @@
              were the only light surfaces in the app that were not blinding. -->
         <item name="android:colorBackground">@color/appScreenLight</item>
         <item name="colorSurface">@color/appSurfaceLight</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="actionButtonStyle">@style/FreezeYou.ActionButton</item>
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup</item>

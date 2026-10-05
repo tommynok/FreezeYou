@@ -177,8 +177,39 @@ EXPECTATIONS = {
         "colorOnPrimary": "#000000",
         "colorSurface": "#22252A",
     },
+    "Base.AppTheme.Light.DarkActionBar.Core": {
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "popupMenuStyle": "Widget.App.PopupMenu",
+        "actionOverflowMenuStyle": "Widget.App.Overflow",
+    },
+    "Base.AppTheme.Light.Core": {
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "popupMenuStyle": "Widget.App.PopupMenu",
+        "actionOverflowMenuStyle": "Widget.App.Overflow",
+    },
+    "Base.AppTheme.Light.Dialog.Core": {
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+    },
     "AppTheme.Default": {
         "colorAccent": "#1976D2",  # values-v31 and up
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "popupMenuStyle": "Widget.App.PopupMenu",
+        "actionOverflowMenuStyle": "Widget.App.Overflow",
+    },
+    "AppTheme.Default.Dialog": {
+        "colorSurface": "#DCDCDE",
+        "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
+        "popupMenuStyle": "Widget.App.PopupMenu",
+        "actionOverflowMenuStyle": "Widget.App.Overflow",
+    },
+    "ThemeOverlay.App.Dialog.Light": {
+        "colorSurface": "#DCDCDE",
+        "colorPrimary": "#1976D2",
+        "elevationOverlayEnabled": "false",
     },
 }
 

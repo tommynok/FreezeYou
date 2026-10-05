@@ -13,8 +13,8 @@
 
     <!-- Android 12+. The light default used to be defined here instead of in values/ precisely
          because below 31 there was an AppCompat theme with the same name; that is gone, so this
-         only adds what is really 31+ - and it now shares the popup, button and surface items
-         with the other light themes through Base.AppTheme.Light.DarkActionBar.
+         only adds what is really 31+ and shares the popup, button, surface and dialog-overlay
+         items with the other light themes through Base.AppTheme.Light.DarkActionBar.
          Always light: the upstream DayNight parent made "Default" follow the system dark mode,
          which the owner experienced as the light option disappearing. -->
     <style name="AppTheme.Default" parent="Base.AppTheme.Light.DarkActionBar">

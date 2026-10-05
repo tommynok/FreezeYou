@@ -21,7 +21,7 @@
     <string name="addToFreezeOnceQuit">Добавить в «Заморозка после выхода»</string>
     <string name="addFailed">Не удалось добавить</string>
     <string name="caution">ВНИМАНИЕ</string>
-    <string name="cautionContent">Внимание! Не замораживайте важные для системы приложения. Это может привести к сбою системы</string>
+    <string name="cautionContent">Не замораживайте важные для системы приложения. Это может привести к сбою системы</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="requested">Запрос</string>
