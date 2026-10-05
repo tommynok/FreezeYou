@@ -54,9 +54,9 @@
         android:title="@string/remove" />
 
     <item
-        android:id="@+id/main_sca_menu_gotoStore"
-        android:title="@string/gotoStore" />
-    <item
         android:id="@+id/main_sca_menu_uninstall"
         android:title="@string/uninstall" />
+    <item
+        android:id="@+id/main_sca_menu_gotoStore"
+        android:title="@string/gotoStore" />
 </menu>
