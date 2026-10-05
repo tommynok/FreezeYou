@@ -71,7 +71,7 @@
     <!-- PreferenceCategory's framework separator style brings all-caps text and a private divider
          background. Rebuild it so section labels follow the app type scale and sit cleanly inside
          the rounded preference-group cards. -->
-    <style name="Widget.App.ListSeparator">
+    <style name="Widget.App.ListSeparator" parent="">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center_vertical</item>
