@@ -68,6 +68,19 @@
         <item name="android:popupBackground">@drawable/rounded_popup_menu</item>
     </style>
 
+    <!-- PreferenceCategory's framework separator style brings all-caps text and a private divider
+         background. Rebuild it so section labels follow the app type scale and sit cleanly inside
+         the rounded preference-group cards. -->
+    <style name="Widget.App.ListSeparator">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.TitleSmall</item>
+    </style>
+
     <!-- Popup and menu item text. The dark themes need a colour of their own here: AppCompat's
          popup item layout takes its title appearance from ?attr/textAppearanceLargePopupMenu, and
          the Material3 appearance it points at carries no colour, so the text falls back to the
@@ -196,6 +209,9 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+        <item name="android:textAppearanceSmall">@style/TextAppearance.App.BodySmall</item>
+        <item name="android:textAppearanceLarge">@style/TextAppearance.App.TitleMedium</item>
+        <item name="android:listSeparatorTextViewStyle">@style/Widget.App.ListSeparator</item>
     </style>
 
         <!-- The app-wide typeface, and the only thing about these themes that differs by API
@@ -267,6 +283,9 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+        <item name="android:textAppearanceSmall">@style/TextAppearance.App.BodySmall</item>
+        <item name="android:textAppearanceLarge">@style/TextAppearance.App.TitleMedium</item>
+        <item name="android:listSeparatorTextViewStyle">@style/Widget.App.ListSeparator</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
     </style>
@@ -312,6 +331,9 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.App.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.App.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.App.LabelSmall</item>
+        <item name="android:textAppearanceSmall">@style/TextAppearance.App.BodySmall</item>
+        <item name="android:textAppearanceLarge">@style/TextAppearance.App.TitleMedium</item>
+        <item name="android:listSeparatorTextViewStyle">@style/Widget.App.ListSeparator</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
     </style>
