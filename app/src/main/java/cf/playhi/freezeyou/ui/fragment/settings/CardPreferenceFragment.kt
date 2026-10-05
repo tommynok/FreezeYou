@@ -15,10 +15,12 @@ import cf.playhi.freezeyou.utils.ThemeUtils
  * as one rounded card behind the rows, matching the expressive look of the design
  * reference. Purely visual - no layout or preference changes.
  *
- * The two colours come from values/colors.xml and are the same pair the theme itself uses for
- * android:colorBackground and colorSurface, so a card here matches the menus, the dialogs and
- * the toolbar of the theme it is painted in. Dark and black therefore differ on this screen
- * exactly as much as they do everywhere else, and the difference is defined in one place.
+ * The two colours come from values/colors.xml through ThemePalettes. For dark and black they are
+ * the pair the theme itself uses, so a card there matches the menus, the dialogs and the toolbar.
+ * For light they are not: the cards here are light on a grey screen while the menus and dialogs of
+ * the home screen are grey, which is what the owner asked for on 05.10 after seeing grey cards on
+ * a near-white screen. That is why the screen colour is still shared with the theme and the card
+ * colour is not.
  */
 abstract class CardPreferenceFragment : PreferenceFragmentCompat() {
 
