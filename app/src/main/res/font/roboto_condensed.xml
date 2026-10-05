@@ -1,26 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The compact typeface experiment, bundled edition. Regular-weight requests resolve to the
-     Medium cut: the owner wanted the narrow face sturdy, not thin, and the static system
-     sans-serif-condensed has no medium weight to compose with. Bold requests use the real
-     bold. Pre-API-26 AppCompat picks entries by style and cannot vary weight, so old devices
-     render everything in the Medium cut. The fonts and the OFL licence (res/raw) are Google
-     Fonts' Roboto Condensed v31, subsets requested per weight from the CSS API. -->
+<!-- The compact typeface experiment, bundled edition. The variable font carries the full
+     Cyrillic coverage (the per-weight CSS instances are Latin-only subsets, which made every
+     Cyrillic string fall back to the system font - the mixed look the owner reported).
+     Regular-weight requests resolve to the wght=500 instance: the owner wanted the narrow
+     face sturdy, not thin. Pre-API-26 AppCompat cannot vary weight, so old devices render
+     the file's default 400 instance. Font and licence (res/raw) are Google Fonts' Roboto
+     Condensed v31. -->
 <font-family xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <font
-        android:fontWeight="400"
+        android:fontWeight="500"
         android:fontStyle="normal"
-        android:font="@font/roboto_condensed_medium"
-        app:fontWeight="400"
+        android:font="@font/roboto_condensed_var"
+        android:fontVariationSettings="'wght' 500"
+        app:fontWeight="500"
         app:fontStyle="normal"
-        app:font="@font/roboto_condensed_medium" />
+        app:font="@font/roboto_condensed_var"
+        app:fontVariationSettings="'wght' 500" />
 
     <font
         android:fontWeight="700"
         android:fontStyle="normal"
-        android:font="@font/roboto_condensed_bold"
+        android:font="@font/roboto_condensed_var"
+        android:fontVariationSettings="'wght' 700"
         app:fontWeight="700"
         app:fontStyle="normal"
-        app:font="@font/roboto_condensed_bold" />
+        app:font="@font/roboto_condensed_var"
+        app:fontVariationSettings="'wght' 700" />
 </font-family>
