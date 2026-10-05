@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 
@@ -123,6 +124,15 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                         finalDrawable = new BitmapDrawable(bm);
                         lscaga_icon_imageButton.setImageDrawable(finalDrawable);
                     }
+                    updateActionButtons(
+                            findViewById(R.id.lscaga_generate_button),
+                            findViewById(R.id.lscaga_simulate_button),
+                            lscaga_target_editText);
+                } else if (activityShortcutMode
+                        && ((EditText) findViewById(R.id.lscaga_target_editText)).length() == 0) {
+                    // The pick is the whole point of this screen; a cancelled picker leaves
+                    // nothing to generate.
+                    finish();
                 }
                 break;
             case 11:
@@ -142,6 +152,19 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 break;
             default:
                 break;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // The picked target text comes back with the view state after init() has run, so the
+        // buttons are re-evaluated here rather than trusted from onCreate.
+        if (activityShortcutMode) {
+            updateActionButtons(
+                    findViewById(R.id.lscaga_generate_button),
+                    findViewById(R.id.lscaga_simulate_button),
+                    findViewById(R.id.lscaga_target_editText));
         }
     }
 
@@ -174,11 +197,17 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
         processDisplayNameEditText(name, lscaga_displayName_editText);
 
-        processSelectedTargetEditText(pkgName, lscaga_target_editText);
+        // In the activity-shortcut mode the target is the picked activity itself: no "launch
+        // the app" default and no re-picking. Both pickers below belong to the freeze flow.
+        if (!activityShortcutMode) {
+            processSelectedTargetEditText(pkgName, lscaga_target_editText);
+        }
 
         processChangeIconImageButton(pkgName, lscaga_icon_imageButton);
 
-        processSelectTargetButton(pkgName, lscaga_target_button);
+        if (!activityShortcutMode) {
+            processSelectTargetButton(pkgName, lscaga_target_button);
+        }
 
         processTaskEditText(lscaga_task_editText);
 
@@ -192,11 +221,20 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
         if (activityShortcutMode) {
             hideFieldsThatBelongToFreezing();
+            hidePackagePicker(findViewById(R.id.lscaga_package_textView),
+                    findViewById(R.id.lscaga_package_linearLayout),
+                    findViewById(R.id.lscaga_package_hint_textView),
+                    findViewById(R.id.lscaga_displayName_textView));
+            prepareTargetAsReadOnly(lscaga_target_editText,
+                    findViewById(R.id.lscaga_target_button),
+                    findViewById(R.id.lscaga_target_hint_textView));
             if (openTargetPickerOnNextInit) {
                 openTargetPickerOnNextInit = false;
                 startSelectTargetActivityForResult(pkgName);
             }
         }
+
+        updateActionButtons(lscaga_generate_button, lscaga_simulate_button, lscaga_target_editText);
 
     }
 
@@ -220,6 +258,50 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 view.setVisibility(View.GONE);
             }
         }
+    }
+
+    /**
+     * The package is the context the owner came from: the menu item lives inside one
+     * application, and repointing the shortcut at another one would cascade into re-picking
+     * the activity anyway. The label above the name is re-anchored to the top of the screen,
+     * because the hidden rows sit at the head of the RelativeLayout's below-chain.
+     */
+    private void hidePackagePicker(View packageLabel, View packageRow, View packageHint,
+                                   View displayNameLabel) {
+        for (View view : new View[]{packageLabel, packageRow, packageHint}) {
+            view.setVisibility(View.GONE);
+        }
+        RelativeLayout.LayoutParams layoutParams =
+                (RelativeLayout.LayoutParams) displayNameLabel.getLayoutParams();
+        layoutParams.addRule(RelativeLayout.BELOW, 0);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        displayNameLabel.setLayoutParams(layoutParams);
+    }
+
+    /**
+     * The picked activity IS the target: the freeze flow's "launch the app" default and the
+     * re-picking button do not apply here, the row only confirms what was picked. It stays
+     * empty until the auto-opened picker returns.
+     */
+    private void prepareTargetAsReadOnly(EditText targetText, View targetButton, View targetHint) {
+        targetText.setText("");
+        targetText.setKeyListener(null);
+        targetText.setCursorVisible(false);
+        targetButton.setVisibility(View.GONE);
+        targetHint.setVisibility(View.GONE);
+    }
+
+    /**
+     * Generating before an activity is picked would silently produce a launch-the-app
+     * shortcut, and the cancel case closes the screen instead.
+     */
+    private void updateActionButtons(Button generateButton, Button simulateButton, EditText targetText) {
+        if (!activityShortcutMode) {
+            return;
+        }
+        boolean picked = targetText.length() > 0;
+        generateButton.setEnabled(picked);
+        simulateButton.setEnabled(picked);
     }
 
     private void processDisplayNameEditText(String name, EditText lscaga_displayName_editText) {
