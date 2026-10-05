@@ -18,7 +18,9 @@
         Light is the only family whose container is a little DARKER than its screen, and that
         is the stock relationship the owner asked for: a slightly grey screen, with menus,
         dialogs and cards a touch greyer on top of it so they read as surfaces instead of
-        holes. The step is about 9% of luminance - visible, not glaring.
+        holes. The step is about 9% of luminance - visible, not glaring. All three greys were
+        darkened proportionally by 10% on 05.10 after the owner read the lighter pair as bright
+        white against each other; the steps between them did not move.
 
         The light cards are the one exception, split off on purpose. The owner read the first
         attempt - grey cards on a near-white screen - as lilac cards on white, and rejected it:
@@ -31,12 +33,12 @@
         Dark is a dark grey theme with clearly lighter containers; black is the AMOLED one,
         pure black with containers only as light as they have to be to stay visible.
     -->
-    <color name="appScreenLight">#EFEFF2</color>
-    <color name="appSurfaceLight">#E6E6E9</color>
+    <color name="appScreenLight">#E4E4E7</color>
+    <color name="appSurfaceLight">#DCDCDE</color>
     <!-- Only the settings screens paint with this one (see ThemePalettes): their cards are light
          on the grey screen, the way the builds before 05.10 had them. Near white rather than
          white, because pure #FFFFFF read as glare next to the grey. -->
-    <color name="appSettingsCardLight">#FAFAFB</color>
+    <color name="appSettingsCardLight">#EFEFF0</color>
     <color name="appScreenDark">#1E1F22</color>
     <color name="appSurfaceDark">#35383E</color>
     <color name="appScreenBlack">#000000</color>
