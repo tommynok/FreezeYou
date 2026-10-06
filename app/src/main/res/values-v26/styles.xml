@@ -10,104 +10,104 @@
              looks denser than it is tall. Raising the size rather than the width keeps the
              condensed footprint the compact look was asked for. -->
     <style name="TextAppearance.App.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">61sp</item>
     </style>
 
     <style name="TextAppearance.App.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">48sp</item>
     </style>
 
     <style name="TextAppearance.App.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">38sp</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">34sp</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">30sp</item>
     </style>
 
     <style name="TextAppearance.App.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">26sp</item>
     </style>
 
     <style name="TextAppearance.App.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">24sp</item>
     </style>
 
     <style name="TextAppearance.App.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">18sp</item>
     </style>
 
     <style name="TextAppearance.App.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">16sp</item>
     </style>
 
     <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">18sp</item>
     </style>
 
     <style name="TextAppearance.App.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">16sp</item>
     </style>
 
     <style name="TextAppearance.App.BodySmall" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">14sp</item>
     </style>
 
     <style name="TextAppearance.App.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">16sp</item>
     </style>
 
     <style name="TextAppearance.App.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">14sp</item>
     </style>
 
     <style name="TextAppearance.App.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="android:textSize">12sp</item>
     </style>
 
     <style name="TextAppearance.App.PopupMenu.Dark" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:textColor">@color/appOnDarkSurface</item>
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <!-- The app-wide typeface on API 26+, where the framework resolves @font natively. This is the
@@ -120,28 +120,28 @@
          here applies and the theme keeps the system family, which is also what keeps Robolectric's
          old-SDK shadows out of the way. -->
     <style name="Base.AppTheme.Dark" parent="Base.AppTheme.Dark.Core">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Dialog" parent="Base.AppTheme.Dark.Dialog.Core">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <style name="Base.AppTheme.Light.DarkActionBar" parent="Base.AppTheme.Light.DarkActionBar.Core">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <style name="Base.AppTheme.Light" parent="Base.AppTheme.Light.Core">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
     <style name="Base.AppTheme.Light.Dialog" parent="Base.AppTheme.Light.Dialog.Core">
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
     </style>
 
 </resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The compact typeface experiment, second candidate: Fira Sans Condensed instead of Roboto
+     Condensed. Same wiring as the first one - only the family and the files differ, the styles
+     and the revert recipe stay. Regular-weight requests resolve to the Medium cut (the owner
+     wants the narrow face sturdy), bold requests to the Bold cut. Full Cyrillic; the OFL licence
+     is in res/raw. Google Fonts' Fira Sans Condensed v11. -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <font
+        android:fontWeight="400"
+        android:fontStyle="normal"
+        android:font="@font/fira_condensed_medium"
+        app:fontWeight="400"
+        app:fontStyle="normal"
+        app:font="@font/fira_condensed_medium" />
+
+    <font
+        android:fontWeight="700"
+        android:fontStyle="normal"
+        android:font="@font/fira_condensed_bold"
+        app:fontWeight="700"
+        app:fontStyle="normal"
+        app:font="@font/fira_condensed_bold" />
+</font-family>

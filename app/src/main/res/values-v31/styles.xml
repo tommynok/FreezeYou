@@ -28,8 +28,8 @@
              these the light dialogs on Android 12+ were the one surface in the app still set in the
              system regular - title, message and action labels - while every screen behind them was
              condensed. -->
-        <item name="android:fontFamily">@font/roboto_condensed</item>
-        <item name="fontFamily">@font/roboto_condensed</item>
+        <item name="android:fontFamily">@font/fira_condensed</item>
+        <item name="fontFamily">@font/fira_condensed</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.App.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.App.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.DisplaySmall</item>

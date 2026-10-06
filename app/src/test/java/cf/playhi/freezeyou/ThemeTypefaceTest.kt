@@ -35,7 +35,7 @@ class ThemeTypefaceTest {
         "AppTheme.Dark.Black" to "AppTheme.Dark.Dialog.Black",
     )
 
-    private val bundledFont = "@font/roboto_condensed"
+    private val bundledFont = "@font/fira_condensed"
     private val systemFont = "sans-serif-condensed"
 
     /**
