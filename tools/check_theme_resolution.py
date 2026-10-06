@@ -152,10 +152,17 @@ def find_recreated_themes(styles):
 # Material3 light theme from 31 on, and those two carry different accents. (The values came from
 # the deleted "white" palette, whose style was the light theme; see ROADMAP.)
 EXPECTATIONS = {
+    "Base.AppTheme.Dark.Core": {
+        "colorOnSurfaceVariant": "#C4C4C6",
+    },
+    "Base.AppTheme.Dark.Dialog.Core": {
+        "colorOnSurfaceVariant": "#C4C4C6",
+    },
     "AppTheme.Dark.Default": {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#1E1F22",
         "colorSurface": "#35383E",
+        "colorOnSurfaceVariant": "#C4C4C6",
         "colorAccent": "#1976D2",
         "actionBarPopupTheme": "ThemeOverlay.App.ActionBarPopup",
         "textAppearanceLargePopupMenu": "TextAppearance.App.PopupMenu.Dark",
@@ -164,6 +171,7 @@ EXPECTATIONS = {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#000000",
         "colorSurface": "#22252A",
+        "colorOnSurfaceVariant": "#C4C4C6",
         "colorAccent": "#1976D2",
         "actionBarPopupTheme": "ThemeOverlay.App.ActionBarPopup",
     },
@@ -171,11 +179,13 @@ EXPECTATIONS = {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#1E1F22",
         "colorSurface": "#35383E",
+        "colorOnSurfaceVariant": "#C4C4C6",
     },
     "AppTheme.Dark.Dialog.Black": {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#000000",
         "colorSurface": "#22252A",
+        "colorOnSurfaceVariant": "#C4C4C6",
     },
     "Base.AppTheme.Light.DarkActionBar.Core": {
         "colorSurface": "#DCDCDE",

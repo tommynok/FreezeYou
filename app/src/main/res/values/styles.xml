@@ -217,6 +217,7 @@
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <item name="android:colorBackground">@color/appScreenDark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
+        <item name="colorOnSurfaceVariant">@color/appOnDarkSurfaceVariant</item>
         <item name="android:navigationBarColor">?attr/colorPrimaryDark</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
@@ -410,6 +411,7 @@
         <item name="windowNoTitle">true</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Dark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
+        <item name="colorOnSurfaceVariant">@color/appOnDarkSurfaceVariant</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
         <item name="colorOnPrimary">@color/appScreenDark</item>

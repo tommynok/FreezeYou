@@ -198,6 +198,70 @@ class ThemeSelectionTest {
     }
 
     @Test
+    fun darkAndBlackThemesUseNeutralSecondaryTextWithoutChangingLightOrPrimaryText() {
+        val resDir = File(moduleDir(), "src/main/res")
+        val valuesStyles = File(resDir, "values/styles.xml")
+        val v26Styles = File(resDir, "values-v26/styles.xml")
+        fun style(file: File, name: String): Element =
+            styleElement(file, name) ?: throw AssertionError("Missing style $name in ${file.name}")
+
+        val darkCore = style(valuesStyles, "Base.AppTheme.Dark.Core")
+        val darkDialogCore = style(valuesStyles, "Base.AppTheme.Dark.Dialog.Core")
+        assertEquals(
+            "@color/appOnDarkSurfaceVariant",
+            styleItems(darkCore)["colorOnSurfaceVariant"]
+        )
+        assertEquals(
+            "@color/appOnDarkSurfaceVariant",
+            styleItems(darkDialogCore)["colorOnSurfaceVariant"]
+        )
+
+        val colorDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            .parse(File(resDir, "values/colors.xml"))
+        val colorNodes = colorDocument.getElementsByTagName("color")
+        fun color(name: String): String? = (0 until colorNodes.length)
+            .map { colorNodes.item(it) as Element }
+            .firstOrNull { it.getAttribute("name") == name }
+            ?.textContent?.trim()
+        assertEquals("#C4C4C6", color("appOnDarkSurfaceVariant"))
+        assertEquals("#FFFFFF", color("appOnDarkSurface"))
+
+        // The black screen/dialog leaves inherit the same neutral value through the dark cores;
+        // they need no duplicate color declaration of their own.
+        assertEquals(
+            "Base.AppTheme.Dark.Core",
+            style(v26Styles, "Base.AppTheme.Dark").getAttribute("parent")
+        )
+        assertEquals(
+            "Base.AppTheme.Dark",
+            style(valuesStyles, "Base.AppTheme.Dark.Black").getAttribute("parent")
+        )
+        assertEquals(
+            "Base.AppTheme.Dark.Dialog.Core",
+            style(v26Styles, "Base.AppTheme.Dark.Dialog").getAttribute("parent")
+        )
+        assertEquals(
+            "Base.AppTheme.Dark.Dialog",
+            style(valuesStyles, "Base.V14.AppTheme.Dark.Dialog").getAttribute("parent")
+        )
+        assertEquals(
+            "Base.V14.AppTheme.Dark.Dialog",
+            style(valuesStyles, "Base.AppTheme.Dark.Dialog.Black").getAttribute("parent")
+        )
+
+        listOf(
+            "Base.AppTheme.Light.DarkActionBar.Core",
+            "Base.AppTheme.Light.Core",
+            "Base.AppTheme.Light.Dialog.Core",
+        ).forEach { name ->
+            assertTrue(
+                "$name must keep the light theme's existing secondary text color",
+                "colorOnSurfaceVariant" !in styleItems(style(valuesStyles, name))
+            )
+        }
+    }
+
+    @Test
     fun mainAndDialogActivitiesUsePopupSurfaceWithoutChangingSettingsScreen() {
         val stylesFile = File(moduleDir(), "src/main/res/values/styles.xml")
         fun style(name: String): Element =
