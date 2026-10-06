@@ -48,6 +48,7 @@
         android:maxLines="1"
         android:scrollHorizontally="true"
         android:singleLine="true"
+        android:textColor="?attr/appListPackageTextColor"
         android:textSize="12sp" />
 
     <ImageView

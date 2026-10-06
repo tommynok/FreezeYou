@@ -146,6 +146,16 @@ def find_recreated_themes(styles):
     return out
 
 
+# colorOnSurfaceVariant alone does not reach framework TextViews or AndroidX Preference; their
+# primary/secondary text comes through android:textColor*. Check the screen-theme bridge while
+# keeping the separate dialog theme's text attributes outside this follow-up.
+DARK_SCREEN_TEXT_EXPECTATIONS = {
+    "android:textColorPrimary": "@color/app_dark_text_primary",
+    "android:textColorSecondary": "@color/app_dark_text_secondary",
+    "android:textColorHint": "@color/app_dark_text_secondary",
+    "appListPackageTextColor": "@color/app_dark_text_secondary",
+}
+
 # Theme -> the attributes that must resolve to this fork's values, and what they must be.
 # "apis" narrows an expectation to a range, for attributes that legitimately differ by platform
 # version: AppTheme.Default is the light theme with the stock light values below API 31 and a
@@ -159,6 +169,7 @@ EXPECTATIONS = {
         "colorOnSurfaceVariant": "#C4C4C6",
     },
     "AppTheme.Dark.Default": {
+        **DARK_SCREEN_TEXT_EXPECTATIONS,
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#1E1F22",
         "colorSurface": "#35383E",
@@ -168,6 +179,7 @@ EXPECTATIONS = {
         "textAppearanceLargePopupMenu": "TextAppearance.App.PopupMenu.Dark",
     },
     "AppTheme.Dark.Black": {
+        **DARK_SCREEN_TEXT_EXPECTATIONS,
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#000000",
         "colorSurface": "#22252A",
@@ -192,12 +204,14 @@ EXPECTATIONS = {
         "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
         "popupMenuStyle": "Widget.App.PopupMenu",
         "actionOverflowMenuStyle": "Widget.App.Overflow",
+        "appListPackageTextColor": "?android:attr/textColorPrimary",
     },
     "Base.AppTheme.Light.Core": {
         "colorSurface": "#DCDCDE",
         "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Light",
         "popupMenuStyle": "Widget.App.PopupMenu",
         "actionOverflowMenuStyle": "Widget.App.Overflow",
+        "appListPackageTextColor": "?android:attr/textColorPrimary",
     },
     "Base.AppTheme.Light.Dialog.Core": {
         "colorSurface": "#DCDCDE",
@@ -210,11 +224,13 @@ EXPECTATIONS = {
         "popupMenuStyle": "Widget.App.PopupMenu",
         "actionOverflowMenuStyle": "Widget.App.Overflow",
         "actionBarPopupTheme": "ThemeOverlay.App.ActionBarPopup",
+        "appListPackageTextColor": "?android:attr/textColorPrimary",
     },
     "AppTheme.Default.Main": {
         "colorSurface": "#DCDCDE",
         "materialAlertDialogTheme": "ThemeOverlay.App.Dialog.Main.Light",
         "actionBarPopupTheme": "ThemeOverlay.App.Popup.Main.Light",
+        "appListPackageTextColor": "?android:attr/textColorPrimary",
     },
     "ThemeOverlay.App.Dialog.Main.Light": {
         "colorSurface": "#F0EFF7",

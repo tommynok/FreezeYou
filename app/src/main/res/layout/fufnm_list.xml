@@ -26,6 +26,7 @@
         android:paddingTop="1dp"
         android:scrollHorizontally="true"
         android:singleLine="true"
+        android:textColor="?attr/appListPackageTextColor"
         android:textSize="12sp" />
 
 </LinearLayout>

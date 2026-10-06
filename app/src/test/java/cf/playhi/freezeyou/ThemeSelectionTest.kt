@@ -198,23 +198,39 @@ class ThemeSelectionTest {
     }
 
     @Test
-    fun darkAndBlackThemesUseNeutralSecondaryTextWithoutChangingLightOrPrimaryText() {
+    fun darkAndBlackThemesRouteFrameworkTextColorsWithoutChangingLightOrPrimaryText() {
         val resDir = File(moduleDir(), "src/main/res")
         val valuesStyles = File(resDir, "values/styles.xml")
         val v26Styles = File(resDir, "values-v26/styles.xml")
         fun style(file: File, name: String): Element =
             styleElement(file, name) ?: throw AssertionError("Missing style $name in ${file.name}")
 
+        val darkTextRouting = mapOf(
+            "android:textColorPrimary" to "@color/app_dark_text_primary",
+            "android:textColorSecondary" to "@color/app_dark_text_secondary",
+            "android:textColorHint" to "@color/app_dark_text_secondary",
+            "appListPackageTextColor" to "@color/app_dark_text_secondary",
+        )
         val darkCore = style(valuesStyles, "Base.AppTheme.Dark.Core")
+        val darkCoreItems = styleItems(darkCore)
+        assertEquals("@color/appOnDarkSurfaceVariant", darkCoreItems["colorOnSurfaceVariant"])
+        darkTextRouting.forEach { (attribute, value) ->
+            assertEquals("Base.AppTheme.Dark.Core.$attribute", value, darkCoreItems[attribute])
+        }
+
         val darkDialogCore = style(valuesStyles, "Base.AppTheme.Dark.Dialog.Core")
-        assertEquals(
-            "@color/appOnDarkSurfaceVariant",
-            styleItems(darkCore)["colorOnSurfaceVariant"]
-        )
-        assertEquals(
-            "@color/appOnDarkSurfaceVariant",
-            styleItems(darkDialogCore)["colorOnSurfaceVariant"]
-        )
+        val darkDialogItems = styleItems(darkDialogCore)
+        assertEquals("@color/appOnDarkSurfaceVariant", darkDialogItems["colorOnSurfaceVariant"])
+        listOf(
+            "colorOnBackground",
+            "colorOnSurface",
+            "android:textColorPrimary",
+            "android:textColorSecondary",
+            "android:textColorHint",
+            "appListPackageTextColor",
+        ).forEach { attribute ->
+            assertTrue("The dialog palette must not be changed through $attribute", attribute !in darkDialogItems)
+        }
 
         val colorDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder()
             .parse(File(resDir, "values/colors.xml"))
@@ -226,8 +242,75 @@ class ThemeSelectionTest {
         assertEquals("#C4C4C6", color("appOnDarkSurfaceVariant"))
         assertEquals("#FFFFFF", color("appOnDarkSurface"))
 
-        // The black screen/dialog leaves inherit the same neutral value through the dark cores;
-        // they need no duplicate color declaration of their own.
+        fun selectorColors(name: String): List<String> {
+            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(File(resDir, "color/$name.xml"))
+            val items = document.getElementsByTagName("item")
+            return (0 until items.length)
+                .map { (items.item(it) as Element).getAttribute("android:color") }
+        }
+        assertEquals(
+            listOf("#61FFFFFF", "@color/appOnDarkSurface"),
+            selectorColors("app_dark_text_primary")
+        )
+        assertEquals(
+            listOf("#61C4C4C6", "@color/appOnDarkSurfaceVariant"),
+            selectorColors("app_dark_text_secondary")
+        )
+
+        listOf(
+            "layout/app_list_1.xml" to "@+id/pkgName",
+            "layout/fufnm_list.xml" to "@+id/fufnml_pkgName",
+            "layout/uaam_list.xml" to "@+id/uaaml_pkgName",
+        ).forEach { (layoutName, packageId) ->
+            val layoutDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(File(resDir, layoutName))
+            val textViews = layoutDocument.getElementsByTagName("TextView")
+            val packageLabel = (0 until textViews.length)
+                .map { textViews.item(it) as Element }
+                .first { it.getAttribute("android:id") == packageId }
+            assertEquals(
+                "$layoutName package label",
+                "?attr/appListPackageTextColor",
+                packageLabel.getAttribute("android:textColor")
+            )
+        }
+
+        // The light alias is the same framework primary color this TextView inherited before
+        // the explicit dark-only package-label routing was added.
+        listOf(
+            "Base.AppTheme.Light.DarkActionBar.Core",
+            "Base.AppTheme.Light.Core",
+        ).forEach { name ->
+            val items = styleItems(style(valuesStyles, name))
+            assertEquals("?android:attr/textColorPrimary", items["appListPackageTextColor"])
+            listOf(
+                "colorOnBackground",
+                "colorOnSurface",
+                "colorOnSurfaceVariant",
+                "android:textColorPrimary",
+                "android:textColorSecondary",
+                "android:textColorHint",
+            ).forEach { attribute ->
+                assertTrue("$name must not override $attribute", attribute !in items)
+            }
+        }
+        val lightDialogItems =
+            styleItems(style(valuesStyles, "Base.AppTheme.Light.Dialog.Core"))
+        listOf(
+            "appListPackageTextColor",
+            "colorOnBackground",
+            "colorOnSurface",
+            "colorOnSurfaceVariant",
+            "android:textColorPrimary",
+            "android:textColorSecondary",
+            "android:textColorHint",
+        ).forEach { attribute ->
+            assertTrue("Light dialog core must remain untouched through $attribute", attribute !in lightDialogItems)
+        }
+
+        // The black screen inherits the new screen-text routing through the dark core; dialog
+        // leaves stay on their separate, unchanged dialog cores.
         assertEquals(
             "Base.AppTheme.Dark.Core",
             style(v26Styles, "Base.AppTheme.Dark").getAttribute("parent")
@@ -248,17 +331,6 @@ class ThemeSelectionTest {
             "Base.V14.AppTheme.Dark.Dialog",
             style(valuesStyles, "Base.AppTheme.Dark.Dialog.Black").getAttribute("parent")
         )
-
-        listOf(
-            "Base.AppTheme.Light.DarkActionBar.Core",
-            "Base.AppTheme.Light.Core",
-            "Base.AppTheme.Light.Dialog.Core",
-        ).forEach { name ->
-            assertTrue(
-                "$name must keep the light theme's existing secondary text color",
-                "colorOnSurfaceVariant" !in styleItems(style(valuesStyles, name))
-            )
-        }
     }
 
     @Test
