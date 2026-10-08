@@ -217,8 +217,9 @@
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow</item>
         <item name="android:colorBackground">@color/appScreenDark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
-        <!-- The default Material3 text appearances inherit AppCompat and do not set a color;
-             ordinary TextViews and AndroidX Preference therefore read these framework attrs. -->
+        <!-- Screen-theme role: Material3 screen components use this secondary token, while
+             ordinary TextViews and AndroidX Preference read the framework text attrs below.
+             Dialog cores intentionally leave this role to their Material3 parent. -->
         <item name="colorOnSurfaceVariant">@color/appOnDarkSurfaceVariant</item>
         <item name="android:textColorPrimary">@color/app_dark_text_primary</item>
         <item name="android:textColorSecondary">@color/app_dark_text_secondary</item>
@@ -419,7 +420,6 @@
         <item name="windowNoTitle">true</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Dark</item>
         <item name="colorSurface">@color/appSurfaceDark</item>
-        <item name="colorOnSurfaceVariant">@color/appOnDarkSurfaceVariant</item>
         <item name="android:dialogCornerRadius">16dp</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
         <item name="colorOnPrimary">@color/appScreenDark</item>

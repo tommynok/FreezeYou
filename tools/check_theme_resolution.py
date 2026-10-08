@@ -165,9 +165,6 @@ EXPECTATIONS = {
     "Base.AppTheme.Dark.Core": {
         "colorOnSurfaceVariant": "#C4C4C6",
     },
-    "Base.AppTheme.Dark.Dialog.Core": {
-        "colorOnSurfaceVariant": "#C4C4C6",
-    },
     "AppTheme.Dark.Default": {
         **DARK_SCREEN_TEXT_EXPECTATIONS,
         "colorPrimary": "#FFFFFF",
@@ -191,13 +188,11 @@ EXPECTATIONS = {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#1E1F22",
         "colorSurface": "#35383E",
-        "colorOnSurfaceVariant": "#C4C4C6",
     },
     "AppTheme.Dark.Dialog.Black": {
         "colorPrimary": "#FFFFFF",
         "colorOnPrimary": "#000000",
         "colorSurface": "#22252A",
-        "colorOnSurfaceVariant": "#C4C4C6",
     },
     "Base.AppTheme.Light.DarkActionBar.Core": {
         "colorSurface": "#DCDCDE",
@@ -294,6 +289,22 @@ def check(res_dir, apis, strict):
                 "main-dialog-overlay",
                 "ThemeOverlay.App.Dialog.Main.Light must override only colorSurface with appMainPopupLight",
             ))
+
+    # The neutral secondary token is scoped to dark/black screens, not dialog themes. The
+    # Material3 parent supplies dialog roles; do not flatten an app override into those chains.
+    dark_dialog_themes = (
+        "Base.AppTheme.Dark.Dialog.Core",
+        "AppTheme.Dark.Dialog.Default",
+        "AppTheme.Dark.Dialog.Black",
+    )
+    for api in apis:
+        for name in dark_dialog_themes:
+            items, _, _ = resolve_style(styles, name, api)
+            if "colorOnSurfaceVariant" in items:
+                findings.append((
+                    "dark-dialog-role",
+                    f"{name} (API {api}) must leave colorOnSurfaceVariant to its Material3 parent",
+                ))
 
     for name, places in sorted(find_overridden_styles(styles).items()):
         dirs = sorted({q for q, _ in places})

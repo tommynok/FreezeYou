@@ -63,7 +63,7 @@
          control color used by the app bar, checked controls, dialog actions and popup text.
          Material alert dialog title/body colors continue to use their dedicated M3 on-surface roles. -->
     <color name="appOnDarkSurface">#FFFFFF</color>
-    <!-- Neutral secondary foreground for dark and black surfaces; B-R is +2, separate from the
-         unchanged pure-white primary text above. -->
+    <!-- Neutral secondary foreground for dark and black screen themes; B-R is +2, separate from
+         the unchanged pure-white primary text above. Dialog themes keep their Material3 defaults. -->
     <color name="appOnDarkSurfaceVariant">#C4C4C6</color>
 </resources>

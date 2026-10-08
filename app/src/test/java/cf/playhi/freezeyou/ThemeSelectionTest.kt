@@ -220,10 +220,10 @@ class ThemeSelectionTest {
 
         val darkDialogCore = style(valuesStyles, "Base.AppTheme.Dark.Dialog.Core")
         val darkDialogItems = styleItems(darkDialogCore)
-        assertEquals("@color/appOnDarkSurfaceVariant", darkDialogItems["colorOnSurfaceVariant"])
         listOf(
             "colorOnBackground",
             "colorOnSurface",
+            "colorOnSurfaceVariant",
             "android:textColorPrimary",
             "android:textColorSecondary",
             "android:textColorHint",
