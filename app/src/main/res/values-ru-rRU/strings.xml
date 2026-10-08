@@ -1,496 +1,496 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FreezeYou-Fork</string>
-    <string name="oneKeyFreeze">OneKey-Р·Р°РјРѕСЂРѕР·РєР°</string>
-    <string name="oneKeyUF">OneKey-СЂР°Р·РјРѕСЂРѕР·РєР°</string>
-    <string name="alertT1">Р’РЅРёРјР°РЅРёРµ! РќРµ Р·Р°РјРѕСЂР°Р¶РёРІР°Р№С‚Рµ РІР°Р¶РЅС‹Рµ РґР»СЏ СЃРёСЃС‚РµРјС‹ РїСЂРёР»РѕР¶РµРЅРёСЏ. Р­С‚Рѕ РјРѕР¶РµС‚ РїСЂРёРІРµСЃС‚Рё Рє СЃР±РѕСЋ СЃРёСЃС‚РµРјС‹!</string>
-    <string name="cancel">РћС‚РјРµРЅР°</string>
-    <string name="chooseDetailAction">РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРёС‚Рµ РґРµР№СЃС‚РІРёРµ</string>
-    <string name="added">Р”РѕР±Р°РІР»РµРЅ</string>
-    <string name="notice">Р’РЅРёРјР°РЅРёРµ</string>
-    <string name="freeze">Р—Р°РјРѕСЂРѕР·РєР°</string>
-    <string name="more">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ</string>
-    <string name="appDetail">РЎРІРµРґРµРЅРёСЏ Рѕ РїСЂРёР»РѕР¶РµРЅРёРё</string>
-    <string name="removeFromOneKeyList">РЈРґР°Р»РёС‚СЊ РёР· OneKey-Р·Р°РјРѕСЂРѕР·РєРё</string>
-    <string name="removeFromOneKeyUFList">РЈРґР°Р»РёС‚СЊ РёР· OneKey-СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="removeFromFreezeOnceQuit">РЈРґР°Р»РёС‚СЊ РёР· В«Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°В»</string>
-    <string name="removed">РЈРґР°Р»РµРЅРѕ</string>
-    <string name="removeFailed">РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ</string>
-    <string name="addToOneKeyList">Р”РѕР±Р°РІРёС‚СЊ РІ OneKey-Р·Р°РјРѕСЂРѕР·РєСѓ</string>
-    <string name="addToOneKeyUFList">Р”РѕР±Р°РІРёС‚СЊ РІ OneKey-СЂР°Р·РјРѕСЂРѕР·РєСѓ</string>
-    <string name="addToFreezeOnceQuit">Р”РѕР±Р°РІРёС‚СЊ РІ В«Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°В»</string>
-    <string name="addFailed">РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ</string>
-    <string name="caution">Р’РќРРњРђРќРР•</string>
-    <string name="cautionContent">РќРµ Р·Р°РјРѕСЂР°Р¶РёРІР°Р№С‚Рµ РІР°Р¶РЅС‹Рµ РґР»СЏ СЃРёСЃС‚РµРјС‹ РїСЂРёР»РѕР¶РµРЅРёСЏ. Р­С‚Рѕ РјРѕР¶РµС‚ РїСЂРёРІРµСЃС‚Рё Рє СЃР±РѕСЋ СЃРёСЃС‚РµРјС‹</string>
-    <string name="yes">Р”Р°</string>
-    <string name="no">РќРµС‚</string>
-    <string name="requested">Р—Р°РїСЂРѕСЃ</string>
-    <string name="requestFailed">РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ Р·Р°РїСЂРѕСЃ:</string>
-    <string name="createOneKeyFreezeShortcut">OneKey-Р·Р°РјРѕСЂРѕР·РєР°</string>
-    <string name="executed">Р’С‹РїРѕР»РЅРµРЅРѕ</string>
-    <string name="exception">РСЃРєР»СЋС‡РµРЅРёРµ:</string>
-    <string name="launch">Р—Р°РїСѓСЃРє</string>
-    <string name="mayUnrooted">РќРµС‚ root РїСЂР°РІ, РёР»Рё СЂРµР¶РёРј Р±РµР·-root РЅРµ Р±С‹Р» РІРєР»СЋС‡РµРЅ</string>
-    <string name="mayUnrootedOrOtherEx">РќРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅС‹ СЂР°Р·СЂРµС€РµРЅРёСЏ, С†РµР»Рё Р±С‹Р»Рё СѓРґР°Р»РµРЅС‹ РёР»Рё РІРѕР·РЅРёРєР»Рё РґСЂСѓРіРёРµ РёСЃРєР»СЋС‡РµРЅРёСЏ</string>
-    <string name="nApplicationsFailedColonList">РќРµ СѓРґР°Р»РѕСЃСЊ (%1$d): %2$s</string>
-    <string name="andNMoreApplications">, Рё РµС‰С‘ %1$d</string>
-    <string name="summary_notificationBar_more">РЎРёСЃС‚РµРјРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё СѓРІРµРґРѕРјР»РµРЅРёР№ FreezeYou вЂ” РєР°РЅР°Р»С‹ Рё СЂР°Р·СЂРµС€РµРЅРёРµ РЅР° РїРѕРєР°Р· СѓРІРµРґРѕРјР»РµРЅРёР№</string>
-    <string name="summary_createQuickFUFNotiAfterUnfrozen">РўСЂРµР±СѓРµС‚ СЂР°Р·СЂРµС€РµРЅРёСЏ РЅР° СѓРІРµРґРѕРјР»РµРЅРёСЏ. Р’СЃС‚СѓРїРёС‚ РІ СЃРёР»Сѓ РїСЂРё СЃР»РµРґСѓСЋС‰РµРј СЃРѕР·РґР°РЅРёРё СѓРІРµРґРѕРјР»РµРЅРёСЏ</string>
-    <string name="summary_enableAuthentication">РўСЂРµР±РѕРІР°С‚СЊ СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєСѓ СѓСЃС‚СЂРѕР№СЃС‚РІР° (PIN, РѕС‚РїРµС‡Р°С‚РѕРє Рё С‚.Рґ.) РїРµСЂРµРґ РѕС‚РєСЂС‹С‚РёРµРј FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">РџРѕР·РІРѕР»СЏРµС‚ СѓСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ APK-С„Р°Р№Р»С‹ С‡РµСЂРµР· РІСЃС‚СЂРѕРµРЅРЅС‹Р№ СѓСЃС‚Р°РЅРѕРІС‰РёРє</string>
-    <string name="summary_tryDelApkAfterInstalled">РЈРґР°Р»СЏРµС‚ С„Р°Р№Р» APK РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ СѓСЃС‚Р°РЅРѕРІРєРё, С‡С‚РѕР±С‹ РѕСЃРІРѕР±РѕРґРёС‚СЊ РјРµСЃС‚Рѕ</string>
-    <string name="summary_notAllowWhenIsObsd">Р‘Р»РѕРєРёСЂСѓРµС‚ СѓСЃС‚Р°РЅРѕРІРєСѓ/СѓРґР°Р»РµРЅРёРµ, РµСЃР»Рё СЌРєСЂР°РЅ РїРµСЂРµРєСЂС‹С‚ РѕРєРЅРѕРј РґСЂСѓРіРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ (Р·Р°С‰РёС‚Р° РѕС‚ РїРѕРґРјРµРЅС‹ РЅР°Р¶Р°С‚РёР№)</string>
-    <string name="summary_tryToAvoidUpdateWhenUsing">РћС‚РєР»Р°РґС‹РІР°РµС‚ РѕР±РЅРѕРІР»РµРЅРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ, РїРѕРєР° РІС‹ РёРј РїРѕР»СЊР·СѓРµС‚РµСЃСЊ, Рё СЃС‚Р°РІРёС‚ РµРіРѕ, РєРѕРіРґР° РІС‹ РІС‹С…РѕРґРёС‚Рµ</string>
-    <string name="summary_manageIpaAutoAllow">РЎРїРёСЃРѕРє РїСЂРёР»РѕР¶РµРЅРёР№, РєРѕС‚РѕСЂС‹Рј СЂР°Р·СЂРµС€РµРЅРѕ Р·Р°РїСЂР°С€РёРІР°С‚СЊ СѓСЃС‚Р°РЅРѕРІРєСѓ Р±РµР· РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ РєР°Р¶РґС‹Р№ СЂР°Р·</string>
-    <string name="summary_manageMyCustomization">РЎРѕР·РґР°РІР°Р№С‚Рµ, РїРµСЂРµРёРјРµРЅРѕРІС‹РІР°Р№С‚Рµ Рё СѓРґР°Р»СЏР№С‚Рµ СЃРѕР±СЃС‚РІРµРЅРЅС‹Рµ РіСЂСѓРїРїС‹ РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="summary_clearUninstalledPkgsInList">* РЈРґР°Р»СЏРµС‚ РёР· СЃРїРёСЃРєР° С‚РѕР»СЊРєРѕ С‚Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ, РєРѕС‚РѕСЂС‹Рµ РІС‹ СѓР¶Рµ СѓРґР°Р»РёР»Рё СЃ СѓСЃС‚СЂРѕР№СЃС‚РІР° вЂ” РѕСЃС‚Р°Р»СЊРЅС‹Рµ РїСѓРЅРєС‚С‹ СЃРїРёСЃРєР° РЅРµ Р·Р°С‚СЂР°РіРёРІР°СЋС‚СЃСЏ</string>
-    <string name="clearUninstalledPkgsInOKFFListAsterisk">РЈР±СЂР°С‚СЊ СѓРґР°Р»РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РёР· OneKey-Р·Р°РјРѕСЂРѕР·РєРё *</string>
-    <string name="clearUninstalledPkgsInOKUFListAsterisk">РЈР±СЂР°С‚СЊ СѓРґР°Р»РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РёР· OneKey-СЂР°Р·РјРѕСЂРѕР·РєРё *</string>
-    <string name="clearUninstalledPkgsInFOQListAsterisk">РЈР±СЂР°С‚СЊ СѓРґР°Р»РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РёР· В«Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°В» *</string>
-    <string name="summary_clearIconCache">РћСЃРІРѕР±РѕР¶РґР°РµС‚ РјРµСЃС‚Рѕ, Р·Р°РЅСЏС‚РѕРµ РєСЌС€РµРј РёРєРѕРЅРѕРє РїСЂРёР»РѕР¶РµРЅРёР№; РѕРЅРё Р±СѓРґСѓС‚ Р·Р°РіСЂСѓР¶РµРЅС‹ Р·Р°РЅРѕРІРѕ РїРѕ РјРµСЂРµ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё</string>
-    <string name="summary_clearNameCache">РћСЃРІРѕР±РѕР¶РґР°РµС‚ РјРµСЃС‚Рѕ, Р·Р°РЅСЏС‚РѕРµ РєСЌС€РµРј РЅР°Р·РІР°РЅРёР№ РїСЂРёР»РѕР¶РµРЅРёР№; РѕРЅРё Р±СѓРґСѓС‚ Р·Р°РіСЂСѓР¶РµРЅС‹ Р·Р°РЅРѕРІРѕ РїРѕ РјРµСЂРµ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё</string>
-    <string name="summary_clearAllCache">РћС‡РёС‰Р°РµС‚ СЃСЂР°Р·Сѓ РѕР±Р° РєСЌС€Р° вЂ” РёРєРѕРЅРѕРє Рё РЅР°Р·РІР°РЅРёР№</string>
-    <string name="summary_resetFreezeTimes">РћР±РЅСѓР»СЏРµС‚ СЃС‡С‘С‚С‡РёРє Р·Р°РјРѕСЂРѕР·РѕРє РґР»СЏ РєР°Р¶РґРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ, РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹Р№ РІ СЃРїРёСЃРєРµ</string>
-    <string name="summary_resetUFTimes">РћР±РЅСѓР»СЏРµС‚ СЃС‡С‘С‚С‡РёРє СЂР°Р·РјРѕСЂРѕР·РѕРє РґР»СЏ РєР°Р¶РґРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ, РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹Р№ РІ СЃРїРёСЃРєРµ</string>
-    <string name="summary_resetUseTimes">РћР±РЅСѓР»СЏРµС‚ СЃС‡С‘С‚С‡РёРє РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РґР»СЏ РєР°Р¶РґРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ, РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹Р№ РІ СЃРїРёСЃРєРµ</string>
-    <string name="summary_deleteAllScheduledTasks">Р‘РµР·РІРѕР·РІСЂР°С‚РЅРѕ СѓРґР°Р»СЏРµС‚ РІСЃРµ СЃРѕР·РґР°РЅРЅС‹Рµ РІР°РјРё Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°С‡Рё</string>
-    <string name="unfreeze">Р Р°Р·РјРѕСЂРѕР·РєР°</string>
-    <string name="unfreezedAndAskLaunch">Р—Р°РїСЂРѕС€РµРЅР° СЂР°Р·РјРѕСЂРѕР·РєР°, РїРѕРїСЂРѕР±РѕРІР°С‚СЊ СЃСЂР°Р·Сѓ Р·Р°РїСѓСЃС‚РёС‚СЊ?</string>
-    <string name="unrootedOrCannotFindTheLaunchIntent">Р Р°Р·РјРѕСЂРѕР·РєР° Р·Р°РІРµСЂС€РёР»Р°СЃСЊ СѓСЃРїРµС€РЅРѕ, РЅРѕ РЅРµ СѓРґР°Р»РѕСЃСЊ РЅР°Р№С‚Рё РІС…РѕРґ СЌС‚РѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ, РёР»Рё СЂР°Р·РјРѕСЂРѕР·РєР° РЅРµ СѓРґР°Р»Р°СЃСЊ РёР·-Р·Р° РЅРµС…РІР°С‚РєРё РїСЂР°РІ.</string>
-    <string name="OneKeyFreezeImmediately">OneKey-Р·Р°РјРѕСЂРѕР·РєР°</string>
-    <string name="about">Рћ FreezeYou-Fork</string>
-    <string name="plsVisit">РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕСЃРµС‚РёС‚Рµ</string>
-    <string name="viewMode">Р РµР¶РёРј РїСЂРѕСЃРјРѕС‚СЂР°</string>
-    <string name="onlyFrozen">Р—Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ</string>
-    <string name="onlyUF">РќРµР·Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ</string>
-    <string name="shortCut">РЇСЂР»С‹РєРё</string>
-    <string name="notAvailable">Рќ/Р”</string>
-    <string name="displayAll">РџРѕРєР°Р·Р°С‚СЊ РІСЃРµ</string>
-    <string name="onlyOnekey">OneKey-Р·Р°РјРѕСЂРѕР·РєР°</string>
-    <string name="uninstalled">РЈРґР°Р»РµРЅРЅС‹Рµ</string>
-    <string name="onlySA">РЎРёСЃС‚РµРјРЅС‹Рµ</string>
-    <string name="onlyUA">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ</string>
-    <string name="moreSettings">РќР°СЃС‚СЂРѕР№РєРё</string>
-    <string name="visitWebsite">Р’РµР±СЃР°Р№С‚ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРіРѕ FreezeYou</string>
-    <string name="checkUpdate">РџСЂРѕРІРµСЂРёС‚СЊ РѕР±РЅРѕРІР»РµРЅРёСЏ</string>
-    <string name="summary_checkUpdate">РЎС‚СЂР°РЅРёС†Р° СЂРµР»РёР·РѕРІ С„РѕСЂРєР° - РєР°РЅР°Р» РѕР±РЅРѕРІР»РµРЅРёР№ СЌС‚РѕР№ СЃР±РѕСЂРєРё</string>
-    <string name="addQQGroup">РџСЂРёСЃРѕРµРґРёРЅРёС‚СЊСЃСЏ Рє QQ РіСЂСѓРїРїРµ</string>
-    <string name="dangerZone">РћРїР°СЃРЅР°СЏ Р·РѕРЅР°</string>
-    <string name="disableMRootMode">РћС‚РєР»СЋС‡РёС‚СЊ СЂРµР¶РёРј Р±РµР·-root</string>
-    <string name="disableMRootModeEx">Р•СЃР»Рё РІС‹ РІРєР»СЋС‡РёР»Рё СЂРµР¶РёРј Р±РµР·-root, РІР°Рј РЅРµРѕР±С…РѕРґРёРјРѕ РѕС‚РєР»СЋС‡РёС‚СЊ РµРіРѕ РїРµСЂРµРґ СѓРґР°Р»РµРЅРёРµРј FreezeYou-Fork</string>
-    <string name="update">РћР±РЅРѕРІРёС‚СЊ</string>
-    <string name="common">РћР±С‰РёРµ РЅР°СЃС‚СЂРѕР№РєРё</string>
-    <string name="openImmediately">РћС‚РєСЂС‹С‚СЊ РЅРµРјРµРґР»РµРЅРЅРѕ</string>
-    <string name="openImmediatelyEx">РћС‚РєСЂС‹С‚СЊ РїСЂРёР»РѕР¶РµРЅРёРµ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="hToUse">РљР°Рє РїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ</string>
-    <string name="openAndUFImmediately">РќРµРјРµРґР»РµРЅРЅР°СЏ СЂР°Р·РјРѕСЂРѕР·РєР° Рё Р·Р°РїСѓСЃРє РїСЂРё РЅР°Р¶Р°С‚РёРё РЅР° СЏСЂР»С‹Рє</string>
-    <string name="openAndUFImmediatelyEx">Р‘РѕР»СЊС€Рµ РЅРµР»СЊР·СЏ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЏСЂР»С‹Рє РґР»СЏ Р·Р°РјРѕСЂРѕР·РєРё РїСЂРёР»РѕР¶РµРЅРёСЏ.</string>
-    <string name="quickView">Р‘С‹СЃС‚СЂС‹Р№ РїСЂРѕСЃРјРѕС‚СЂ</string>
-    <string name="nCaution">РќРµ РЅР°РїРѕРјРёРЅР°С‚СЊ</string>
-    <string name="nSCaution">Р‘РѕР»СЊС€Рµ РЅРµ РїРѕРєР°Р·С‹РІР°С‚СЊ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ РїСЂРё Р·Р°РїСѓСЃРєРµ</string>
-    <string name="advance">РџСЂРѕС‡РёРµ РЅР°СЃС‚СЂРѕР№РєРё</string>
-    <string name="manualMode">Р—Р°РјРѕСЂРѕР·РєР° РїРѕ РёРјРµРЅРё РїР°РєРµС‚Р°</string>
-    <string name="summary_manualMode">Р’РІРѕРґ РёРјРµРЅРё РїР°РєРµС‚Р° Рё Р·Р°РјРѕСЂРѕР·РєР° РёР»Рё СЂР°Р·РјРѕСЂРѕР·РєР° РІСЂСѓС‡РЅСѓСЋ вЂ” РґР»СЏ СЃР»СѓС‡Р°РµРІ, РєРѕРіРґР° РїСЂРёР»РѕР¶РµРЅРёСЏ РЅРµС‚ РІ СЃРїРёСЃРєРµ</string>
-    <string name="packageName">РРјСЏ РїР°РєРµС‚Р°</string>
-    <string name="failed">РќРµ СѓРґР°Р»РѕСЃСЊ</string>
-    <string name="success">РЈСЃРїРµС€РЅРѕ</string>
-    <string name="disableAEnable">Р—Р°РјРѕСЂРѕР·РєР°/СЂР°Р·РјРѕСЂРѕР·РєР°/Р·Р°РїСѓСЃРє</string>
-    <string name="copyPkgName">РЎРєРѕРїРёСЂРѕРІР°С‚СЊ РёРјСЏ РїР°РєРµС‚Р°</string>
-    <string name="createDisEnableShortCut">РЎРѕР·РґР°С‚СЊ СЏСЂР»С‹Рє Р·Р°РјРѕСЂРѕР·РєРё/СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="createActivityShortcut">РЎРѕР·РґР°С‚СЊ СЏСЂР»С‹Рє Р°РєС‚РёРІРёС‚Рё</string>
-    <string name="cannotFindTheEntrance">РЈ СЌС‚РѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ РЅРµ РЅР°С€Р»РѕСЃСЊ С‚РѕС‡РєРё РІС…РѕРґР°</string>
-    <string name="unfreezeAndLaunchActivity">РџСЂРёР»РѕР¶РµРЅРёРµ Р·Р°РјРѕСЂРѕР¶РµРЅРѕ вЂ” Р°РєС‚РёРІРёС‚Рё РЅРµ Р·Р°РїСѓСЃС‚РёС‚СЃСЏ. Р Р°Р·РјРѕСЂРѕР·РёС‚СЊ? РћРЅРѕ РѕСЃС‚Р°РЅРµС‚СЃСЏ СЂР°Р·РјРѕСЂРѕР¶РµРЅРЅС‹Рј. Р•СЃР»Рё РЅСѓР¶РЅРѕ Р·Р°РјРѕСЂР°Р¶РёРІР°С‚СЊ РїСЂРёР»РѕР¶РµРЅРёРµ С‡РµСЂРµР· СЏСЂР»С‹Рє вЂ” СЃРѕР·РґР°Р№С‚Рµ РµРіРѕ С‡РµСЂРµР· РїСѓРЅРєС‚ В«%1$sВ».</string>
-    <string name="iconAEntry">РРєРѕРЅРєРё Рё РІС…РѕРґ</string>
-    <string name="dialEntry">РСЃРїРѕР»СЊР·СѓР№С‚Рµ РєР»Р°РІРёР°С‚СѓСЂСѓ РґР»СЏ РІРІРѕРґР°</string>
-    <string name="dialEntry_Ex">Р•СЃР»Рё СЏСЂР»С‹РєРё РЅР° СЌРєСЂР°РЅРµ СЃРєСЂС‹С‚С‹, РѕС‚РєСЂРѕР№С‚Рµ FreezeYou, РЅР°Р±СЂР°РІ РєРѕРґ *#*#373393968#*#* (*#*#FreezeYou#*#*) РІ РЅРѕРјРµСЂРѕРЅР°Р±РёСЂР°С‚РµР»Рµ С‚РµР»РµС„РѕРЅР°. РџРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ РЅР° Р±РѕР»СЊС€РёРЅСЃС‚РІРµ Android-СѓСЃС‚СЂРѕР№СЃС‚РІ.</string>
-    <string name="ciFinishedToast">РћС‚РїСЂР°РІР»РµРЅРѕ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, РґРѕР¶РґРёС‚РµСЃСЊ РѕР±РЅРѕРІР»РµРЅРёСЏ Р»Р°СѓРЅС‡РµСЂР°, РёР»Рё РїРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ РµРіРѕ.</string>
-    <string name="ifUploadCrashLog">РћР±РЅР°СЂСѓР¶РµРЅ Р»РѕРі СЃР±РѕСЏ. РџРѕРґРµР»РёС‚СЊСЃСЏ РёРј?</string>
-    <string name="crashLog">Р›РѕРі СЃР±РѕСЏ</string>
-    <string name="log">Р›РѕРі</string>
-    <string name="search">РџРѕРёСЃРє</string>
-    <string name="launchMode">Р’РёРґ РїСЂРё Р·Р°РїСѓСЃРєРµ</string>
-    <string name="freezeImmediately">Р—Р°РјРѕСЂРѕР·РєР° РЅРµРјРµРґР»РµРЅРЅРѕ</string>
-    <string name="UFImmediately">Р Р°Р·РјРѕСЂРѕР·РєР° РЅРµРјРµРґР»РµРЅРЅРѕ</string>
-    <string name="plsRemoveUninstalledApplications">РЈРґР°Р»РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РјРѕР¶РЅРѕ СѓР±СЂР°С‚СЊ РёР· СЃРїРёСЃРєР°</string>
-    <string name="notificationBarFreezeImmediately">Р—Р°РјРѕСЂРѕР·РєР° СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РЅР°Р¶Р°С‚РёСЏ РЅР° СѓРІРµРґРѕРјР»РµРЅРёРµ Рѕ Р·Р°РјРѕСЂРѕР·РєРµ/СЂР°Р·РјРѕСЂРѕР·РєРµ</string>
-    <string name="onClickFunction">Р”РµР№СЃС‚РІРёСЏ РїСЂРё РЅР°Р¶Р°С‚РёРё</string>
-    <string name="chooseAction">Р’С‹Р±СЂР°С‚СЊ РґРµР№СЃС‚РІРёРµ</string>
-    <string name="autoUFOrFreeze">РђРІС‚РѕР·Р°РјРѕСЂРѕР·РєР° Рё СЂР°Р·РјРѕСЂРѕР·РєР°</string>
-    <string name="UFAndRun">Р Р°Р·РјРѕСЂРѕР·РєР° Рё Р·Р°РїСѓСЃРє</string>
-    <string name="autoUFOrFreezeAndRun">РђРІС‚РѕР·Р°РјРѕСЂРѕР·РєР° РёР»Рё СЂР°Р·РјРѕСЂРѕР·РєР° Рё Р·Р°РїСѓСЃРє</string>
-    <string name="freezeCompleted">Р—Р°РјРѕСЂРѕР¶РµРЅРѕ</string>
-    <string name="UFCompleted">Р Р°Р·РјРѕСЂРѕР¶РµРЅРѕ</string>
-    <string name="shortCutOneKeyFreezeAdditionalOptions">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ СЏСЂР»С‹РєР° OneKey-Р·Р°РјРѕСЂРѕР·РєРё</string>
-    <string name="askIfLockScreen">Р’С‹ С…РѕС‚РёС‚Рµ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ СЌРєСЂР°РЅ СЃРµР№С‡Р°СЃ?</string>
-    <string name="devicePolicyManagerNotFound">Р”РёСЃРїРµС‚С‡РµСЂ РїРѕР»РёС‚РёРєРё СѓСЃС‚СЂРѕР№СЃС‚РІ РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅ</string>
-    <string name="activated">РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ</string>
-    <string name="disableConfirmation">РџРѕРґС‚РІРµСЂРґРёС‚СЊ РѕС‚РјРµРЅСѓ?</string>
-    <string name="disabled">РћС‚РєР»СЋС‡РµРЅРѕ</string>
-    <string name="notUpdatedForALongTimeMessage">Р”Р°РІРЅРѕ РЅРµ РѕР±РЅРѕРІР»СЏР»РѕСЃСЊ, С…РѕС‚РёС‚Рµ РїСЂРѕРІРµСЂРёС‚СЊ РЅР°Р»РёС‡РёРµ РѕР±РЅРѕРІР»РµРЅРёР№ СЃРµР№С‡Р°СЃ?</string>
-    <string name="uiStyle">Р¦РІРµС‚РѕРІР°СЏ СЃС…РµРјР°</string>
-    <string name="willTakeEffectsNextLaunch">Р’СЃС‚СѓРїРёС‚ РІ СЃРёР»Сѓ РїСЂРё СЃР»РµРґСѓСЋС‰РµРј Р·Р°РїСѓСЃРєРµ РїСЂРёР»РѕР¶РµРЅРёСЏ</string>
-    <string name="freezeAUF">Р—Р°РјРѕСЂРѕР·РєР° Рё СЂР°Р·РјРѕСЂРѕР·РєР°</string>
-    <string name="notificationBar">РЈРІРµРґРѕРјР»РµРЅРёСЏ</string>
-    <string name="disableSlideOut">РќРµ РёСЃС‡РµР·Р°С‚СЊ РїСЂРё СЃРјР°С…РёРІР°РЅРёРё</string>
-    <string name="disableClickDisappear">РќРµ РёСЃС‡РµР·Р°С‚СЊ РїРѕСЃР»Рµ РЅР°Р¶Р°С‚РёСЏ</string>
-    <string name="effectNextCreate">Р’СЃС‚СѓРїРёС‚ РІ СЃРёР»Сѓ РІ СЃР»РµРґСѓСЋС‰РёР№ СЂР°Р·</string>
-    <string name="helpTranslate">РџРѕРјРѕРіРёС‚Рµ РїРµСЂРµРІРµСЃС‚Рё СЌС‚Рѕ РїСЂРёР»РѕР¶РµРЅРёРµ</string>
-    <string name="thanksList">Р‘Р»Р°РіРѕРґР°СЂРЅРѕСЃС‚Рё СѓС‡Р°СЃС‚РЅРёРєР°Рј РїСЂРѕРµРєС‚Р°</string>
-    <string name="automation">РђРІС‚РѕРјР°С‚РёР·Р°С†РёСЏ</string>
-    <string name="freezeAfterScreenLock">Р—Р°РїСѓСЃРєР°С‚СЊ OneKey-Р·Р°РјРѕСЂРѕР·РєСѓ РїСЂРё РІС‹РєР»СЋС‡РµРЅРёРё СЌРєСЂР°РЅР°</string>
-    <string name="freezeAfterScreenLockSummary">Р—Р°РјРѕСЂР°Р¶РёРІР°РµС‚ РїСЂРёР»РѕР¶РµРЅРёСЏ РёР· СЃРїРёСЃРєР° В«OneKey-Р·Р°РјРѕСЂРѕР·РєР°В» РєР°Р¶РґС‹Р№ СЂР°Р·, РєРѕРіРґР° РіР°СЃРЅРµС‚ СЌРєСЂР°РЅ.</string>
-    <string name="backgroundService">Р¤РѕРЅРѕРІС‹Р№ СЃРµСЂРІРёСЃ</string>
-    <string name="useForegroundService">РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЃРµСЂРІРёСЃ РїРµСЂРµРґРЅРµРіРѕ РїР»Р°РЅР°</string>
-    <string name="serviceLongerEx">РЎРЅРёР·РёС‚ РІРµСЂРѕСЏС‚РЅРѕСЃС‚СЊ СЃР±РѕСЏ С„РѕРЅРѕРІРѕРіРѕ СЃРµСЂРІРёСЃР°</string>
-    <string name="getDisabledApplications">РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє Р·Р°РјРѕСЂРѕР¶РµРЅРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="enableApplications">Р Р°Р·РјРѕСЂРѕР·РёС‚СЊ РїР°РєРµС‚С‹</string>
-    <string name="disableApplications">Р—Р°РјРѕСЂРѕР·РёС‚СЊ РїР°РєРµС‚С‹</string>
-    <string name="clearIconCache">РћС‡РёСЃС‚РёС‚СЊ РєСЌС€ РёРєРѕРЅРѕРє</string>
-    <string name="clearNameCache">РћС‡РёСЃС‚РёС‚СЊ РєСЌС€ РёРјРµРЅ РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="saveOnClickFunctionStatus">РЎРѕС…СЂР°РЅРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ В«Р”РµР№СЃС‚РІРёСЏ РїСЂРё РЅР°Р¶Р°С‚РёРёВ»</string>
-    <string name="accessibility_service_description">РЎР»РµРґРёС‚СЊ Р·Р° РёР·РјРµРЅРµРЅРёСЏРјРё РїСЂРёР»РѕР¶РµРЅРёР№ РїРµСЂРµРґРЅРµРіРѕ РїР»Р°РЅР°. \nРСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ СЂР°Р±РѕС‚С‹ С„СѓРЅРєС†РёРё, РєРѕС‚РѕСЂР°СЏ РїСЂРµРґРѕС‚РІСЂР°С‰Р°РµС‚ Р·Р°РјРѕСЂРѕР·РєСѓ РїСЂРёР»РѕР¶РµРЅРёР№ РїРµСЂРµРґРЅРµРіРѕ РїР»Р°РЅР° РїСЂРё Р°РІС‚Рѕ-Р·Р°РјРѕСЂРѕР·РєРµ, Рё РґР»СЏ Р°РІС‚РѕР·Р°РјРѕСЂРѕР·РєРё РїСЂРёР»РѕР¶РµРЅРёР№, РєРѕРіРґР° РѕРЅРё РЅРµ СЏРІР»СЏСЋС‚СЃСЏ РїСЂРёР»РѕР¶РµРЅРёСЏРјРё РїРµСЂРµРґРЅРµРіРѕ РїР»Р°РЅР°, Рё С‚.Рґ.</string>
-    <string name="configureAccessibilityService">РќР°СЃС‚СЂРѕР№РєР° СЃР»СѓР¶Р±С‹ СЃРїРµС†РёР°Р»СЊРЅС‹С… РІРѕР·РјРѕР¶РЅРѕСЃС‚РµР№</string>
-    <string name="freezeOnceQuit">Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°</string>
-    <string name="freezeOnceQuitSummary">РџСЂРёР»РѕР¶РµРЅРёСЏ РёР· СЃРїРёСЃРєР° В«Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°В» Р·Р°РјРѕСЂР°Р¶РёРІР°СЋС‚СЃСЏ, РєР°Рє С‚РѕР»СЊРєРѕ РІС‹ РёР· РЅРёС… РІС‹С€Р»Рё.</string>
-    <string name="needActiveAccessibilityService">РќСѓР¶РЅРѕ РІРєР»СЋС‡РёС‚СЊ СЃР»СѓР¶Р±Сѓ РїРѕРґРґРµСЂР¶РєРё СЃРїРµС†РёР°Р»СЊРЅС‹С… РІРѕР·РјРѕР¶РЅРѕСЃС‚РµР№</string>
-    <string name="invalidArguments">РќРµРІРµСЂРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹</string>
-    <string name="plsConfirm">РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґС‚РІРµСЂРґРёС‚Рµ</string>
-    <string name="removeNoRootCaution">Р’С‹ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ РѕС‚РјРµРЅРёС‚СЊ СЂР°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СЂРµР¶РёРјР° Р±РµР·-root? \nР§С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РЅРµРЅСѓР¶РЅС‹С… РїСЂРѕР±Р»РµРј, СЂР°Р·РјРѕСЂРѕР·СЊС‚Рµ РІСЃРµ Р·Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РїРµСЂРµРґ РѕС‚РєР»СЋС‡РµРЅРёРµРј СЌС‚РѕРіРѕ СЂРµР¶РёРјР°!</string>
-    <string name="noRootNotActivated">Рљ СЃРѕР¶Р°Р»РµРЅРёСЋ, СЂРµР¶РёРј Р±РµР·-root СЃРµР№С‡Р°СЃ РЅРµ РІРєР»СЋС‡РµРЅ!</string>
-    <string name="faq">Р§РђР’Рћ</string>
-    <string name="executeImmediately">Р’С‹РїРѕР»РЅРёС‚СЊ</string>
-    <string name="oneKeyLockScreen">Р‘Р»РѕРєРёСЂРѕРІРєР° СЌРєСЂР°РЅР°</string>
-    <string name="mustContainColon">РСЃРїРѕР»СЊР·СѓР№С‚Рµ РґРІРѕРµС‚РѕС‡РёРµ : РґР»СЏ СЂР°Р·РґРµР»РµРЅРёСЏ С‡Р°СЃРѕРІ Рё РјРёРЅСѓС‚</string>
-    <string name="scheduledTasks">Р—Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°РЅРёСЏ</string>
-    <string name="add">Р”РѕР±Р°РІРёС‚СЊ</string>
-    <string name="save">РЎРѕС…СЂР°РЅРёС‚СЊ</string>
-    <string name="time">Р’СЂРµРјСЏ</string>
-    <string name="enable">Р’РєР»СЋС‡РёС‚СЊ</string>
-    <string name="repeat">РџРѕРІС‚РѕСЂ</string>
-    <string name="task">Р—Р°РґР°С‡Р°</string>
-    <string name="help">РџРѕРјРѕС‰СЊ</string>
-    <string name="summary_stma_add_help">РЎРёРЅС‚Р°РєСЃРёСЃ РєРѕРјР°РЅРґ Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹С… Р·Р°РґР°РЅРёР№</string>
-    <string name="label">РќР°Р·РІР°РЅРёРµ</string>
-    <string name="hourShouldBetween">Р§Р°СЃ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРµР¶РґСѓ 0 Рё 23</string>
-    <string name="minutesShouldBetween">РњРёРЅСѓС‚С‹ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РѕС‚ 0 РґРѕ 59</string>
-    <string name="requestFailedPlsRetry">Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ, РїРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰Рµ СЂР°Р·</string>
-    <string name="uninstall">РЈРґР°Р»РёС‚СЊ РїСЂРёР»РѕР¶РµРЅРёРµ</string>
-    <string name="triggers">РўСЂРёРіРіРµСЂС‹</string>
-    <string name="triggers_extra_parameters">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹</string>
-    <string name="delete">РЈРґР°Р»РёС‚СЊ</string>
-    <string name="copyAfterBeingFormatted">РљРѕРїРёСЂРѕРІР°С‚СЊ РёРјРµРЅР° РїР°РєРµС‚РѕРІ</string>
-    <string name="showInRecents">РџРѕРєР°Р·С‹РІР°С‚СЊ РІ РЅРµРґР°РІРЅРёС…</string>
-    <string name="showInRecentsSummary">РћСЃС‚Р°РІР»СЏРµС‚ FreezeYou РІРёРґРёРјС‹Рј РІ СЃРїРёСЃРєРµ РЅРµРґР°РІРЅРёС… РїСЂРёР»РѕР¶РµРЅРёР№ (РјРЅРѕРіРѕР·Р°РґР°С‡РЅРѕСЃС‚СЊ).</string>
-    <string name="mayHaveNoEffectsL">РњРѕР¶РµС‚ РЅРµ РёРјРµС‚СЊ РЅРёРєР°РєРѕРіРѕ СЌС„С„РµРєС‚Р° РЅР° Android 4.4 Рё РЅРёР¶Рµ</string>
-    <string name="lesserToast">Р РµР¶Рµ РїРѕРєР°Р·С‹РІР°С‚СЊ РІСЃРїР»С‹РІР°СЋС‰РёРµ СЃРѕРѕР±С‰РµРЅРёСЏ</string>
-    <string name="avoidFreezeForegroundApplications">РџСЂРµРґРѕС‚РІСЂР°С‰РµРЅРёРµ Р·Р°РјРѕСЂРѕР·РєРё РїСЂРёР»РѕР¶РµРЅРёР№ РїРµСЂРµРґРЅРµРіРѕ РїР»Р°РЅР°</string>
-    <string name="avoidFreezeForegroundApplicationsSummary">РџСЂРѕРїСѓСЃРєР°РµС‚ Р·Р°РјРѕСЂРѕР·РєСѓ РїСЂРёР»РѕР¶РµРЅРёСЏ, РїРѕРєР° РѕРЅРѕ РЅР°С…РѕРґРёС‚СЃСЏ РЅР° РїРµСЂРµРґРЅРµРј РїР»Р°РЅРµ, С‡С‚РѕР±С‹ РЅРµ РїСЂРµСЂС‹РІР°С‚СЊ Р°РєС‚РёРІРЅРѕРµ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ. РўСЂРµР±СѓРµС‚ РІРєР»СЋС‡РµРЅРёСЏ РЎРїРµС†РёР°Р»СЊРЅС‹С… РІРѕР·РјРѕР¶РЅРѕСЃС‚РµР№ (Accessibility Service).</string>
-    <string name="delAllScheduledTasks">РЈРґР°Р»РёС‚СЊ РІСЃРµ Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°С‡Рё</string>
-    <string name="askIfDel">Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ?</string>
-    <string name="folder">РџР°РїРєР°</string>
-    <string name="later">РџРѕС‚РѕРј</string>
-    <string name="onlyMROOTModeUse">РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ С‚РѕР»СЊРєРѕ РІ СЂРµР¶РёРјРµ Р±РµР·-root</string>
-    <string name="organizationName">РќР°Р·РІР°РЅРёРµ РѕСЂРіР°РЅРёР·Р°С†РёРё</string>
-    <string name="avoidFreezeNotifyingApplications">РџСЂРµРґРѕС‚РІСЂР°С‰РµРЅРёРµ Р·Р°РјРѕСЂРѕР·РєРё РїСЂРёР»РѕР¶РµРЅРёР№ СЃ СѓРІРµРґРѕРјР»РµРЅРёСЏРјРё</string>
-    <string name="avoidFreezeNotifyingApplicationsSummary">РџСЂРѕРїСѓСЃРєР°РµС‚ Р·Р°РјРѕСЂРѕР·РєСѓ РїСЂРёР»РѕР¶РµРЅРёСЏ, РїРѕРєР° Сѓ РЅРµРіРѕ РµСЃС‚СЊ Р°РєС‚РёРІРЅРѕРµ СѓРІРµРґРѕРјР»РµРЅРёРµ (РЅР°РїСЂРёРјРµСЂ, РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ РјСѓР·С‹РєРё, Р·Р°РіСЂСѓР·РєРё), С‡С‚РѕР±С‹ РѕРЅРѕ РїСЂРѕРґРѕР»Р¶Р°Р»Рѕ СЂР°Р±РѕС‚Р°С‚СЊ.</string>
-    <string name="needL">РўСЂРµР±СѓРµС‚СЃСЏ Android 5.0 Рё РЅРѕРІРµРµ</string>
-    <string name="autoDiagnosis">Р”РёР°РіРЅРѕСЃС‚РёРєР°</string>
-    <string name="summary_autoDiagnosis">РђРІС‚РѕРїСЂРѕРІРµСЂРєР° СЂР°Р·СЂРµС€РµРЅРёР№, СЂРµР¶РёРјР° РІР»Р°РґРµР»СЊС†Р°, root Рё СЌРєРѕРЅРѕРјРёРё Р±Р°С‚Р°СЂРµРё вЂ” СЃРѕ СЃРїРёСЃРєРѕРј РЅР°Р№РґРµРЅРЅС‹С… РїСЂРѕР±Р»РµРј</string>
-    <string name="sysVerLow">РЈСЃС‚Р°СЂРµРІС€Р°СЏ РІРµСЂСЃРёСЏ Android</string>
-    <string name="someFuncUn">РќРµРєРѕС‚РѕСЂС‹Рµ С„СѓРЅРєС†РёРё РјРѕРіСѓС‚ Р±С‹С‚СЊ РЅРµРґРѕСЃС‚СѓРїРЅС‹</string>
-    <string name="ACBSNotEnabled">РЎР»СѓР¶Р±Р° СЃРїРµС†РёР°Р»СЊРЅС‹С… РІРѕР·РјРѕР¶РЅРѕСЃС‚РµР№ РЅРµ РІРєР»СЋС‡РµРЅР°</string>
-    <string name="affect">Р’Р»РёСЏРµС‚ РЅР°</string>
-    <string name="etc">Рё С‚.Рґ.</string>
-    <string name="mayCannotNotify">РЈРІРµРґРѕРјР»РµРЅРёСЏ РјРѕРіСѓС‚ РЅРµ РѕС‚РїСЂР°РІР»СЏС‚СЊСЃСЏ</string>
-    <string name="noNotifyPermission">Р Р°Р·СЂРµС€РµРЅРёРµ РЅР° РѕС‚РїСЂР°РІРєСѓ СѓРІРµРґРѕРјР»РµРЅРёСЏ РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРѕ</string>
-    <string name="noNotificationListenerPermission">Р Р°Р·СЂРµС€РµРЅРёРµ РѕС‚СЃР»РµР¶РёРІР°РЅРёСЏ СѓРІРµРґРѕРјР»РµРЅРёР№ РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРѕ</string>
-    <string name="noProblemsFound">РџСЂРѕР±Р»РµРј РЅРµ РЅР°Р№РґРµРЅРѕ</string>
-    <string name="everySeemsAllRight">РљР°Р¶РµС‚СЃСЏ, РІСЃРµ РІ РїРѕСЂСЏРґРєРµ</string>
-    <string name="noMRootPermission">Р РµР¶РёРј Р±РµР·-root РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅ</string>
-    <string name="someFuncMayRestrict">РќРµРєРѕС‚РѕСЂС‹Рµ С„СѓРЅРєС†РёРё РјРѕРіСѓС‚ Р±С‹С‚СЊ РѕРіСЂР°РЅРёС‡РµРЅС‹</string>
-    <string name="noRootPermission">Р Р°Р·СЂРµС€РµРЅРёРµ root РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРѕ</string>
-    <string name="noIgnoringBO">РћРїС‚РёРјРёР·Р°С†РёСЏ Р±Р°С‚Р°СЂРµРё РЅРµ РѕС‚РєР»СЋС‡РµРЅР°</string>
-    <string name="someFuncMayBeAff">РќРµРєРѕС‚РѕСЂС‹Рµ С„СѓРЅРєС†РёРё РјРѕРіСѓС‚ Р±С‹С‚СЊ Р·Р°С‚СЂРѕРЅСѓС‚С‹</string>
-    <string name="notUpdatedForALongTime">Р”Р°РІРЅРѕ РЅРµ РѕР±РЅРѕРІР»СЏР»РѕСЃСЊ</string>
-    <string name="someNewFuncMayPub">РќРµРєРѕС‚РѕСЂС‹Рµ РЅРѕРІС‹Рµ С„СѓРЅРєС†РёРё РјРѕРіР»Рё Р±С‹С‚СЊ СЂРµР°Р»РёР·РѕРІР°РЅС‹</string>
-    <string name="inPowerSaveMode">Р РµР¶РёРј СЌРЅРµСЂРіРѕСЃР±РµСЂРµР¶РµРЅРёСЏ РІРєР»СЋС‡РµРЅ</string>
-    <string name="manageQuickFUFNoti">РЈРїСЂР°РІР»РµРЅРёРµ СѓРІРµРґРѕРјР»РµРЅРёСЏРјРё Рѕ Р±С‹СЃС‚СЂРѕР№ Р·Р°РјРѕСЂРѕР·РєРµ</string>
-    <string name="addToRemoveFrom">Р”РѕР±Р°РІРёС‚СЊ РІ/СѓРґР°Р»РёС‚СЊ РёР·</string>
-    <string name="shortcutAutoFUF">РђРІС‚РѕР·Р°РјРѕСЂРѕР·РєР° РёР»Рё СЂР°Р·РјРѕСЂРѕР·РєР° РїРѕ СЏСЂР»С‹РєСѓ</string>
-    <string name="shortcutAutoFUFEx">РЇСЂР»С‹Рє-РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЊ: Р·Р°РјРѕСЂРѕР¶РµРЅРЅРѕРµ СЂР°Р·РјРѕСЂР°Р¶РёРІР°РµС‚, СЂР°Р·РјРѕСЂРѕР¶РµРЅРЅРѕРµ Р·Р°РјРѕСЂР°Р¶РёРІР°РµС‚.</string>
-    <string name="regenerateSomeCache">РћР±РЅРѕРІР»РµРЅРёРµ РЅРµРєРѕС‚РѕСЂС‹С… РєСЌС€РµР№</string>
-    <string name="updateSomeData">РћР±РЅРѕРІРёС‚СЊ РЅРµРєРѕС‚РѕСЂС‹Рµ РґР°РЅРЅС‹Рµ</string>
-    <string name="backupAndRestore">Р‘РµРєР°Рї Рё РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ</string>
-    <string name="summary_backupAndRestore">Р­РєСЃРїРѕСЂС‚ РЅР°СЃС‚СЂРѕРµРє, СЃРїРёСЃРєРѕРІ, СЏСЂР»С‹РєРѕРІ Рё Р·Р°РґР°РЅРёР№ РІ С„Р°Р№Р» Рё РёРјРїРѕСЂС‚ РѕР±СЂР°С‚РЅРѕ</string>
-    <string name="status">РЎРѕСЃС‚РѕСЏРЅРёРµ</string>
-    <string name="debugMode">Р РµР¶РёРј РѕС‚Р»Р°РґРєРё</string>
-    <string name="debugModeSummary">Р—Р°РїРёСЃС‹РІР°РµС‚ РІ Р¶СѓСЂРЅР°Р» РІРЅСѓС‚СЂРµРЅРЅРёРµ РґРµР№СЃС‚РІРёСЏ РїСЂРёР»РѕР¶РµРЅРёСЏ (РїРѕРїС‹С‚РєРё Р·Р°РјРѕСЂРѕР·РєРё/СЂР°Р·РјРѕСЂРѕР·РєРё, РІС‹Р·РѕРІС‹ Shizuku/root) РґР»СЏ РґРёР°РіРЅРѕСЃС‚РёРєРё РїСЂРѕР±Р»РµРј. РњРѕР¶РµС‚ РЅРµРјРЅРѕРіРѕ СЃРЅРёР·РёС‚СЊ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚СЊ.</string>
-    <string name="showLogcat">РџСЂРѕСЃРјРѕС‚СЂ Р¶СѓСЂРЅР°Р»Р°</string>
-    <string name="summary_showLogcat">РџСЂРѕСЃРјРѕС‚СЂ Р¶СѓСЂРЅР°Р»Р° СЂР°Р±РѕС‚С‹ РїСЂРёР»РѕР¶РµРЅРёСЏ Рё РѕС‚РїСЂР°РІРєР° РµРіРѕ С„Р°Р№Р»РѕРј С‡РµСЂРµР· В«РџРѕРґРµР»РёС‚СЊСЃСЏВ»</string>
-    <string name="askIfSave">РЎРѕС…СЂР°РЅРёС‚СЊ?</string>
-    <string name="mainActivityPattern">Р’РёРґ СЃС‚Р°СЂС‚РѕРІРѕР№ СЃС‚СЂР°РЅРёС†С‹</string>
-    <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">РџРѕРєР°Р·С‹РІР°РµС‚ Р·Р°РїСЂРѕСЃ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ РїРµСЂРµРґ Р·Р°РјРѕСЂРѕР·РєРѕР№ РїСЂРёР»РѕР¶РµРЅРёСЏ, РµСЃР»Рё РѕРЅР° Р·Р°РїСѓС‰РµРЅР° С‡РµСЂРµР· Р°РІС‚РѕР·Р°РјРѕСЂРѕР·РєСѓ РїРѕ СЏСЂР»С‹РєСѓ.</string>
-    <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕС‚РєСЂС‹РІР°РµС‚ РїСЂРёР»РѕР¶РµРЅРёРµ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё С‡РµСЂРµР· Р°РІС‚РѕСЂР°Р·РјРѕСЂРѕР·РєСѓ РїРѕ СЏСЂР»С‹РєСѓ.</string>
-    <string name="needCfmWhenFreeze">Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїСЂРё Р·Р°РјРѕСЂРѕР·РєРµ</string>
-    <string name="openImmediatelyAfterUF">Р—Р°РїСѓСЃРє СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="createLauncherShortcut">РЎРѕР·РґР°С‚СЊ СЏСЂР»С‹Рє РЅР° СЂР°Р±РѕС‡РµРј СЃС‚РѕР»Рµ</string>
-    <string name="name">РќР°Р·РІР°РЅРёРµ</string>
-    <string name="icon">Р—РЅР°С‡РѕРє</string>
-    <string name="target">Р¦РµР»СЊ</string>
-    <string name="shortcutTargetFieldHint">РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ СЏСЂР»С‹Рє Р·Р°РїСѓСЃРєР°РµС‚ РїСЂРёР»РѕР¶РµРЅРёРµ. РќР°Р¶РјРёС‚Рµ В«...В», С‡С‚РѕР±С‹ РІС‹Р±СЂР°С‚СЊ РґСЂСѓРіРѕРµ Р°РєС‚РёРІРёС‚Рё (СЌРєСЂР°РЅ) РёР· СЃРїРёСЃРєР° РґРѕСЃС‚СѓРїРЅС‹С… Рє Р·Р°РїСѓСЃРєСѓ.</string>
-    <string name="generate">РЎРѕР·РґР°С‚СЊ</string>
-    <string name="plsSelect">РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІС‹Р±РµСЂРёС‚Рµ</string>
-    <string name="application">РџСЂРёР»РѕР¶РµРЅРёСЏ</string>
-    <string name="shortcutPackageFieldHint">РќР°Р¶РјРёС‚Рµ В«...В», С‡С‚РѕР±С‹ РІС‹Р±СЂР°С‚СЊ Р»СЋР±РѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ РёР· РїРѕР»РЅРѕРіРѕ СЃРїРёСЃРєР°, Р° РЅРµ С‚РѕР»СЊРєРѕ С‚Рѕ, СЃ РєРѕС‚РѕСЂРѕРіРѕ РІС‹ РЅР°С‡Р°Р»Рё.</string>
-    <string name="allowEditWhCreateShortcut">Р Р°Р·СЂРµС€РёС‚СЊ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїСЂРё СЃРѕР·РґР°РЅРёРё СЏСЂР»С‹РєРѕРІ</string>
-    <string name="clearAllUserData">РЎС‚РµСЂРµС‚СЊ РґР°РЅРЅС‹Рµ FreezeYou</string>
-    <string name="clearAllUserDataSummary">Р‘РµР·РІРѕР·РІСЂР°С‚РЅРѕ СЃС‚РёСЂР°РµС‚ РґР°РЅРЅС‹Рµ СЃР°РјРѕРіРѕ FreezeYou: РЅР°СЃС‚СЂРѕР№РєРё, РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ РіСЂСѓРїРїС‹, Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°РЅРёСЏ Рё РґР°РЅРЅС‹Рµ СЏСЂР»С‹РєРѕРІ. Р—Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ РѕСЃС‚Р°РЅСѓС‚СЃСЏ Р·Р°РјРѕСЂРѕР¶РµРЅРЅС‹РјРё вЂ” СЌС‚Рѕ СЃРѕСЃС‚РѕСЏРЅРёРµ С…СЂР°РЅРёС‚ СЃРёСЃС‚РµРјР°, Р° РЅРµ FreezeYou. РћС‚РјРµРЅРёС‚СЊ РЅРµР»СЊР·СЏ.</string>
-    <string name="packageNotFound">РџСЂРёР»РѕР¶РµРЅРёРµ РЅРµ РЅР°Р№РґРµРЅРѕ</string>
+    <string name="oneKeyFreeze">OneKey-заморозка</string>
+    <string name="oneKeyUF">OneKey-разморозка</string>
+    <string name="alertT1">Внимание! Не замораживайте важные для системы приложения. Это может привести к сбою системы!</string>
+    <string name="cancel">Отмена</string>
+    <string name="chooseDetailAction">Пожалуйста, выберите действие</string>
+    <string name="added">Добавлен</string>
+    <string name="notice">Внимание</string>
+    <string name="freeze">Заморозка</string>
+    <string name="more">Дополнительно</string>
+    <string name="appDetail">Сведения о приложении</string>
+    <string name="removeFromOneKeyList">Удалить из OneKey-заморозки</string>
+    <string name="removeFromOneKeyUFList">Удалить из OneKey-разморозки</string>
+    <string name="removeFromFreezeOnceQuit">Удалить из «Заморозка после выхода»</string>
+    <string name="removed">Удалено</string>
+    <string name="removeFailed">Не удалось удалить</string>
+    <string name="addToOneKeyList">Добавить в OneKey-заморозку</string>
+    <string name="addToOneKeyUFList">Добавить в OneKey-разморозку</string>
+    <string name="addToFreezeOnceQuit">Добавить в «Заморозка после выхода»</string>
+    <string name="addFailed">Не удалось добавить</string>
+    <string name="caution">ВНИМАНИЕ</string>
+    <string name="cautionContent">Не замораживайте важные для системы приложения. Это может привести к сбою системы</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="requested">Запрос</string>
+    <string name="requestFailed">Не удалось создать запрос:</string>
+    <string name="createOneKeyFreezeShortcut">OneKey-заморозка</string>
+    <string name="executed">Выполнено</string>
+    <string name="exception">Исключение:</string>
+    <string name="launch">Запуск</string>
+    <string name="mayUnrooted">Нет root прав, или режим без-root не был включен</string>
+    <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
+    <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
+    <string name="andNMoreApplications">, и ещё %1$d</string>
+    <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
+    <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
+    <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
+    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы через встроенный установщик</string>
+    <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
+    <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
+    <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
+    <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
+    <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
+    <string name="summary_clearUninstalledPkgsInList">* Удаляет из списка только те приложения, которые вы уже удалили с устройства — остальные пункты списка не затрагиваются</string>
+    <string name="clearUninstalledPkgsInOKFFListAsterisk">Убрать удаленные приложения из OneKey-заморозки *</string>
+    <string name="clearUninstalledPkgsInOKUFListAsterisk">Убрать удаленные приложения из OneKey-разморозки *</string>
+    <string name="clearUninstalledPkgsInFOQListAsterisk">Убрать удаленные приложения из «Заморозка после выхода» *</string>
+    <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
+    <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
+    <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>
+    <string name="summary_resetFreezeTimes">Обнуляет счётчик заморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUFTimes">Обнуляет счётчик разморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUseTimes">Обнуляет счётчик использования для каждого приложения, отображаемый в списке</string>
+    <string name="summary_deleteAllScheduledTasks">Безвозвратно удаляет все созданные вами запланированные задачи</string>
+    <string name="unfreeze">Разморозка</string>
+    <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
+    <string name="unrootedOrCannotFindTheLaunchIntent">Разморозка завершилась успешно, но не удалось найти вход этого приложения, или разморозка не удалась из-за нехватки прав.</string>
+    <string name="OneKeyFreezeImmediately">OneKey-заморозка</string>
+    <string name="about">О FreezeYou-Fork</string>
+    <string name="plsVisit">Пожалуйста, посетите</string>
+    <string name="viewMode">Режим просмотра</string>
+    <string name="onlyFrozen">Замороженные</string>
+    <string name="onlyUF">Незамороженные</string>
+    <string name="shortCut">Ярлыки</string>
+    <string name="notAvailable">Н/Д</string>
+    <string name="displayAll">Показать все</string>
+    <string name="onlyOnekey">OneKey-заморозка</string>
+    <string name="uninstalled">Удаленные</string>
+    <string name="onlySA">Системные</string>
+    <string name="onlyUA">Пользовательские</string>
+    <string name="moreSettings">Настройки</string>
+    <string name="visitWebsite">Вебсайт оригинального FreezeYou</string>
+    <string name="checkUpdate">Проверить обновления</string>
+    <string name="summary_checkUpdate">Страница релизов форка - канал обновлений этой сборки</string>
+    <string name="addQQGroup">Присоединиться к QQ группе</string>
+    <string name="dangerZone">Опасная зона</string>
+    <string name="disableMRootMode">Отключить режим без-root</string>
+    <string name="disableMRootModeEx">Если вы включили режим без-root, вам необходимо отключить его перед удалением FreezeYou-Fork</string>
+    <string name="update">Обновить</string>
+    <string name="common">Общие настройки</string>
+    <string name="openImmediately">Открыть немедленно</string>
+    <string name="openImmediatelyEx">Открыть приложение сразу после разморозки</string>
+    <string name="hToUse">Как пользоваться</string>
+    <string name="openAndUFImmediately">Немедленная разморозка и запуск при нажатии на ярлык</string>
+    <string name="openAndUFImmediatelyEx">Больше нельзя использовать ярлык для заморозки приложения.</string>
+    <string name="quickView">Быстрый просмотр</string>
+    <string name="nCaution">Не напоминать</string>
+    <string name="nSCaution">Больше не показывать предупреждение при запуске</string>
+    <string name="advance">Прочие настройки</string>
+    <string name="manualMode">Заморозка по имени пакета</string>
+    <string name="summary_manualMode">Ввод имени пакета и заморозка или разморозка вручную — для случаев, когда приложения нет в списке</string>
+    <string name="packageName">Имя пакета</string>
+    <string name="failed">Не удалось</string>
+    <string name="success">Успешно</string>
+    <string name="disableAEnable">Заморозка/разморозка/запуск</string>
+    <string name="copyPkgName">Скопировать имя пакета</string>
+    <string name="createDisEnableShortCut">Создать ярлык заморозки/разморозки</string>
+    <string name="createActivityShortcut">Создать ярлык активити</string>
+    <string name="cannotFindTheEntrance">У этого приложения не нашлось точки входа</string>
+    <string name="unfreezeAndLaunchActivity">Приложение заморожено — активити не запустится. Разморозить? Оно останется размороженным. Если нужно замораживать приложение через ярлык — создайте его через пункт «%1$s».</string>
+    <string name="iconAEntry">Иконки и вход</string>
+    <string name="dialEntry">Используйте клавиатуру для ввода</string>
+    <string name="dialEntry_Ex">Если ярлыки на экране скрыты, откройте FreezeYou, набрав код *#*#373393968#*#* (*#*#FreezeYou#*#*) в номеронабирателе телефона. Поддерживается на большинстве Android-устройств.</string>
+    <string name="ciFinishedToast">Отправлено, пожалуйста, дождитесь обновления лаунчера, или перезапустите его.</string>
+    <string name="ifUploadCrashLog">Обнаружен лог сбоя. Поделиться им?</string>
+    <string name="crashLog">Лог сбоя</string>
+    <string name="log">Лог</string>
+    <string name="search">Поиск</string>
+    <string name="launchMode">Вид при запуске</string>
+    <string name="freezeImmediately">Заморозка немедленно</string>
+    <string name="UFImmediately">Разморозка немедленно</string>
+    <string name="plsRemoveUninstalledApplications">Удаленные приложения можно убрать из списка</string>
+    <string name="notificationBarFreezeImmediately">Заморозка сразу после нажатия на уведомление о заморозке/разморозке</string>
+    <string name="onClickFunction">Действия при нажатии</string>
+    <string name="chooseAction">Выбрать действие</string>
+    <string name="autoUFOrFreeze">Автозаморозка и разморозка</string>
+    <string name="UFAndRun">Разморозка и запуск</string>
+    <string name="autoUFOrFreezeAndRun">Автозаморозка или разморозка и запуск</string>
+    <string name="freezeCompleted">Заморожено</string>
+    <string name="UFCompleted">Разморожено</string>
+    <string name="shortCutOneKeyFreezeAdditionalOptions">Дополнительные параметры ярлыка OneKey-заморозки</string>
+    <string name="askIfLockScreen">Вы хотите заблокировать экран сейчас?</string>
+    <string name="devicePolicyManagerNotFound">Диспетчер политики устройств не обнаружен</string>
+    <string name="activated">Активировано</string>
+    <string name="disableConfirmation">Подтвердить отмену?</string>
+    <string name="disabled">Отключено</string>
+    <string name="notUpdatedForALongTimeMessage">Давно не обновлялось, хотите проверить наличие обновлений сейчас?</string>
+    <string name="uiStyle">Цветовая схема</string>
+    <string name="willTakeEffectsNextLaunch">Вступит в силу при следующем запуске приложения</string>
+    <string name="freezeAUF">Заморозка и разморозка</string>
+    <string name="notificationBar">Уведомления</string>
+    <string name="disableSlideOut">Не исчезать при смахивании</string>
+    <string name="disableClickDisappear">Не исчезать после нажатия</string>
+    <string name="effectNextCreate">Вступит в силу в следующий раз</string>
+    <string name="helpTranslate">Помогите перевести это приложение</string>
+    <string name="thanksList">Благодарности участникам проекта</string>
+    <string name="automation">Автоматизация</string>
+    <string name="freezeAfterScreenLock">Запускать OneKey-заморозку при выключении экрана</string>
+    <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKey-заморозка» каждый раз, когда гаснет экран.</string>
+    <string name="backgroundService">Фоновый сервис</string>
+    <string name="useForegroundService">Использовать сервис переднего плана</string>
+    <string name="serviceLongerEx">Снизит вероятность сбоя фонового сервиса</string>
+    <string name="getDisabledApplications">Получить список замороженных приложений</string>
+    <string name="enableApplications">Разморозить пакеты</string>
+    <string name="disableApplications">Заморозить пакеты</string>
+    <string name="clearIconCache">Очистить кэш иконок</string>
+    <string name="clearNameCache">Очистить кэш имен приложений</string>
+    <string name="saveOnClickFunctionStatus">Сохранить состояние «Действия при нажатии»</string>
+    <string name="accessibility_service_description">Следить за изменениями приложений переднего плана. \nИспользуется для работы функции, которая предотвращает заморозку приложений переднего плана при авто-заморозке, и для автозаморозки приложений, когда они не являются приложениями переднего плана, и т.д.</string>
+    <string name="configureAccessibilityService">Настройка службы специальных возможностей</string>
+    <string name="freezeOnceQuit">Заморозка после выхода</string>
+    <string name="freezeOnceQuitSummary">Приложения из списка «Заморозка после выхода» замораживаются, как только вы из них вышли.</string>
+    <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
+    <string name="invalidArguments">Неверные параметры</string>
+    <string name="plsConfirm">Пожалуйста, подтвердите</string>
+    <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-root? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
+    <string name="noRootNotActivated">К сожалению, режим без-root сейчас не включен!</string>
+    <string name="faq">ЧАВО</string>
+    <string name="executeImmediately">Выполнить</string>
+    <string name="oneKeyLockScreen">Блокировка экрана</string>
+    <string name="mustContainColon">Используйте двоеточие : для разделения часов и минут</string>
+    <string name="scheduledTasks">Запланированные задания</string>
+    <string name="add">Добавить</string>
+    <string name="save">Сохранить</string>
+    <string name="time">Время</string>
+    <string name="enable">Включить</string>
+    <string name="repeat">Повтор</string>
+    <string name="task">Задача</string>
+    <string name="help">Помощь</string>
+    <string name="summary_stma_add_help">Синтаксис команд запланированных заданий</string>
+    <string name="label">Название</string>
+    <string name="hourShouldBetween">Час должен быть между 0 и 23</string>
+    <string name="minutesShouldBetween">Минуты должны быть от 0 до 59</string>
+    <string name="requestFailedPlsRetry">Запрос не выполнен, попробуйте еще раз</string>
+    <string name="uninstall">Удалить приложение</string>
+    <string name="triggers">Триггеры</string>
+    <string name="triggers_extra_parameters">Дополнительные параметры</string>
+    <string name="delete">Удалить</string>
+    <string name="copyAfterBeingFormatted">Копировать имена пакетов</string>
+    <string name="showInRecents">Показывать в недавних</string>
+    <string name="showInRecentsSummary">Оставляет FreezeYou видимым в списке недавних приложений (многозадачность).</string>
+    <string name="mayHaveNoEffectsL">Может не иметь никакого эффекта на Android 4.4 и ниже</string>
+    <string name="lesserToast">Реже показывать всплывающие сообщения</string>
+    <string name="avoidFreezeForegroundApplications">Предотвращение заморозки приложений переднего плана</string>
+    <string name="avoidFreezeForegroundApplicationsSummary">Пропускает заморозку приложения, пока оно находится на переднем плане, чтобы не прерывать активное использование. Требует включения Специальных возможностей (Accessibility Service).</string>
+    <string name="delAllScheduledTasks">Удалить все запланированные задачи</string>
+    <string name="askIfDel">Вы уверены, что хотите удалить?</string>
+    <string name="folder">Папка</string>
+    <string name="later">Потом</string>
+    <string name="onlyMROOTModeUse">Используется только в режиме без-root</string>
+    <string name="organizationName">Название организации</string>
+    <string name="avoidFreezeNotifyingApplications">Предотвращение заморозки приложений с уведомлениями</string>
+    <string name="avoidFreezeNotifyingApplicationsSummary">Пропускает заморозку приложения, пока у него есть активное уведомление (например, воспроизведение музыки, загрузки), чтобы оно продолжало работать.</string>
+    <string name="needL">Требуется Android 5.0 и новее</string>
+    <string name="autoDiagnosis">Диагностика</string>
+    <string name="summary_autoDiagnosis">Автопроверка разрешений, режима владельца, root и экономии батареи — со списком найденных проблем</string>
+    <string name="sysVerLow">Устаревшая версия Android</string>
+    <string name="someFuncUn">Некоторые функции могут быть недоступны</string>
+    <string name="ACBSNotEnabled">Служба специальных возможностей не включена</string>
+    <string name="affect">Влияет на</string>
+    <string name="etc">и т.д.</string>
+    <string name="mayCannotNotify">Уведомления могут не отправляться</string>
+    <string name="noNotifyPermission">Разрешение на отправку уведомления не предоставлено</string>
+    <string name="noNotificationListenerPermission">Разрешение отслеживания уведомлений не предоставлено</string>
+    <string name="noProblemsFound">Проблем не найдено</string>
+    <string name="everySeemsAllRight">Кажется, все в порядке</string>
+    <string name="noMRootPermission">Режим без-root не предоставлен</string>
+    <string name="someFuncMayRestrict">Некоторые функции могут быть ограничены</string>
+    <string name="noRootPermission">Разрешение root не предоставлено</string>
+    <string name="noIgnoringBO">Оптимизация батареи не отключена</string>
+    <string name="someFuncMayBeAff">Некоторые функции могут быть затронуты</string>
+    <string name="notUpdatedForALongTime">Давно не обновлялось</string>
+    <string name="someNewFuncMayPub">Некоторые новые функции могли быть реализованы</string>
+    <string name="inPowerSaveMode">Режим энергосбережения включен</string>
+    <string name="manageQuickFUFNoti">Управление уведомлениями о быстрой заморозке</string>
+    <string name="addToRemoveFrom">Добавить в/удалить из</string>
+    <string name="shortcutAutoFUF">Автозаморозка или разморозка по ярлыку</string>
+    <string name="shortcutAutoFUFEx">Ярлык-переключатель: замороженное размораживает, размороженное замораживает.</string>
+    <string name="regenerateSomeCache">Обновление некоторых кэшей</string>
+    <string name="updateSomeData">Обновить некоторые данные</string>
+    <string name="backupAndRestore">Бекап и восстановление</string>
+    <string name="summary_backupAndRestore">Экспорт настроек, списков, ярлыков и заданий в файл и импорт обратно</string>
+    <string name="status">Состояние</string>
+    <string name="debugMode">Режим отладки</string>
+    <string name="debugModeSummary">Записывает в журнал внутренние действия приложения (попытки заморозки/разморозки, вызовы Shizuku/root) для диагностики проблем. Может немного снизить производительность.</string>
+    <string name="showLogcat">Просмотр журнала</string>
+    <string name="summary_showLogcat">Просмотр журнала работы приложения и отправка его файлом через «Поделиться»</string>
+    <string name="askIfSave">Сохранить?</string>
+    <string name="mainActivityPattern">Вид стартовой страницы</string>
+    <string name="needConfirmWhenFreezeUseShortcutAutoFUFSummary">Показывает запрос подтверждения перед заморозкой приложения, если она запущена через автозаморозку по ярлыку.</string>
+    <string name="openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary">Автоматически открывает приложение сразу после разморозки через авторазморозку по ярлыку.</string>
+    <string name="needCfmWhenFreeze">Дополнительное подтверждение при заморозке</string>
+    <string name="openImmediatelyAfterUF">Запуск сразу после разморозки</string>
+    <string name="createLauncherShortcut">Создать ярлык на рабочем столе</string>
+    <string name="name">Название</string>
+    <string name="icon">Значок</string>
+    <string name="target">Цель</string>
+    <string name="shortcutTargetFieldHint">По умолчанию ярлык запускает приложение. Нажмите «...», чтобы выбрать другое активити (экран) из списка доступных к запуску.</string>
+    <string name="generate">Создать</string>
+    <string name="plsSelect">Пожалуйста, выберите</string>
+    <string name="application">Приложения</string>
+    <string name="shortcutPackageFieldHint">Нажмите «...», чтобы выбрать любое приложение из полного списка, а не только то, с которого вы начали.</string>
+    <string name="allowEditWhCreateShortcut">Разрешить редактирование при создании ярлыков</string>
+    <string name="clearAllUserData">Стереть данные FreezeYou</string>
+    <string name="clearAllUserDataSummary">Безвозвратно стирает данные самого FreezeYou: настройки, пользовательские группы, запланированные задания и данные ярлыков. Замороженные приложения останутся замороженными — это состояние хранит система, а не FreezeYou. Отменить нельзя.</string>
+    <string name="packageNotFound">Приложение не найдено</string>
     <string name="id">ID</string>
-    <string name="simulate">РўРµСЃС‚</string>
-    <string name="insufficientPermission">РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЂР°Р·СЂРµС€РµРЅРёР№</string>
-    <string name="stateDidNotChange">РЎРёСЃС‚РµРјР° РїСЂРёРЅСЏР»Р° РєРѕРјР°РЅРґСѓ, РЅРѕ СЃРѕСЃС‚РѕСЏРЅРёРµ РЅРµ РёР·РјРµРЅРёР»РѕСЃСЊ</string>
-    <string name="onlyUnfreeze">РўРѕР»СЊРєРѕ СЂР°Р·РјРѕСЂРѕР·РёС‚СЊ</string>
-    <string name="unknown">РќРµРёР·РІРµСЃС‚РЅС‹Р№</string>
-    <string name="installPackage_colon">РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°РєРµС‚:</string>
-    <string name="requestFromPackage_colon">РР· РїР°РєРµС‚Р°:</string>
-    <string name="whetherAllow">Р Р°Р·СЂРµС€РёС‚СЊ?</string>
-    <string name="uninstallPackage_colon">РЈРґР°Р»РµРЅРёРµ РїР°РєРµС‚Р°:</string>
-    <string name="install">РЈСЃС‚Р°РЅРѕРІРєР°</string>
-    <string name="installFailed">РЈСЃС‚Р°РЅРѕРІРєР° РЅРµ СѓРґР°Р»Р°СЃСЊ</string>
-    <string name="uninstallFailed">РЎР±РѕР№ СѓРґР°Р»РµРЅРёСЏ</string>
-    <string name="installAndUninstall">РЈСЃС‚Р°РЅРѕРІРєР° Рё СѓРґР°Р»РµРЅРёРµ</string>
-    <string name="errorUninstallToast">РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё СѓРґР°Р»РµРЅРёРё РїСЂРёР»РѕР¶РµРЅРёСЏ: %1$s</string>
-    <string name="errorInstallToast">РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РїСЂРёР»РѕР¶РµРЅРёСЏ: %1$s</string>
-    <string name="invalidUriToast">РќРµРІРµСЂРЅС‹Р№ URI: %1$s</string>
-    <string name="reason_colon">РџСЂРёС‡РёРЅР°: %1$s</string>
-    <string name="plsWait">РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґРѕР¶РґРёС‚Рµ</string>
-    <string name="loading___">Р—Р°РіСЂСѓР·РєР°...</string>
-    <string name="freezeSlashRun">Р—Р°РјРѕСЂРѕР·РєР°/Р·Р°РїСѓСЃРє</string>
-    <string name="UfSlashRun">Р Р°Р·РјРѕСЂРѕР·РєР°/Р·Р°РїСѓСЃРє</string>
-    <string name="isForegroundApplication">%1$s СЃРµР№С‡Р°СЃ РЅР° РїРµСЂРµРґРЅРµРј РїР»Р°РЅРµ</string>
-    <string name="appHasNotifi">%1$s РІСЃРµ РµС‰Рµ СѓРІРµРґРѕРјР»СЏРµС‚</string>
-    <string name="dangerous">РћРїР°СЃРЅРѕ</string>
-    <string name="alert_isObsd">РћРєРЅРѕ Р·Р°С‚РµРјРЅРµРЅРѕ, РѕРїРµСЂР°С†РёСЏ Р±С‹Р»Р° РѕС‚РєР»РѕРЅРµРЅР°. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РѕС‚РєР»СЋС‡РёС‚Рµ СЌРєСЂР°РЅРЅС‹Рµ РЅР°Р»РѕР¶РµРЅРёСЏ Рё РїРѕРІС‚РѕСЂРёС‚Рµ РїРѕРїС‹С‚РєСѓ.</string>
-    <string name="retry">РџРѕРІС‚РѕСЂ</string>
-    <string name="enableInstallPkgFunc">РЈСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ APK С‡РµСЂРµР· FreezeYou</string>
-    <string name="allow">Р Р°Р·СЂРµС€РёС‚СЊ</string>
-    <string name="reject">РћС‚РєР»РѕРЅРёС‚СЊ</string>
-    <string name="execute_colon">Р’С‹РїРѕР»РЅРёС‚СЊ:</string>
-    <string name="target_colon">Р¦РµР»СЊ:</string>
-    <string name="alwaysAllow_name">Р’СЃРµРіРґР° СЂР°Р·СЂРµС€Р°С‚СЊ %1$s</string>
-    <string name="manageUriAutoAllow">Р‘РµР»С‹Р№ СЃРїРёСЃРѕРє URI: Р·Р°РїСЂРѕСЃС‹ Р±РµР· РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ</string>
-    <string name="manageIpaAutoAllow">Р‘РµР»С‹Р№ СЃРїРёСЃРѕРє: СѓСЃС‚Р°РЅРѕРІРєР° Р±РµР· РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ</string>
-    <string name="delAllCache">РћС‡РёСЃС‚РёС‚СЊ РІСЃРµ РєРµС€Рё</string>
-    <string name="needStoragePermission">РўСЂРµР±СѓРµС‚СЃСЏ СЂР°Р·СЂРµС€РµРЅРёРµ РЅР° РґРѕСЃС‚СѓРї Рє РїР°РјСЏС‚Рё</string>
-    <string name="okay">РћРљ</string>
-    <string name="scheduledTasksUserNotification">Р—Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°РЅРёСЏ - РЈРІРµРґРѕРјР»РµРЅРёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№</string>
-    <string name="manageSpace">РЈРїСЂР°РІР»РµРЅРёРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕРј</string>
-    <string name="cacheApplicationsIcons">РљРµС€ РёРєРѕРЅРѕРє РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="greyFrozenApplicationsIcons">РћС‚РѕР±СЂР°Р¶Р°С‚СЊ Р·Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ СЃРµСЂС‹Рј С†РІРµС‚РѕРј</string>
-    <string name="tryDelApkAfterInstalled">РЈРґР°Р»СЏС‚СЊ APK-С„Р°Р№Р» РїРѕСЃР»Рµ СѓСЃС‚Р°РЅРѕРІРєРё</string>
-    <string name="sortBy">РЎРѕСЂС‚РёСЂРѕРІРєР°</string>
-    <string name="sortBy_default">РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ</string>
-    <string name="sortBy_no">РќРµ СЃРѕСЂС‚РёСЂРѕРІР°С‚СЊ</string>
-    <string name="uf_ascending">Р Р°Р·РјРѕСЂРѕР¶РµРЅРѕ в†‘</string>
-    <string name="uf_descending">Р Р°Р·РјРѕСЂРѕР¶РµРЅРѕ в†“</string>
-    <string name="ff_ascending">Р—Р°РјРѕСЂРѕР¶РµРЅРѕ в†‘</string>
-    <string name="ff_descending">Р—Р°РјРѕСЂРѕР¶РµРЅРѕ в†“</string>
-    <string name="us_ascending">Р§Р°СЃС‚РѕС‚Р° РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ в†‘</string>
-    <string name="us_descending">Р§Р°СЃС‚РѕС‚Р° РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ в†“</string>
-    <string name="impt">РРјРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ</string>
-    <string name="expt">Р­РєСЃРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ</string>
-    <string name="saveBackupToFile">РЎРѕС…СЂР°РЅРёС‚СЊ РІ С„Р°Р№Р»</string>
-    <string name="restoreBackupFromFile">Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РёР· С„Р°Р№Р»Р°</string>
-    <string name="backupViaTextHint">Р›РёР±Рѕ РїРµСЂРµРЅРµСЃС‚Рё С‚РµРєСЃС‚РѕРј С‡РµСЂРµР· Р±СѓС„РµСЂ РѕР±РјРµРЅР°:</string>
-    <string name="backupGroupOneKeyLists">РЎРїРёСЃРєРё OneKey</string>
-    <string name="backupGroupAllowLists">Р‘РµР»С‹Рµ СЃРїРёСЃРєРё</string>
-    <string name="appStore">РњР°РіР°Р·РёРЅ РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="finish">Р“РѕС‚РѕРІРѕ</string>
-    <string name="welcomeToUseAppName">Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ РІ %1$s</string>
-    <string name="quickSetup">Р‘С‹СЃС‚СЂР°СЏ РЅР°СЃС‚СЂРѕР№РєР°</string>
-    <string name="importConfig">РРјРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ</string>
-    <string name="loadingPkgList">Р—Р°РіСЂСѓР·РєР° СЃРїРёСЃРєР° РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="sorting">РЎРѕСЂС‚РёСЂРѕРІРєР°</string>
-    <string name="saveSortMethodStatus">РЎРѕС…СЂР°РЅРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ РјРµС‚РѕРґР° СЃРѕСЂС‚РёСЂРѕРІРєРё</string>
-    <string name="resetFreezeTimes">РЎР±СЂРѕСЃ СЃС‡РµС‚С‡РёРєР° Р·Р°РјРѕСЂРѕР·РєРё</string>
-    <string name="resetUFTimes">РЎР±СЂРѕСЃ СЃС‡РµС‚С‡РёРєР° СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="resetUseTimes">РЎР±СЂРѕСЃ СЃС‡РµС‚С‡РёРєР° РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ</string>
-    <string name="selectAll">Р’С‹Р±СЂР°С‚СЊ РІСЃРµ</string>
-    <string name="selectUnselected">РРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ</string>
-    <string name="parseFailed">РЎР±РѕР№ СЂР°Р·Р±РѕСЂР°</string>
-    <string name="nothing">РќРµС‚</string>
-    <string name="share">РџРѕРґРµР»РёС‚СЊСЃСЏ</string>
-    <string name="notAllowWhenIsObsd">Р‘Р»РѕРєРёСЂРѕРІР°С‚СЊ СѓСЃС‚Р°РЅРѕРІРєСѓ РїСЂРё РїРµСЂРµРєСЂС‹С‚РѕРј СЌРєСЂР°РЅРµ</string>
-    <string name="remove">РЈРґР°Р»РёС‚СЊ</string>
-    <string name="newFolder">РќРѕРІР°СЏ РїР°РїРєР°</string>
-    <string name="alreadyExist">РЈР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚</string>
-    <string name="queryStatus">РЎС‚Р°С‚СѓСЃ Р·Р°РїСЂРѕСЃР°</string>
-    <string name="newClassification">РќРѕРІР°СЏ РєР°С‚РµРіРѕСЂРёСЏ</string>
-    <string name="displayLanguage">РЇР·С‹Рє РїСЂРёР»РѕР¶РµРЅРёСЏ</string>
-    <string name="emptyNotAllowed">РџРѕР»Рµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј</string>
-    <string name="myCustomization">РњРѕСЏ РїРѕРґР±РѕСЂРєР°</string>
-    <string name="manageMyCustomization">РЈРїСЂР°РІР»РµРЅРёРµ СЃРїРёСЃРєРѕРј В«РњРѕСЏ РїРѕРґР±РѕСЂРєР°В»</string>
-    <string name="copyAlias">РЎРєРѕРїРёСЂРѕРІР°С‚СЊ РїСЃРµРІРґРѕРЅРёРј</string>
-    <string name="version_colon_vN_longVC">Р’РµСЂСЃРёСЏ: %1$s (%2$s)</string>
-    <string name="existed_colon_vN_longVC">РЈР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ: %1$s (%2$s)</string>
-    <string name="application_colon_app">РџСЂРёР»РѕР¶РµРЅРёРµ: %1$s</string>
-    <string name="pkgName_colon_pkgName">РџР°РєРµС‚: %1$s</string>
-    <string name="cannotInstall_colon_msg">РќРµ СѓРґР°РµС‚СЃСЏ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ: %1$s</string>
-    <string name="installing_app">РЈСЃС‚Р°РЅРѕРІРєР° %1$s</string>
-    <string name="uninstalling_app">РЈРґР°Р»РµРЅРёРµ %1$s</string>
-    <string name="app_installFinished">%1$s СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ</string>
-    <string name="app_installFailed">РћС€РёР±РєР° СѓСЃС‚Р°РЅРѕРІРєРё %1$s</string>
-    <string name="app_uninstallFinished">Р—Р°РІРµСЂС€РµРЅРѕ СѓРґР°Р»РµРЅРёРµ %1$s</string>
-    <string name="app_uninstallFailed">РЎР±РѕР№ СѓРґР°Р»РµРЅРёСЏ %1$s</string>
-    <string name="commandExecutionTool">РРЅСЃС‚СЂСѓРјРµРЅС‚ РІС‹РїРѕР»РЅРµРЅРёСЏ РєРѕРјР°РЅРґ</string>
-    <string name="addToMyCustomization">Р”РѕР±Р°РІРёС‚СЊ РІ В«РњРѕСЏ РїРѕРґР±РѕСЂРєР°В»</string>
-    <string name="removeFromMyCustomization">РЈРґР°Р»РёС‚СЊ РёР· В«РњРѕСЏ РїРѕРґР±РѕСЂРєР°В»</string>
-    <string name="waitingToInstall_app">РћР¶РёРґР°РЅРёРµ СѓСЃС‚Р°РЅРѕРІРєРё РїРѕСЃР»Рµ РІС‹С…РѕРґР° %1$s</string>
-    <string name="installWhenNotUsing">РЈСЃС‚Р°РЅРѕРІРёС‚СЊ, РµСЃР»Рё РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ</string>
-    <string name="contactUs">РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РЅР°РјРё</string>
+    <string name="simulate">Тест</string>
+    <string name="insufficientPermission">Недостаточно разрешений</string>
+    <string name="stateDidNotChange">Система приняла команду, но состояние не изменилось</string>
+    <string name="onlyUnfreeze">Только разморозить</string>
+    <string name="unknown">Неизвестный</string>
+    <string name="installPackage_colon">Установить пакет:</string>
+    <string name="requestFromPackage_colon">Из пакета:</string>
+    <string name="whetherAllow">Разрешить?</string>
+    <string name="uninstallPackage_colon">Удаление пакета:</string>
+    <string name="install">Установка</string>
+    <string name="installFailed">Установка не удалась</string>
+    <string name="uninstallFailed">Сбой удаления</string>
+    <string name="installAndUninstall">Установка и удаление</string>
+    <string name="errorUninstallToast">Произошла ошибка при удалении приложения: %1$s</string>
+    <string name="errorInstallToast">Произошла ошибка при установке приложения: %1$s</string>
+    <string name="invalidUriToast">Неверный URI: %1$s</string>
+    <string name="reason_colon">Причина: %1$s</string>
+    <string name="plsWait">Пожалуйста, подождите</string>
+    <string name="loading___">Загрузка...</string>
+    <string name="freezeSlashRun">Заморозка/запуск</string>
+    <string name="UfSlashRun">Разморозка/запуск</string>
+    <string name="isForegroundApplication">%1$s сейчас на переднем плане</string>
+    <string name="appHasNotifi">%1$s все еще уведомляет</string>
+    <string name="dangerous">Опасно</string>
+    <string name="alert_isObsd">Окно затемнено, операция была отклонена. Пожалуйста, отключите экранные наложения и повторите попытку.</string>
+    <string name="retry">Повтор</string>
+    <string name="enableInstallPkgFunc">Устанавливать APK через FreezeYou</string>
+    <string name="allow">Разрешить</string>
+    <string name="reject">Отклонить</string>
+    <string name="execute_colon">Выполнить:</string>
+    <string name="target_colon">Цель:</string>
+    <string name="alwaysAllow_name">Всегда разрешать %1$s</string>
+    <string name="manageUriAutoAllow">Белый список URI: запросы без подтверждения</string>
+    <string name="manageIpaAutoAllow">Белый список: установка без подтверждения</string>
+    <string name="delAllCache">Очистить все кеши</string>
+    <string name="needStoragePermission">Требуется разрешение на доступ к памяти</string>
+    <string name="okay">ОК</string>
+    <string name="scheduledTasksUserNotification">Запланированные задания - Уведомления пользователей</string>
+    <string name="manageSpace">Управление пространством</string>
+    <string name="cacheApplicationsIcons">Кеш иконок приложений</string>
+    <string name="greyFrozenApplicationsIcons">Отображать замороженные серым цветом</string>
+    <string name="tryDelApkAfterInstalled">Удалять APK-файл после установки</string>
+    <string name="sortBy">Сортировка</string>
+    <string name="sortBy_default">По умолчанию</string>
+    <string name="sortBy_no">Не сортировать</string>
+    <string name="uf_ascending">Разморожено ↑</string>
+    <string name="uf_descending">Разморожено ↓</string>
+    <string name="ff_ascending">Заморожено ↑</string>
+    <string name="ff_descending">Заморожено ↓</string>
+    <string name="us_ascending">Частота использования ↑</string>
+    <string name="us_descending">Частота использования ↓</string>
+    <string name="impt">Импортировать</string>
+    <string name="expt">Экспортировать</string>
+    <string name="saveBackupToFile">Сохранить в файл</string>
+    <string name="restoreBackupFromFile">Восстановить из файла</string>
+    <string name="backupViaTextHint">Либо перенести текстом через буфер обмена:</string>
+    <string name="backupGroupOneKeyLists">Списки OneKey</string>
+    <string name="backupGroupAllowLists">Белые списки</string>
+    <string name="appStore">Магазин приложений</string>
+    <string name="finish">Готово</string>
+    <string name="welcomeToUseAppName">Добро пожаловать в %1$s</string>
+    <string name="quickSetup">Быстрая настройка</string>
+    <string name="importConfig">Импортировать конфигурацию</string>
+    <string name="loadingPkgList">Загрузка списка приложений</string>
+    <string name="sorting">Сортировка</string>
+    <string name="saveSortMethodStatus">Сохранить состояние метода сортировки</string>
+    <string name="resetFreezeTimes">Сброс счетчика заморозки</string>
+    <string name="resetUFTimes">Сброс счетчика разморозки</string>
+    <string name="resetUseTimes">Сброс счетчика использования</string>
+    <string name="selectAll">Выбрать все</string>
+    <string name="selectUnselected">Инвертировать</string>
+    <string name="parseFailed">Сбой разбора</string>
+    <string name="nothing">Нет</string>
+    <string name="share">Поделиться</string>
+    <string name="notAllowWhenIsObsd">Блокировать установку при перекрытом экране</string>
+    <string name="remove">Удалить</string>
+    <string name="newFolder">Новая папка</string>
+    <string name="alreadyExist">Уже существует</string>
+    <string name="queryStatus">Статус запроса</string>
+    <string name="newClassification">Новая категория</string>
+    <string name="displayLanguage">Язык приложения</string>
+    <string name="emptyNotAllowed">Поле не может быть пустым</string>
+    <string name="myCustomization">Моя подборка</string>
+    <string name="manageMyCustomization">Управление списком «Моя подборка»</string>
+    <string name="copyAlias">Скопировать псевдоним</string>
+    <string name="version_colon_vN_longVC">Версия: %1$s (%2$s)</string>
+    <string name="existed_colon_vN_longVC">Уже установлено: %1$s (%2$s)</string>
+    <string name="application_colon_app">Приложение: %1$s</string>
+    <string name="pkgName_colon_pkgName">Пакет: %1$s</string>
+    <string name="cannotInstall_colon_msg">Не удается установить: %1$s</string>
+    <string name="installing_app">Установка %1$s</string>
+    <string name="uninstalling_app">Удаление %1$s</string>
+    <string name="app_installFinished">%1$s установлено</string>
+    <string name="app_installFailed">Ошибка установки %1$s</string>
+    <string name="app_uninstallFinished">Завершено удаление %1$s</string>
+    <string name="app_uninstallFailed">Сбой удаления %1$s</string>
+    <string name="commandExecutionTool">Инструмент выполнения команд</string>
+    <string name="addToMyCustomization">Добавить в «Моя подборка»</string>
+    <string name="removeFromMyCustomization">Удалить из «Моя подборка»</string>
+    <string name="waitingToInstall_app">Ожидание установки после выхода %1$s</string>
+    <string name="installWhenNotUsing">Установить, если не используется</string>
+    <string name="contactUs">Связаться с нами</string>
     <string name="email_colon">Email: %1$s</string>
-    <string name="qqGroup_colon">QQ СЃРѕРѕР±С‰РµСЃС‚РІРѕ: %1$s</string>
-    <string name="tryToAvoidUpdateWhenUsing">РќРµ РѕР±РЅРѕРІР»СЏС‚СЊ РїСЂРёР»РѕР¶РµРЅРёРµ РІРѕ РІСЂРµРјСЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ</string>
-    <string name="selectFUFMode">Р’С‹Р±РµСЂРёС‚Рµ СЂРµР¶РёРј Р·Р°РјРѕСЂРѕР·РєРё Рё СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="allowFollowSystemAutoSwitchDarkMode">РЎР»РµРґРѕРІР°С‚СЊ СЃРёСЃС‚РµРјРЅРѕР№ С‚РµРјРЅРѕР№ С‚РµРјРµ</string>
-    <string name="willOverrideInterfaceStyle">РџРµСЂРµРѕРїСЂРµРґРµР»РёС‚ СЃС‚РёР»СЊ РёРЅС‚РµСЂС„РµР№СЃР°</string>
-    <string name="installPerimisionCheckFailed_ifContinue">РџСЂРѕРІРµСЂРєР° СЂР°Р·СЂРµС€РµРЅРёСЏ СѓСЃС‚Р°РЅРѕРІРєРё РЅРµ СѓРґР°Р»Р°СЃСЊ, РїСЂРѕРґРѕР»Р¶РёС‚СЊ?</string>
-    <string name="jumpToSysInstaller">РџРµСЂРµР№С‚Рё Рє СЃРёСЃС‚РµРјРЅРѕРјСѓ СѓСЃС‚Р°РЅРѕРІС‰РёРєСѓ</string>
-    <string name="appearance">Р’РЅРµС€РЅРёР№ РІРёРґ</string>
-    <string name="createQuickFUFNotiAfterUnfrozen">РЎРѕР·РґР°С‚СЊ СѓРІРµРґРѕРјР»РµРЅРёРµ Рѕ Р±С‹СЃС‚СЂРѕР№ Р·Р°РјРѕСЂРѕР·РєРµ РїРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="executionResult_colon_message">Р РµР·СѓР»СЊС‚Р°С‚ РІС‹РїРѕР»РЅРµРЅРёСЏ: %1$s</string>
-    <string name="unknownResult_probablySuccess">Р РµР·СѓР»СЊС‚Р°С‚ РЅРµРёР·РІРµСЃС‚РµРЅ (РІРµСЂРѕСЏС‚РЅРѕ СѓСЃРїРµС…)</string>
-    <string name="unknownError">РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°</string>
-    <string name="packageNameIsEmpty">РРјСЏ РїР°РєРµС‚Р° РїСѓСЃС‚РѕРµ</string>
-    <string name="isNotDevicePolicyManager">РќРµ СЏРІР»СЏРµС‚СЃСЏ РґРёСЃРїРµС‚С‡РµСЂРѕРј РїРѕР»РёС‚РёРєРё СѓСЃС‚СЂРѕР№СЃС‚РІР°</string>
-    <string name="noSuchApiMode">РќРµС‚ С‚Р°РєРѕРіРѕ СЂРµР¶РёРјР° API</string>
-    <string name="executeFailedFromSystem">РЎР±РѕР№ РІС‹РїРѕР»РЅРµРЅРёСЏ РёР· СЃРёСЃС‚РµРјС‹</string>
-    <string name="isNotSystemApp">Р­С‚Рѕ РЅРµ СЃРёСЃС‚РµРјРЅРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ</string>
-    <string name="telegramGroup_colon">Telegram РіСЂСѓРїРїР°: %1$s</string>
-    <string name="unlock">Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ</string>
-    <string name="security">Р‘РµР·РѕРїР°СЃРЅРѕСЃС‚СЊ</string>
-    <string name="enableAuthentication">Р’РєР»СЋС‡РёС‚СЊ Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёСЋ</string>
-    <string name="authentication">РђСѓС‚РµРЅС‚РёС„РёРєР°С†РёСЏ</string>
-    <string name="verifyToContinue">РџРѕРґС‚РІРµСЂРґРёС‚Рµ РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ</string>
-    <string name="authenticationFailed">РЎР±РѕР№ Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё</string>
-    <string name="authenticationError_colon">РћС€РёР±РєР° Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё: %1$s</string>
+    <string name="qqGroup_colon">QQ сообщество: %1$s</string>
+    <string name="tryToAvoidUpdateWhenUsing">Не обновлять приложение во время использования</string>
+    <string name="selectFUFMode">Выберите режим заморозки и разморозки</string>
+    <string name="allowFollowSystemAutoSwitchDarkMode">Следовать системной темной теме</string>
+    <string name="willOverrideInterfaceStyle">Переопределит стиль интерфейса</string>
+    <string name="installPerimisionCheckFailed_ifContinue">Проверка разрешения установки не удалась, продолжить?</string>
+    <string name="jumpToSysInstaller">Перейти к системному установщику</string>
+    <string name="appearance">Внешний вид</string>
+    <string name="createQuickFUFNotiAfterUnfrozen">Создать уведомление о быстрой заморозке после разморозки</string>
+    <string name="executionResult_colon_message">Результат выполнения: %1$s</string>
+    <string name="unknownResult_probablySuccess">Результат неизвестен (вероятно успех)</string>
+    <string name="unknownError">Неизвестная ошибка</string>
+    <string name="packageNameIsEmpty">Имя пакета пустое</string>
+    <string name="isNotDevicePolicyManager">Не является диспетчером политики устройства</string>
+    <string name="noSuchApiMode">Нет такого режима API</string>
+    <string name="executeFailedFromSystem">Сбой выполнения из системы</string>
+    <string name="isNotSystemApp">Это не системное приложение</string>
+    <string name="telegramGroup_colon">Telegram группа: %1$s</string>
+    <string name="unlock">Разблокировать</string>
+    <string name="security">Безопасность</string>
+    <string name="enableAuthentication">Включить аутентификацию</string>
+    <string name="authentication">Аутентификация</string>
+    <string name="verifyToContinue">Подтвердите для продолжения</string>
+    <string name="authenticationFailed">Сбой аутентификации</string>
+    <string name="authenticationError_colon">Ошибка аутентификации: %1$s</string>
     <string name="correspondingAndAvailableWebsiteUrlLanguageCode">ru-RU</string>
-    <string name="forceStop">РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅР°СЏ РѕСЃС‚Р°РЅРѕРІРєР°</string>
-    <string name="unfrozenUA">РќРµР·Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ</string>
-    <string name="onlyRunning">Р Р°Р±РѕС‚Р°СЋС‰РёРµ</string>
-    <string name="onlyRunningSys">Р Р°Р±РѕС‚Р°СЋС‰РёРµ: СЃРёСЃС‚РµРјРЅС‹Рµ</string>
-    <string name="onlyRunningUser">Р Р°Р±РѕС‚Р°СЋС‰РёРµ: РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ</string>
-    <string name="criticalPackagesWarning">Р’ РІС‹РґРµР»РµРЅРёРё РµСЃС‚СЊ РїР°РєРµС‚С‹, РѕС‚ РєРѕС‚РѕСЂС‹С… Р·Р°РІРёСЃРёС‚ СЃРёСЃС‚РµРјР°:\n\n%1$s\n\nРС… Р·Р°РјРѕСЂРѕР·РєР° РјРѕР¶РµС‚ РѕСЃС‚Р°РІРёС‚СЊ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ Р±РµР· СЃС‚СЂРѕРєРё СЃРѕСЃС‚РѕСЏРЅРёСЏ, РќР°СЃС‚СЂРѕРµРє РёР»Рё РєР»Р°РІРёР°С‚СѓСЂС‹, Рё РІРµСЂРЅСѓС‚СЊ РІСЃС‘ Р±СѓРґРµС‚ РЅРµРїСЂРѕСЃС‚Рѕ. Р’СЃС‘ СЂР°РІРЅРѕ РїСЂРѕРґРѕР»Р¶РёС‚СЊ?</string>
-    <string name="runningFilterUnavailable">Р¤РёР»СЊС‚СЂ В«Р Р°Р±РѕС‚Р°СЋС‰РёРµВ» РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РІ СЂРµР¶РёРјР°С… root РёР»Рё Shizuku. РЎРјРµРЅРёС‚Рµ СЂРµР¶РёРј: РќР°СЃС‚СЂРѕР№РєРё \u2192 Р—Р°РјРѕСЂРѕР·РєР° Рё СЂР°Р·РјРѕСЂРѕР·РєР° \u2192 Р’С‹Р±СЂР°С‚СЊ СЂРµР¶РёРј.</string>
-    <string name="scheduledTaskCommandsSyntax">РќР°СЃС‚СЂРѕР№РєР° Р·Р°РґР°РЅРёР№</string>
+    <string name="forceStop">Принудительная остановка</string>
+    <string name="unfrozenUA">Незамороженные пользовательские</string>
+    <string name="onlyRunning">Работающие</string>
+    <string name="onlyRunningSys">Работающие: системные</string>
+    <string name="onlyRunningUser">Работающие: пользовательские</string>
+    <string name="criticalPackagesWarning">В выделении есть пакеты, от которых зависит система:\n\n%1$s\n\nИх заморозка может оставить устройство без строки состояния, Настроек или клавиатуры, и вернуть всё будет непросто. Всё равно продолжить?</string>
+    <string name="runningFilterUnavailable">Фильтр «Работающие» доступен только в режимах root или Shizuku. Смените режим: Настройки \u2192 Заморозка и разморозка \u2192 Выбрать режим.</string>
+    <string name="scheduledTaskCommandsSyntax">Настройка заданий</string>
     <string name="offlineHelpAssetLanguageCode">ru</string>
-    <string name="lastInstall">РќРµРґР°РІРЅРѕ СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ</string>
-    <string name="lastUpdate">РќРµРґР°РІРЅРѕ РѕР±РЅРѕРІР»РµРЅРЅС‹Рµ</string>
-    <string name="alphabetical">Р’ Р°Р»С„Р°РІРёС‚РЅРѕРј РїРѕСЂСЏРґРєРµ</string>
-    <string name="refresh">РћР±РЅРѕРІРёС‚СЊ</string>
-    <string name="themeOfAutoSwitchDarkMode">РЎС…РµРјР° РґР»СЏ С‚РµРјРЅРѕРіРѕ СЂРµР¶РёРјР°</string>
-    <string name="bluetoothPermissionIsNotGranted">РЎРІСЏР·Р°РЅРЅРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ Bluetooth РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРѕ</string>
-    <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Р’РѕР·РјРѕР¶РЅРѕ, РЅРµ СѓРґР°СЃС‚СЃСЏ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°С‡Рё РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ РёР»Рё РѕС‚РєР»СЋС‡РµРЅРёСЏ Bluetooth</string>
-    <string name="gotoStore">РџРµСЂРµР№С‚Рё РІ РјР°РіР°Р·РёРЅ РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="selfRevokeProfileOwner">РћС‚РєР»СЋС‡РёС‚СЊ СЂРµР¶РёРј РІР»Р°РґРµР»СЊС†Р° РїСЂРѕС„РёР»СЏ</string>
-    <string name="selfRevokeProfileOwnerSummary">РќСѓР¶РЅРѕ С‚РѕР»СЊРєРѕ РµСЃР»Рё РІС‹ РёСЃРїРѕР»СЊР·РѕРІР°Р»Рё СЂРµР¶РёРј Р±РµР·-root (РІР»Р°РґРµР»РµС† РїСЂРѕС„РёР»СЏ). РћС‚Р·С‹РІР°РµС‚ РїСЂР°РІРѕ РІР»Р°РґРµР»СЊС†Р° РїСЂРѕС„РёР»СЏ вЂ” РёРЅР°С‡Рµ СѓРґР°Р»РµРЅРёРµ FreezeYou РјРѕР¶РµС‚ РЅРµ СЃСЂР°Р±РѕС‚Р°С‚СЊ.</string>
-    <string name="uninstallSummary">РЈРґР°Р»СЏРµС‚ FreezeYou. Р•СЃР»Рё РІС‹ РёСЃРїРѕР»СЊР·РѕРІР°Р»Рё СЂРµР¶РёРј Р±РµР·-root (РІР»Р°РґРµР»РµС† РїСЂРѕС„РёР»СЏ), СЃРЅР°С‡Р°Р»Р° РѕС‚Р·РѕРІРёС‚Рµ РµРіРѕ РІС‹С€Рµ вЂ” РёРЅР°С‡Рµ СѓРґР°Р»РµРЅРёРµ РјРѕР¶РµС‚ РЅРµ СЃСЂР°Р±РѕС‚Р°С‚СЊ.</string>
-    <string name="isNotProfileOwner">Р­С‚Рѕ РЅРµ РїСЂРѕС„РёР»СЊ РІР»Р°РґРµР»СЊС†Р° СѓСЃС‚СЂРѕР№СЃС‚РІР°</string>
-    <string name="getBackupData">РџРѕР»СѓС‡РёС‚СЊ СЂРµР·РµСЂРІРЅС‹Рµ РґР°РЅРЅС‹Рµ</string>
-    <string name="theAppHasNotificationInTheNotificationBar">РџСЂРёР»РѕР¶РµРЅРёРµ РёРјРµРµС‚ СѓРІРµРґРѕРјР»РµРЅРёСЏ РІ РїР°РЅРµР»Рё СѓРІРµРґРѕРјР»РµРЅРёР№</string>
-    <string name="theAppIsCurrentlyTheForegroundApp">Р’ РЅР°СЃС‚РѕСЏС‰РµРµ РІСЂРµРјСЏ РЅР° РїРµСЂРµРґРЅРµРј РїР»Р°РЅРµ</string>
-    <string name="operationOnFreezeYouIsNotAllowed">РћРїРµСЂР°С†РёРё СЃ FreezeYou Р·Р°РїСЂРµС‰РµРЅС‹</string>
-    <string name="shizukuVersionIsTooLow">Р’РµСЂСЃРёСЏ Shizuku СѓСЃС‚Р°СЂРµР»Р°</string>
-    <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ РёР»Рё РґСЂСѓРіРёРµ РёСЃРєР»СЋС‡РµРЅРёСЏ</string>
-    <string name="includeFUFActivityInRecents">Р”РѕР±Р°РІРёС‚СЊ Р°РєС‚РёРІРёС‚Рё Р·Р°РјРѕСЂРѕР·РєРё Рё СЂР°Р·РјРѕСЂРѕР·РєРё РІ РЅРµРґР°РІРЅРёС… РїСЂРёР»РѕР¶РµРЅРёСЏС…</string>
-    <string name="includeFUFActivityInRecentsSummary">РўР°РєР¶Рµ РѕС‚РѕР±СЂР°Р¶Р°РµС‚ СЌРєСЂР°РЅ РїСЂРѕС†РµСЃСЃР° Р·Р°РјРѕСЂРѕР·РєРё/СЂР°Р·РјРѕСЂРѕР·РєРё РѕС‚РґРµР»СЊРЅС‹Рј РїСѓРЅРєС‚РѕРј РІ СЃРїРёСЃРєРµ РЅРµРґР°РІРЅРёС… РїСЂРёР»РѕР¶РµРЅРёР№.</string>
-    <string name="playFUFAnimations">Р’РєР»СЋС‡РёС‚СЊ Р°РЅРёРјР°С†РёСЋ Р·Р°РјРѕСЂРѕР·РєРё Рё СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="toggleGridListMode">РџРµСЂРµРєР»СЋС‡РёС‚СЊ РІРёРґ СЃРїРёСЃРѕРє/СЃРµС‚РєР°</string>
+    <string name="lastInstall">Недавно установленные</string>
+    <string name="lastUpdate">Недавно обновленные</string>
+    <string name="alphabetical">В алфавитном порядке</string>
+    <string name="refresh">Обновить</string>
+    <string name="themeOfAutoSwitchDarkMode">Схема для темного режима</string>
+    <string name="bluetoothPermissionIsNotGranted">Связанное разрешение Bluetooth не предоставлено</string>
+    <string name="mayCannotUseScheduledTaskToEnableOrDisableBluetooth">Возможно, не удастся использовать запланированные задачи для включения или отключения Bluetooth</string>
+    <string name="gotoStore">Перейти в магазин приложений</string>
+    <string name="selfRevokeProfileOwner">Отключить режим владельца профиля</string>
+    <string name="selfRevokeProfileOwnerSummary">Нужно только если вы использовали режим без-root (владелец профиля). Отзывает право владельца профиля — иначе удаление FreezeYou может не сработать.</string>
+    <string name="uninstallSummary">Удаляет FreezeYou. Если вы использовали режим без-root (владелец профиля), сначала отзовите его выше — иначе удаление может не сработать.</string>
+    <string name="isNotProfileOwner">Это не профиль владельца устройства</string>
+    <string name="getBackupData">Получить резервные данные</string>
+    <string name="theAppHasNotificationInTheNotificationBar">Приложение имеет уведомления в панели уведомлений</string>
+    <string name="theAppIsCurrentlyTheForegroundApp">В настоящее время на переднем плане</string>
+    <string name="operationOnFreezeYouIsNotAllowed">Операции с FreezeYou запрещены</string>
+    <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
+    <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
+    <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
+    <string name="includeFUFActivityInRecentsSummary">Также отображает экран процесса заморозки/разморозки отдельным пунктом в списке недавних приложений.</string>
+    <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>
+    <string name="toggleGridListMode">Переключить вид список/сетка</string>
     <string-array name="launchModeSelection">
-        <item>РџРѕРєР°Р·Р°С‚СЊ РІСЃРµ</item>
-        <item>Р—Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ</item>
-        <item>РќРµР·Р°РјРѕСЂРѕР¶РµРЅРЅС‹Рµ</item>
-        <item>РЎРёСЃС‚РµРјРЅС‹Рµ РїСЂРёР»РѕР¶РµРЅРёСЏ</item>
-        <item>РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ</item>
-        <item>OneKey-Р·Р°РјРѕСЂРѕР·РєР°</item>
-        <item>OneKey-СЂР°Р·РјРѕСЂРѕР·РєР°</item>
-        <item>Р—Р°РјРѕСЂРѕР·РєР° РїРѕСЃР»Рµ РІС‹С…РѕРґР°</item>
+        <item>Показать все</item>
+        <item>Замороженные</item>
+        <item>Незамороженные</item>
+        <item>Системные приложения</item>
+        <item>Пользовательские приложения</item>
+        <item>OneKey-заморозка</item>
+        <item>OneKey-разморозка</item>
+        <item>Заморозка после выхода</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
-        <item>РќРµС‚</item>
-        <item>Р—Р°РїСЂР°С€РёРІР°С‚СЊ Р±Р»РѕРєРёСЂРѕРІРєСѓ СЌРєСЂР°РЅР°</item>
-        <item>Р‘Р»РѕРєРёСЂРѕРІР°С‚СЊ СЌРєСЂР°РЅ СЃСЂР°Р·Сѓ</item>
+        <item>Нет</item>
+        <item>Запрашивать блокировку экрана</item>
+        <item>Блокировать экран сразу</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
-        <item>РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ</item>
-        <item>РЎРїРёСЃРѕРє</item>
-        <item>РЎРµС‚РєР°</item>
+        <item>По умолчанию</item>
+        <item>Список</item>
+        <item>Сетка</item>
     </string-array>
     <string-array name="uiStyleSelection">
-        <item>РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ</item>
-        <item>РўРµРјРЅР°СЏ</item>
-        <item>Р§РµСЂРЅР°СЏ</item>
+        <item>По умолчанию</item>
+        <item>Темная</item>
+        <item>Черная</item>
     </string-array>
     <string-array name="sevenDays">
-        <item>Р’ РїРѕРЅРµРґРµР»СЊРЅРёРє</item>
-        <item>Р’Рѕ РІС‚РѕСЂРЅРёРє</item>
-        <item>Р’ СЃСЂРµРґСѓ</item>
-        <item>Р’ С‡РµС‚РІРµСЂРі</item>
-        <item>Р’ РїСЏС‚РЅРёС†Сѓ</item>
-        <item>Р’ СЃСѓР±Р±РѕС‚Сѓ</item>
-        <item>Р’ РІРѕСЃРєСЂРµСЃРµРЅСЊРµ</item>
+        <item>В понедельник</item>
+        <item>Во вторник</item>
+        <item>В среду</item>
+        <item>В четверг</item>
+        <item>В пятницу</item>
+        <item>В субботу</item>
+        <item>В воскресенье</item>
     </string-array>
     <string-array name="triggers">
-        <item>РџСЂРё РІРєР»СЋС‡РµРЅРёРё СЌРєСЂР°РЅР°</item>
-        <item>РџСЂРё РІС‹РєР»СЋС‡РµРЅРёРё СЌРєСЂР°РЅР°</item>
-        <item>РљРѕРіРґР° РѕС‚РєСЂС‹РІР°СЋС‚СЃСЏ РїСЂРёР»РѕР¶РµРЅРёСЏ</item>
-        <item>РџСЂРё РІС‹С…РѕРґРµ РёР· РїСЂРёР»РѕР¶РµРЅРёР№</item>
-        <item>РџСЂРё СЂР°Р·РјРѕСЂРѕР·РєРµ РїСЂРёР»РѕР¶РµРЅРёР№</item>
-        <item>РџСЂРё Р·Р°РјРѕСЂРѕР·РєРµ РїСЂРёР»РѕР¶РµРЅРёР№</item>
+        <item>При включении экрана</item>
+        <item>При выключении экрана</item>
+        <item>Когда открываются приложения</item>
+        <item>При выходе из приложений</item>
+        <item>При разморозке приложений</item>
+        <item>При заморозке приложений</item>
     </string-array>
     <string-array name="selectFUFModeSelection">
-        <item>Р‘РµР·-root (СЂРµР¶РёРј DPM)</item>
-        <item>Р‘РµР·-root (СЂРµР¶РёРј РІР»Р°РґРµР»СЊС†Р° РїСЂРѕС„РёР»СЏ)</item>
-        <item>Root (СЂРµР¶РёРј СЃРєСЂС‹С‚РёСЏ)</item>
-        <item>Root (СЂРµР¶РёРј РѕС‚РєР»СЋС‡РµРЅРёСЏ)</item>
-        <item>Legacy (Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ DPM РёР»Рё СЂРµР¶РёРј РѕС‚РєР»СЋС‡РµРЅРёСЏ)</item>
-        <item>РЎРёСЃС‚РµРјРЅРѕРµ (СЂРµР¶РёРј DISABLE)</item>
-        <item>РЎРёСЃС‚РµРјРЅРѕРµ (СЂРµР¶РёРј Disable_User)</item>
-        <item>РЎРёСЃС‚РµРјРЅРѕРµ (СЂРµР¶РёРј Disable_Until_Used)</item>
-        <item>Shizuku (СЂРµР¶РёРј РѕС‚РєР»СЋС‡РµРЅРёСЏ)</item>
-        <item>Shizuku (СЂРµР¶РёРј Disable_User)</item>
-        <item>Shizuku (СЂРµР¶РёРј Disable_Until_Used)</item>
+        <item>Без-root (режим DPM)</item>
+        <item>Без-root (режим владельца профиля)</item>
+        <item>Root (режим скрытия)</item>
+        <item>Root (режим отключения)</item>
+        <item>Legacy (автоматический DPM или режим отключения)</item>
+        <item>Системное (режим DISABLE)</item>
+        <item>Системное (режим Disable_User)</item>
+        <item>Системное (режим Disable_Until_Used)</item>
+        <item>Shizuku (режим отключения)</item>
+        <item>Shizuku (режим Disable_User)</item>
+        <item>Shizuku (режим Disable_Until_Used)</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
-        <item>РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ</item>
-        <item>РўРµРјРЅР°СЏ</item>
-        <item>Р§РµСЂРЅР°СЏ</item>
+        <item>По умолчанию</item>
+        <item>Темная</item>
+        <item>Черная</item>
     </string-array>
-    <string name="mainScreenSettings">Р“Р»Р°РІРЅС‹Р№ СЌРєСЂР°РЅ</string>
-    <string name="accessAndSecurity">Р’С…РѕРґ Рё Р±РµР·РѕРїР°СЃРЅРѕСЃС‚СЊ</string>
-    <string name="category_feedback">РћС‚РєР»РёРє РёРЅС‚РµСЂС„РµР№СЃР°</string>
-    <string name="category_freezeMode">Р РµР¶РёРј</string>
-    <string name="category_protection">Р—Р°С‰РёС‚Р°</string>
-    <string name="category_shortcuts">РЇСЂР»С‹РєРё</string>
-    <string name="category_afterUnfreeze">РџРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё</string>
-    <string name="category_cache">РљРµС€</string>
-    <string name="category_statistics">РЎС‚Р°С‚РёСЃС‚РёРєР°</string>
-    <string name="category_lists">РЎРїРёСЃРєРё</string>
-    <string name="category_settings">РќР°СЃС‚СЂРѕР№РєРё</string>
-    <string name="category_maintenance">РћР±СЃР»СѓР¶РёРІР°РЅРёРµ</string>
-    <string name="category_help">РЎРїСЂР°РІРєР°</string>
-    <string name="summary_spr_mainScreen">РЎРїРёСЃРѕРє РёР»Рё СЃРµС‚РєР°, СЃРѕСЂС‚РёСЂРѕРІРєР°, С‡С‚Рѕ РґРµР»Р°РµС‚ РЅР°Р¶Р°С‚РёРµ</string>
-    <string name="summary_spr_appearance">РўРµРјР°, С‚РµРјРЅС‹Р№ СЂРµР¶РёРј, СЏР·С‹Рє, Р°РЅРёРјР°С†РёРё</string>
-    <string name="summary_spr_fuf">Р РµР¶РёРј, Р·Р°С‰РёС‚Р°, СЏСЂР»С‹РєРё, С„РѕРЅРѕРІР°СЏ СЃР»СѓР¶Р±Р°</string>
-    <string name="summary_spr_automation">Р—Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹Рµ Р·Р°РґР°РЅРёСЏ, Р±Р»РѕРєРёСЂРѕРІРєР° СЌРєСЂР°РЅР°, РІС‹С…РѕРґ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏ</string>
-    <string name="summary_spr_notification">Р‘С‹СЃС‚СЂРѕРµ СѓРІРµРґРѕРјР»РµРЅРёРµ РїРѕСЃР»Рµ СЂР°Р·РјРѕСЂРѕР·РєРё Рё РµРіРѕ РїРѕРІРµРґРµРЅРёРµ</string>
-    <string name="summary_spr_access">Р‘Р»РѕРєРёСЂРѕРІРєР°, Р·РЅР°С‡РєРё РІ Р»Р°СѓРЅС‡РµСЂРµ, РІС…РѕРґ С‡РµСЂРµР· Р·РІРѕРЅРёР»РєСѓ</string>
-    <string name="summary_spr_installUninstall">РќР°СЃС‚СЂРѕР№РєРё, СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ СѓСЃС‚Р°РЅРѕРІРєРѕР№ РїСЂРёР»РѕР¶РµРЅРёР№ Рё СѓРґР°Р»РµРЅРёРµРј APK-С„Р°Р№Р»РѕРІ</string>
-    <string name="summary_spr_manageSpace">РљРµС€Рё, СЃС‚Р°С‚РёСЃС‚РёРєР°, С‡РёСЃС‚РєР° СЃРїРёСЃРєРѕРІ РѕС‚ СѓРґР°Р»РµРЅРЅС‹С… РїСЂРёР»РѕР¶РµРЅРёР№</string>
-    <string name="summary_spr_advance">РЈСЃС‚Р°РЅРѕРІРєР° РїСЂРёР»РѕР¶РµРЅРёР№, РѕС‚Р»Р°РґРєР°, СЃРїРµС†РёР°Р»СЊРЅС‹Рµ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё, РѕРїР°СЃРЅР°СЏ Р·РѕРЅР°</string>
-    <string name="dangerZoneSummary">РЎС‚РёСЂР°РЅРёРµ РґР°РЅРЅС‹С… СЃР°РјРѕРіРѕ FreezeYou, РѕС‚Р·С‹РІ РїСЂР°РІ РІР»Р°РґРµР»СЊС†Р°, СѓРґР°Р»РµРЅРёРµ FreezeYou</string>
-    <string name="summary_hToUse">РћРЅР»Р°Р№РЅ-СЃРїСЂР°РІРєР° РЅР° СЃР°Р№С‚Рµ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ</string>
+    <string name="mainScreenSettings">Главный экран</string>
+    <string name="accessAndSecurity">Вход и безопасность</string>
+    <string name="category_feedback">Отклик интерфейса</string>
+    <string name="category_freezeMode">Режим</string>
+    <string name="category_protection">Защита</string>
+    <string name="category_shortcuts">Ярлыки</string>
+    <string name="category_afterUnfreeze">После разморозки</string>
+    <string name="category_cache">Кеш</string>
+    <string name="category_statistics">Статистика</string>
+    <string name="category_lists">Списки</string>
+    <string name="category_settings">Настройки</string>
+    <string name="category_maintenance">Обслуживание</string>
+    <string name="category_help">Справка</string>
+    <string name="summary_spr_mainScreen">Список или сетка, сортировка, что делает нажатие</string>
+    <string name="summary_spr_appearance">Тема, темный режим, язык, анимации</string>
+    <string name="summary_spr_fuf">Режим, защита, ярлыки, фоновая служба</string>
+    <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
+    <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
+    <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
+    <string name="summary_spr_installUninstall">Настройки, связанные с установкой приложений и удалением APK-файлов</string>
+    <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
+    <string name="summary_spr_advance">Установка приложений, отладка, специальные возможности, опасная зона</string>
+    <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
+    <string name="summary_hToUse">Онлайн-справка на сайте оригинального приложения</string>
     <string name="system_app_warning">Это системное приложение, будьте осторожны!</string>
     <string name="uninstall_updates_only">Удалить обновления</string>
     <string name="uninstall_completely">Удалить полностью</string>
