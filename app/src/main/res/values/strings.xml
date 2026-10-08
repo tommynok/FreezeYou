@@ -584,7 +584,7 @@
     <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
     <string name="summary_spr_notification">The quick notification after unfreezing, and how it behaves</string>
     <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
-    <string name="summary_spr_installUninstall">Options related to installing apps and removing APK files</string>
+    <string name="summary_spr_installUninstall">Options related to installing and uninstalling apps</string>
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
     <string name="summary_spr_advance">Installing apps, debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>

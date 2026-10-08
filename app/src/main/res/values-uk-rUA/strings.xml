@@ -486,7 +486,7 @@
     <string name="summary_spr_automation">Заплановані завдання, блокування екрана, вихід із додатка</string>
     <string name="summary_spr_notification">Швидке сповіщення після розморожування та його поведінка</string>
     <string name="summary_spr_access">Блокування, значки в лаунчері, вхід через дзвонилку</string>
-    <string name="summary_spr_installUninstall">Налаштування, пов’язані з встановленням додатків</string>
+    <string name="summary_spr_installUninstall">Налаштування, пов’язані з встановленням та видаленням програм</string>
     <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
     <string name="summary_spr_advance">Встановлення додатків, налагодження, спеціальні можливості, небезпечна зона</string>
     <string name="dangerZoneSummary">Стирання даних самого FreezeYou, відкликання прав власника, видалення FreezeYou</string>

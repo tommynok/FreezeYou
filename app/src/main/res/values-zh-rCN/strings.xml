@@ -491,7 +491,7 @@
     <string name="summary_spr_automation">计划任务、锁屏、离开应用</string>
     <string name="summary_spr_notification">解冻后的快速通知及其行为</string>
     <string name="summary_spr_access">锁定、桌面图标、通过拨号器进入</string>
-    <string name="summary_spr_installUninstall">与安装应用和删除 APK 文件相关的选项</string>
+    <string name="summary_spr_installUninstall">与安装和卸载应用相关的选项</string>
     <string name="summary_spr_manageSpace">缓存、统计、清理已卸载应用的列表</string>
     <string name="summary_spr_advance">安装应用、调试、无障碍、危险区</string>
     <string name="dangerZoneSummary">清除 FreezeYou 数据、撤销所有者权限、卸载 FreezeYou</string>
