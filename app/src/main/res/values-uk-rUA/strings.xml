@@ -491,4 +491,7 @@
     <string name="summary_spr_advance">Встановлення додатків, налагодження, спеціальні можливості, небезпечна зона</string>
     <string name="dangerZoneSummary">Стирання даних самого FreezeYou, відкликання прав власника, видалення FreezeYou</string>
     <string name="summary_hToUse">Онлайн-довідка на сайті оригінального додатку</string>
+    <string name="system_app_warning">Це системна програма, будьте обережні!</string>
+    <string name="uninstall_updates_only">Видалити оновлення</string>
+    <string name="uninstall_completely">Видалити повністю</string>
 </resources>

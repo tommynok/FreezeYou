@@ -43,7 +43,7 @@
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
     <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
-    <string name="summary_enableInstallPkgFunc">允许通过应用内置安装器安装 APK 文件</string>
+    <string name="summary_enableInstallPkgFunc">允许通过应用安装和卸载应用（包括系统应用）。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
     <string name="summary_notAllowWhenIsObsd">当屏幕被其他应用窗口遮挡时阻止安装/卸载确认（防点击劫持）</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">使用应用时延迟其更新，离开后再安装</string>
@@ -279,7 +279,7 @@
     <string name="dangerous">危险</string>
     <string name="alert_isObsd">存在遮罩层，操作已被拦截，请移除后重试</string>
     <string name="retry">重试</string>
-    <string name="enableInstallPkgFunc">通过 FreezeYou 安装 APK</string>
+    <string name="enableInstallPkgFunc">通过 FreezeYou 安装和卸载应用</string>
     <string name="allow">允许</string>
     <string name="reject">拒绝</string>
     <string name="execute_colon">执行：</string>
@@ -496,4 +496,7 @@
     <string name="summary_spr_advance">安装应用、调试、无障碍、危险区</string>
     <string name="dangerZoneSummary">清除 FreezeYou 数据、撤销所有者权限、卸载 FreezeYou</string>
     <string name="summary_hToUse">原 FreezeYou 网站上的在线文档</string>
+    <string name="system_app_warning">这是一个系统应用，请小心操作！</string>
+    <string name="uninstall_updates_only">卸载更新</string>
+    <string name="uninstall_completely">完全卸载</string>
 </resources>
