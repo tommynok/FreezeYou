@@ -37,7 +37,7 @@
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы через встроенный установщик</string>
+    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы и удалять приложения, в том числе системные.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
@@ -273,7 +273,7 @@
     <string name="dangerous">Опасно</string>
     <string name="alert_isObsd">Окно затемнено, операция была отклонена. Пожалуйста, отключите экранные наложения и повторите попытку.</string>
     <string name="retry">Повтор</string>
-    <string name="enableInstallPkgFunc">Устанавливать APK через FreezeYou</string>
+    <string name="enableInstallPkgFunc">Устанавливать и удалять приложения через FreezeYou</string>
     <string name="allow">Разрешить</string>
     <string name="reject">Отклонить</string>
     <string name="execute_colon">Выполнить:</string>

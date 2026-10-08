@@ -37,7 +37,7 @@
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">Allows installing APK files using the app\'s built-in installer</string>
+    <string name="summary_enableInstallPkgFunc">Allows installing APK files and uninstalling apps, including system apps.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
@@ -273,7 +273,7 @@
     <string name="dangerous">Dangerous</string>
     <string name="alert_isObsd">The window is obscured, the operation has been rejected, please remove the mask layer and retry</string>
     <string name="retry">Retry</string>
-    <string name="enableInstallPkgFunc">Install APK files through FreezeYou</string>
+    <string name="enableInstallPkgFunc">Install and uninstall apps through FreezeYou</string>
     <string name="allow">Allow</string>
     <string name="reject">Reject</string>
     <string name="execute_colon">Execute: </string>
