@@ -155,7 +155,48 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     builder.build()
             );
 
-            if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
+            boolean uninstallUpdatesOnly = intent.getBooleanExtra("uninstall_updates_only", false);
+            android.content.pm.PackageInfo packageInfo = intent.getParcelableExtra("packageInfo");
+            boolean isSystemApp = packageInfo != null && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+            boolean hasSystemUpdate = packageInfo != null && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+
+            boolean shizukuAvailable = false;
+            try {
+                shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            } catch (Throwable ignored) {}
+
+            boolean success = false;
+            
+            java.util.List<String> commands = new java.util.ArrayList<>();
+            if (uninstallUpdatesOnly) {
+                commands.add("pm uninstall \"" + packageName + "\"");
+            } else if (isSystemApp) {
+                if (hasSystemUpdate) {
+                    commands.add("pm uninstall \"" + packageName + "\"");
+                }
+                commands.add("pm uninstall --user 0 \"" + packageName + "\"");
+            } else {
+                commands.add("pm uninstall \"" + packageName + "\"");
+            }
+            
+            if (shizukuAvailable) {
+                for (String cmd : commands) {
+                    Process p = rikka.shizuku.Shizuku.newProcess(new String[]{"sh", "-c", cmd}, null, null);
+                    p.waitFor();
+                }
+                success = true;
+            } else if (cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission()) {
+                Process process = Runtime.getRuntime().exec("su");
+                DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
+                for (String cmd : commands) {
+                    outputStream.writeBytes(cmd + "\n");
+                }
+                outputStream.writeBytes("exit\n");
+                outputStream.flush();
+                process.waitFor();
+                destroyProcess(outputStream, process);
+                success = true;
+            } else if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 getPackageManager().getPackageInstaller().uninstall(packageName,
                         PendingIntent.getBroadcast(this, packageName.hashCode(),
                                         new Intent(
@@ -168,15 +209,12 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT)
                                 .getIntentSender());
+                return;
             } else {
-                // Root Mode
-                Process process = Runtime.getRuntime().exec("su");
-                DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                outputStream.writeBytes("pm uninstall -k \"" + packageName + "\"\n");
-                outputStream.writeBytes("exit\n");
-                outputStream.flush();
-                process.waitFor();
-                destroyProcess(outputStream, process);
+                throw new Exception("No sufficient privileges to uninstall.");
+            }
+            
+            if (success) {
                 InstallPackagesUtils
                         .notifyFinishNotification(
                                 this, notificationManager, builder,
