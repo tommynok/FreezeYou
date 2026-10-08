@@ -301,6 +301,20 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 finish();
                 return;
             }
+            
+            PackageInfo uninstalledPackageInfo = null;
+            try {
+                uninstalledPackageInfo = getPackageManager().getPackageInfo(packageName, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            
+            if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                alertDialogMessage.append(getString(R.string.system_app_warning));
+                alertDialogMessage.append(nl);
+                alertDialogMessage.append(nl);
+            }
+            
             alertDialogMessage.append(getString(R.string.requestFromPackage_colon));
             alertDialogMessage.append(nl);
             alertDialogMessage.append(
@@ -328,7 +342,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             showInstallDialog(
                     progressDialog, 0,
                     alertDialogMessage, apkFilePath,
-                    packageUri, fromPkgLabel, fromPkgName, null
+                    packageUri, fromPkgLabel, fromPkgName, uninstalledPackageInfo
             );
         }
     }
@@ -348,9 +362,21 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             installPackagesAlertDialog.setView(checkBoxView);
         }
 
+        boolean isSystemApp = false;
+        boolean hasSystemUpdate = false;
+        if (install == 0 && processedPackageInfo != null) {
+            isSystemApp = (processedPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            hasSystemUpdate = (processedPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+        }
+
         switch (install) {
             case 0:
-                installPackagesAlertDialog.setTitle(R.string.uninstall);
+                if (isSystemApp) {
+                    installPackagesAlertDialog.setTitle(R.string.caution);
+                    installPackagesAlertDialog.setIcon(R.drawable.ic_warning);
+                } else {
+                    installPackagesAlertDialog.setTitle(R.string.uninstall);
+                }
                 break;
             case 1:
                 installPackagesAlertDialog.setTitle(R.string.install);
@@ -366,9 +392,18 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 tryToAvoidUpdateWhenUsing.getValue(null);
 
         installPackagesAlertDialog.setMessage(alertDialogMessage);
+        String positiveButtonText = getString(R.string.yes);
+        if (install == 0) {
+            if (isSystemApp) {
+                positiveButtonText = getString(R.string.uninstall_completely);
+            } else {
+                positiveButtonText = getString(R.string.uninstall);
+            }
+        }
+        
         installPackagesAlertDialog.setButton(
                 DialogInterface.BUTTON_POSITIVE,
-                getString(R.string.yes),
+                positiveButtonText,
                 (dialog, which) -> {
                     if (notAllowInstallWhenIsObsd.getValue(null)
                             && installPackagesAlertDialog.isObsd()) {
@@ -440,10 +475,31 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         }
                     }
                 });
-        installPackagesAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.no), (dialog, which) -> {
+        installPackagesAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), (dialog, which) -> {
             if (install != 0) clearTempFile(apkFilePath);
             finish();
         });
+        
+        if (install == 0 && hasSystemUpdate) {
+            installPackagesAlertDialog.setButton(
+                    DialogInterface.BUTTON_NEUTRAL,
+                    getString(R.string.uninstall_updates_only),
+                    (dialog, which) -> {
+                        if (DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this) || FUFUtils.checkRootPermission()) {
+                            ServiceUtils.startService(
+                                    InstallPackagesActivity.this,
+                                    new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
+                                            .putExtra("install", false)
+                                            .putExtra("packageUri", packageUri)
+                                            .putExtra("uninstall_updates_only", true)
+                                            .putExtra("packageInfo", processedPackageInfo)
+                                            .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
+                            finish();
+                        } else {
+                            showInstallPermissionCheckFailedDialog(install, apkFilePath, packageUri, processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
+                        }
+                    });
+        }
         if (!preDefinedTryToAvoidUpdateWhenUsing
                 && processedPackageInfo != null
                 && AccessibilityUtils.isAccessibilitySettingsOn(this)) {

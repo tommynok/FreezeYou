@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FreezeYou-Fork</string>
     <string name="oneKeyFreeze">Onekey Freeze</string>
@@ -34,7 +34,7 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
-    <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
+    <string name="summary_notificationBar_more">Open system notification settings for FreezeYou вЂ” manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Allows installing APK files using the app\'s built-in installer</string>
@@ -43,7 +43,7 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="summary_manageMyCustomization">Create, rename, or delete your own app groups</string>
-    <string name="summary_clearUninstalledPkgsInList">* Only removes entries for apps you\'ve since uninstalled — the rest of the list is untouched</string>
+    <string name="summary_clearUninstalledPkgsInList">* Only removes entries for apps you\'ve since uninstalled вЂ” the rest of the list is untouched</string>
     <string name="clearUninstalledPkgsInOKFFListAsterisk">Remove uninstalled applications from the Onekey Freeze list *</string>
     <string name="clearUninstalledPkgsInOKUFListAsterisk">Remove uninstalled applications from the Onekey Unfreeze list *</string>
     <string name="clearUninstalledPkgsInFOQListAsterisk">Remove uninstalled applications from the Freeze Once Quit list *</string>
@@ -53,7 +53,7 @@
     <string name="summary_resetFreezeTimes">Sets the per-app freeze counter shown in the app list back to zero</string>
     <string name="summary_resetUFTimes">Sets the per-app unfreeze counter shown in the app list back to zero</string>
     <string name="summary_resetUseTimes">Sets the per-app usage counter shown in the app list back to zero</string>
-    <string name="summary_deleteAllScheduledTasks">Permanently removes every scheduled task you\'ve created — this can\'t be undone</string>
+    <string name="summary_deleteAllScheduledTasks">Permanently removes every scheduled task you\'ve created вЂ” this can\'t be undone</string>
     <string name="unfreeze">Unfreeze</string>
     <string name="unfreezedAndAskLaunch">Requested unfreeze, try running now?</string>
     <string name="unrootedOrCannotFindTheLaunchIntent">Unfreeze succeeded but unable to find the entrance of this application, or unfreeze failed due to the insufficient permission.</string>
@@ -90,7 +90,7 @@
     <string name="nSCaution">No longer show the warning at startup</string>
     <string name="advance">Other settings</string>
     <string name="manualMode">Freeze by package name</string>
-    <string name="summary_manualMode">Enter a package name and freeze or unfreeze it manually — for applications that are not in the list</string>
+    <string name="summary_manualMode">Enter a package name and freeze or unfreeze it manually вЂ” for applications that are not in the list</string>
     <string name="packageName">Package Name</string>
     <string name="failed">Failed</string>
     <string name="success">Success</string>
@@ -99,7 +99,7 @@
     <string name="createDisEnableShortCut">Create a freeze and unfreeze shortcut</string>
     <string name="createActivityShortcut">Create an activity shortcut</string>
     <string name="cannotFindTheEntrance">Cannot find an entrance to this application</string>
-    <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen. If you need to freeze the application from a shortcut — create one with «%1$s».</string>
+    <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen. If you need to freeze the application from a shortcut вЂ” create one with В«%1$sВ».</string>
     <string name="iconAEntry">Icons and Entrances</string>
     <string name="dialEntry">Use the dial pad to enter</string>
     <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>
@@ -237,14 +237,14 @@
     <string name="name">Name</string>
     <string name="icon">Icon</string>
     <string name="target">Target</string>
-    <string name="shortcutTargetFieldHint">By default the shortcut launches the app. Tap … to pick a different activity (screen) from the list of ones available to launch.</string>
+    <string name="shortcutTargetFieldHint">By default the shortcut launches the app. Tap вЂ¦ to pick a different activity (screen) from the list of ones available to launch.</string>
     <string name="generate">Create</string>
     <string name="plsSelect">Please select</string>
     <string name="application">Application</string>
-    <string name="shortcutPackageFieldHint">Tap … to pick any app from the full list, not just the one you started from.</string>
+    <string name="shortcutPackageFieldHint">Tap вЂ¦ to pick any app from the full list, not just the one you started from.</string>
     <string name="allowEditWhCreateShortcut">Allow editing when creating shortcuts</string>
     <string name="clearAllUserData">Erase FreezeYou data</string>
-    <string name="clearAllUserDataSummary">Permanently erases the data of FreezeYou itself: settings, custom groups, scheduled tasks and shortcut data. Applications that are frozen stay frozen — that state is kept by the system, not by FreezeYou. This cannot be undone.</string>
+    <string name="clearAllUserDataSummary">Permanently erases the data of FreezeYou itself: settings, custom groups, scheduled tasks and shortcut data. Applications that are frozen stay frozen вЂ” that state is kept by the system, not by FreezeYou. This cannot be undone.</string>
     <string name="packageNotFound">The application was not found</string>
     <string name="id">Id</string>
     <string name="simulate">Test</string>
@@ -292,12 +292,12 @@
     <string name="sortBy">Sort by</string>
     <string name="sortBy_default">Default</string>
     <string name="sortBy_no">No sort</string>
-    <string name="uf_ascending">Unfreeze ↑</string>
-    <string name="uf_descending">Unfreeze ↓</string>
-    <string name="ff_ascending">Freeze ↑</string>
-    <string name="ff_descending">Freeze ↓</string>
-    <string name="us_ascending">Using frequency ↑</string>
-    <string name="us_descending">Using frequency ↓</string>
+    <string name="uf_ascending">Unfreeze в†‘</string>
+    <string name="uf_descending">Unfreeze в†“</string>
+    <string name="ff_ascending">Freeze в†‘</string>
+    <string name="ff_descending">Freeze в†“</string>
+    <string name="us_ascending">Using frequency в†‘</string>
+    <string name="us_descending">Using frequency в†“</string>
     <string name="impt">Import</string>
     <string name="expt">Export</string>
     <string name="saveBackupToFile">Save to file</string>
@@ -518,9 +518,9 @@
     <string-array name="displayLanguageOptionsSelection" translatable="false">
         <item>Default</item>
         <item>English</item>
-        <item>Русский</item>
-        <item>Українська</item>
-        <item>中文（中国）</item>
+        <item>Р СѓСЃСЃРєРёР№</item>
+        <item>РЈРєСЂР°С—РЅСЃСЊРєР°</item>
+        <item>дё­ж–‡пј€дё­е›Ѕпј‰</item>
     </string-array>
     <string-array name="displayLanguageOptionsSelectionValues" translatable="false">
         <item>Default</item>
@@ -589,4 +589,7 @@
     <string name="summary_spr_advance">Installing apps, debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
     <string name="summary_hToUse">Online documentation on the original application website</string>
+    <string name="system_app_warning">This is a system app, please be careful!</string>
+    <string name="uninstall_updates_only">Uninstall updates</string>
+    <string name="uninstall_completely">Uninstall completely</string>
 </resources>
