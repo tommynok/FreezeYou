@@ -315,15 +315,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 alertDialogMessage.append(nl);
             }
             
-            alertDialogMessage.append(getString(R.string.requestFromPackage_colon));
-            alertDialogMessage.append(nl);
-            alertDialogMessage.append(
-                    ILLEGALPKGNAME.equals(fromPkgLabel) ?
-                            getString(R.string.unknown) : fromPkgLabel);
-            alertDialogMessage.append(nl);
-            alertDialogMessage.append(nl);
-            alertDialogMessage.append(getString(R.string.uninstallPackage_colon));
-            alertDialogMessage.append(nl);
             alertDialogMessage.append(
                     String.format(
                             getString(R.string.application_colon_app),
@@ -337,8 +328,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             packageName
                     )
             );
-            alertDialogMessage.append(nl);
-            alertDialogMessage.append(getString(R.string.whetherAllow));
             showInstallDialog(
                     progressDialog, 0,
                     alertDialogMessage, apkFilePath,
