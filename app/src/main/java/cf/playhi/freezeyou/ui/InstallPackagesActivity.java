@@ -443,9 +443,13 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             clearTempFile(apkFilePath);
                             finish();
                         } else {
+                            boolean shizukuAvailable = false;
+                            try {
+                                shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                            } catch (Throwable ignored) {}
                             if (DevicePolicyManagerUtils
                                     .isDeviceOwner(InstallPackagesActivity.this) ||
-                                    FUFUtils.checkRootPermission()) {
+                                    FUFUtils.checkRootPermission() || (install == 0 && shizukuAvailable)) {
                                 ServiceUtils.startService(
                                         InstallPackagesActivity.this,
                                         new Intent(InstallPackagesActivity.this,
@@ -474,7 +478,11 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     DialogInterface.BUTTON_NEUTRAL,
                     getString(R.string.uninstall_updates_only),
                     (dialog, which) -> {
-                        if (DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this) || FUFUtils.checkRootPermission()) {
+                        boolean shizukuAvailable = false;
+                        try {
+                            shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                        } catch (Throwable ignored) {}
+                        if (DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this) || FUFUtils.checkRootPermission() || shizukuAvailable) {
                             ServiceUtils.startService(
                                     InstallPackagesActivity.this,
                                     new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
