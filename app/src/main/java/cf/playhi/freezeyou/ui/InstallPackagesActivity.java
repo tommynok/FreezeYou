@@ -309,7 +309,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 e.printStackTrace();
             }
             
-            if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+            if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
                 alertDialogMessage.append(getString(R.string.system_app_warning));
                 alertDialogMessage.append(nl);
                 alertDialogMessage.append(nl);
@@ -365,8 +365,8 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         boolean isSystemApp = false;
         boolean hasSystemUpdate = false;
         if (install == 0 && processedPackageInfo != null) {
-            isSystemApp = (processedPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            hasSystemUpdate = (processedPackageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+            isSystemApp = (processedPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+            hasSystemUpdate = (processedPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
         }
 
         switch (install) {
