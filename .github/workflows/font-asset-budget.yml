@@ -1,0 +1,24 @@
+name: Font asset budget
+
+on:
+  push:
+    paths:
+      - 'app/src/main/res/font/**'
+      - 'tools/check_font_asset_budget.py'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/font-asset-budget.yml'
+  pull_request:
+    paths:
+      - 'app/src/main/res/font/**'
+      - 'tools/check_font_asset_budget.py'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/font-asset-budget.yml'
+
+jobs:
+  font-asset-budget:
+    name: Check bundled font asset budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check bundled font sizes
+        run: python3 tools/check_font_asset_budget.py
