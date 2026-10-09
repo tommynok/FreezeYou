@@ -38,23 +38,6 @@ public final class RestoreUtils {
         }
     }
 
-    public static void showRestoreConfirmDialog(final Activity activity, final String packageName, final String appName, final Runnable onRestoredCallback) {
-        if (activity == null || activity.isFinishing()) return;
-
-        FreezeYouAlertDialogBuilder(activity)
-                .setTitle(R.string.caution)
-                .setMessage(activity.getString(R.string.app_is_uninstalled_restore_prompt)
-                        + "\n\n"
-                        + String.format(activity.getString(R.string.application_colon_app), appName)
-                        + "\n"
-                        + String.format(activity.getString(R.string.pkgName_colon_pkgName), packageName))
-                .setPositiveButton(R.string.restore, (dialog, which) -> {
-                    restorePackages(activity, Collections.singletonList(packageName), onRestoredCallback);
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
-    }
-
     public static void restorePackages(final Context context, final List<String> packageNames, final Runnable onFinishedCallback) {
         if (packageNames == null || packageNames.isEmpty()) return;
 

@@ -1207,7 +1207,7 @@ public class Main extends FreezeYouBaseActivity {
             final String pkgName = (String) map.get("PackageName");
             if (!getString(R.string.notAvailable).equals(name)) {
                 if (RestoreUtils.isPackageUninstalled(Main.this, pkgName)) {
-                    RestoreUtils.showRestoreConfirmDialog(Main.this, pkgName, name, () -> {
+                    RestoreUtils.restorePackages(Main.this, java.util.Collections.singletonList(pkgName), () -> {
                         new Thread(() -> generateList(currentFilter)).start();
                     });
                     return;

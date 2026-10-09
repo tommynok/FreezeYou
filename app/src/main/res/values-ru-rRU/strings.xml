@@ -497,7 +497,7 @@
     <string name="restore">Восстановить</string>
     <string name="onlyUninstalledSys">Удаленные системные</string>
     <string name="app_is_uninstalled_restore_prompt">Приложение удалено. Восстановить?</string>
-    <string name="restoring_app">Восстановление %1…</string>
+    <string name="restoring_app">Восстановление %1$s…</string>
     <string name="restore_completed">Приложение восстановлено</string>
     <string name="restore_failed">Не удалось восстановить приложение</string>
 </resources>

@@ -307,7 +307,7 @@ public final class Support {
                             break;
                         case R.id.main_sca_menu_uninstall:
                             if (isUninstalled) {
-                                RestoreUtils.showRestoreConfirmDialog(activity, pkgName, name, () -> {
+                                RestoreUtils.restorePackages(activity, java.util.Collections.singletonList(pkgName), () -> {
                                     context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged").putExtra("pkgName", pkgName));
                                 });
                             } else if (!(context.getString(R.string.notAvailable).equals(name)) &&
