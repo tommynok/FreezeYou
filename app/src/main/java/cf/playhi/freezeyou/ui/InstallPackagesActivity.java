@@ -315,17 +315,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
                 final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
-        if (install == 1) {
-            //Init CheckBox
-            View checkBoxView = View.inflate(this, R.layout.ipa_dialog_checkbox, null);
-            CheckBox checkBox = checkBoxView.findViewById(R.id.ipa_dialog_checkBox);
-            if (fromPkgLabel.equals(ILLEGALPKGNAME)) {
-                checkBox.setVisibility(View.GONE);
-            } else {
-                checkBox.setText(String.format(getString(R.string.alwaysAllow_name), fromPkgLabel));
-            }
-            installPackagesAlertDialog.setView(checkBoxView);
-        }
+
 
         boolean isSystemApp = false;
         boolean hasSystemUpdate = false;
@@ -411,27 +401,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 )
                                 .create().show();
                     } else {
-                        if (install == 1) {
-                            CheckBox checkBox = ((ObsdAlertDialog) dialog).findViewById(R.id.ipa_dialog_checkBox);
-                            if (checkBox != null && checkBox.isChecked()) {
-                                AppPreferences sp = new AppPreferences(InstallPackagesActivity.this);
-                                String originData = sp.getString("installPkgs_autoAllowPkgs_allows", "");
-                                List<String> originData_list = MoreUtils.convertToList(originData, ",");
-                                if (!ILLEGALPKGNAME.equals(fromPkgLabel)
-                                        &&
-                                        (originData == null ||
-                                                !MoreUtils.convertToList(originData, ",").contains(
-                                                        Base64.encodeToString(
-                                                                fromPkgName.getBytes(), Base64.DEFAULT)))) {
-                                    originData_list.add(
-                                            Base64.encodeToString(fromPkgName.getBytes(), Base64.DEFAULT));
-                                    sp.put(
-                                            "installPkgs_autoAllowPkgs_allows",
-                                            MoreUtils.listToString(originData_list, ",")
-                                    );
-                                }
-                            }
-                        }
+
                         if (install == 2) {
                             clearTempFile(apkFilePath);
                             finish();
@@ -517,27 +487,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                     })
                                     .create().show();
                         } else {
-                            if (install == 1) {
-                                CheckBox checkBox = ((ObsdAlertDialog) dialog).findViewById(R.id.ipa_dialog_checkBox);
-                                if (checkBox != null && checkBox.isChecked()) {
-                                    AppPreferences sp = new AppPreferences(InstallPackagesActivity.this);
-                                    String originData = sp.getString("installPkgs_autoAllowPkgs_allows", "");
-                                    List<String> originData_list = MoreUtils.convertToList(originData, ",");
-                                    if (!ILLEGALPKGNAME.equals(fromPkgLabel)
-                                            &&
-                                            (originData == null ||
-                                                    !MoreUtils.convertToList(originData, ",").contains(
-                                                            Base64.encodeToString(
-                                                                    fromPkgName.getBytes(), Base64.DEFAULT)))) {
-                                        originData_list.add(
-                                                Base64.encodeToString(fromPkgName.getBytes(), Base64.DEFAULT));
-                                        sp.put(
-                                                "installPkgs_autoAllowPkgs_allows",
-                                                MoreUtils.listToString(originData_list, ",")
-                                        );
-                                    }
-                                }
-                            }
+
                             if (install == 2) {
                                 clearTempFile(apkFilePath);
                             } else {
