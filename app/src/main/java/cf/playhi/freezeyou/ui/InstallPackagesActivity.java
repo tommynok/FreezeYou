@@ -215,22 +215,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         });
                     }
 
-                    alertDialogMessage.append(getString(R.string.requestFromPackage_colon));
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(
-                            ILLEGALPKGNAME.equals(fromPkgLabel) ?
-                                    getString(R.string.unknown) : fromPkgLabel);
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(getString(R.string.installPackage_colon));
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(
-                            String.format(
-                                    getString(R.string.application_colon_app),
-                                    pm.getApplicationLabel(packageInfo.applicationInfo)
-                            )
-                    );
-                    alertDialogMessage.append(nl);
                     alertDialogMessage.append(
                             String.format(
                                     getString(R.string.pkgName_colon_pkgName),
@@ -266,9 +250,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                             Long.toString(packageInfo.getLongVersionCode())
                             )
                     );
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(nl);
-                    alertDialogMessage.append(getString(R.string.whetherAllow));
+
 
                     if (isFinishing()) return;
 
@@ -365,7 +347,21 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 }
                 break;
             case 1:
-                installPackagesAlertDialog.setTitle(R.string.install);
+                CharSequence appLabel = getString(R.string.install); // fallback
+                if (processedPackageInfo != null && processedPackageInfo.applicationInfo != null) {
+                    try {
+                        CharSequence label = getPackageManager().getApplicationLabel(processedPackageInfo.applicationInfo);
+                        if (label != null) {
+                            appLabel = label;
+                        } else {
+                            label = processedPackageInfo.applicationInfo.loadLabel(getPackageManager());
+                            if (label != null) appLabel = label;
+                        }
+                    } catch (Exception e) {
+                        // Ignore
+                    }
+                }
+                installPackagesAlertDialog.setTitle(appLabel);
                 break;
             case 2:
                 installPackagesAlertDialog.setTitle(R.string.failed);

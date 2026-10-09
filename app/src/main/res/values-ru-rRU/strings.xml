@@ -332,8 +332,8 @@
     <string name="myCustomization">Моя подборка</string>
     <string name="manageMyCustomization">Управление списком «Моя подборка»</string>
     <string name="copyAlias">Скопировать псевдоним</string>
-    <string name="version_colon_vN_longVC">Версия: %1$s (%2$s)</string>
-    <string name="existed_colon_vN_longVC">Уже установлено: %1$s (%2$s)</string>
+    <string name="version_colon_vN_longVC">Будет установлено: %1$s (%2$s)</string>
+    <string name="existed_colon_vN_longVC">Установлено: %1$s (%2$s)</string>
     <string name="application_colon_app">Приложение: %1$s</string>
     <string name="pkgName_colon_pkgName">Пакет: %1$s</string>
     <string name="cannotInstall_colon_msg">Не удается установить: %1$s</string>
