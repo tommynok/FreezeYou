@@ -140,7 +140,6 @@
     <style name="ThemeOverlay.App.Dialog.Dark" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="elevationOverlayEnabled">false</item>
         <item name="colorPrimary">@color/appOnDarkSurface</item>
-        <item name="colorAccent">@color/appOnDarkSurface</item>
     </style>
 
     <style name="ThemeOverlay.App.Dialog.Light" parent="ThemeOverlay.Material3.MaterialAlertDialog">

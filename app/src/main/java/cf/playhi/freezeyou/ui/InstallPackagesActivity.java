@@ -570,13 +570,16 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         if (isFinishing()) return;
         installPackagesAlertDialog.setOnShowListener(dialog -> {
-            int accentColor = androidx.core.content.ContextCompat.getColor(InstallPackagesActivity.this, R.color.appAccent);
-            android.widget.Button positiveButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
-            if (positiveButton != null) positiveButton.setTextColor(accentColor);
-            android.widget.Button negativeButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
-            if (negativeButton != null) negativeButton.setTextColor(accentColor);
-            android.widget.Button neutralButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL);
-            if (neutralButton != null) neutralButton.setTextColor(accentColor);
+            String theme = cf.playhi.freezeyou.utils.ThemeUtils.getUiTheme(InstallPackagesActivity.this);
+            if (!"black".equals(theme) && !"deepBlack".equals(theme)) {
+                int accentColor = androidx.core.content.ContextCompat.getColor(InstallPackagesActivity.this, R.color.appAccent);
+                android.widget.Button positiveButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
+                if (positiveButton != null) positiveButton.setTextColor(accentColor);
+                android.widget.Button negativeButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
+                if (negativeButton != null) negativeButton.setTextColor(accentColor);
+                android.widget.Button neutralButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL);
+                if (neutralButton != null) neutralButton.setTextColor(accentColor);
+            }
         });
         installPackagesAlertDialog.show();
         Window w = installPackagesAlertDialog.getWindow();
