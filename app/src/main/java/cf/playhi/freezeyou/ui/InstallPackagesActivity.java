@@ -383,7 +383,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         installPackagesAlertDialog.setMessage(alertDialogMessage);
         String positiveButtonText = getString(R.string.yes);
         if (install == 0) {
-            if (isSystemApp) {
+            if (isSystemApp && hasSystemUpdate) {
                 positiveButtonText = getString(R.string.uninstall_completely);
             } else {
                 positiveButtonText = getString(R.string.uninstall);
