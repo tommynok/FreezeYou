@@ -500,4 +500,5 @@
     <string name="restoring_app">Восстановление %1$s…</string>
     <string name="restore_completed">Приложение восстановлено</string>
     <string name="restore_failed">Не удалось восстановить приложение</string>
+    <string name="apps_restore_prompt">Восстановить выбранные приложения?</string>
 </resources>

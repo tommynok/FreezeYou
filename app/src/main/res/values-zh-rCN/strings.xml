@@ -505,4 +505,5 @@
     <string name="restoring_app">正在恢复 %1$s…</string>
     <string name="restore_completed">应用已恢复</string>
     <string name="restore_failed">恢复应用失败</string>
+    <string name="apps_restore_prompt">恢复选定的应用？</string>
 </resources>

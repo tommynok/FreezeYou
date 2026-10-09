@@ -38,6 +38,26 @@ public final class RestoreUtils {
         }
     }
 
+    public static void showRestoreConfirmDialog(final android.app.Activity activity, final java.util.List<String> packageNames, final String appName, final Runnable onRestoredCallback) {
+        if (activity == null || activity.isFinishing()) return;
+
+        String message;
+        if (packageNames.size() == 1) {
+            message = activity.getString(R.string.app_is_uninstalled_restore_prompt);
+        } else {
+            message = activity.getString(R.string.apps_restore_prompt);
+        }
+
+        cf.playhi.freezeyou.utils.AlertDialogUtils.FreezeYouAlertDialogBuilder(activity)
+                .setTitle(R.string.caution)
+                .setMessage(message)
+                .setPositiveButton(R.string.restore, (dialog, which) -> {
+                    restorePackages(activity, packageNames, onRestoredCallback);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     public static void restorePackages(final Context context, final List<String> packageNames, final Runnable onFinishedCallback) {
         if (packageNames == null || packageNames.isEmpty()) return;
 

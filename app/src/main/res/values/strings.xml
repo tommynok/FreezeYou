@@ -598,4 +598,5 @@
     <string name="restoring_app">Restoring %1$s…</string>
     <string name="restore_completed">Application restored</string>
     <string name="restore_failed">Failed to restore application</string>
+    <string name="apps_restore_prompt">Restore selected apps?</string>
 </resources>

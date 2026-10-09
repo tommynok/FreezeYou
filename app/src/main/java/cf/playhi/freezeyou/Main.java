@@ -1123,7 +1123,7 @@ public class Main extends FreezeYouBaseActivity {
                                         actionMode.finish();
                                         return true;
                                     case R.id.list_menu_restoreImmediately:
-                                        RestoreUtils.restorePackages(Main.this, new ArrayList<>(selectedPackages), () -> {
+                                        RestoreUtils.showRestoreConfirmDialog(Main.this, new ArrayList<>(selectedPackages), "", () -> {
                                             new Thread(() -> generateList(currentFilter)).start();
                                         });
                                         actionMode.finish();
@@ -1207,7 +1207,7 @@ public class Main extends FreezeYouBaseActivity {
             final String pkgName = (String) map.get("PackageName");
             if (!getString(R.string.notAvailable).equals(name)) {
                 if (RestoreUtils.isPackageUninstalled(Main.this, pkgName)) {
-                    RestoreUtils.restorePackages(Main.this, java.util.Collections.singletonList(pkgName), () -> {
+                    RestoreUtils.showRestoreConfirmDialog(Main.this, java.util.Collections.singletonList(pkgName), name, () -> {
                         new Thread(() -> generateList(currentFilter)).start();
                     });
                     return;

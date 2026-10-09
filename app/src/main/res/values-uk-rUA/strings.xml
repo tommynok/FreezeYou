@@ -500,4 +500,5 @@
     <string name="restoring_app">Відновлення %1$s…</string>
     <string name="restore_completed">Програму відновлено</string>
     <string name="restore_failed">Не вдалося відновити програму</string>
+    <string name="apps_restore_prompt">Відновити вибрані програми?</string>
 </resources>
