@@ -315,8 +315,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 alertDialogMessage.append(nl);
             }
             
-            alertDialogMessage.append(getApplicationLabel(this, null, null, packageName));
-            alertDialogMessage.append(nl);
             alertDialogMessage.append(packageName);
             alertDialogMessage.append(nl);
             showInstallDialog(
@@ -353,11 +351,14 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         switch (install) {
             case 0:
+                installPackagesAlertDialog.setTitle(
+                        getApplicationLabel(
+                                InstallPackagesActivity.this, null, null,
+                                packageUri == null ? "" : packageUri.getEncodedSchemeSpecificPart()
+                        )
+                );
                 if (isSystemApp) {
-                    installPackagesAlertDialog.setTitle(R.string.caution);
                     installPackagesAlertDialog.setIcon(R.drawable.ic_warning);
-                } else {
-                    installPackagesAlertDialog.setTitle(R.string.uninstall);
                 }
                 break;
             case 1:
