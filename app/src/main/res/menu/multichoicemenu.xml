@@ -22,6 +22,10 @@
         android:title="@string/forceStop"
         app:showAsAction="never" />
     <item
+        android:id="@+id/list_menu_restoreImmediately"
+        android:title="@string/restore"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/list_menu_addToOneKeyFreezeList"
         android:title="@string/addToOneKeyList"
         app:showAsAction="never" />

@@ -125,10 +125,16 @@ public final class Support {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyUFList).setTitle(R.string.removeFromOneKeyUFList);
         }
 
-        if (FUFUtils.realGetFrozenStatus(context, pkgName, null)) {
-            popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.UfSlashRun);
+        final boolean isUninstalled = RestoreUtils.isPackageUninstalled(context, pkgName);
+        if (isUninstalled) {
+            popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setTitle(R.string.restore);
+            popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setVisible(false);
         } else {
-            popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.freezeSlashRun);
+            if (FUFUtils.realGetFrozenStatus(context, pkgName, null)) {
+                popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.UfSlashRun);
+            } else {
+                popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.freezeSlashRun);
+            }
         }
 
         if (!canRemoveItem) {
@@ -300,7 +306,11 @@ public final class Support {
                             }
                             break;
                         case R.id.main_sca_menu_uninstall:
-                            if (!(context.getString(R.string.notAvailable).equals(name)) &&
+                            if (isUninstalled) {
+                                RestoreUtils.showRestoreConfirmDialog(activity, pkgName, name, () -> {
+                                    context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged").putExtra("pkgName", pkgName));
+                                });
+                            } else if (!(context.getString(R.string.notAvailable).equals(name)) &&
                                     context.getPackageManager()
                                             .getComponentEnabledSetting(
                                                     new ComponentName("cf.playhi.freezeyou", "cf.playhi.freezeyou.InstallPackagesActivity"))

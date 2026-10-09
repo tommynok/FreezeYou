@@ -336,6 +336,9 @@ public class Main extends FreezeYouBaseActivity {
             case "OS":
                 titleResId = R.string.onlySA;
                 break;
+            case "OUS":
+                titleResId = R.string.onlyUninstalledSys;
+                break;
             case "OU":
                 titleResId = R.string.onlyUA;
                 break;
@@ -458,9 +461,30 @@ public class Main extends FreezeYouBaseActivity {
         int size = packageInfo == null ? 0 : packageInfo.size();
         boolean saveIconCache = cacheApplicationsIcons.getValue(applicationContext);
         switch (filter) {
+            case "OUS":
+                for (int i = 0; i < size; i++) {
+                    packageInfo1 = packageInfo.get(i);
+                    boolean isUninstalled = RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo);
+                    boolean isSystemApp = (packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM;
+                    if (isUninstalled && isSystemApp) {
+                        Map<String, Object> keyValuePair = processAppStatus(
+                                getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
+                                packageInfo1.packageName,
+                                packageInfo1,
+                                packageManager,
+                                saveIconCache
+                        );
+                        if (keyValuePair != null) {
+                            AppList.add(keyValuePair);
+                        }
+                    }
+                }
+                checkAndAddNotAvailablePair(AppList);
+                break;
             case "all":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
@@ -477,6 +501,7 @@ public class Main extends FreezeYouBaseActivity {
             case "OF":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
@@ -493,6 +518,7 @@ public class Main extends FreezeYouBaseActivity {
             case "UF":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
@@ -527,6 +553,7 @@ public class Main extends FreezeYouBaseActivity {
             case "OS":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM) {
                         Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
@@ -545,6 +572,7 @@ public class Main extends FreezeYouBaseActivity {
             case "OU":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != ApplicationInfo.FLAG_SYSTEM) {
                         Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
@@ -563,6 +591,7 @@ public class Main extends FreezeYouBaseActivity {
             case "UFU":
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != ApplicationInfo.FLAG_SYSTEM) {
                         Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
@@ -584,6 +613,7 @@ public class Main extends FreezeYouBaseActivity {
                 Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
+                    if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     boolean isSystemApp = (packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM;
                     if (("RUN_SYS".equals(filter) && !isSystemApp) || ("RUN_USER".equals(filter) && isSystemApp)) {
                         continue;
@@ -1091,6 +1121,12 @@ public class Main extends FreezeYouBaseActivity {
                                         processForceStopImmediately();
                                         actionMode.finish();
                                         return true;
+                                    case R.id.list_menu_restoreImmediately:
+                                        RestoreUtils.restorePackages(Main.this, new ArrayList<>(selectedPackages), () -> {
+                                            new Thread(() -> generateList(currentFilter)).start();
+                                        });
+                                        actionMode.finish();
+                                        return true;
                                     case R.id.list_menu_createDisEnableShortCut:
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                             ShortcutManager mShortcutManager =
@@ -1169,6 +1205,12 @@ public class Main extends FreezeYouBaseActivity {
             final String name = (String) map.get("Name");
             final String pkgName = (String) map.get("PackageName");
             if (!getString(R.string.notAvailable).equals(name)) {
+                if (RestoreUtils.isPackageUninstalled(Main.this, pkgName)) {
+                    RestoreUtils.showRestoreConfirmDialog(Main.this, pkgName, name, () -> {
+                        new Thread(() -> generateList(currentFilter)).start();
+                    });
+                    return;
+                }
                 switch (appListViewOnClickMode) {
                     case APPListViewOnClickMode_chooseAction:
                         showChooseActionPopupMenu(
@@ -2107,6 +2149,14 @@ public class Main extends FreezeYouBaseActivity {
                             @Override
                             public void run() {
                                 generateList("OS");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_onlyUninstalledSys:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("OUS");
                             }
                         }).start();
                         return true;
