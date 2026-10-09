@@ -41,7 +41,7 @@ public final class RestoreUtils {
     public static void showRestoreConfirmDialog(final android.app.Activity activity, final java.util.List<String> packageNames, final String appName, final Runnable onRestoredCallback) {
         if (activity == null || activity.isFinishing()) return;
 
-        cf.playhi.freezeyou.utils.AlertDialogUtils.FreezeYouAlertDialogBuilder(activity)
+        FreezeYouAlertDialogBuilder(activity)
                 .setTitle(appName)
                 .setMessage(R.string.app_is_uninstalled_restore_prompt)
                 .setPositiveButton(R.string.restore, (dialog, which) -> {
