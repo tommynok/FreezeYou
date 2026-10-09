@@ -315,19 +315,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 alertDialogMessage.append(nl);
             }
             
-            alertDialogMessage.append(
-                    String.format(
-                            getString(R.string.application_colon_app),
-                            getApplicationLabel(this, null, null, packageName)
-                    )
-            );
+            alertDialogMessage.append(getApplicationLabel(this, null, null, packageName));
             alertDialogMessage.append(nl);
-            alertDialogMessage.append(
-                    String.format(
-                            getString(R.string.pkgName_colon_pkgName),
-                            packageName
-                    )
-            );
+            alertDialogMessage.append(packageName);
+            alertDialogMessage.append(nl);
             showInstallDialog(
                     progressDialog, 0,
                     alertDialogMessage, apkFilePath,
@@ -338,7 +329,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
-        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
+                android.util.TypedValue outValue = new android.util.TypedValue();
+        getTheme().resolveAttribute(com.google.android.material.R.attr.materialAlertDialogTheme, outValue, true);
+        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(new android.view.ContextThemeWrapper(this, outValue.resourceId));
         if (install == 1) {
             //Init CheckBox
             View checkBoxView = View.inflate(this, R.layout.ipa_dialog_checkbox, null);
