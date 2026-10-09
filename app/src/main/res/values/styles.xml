@@ -405,7 +405,7 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
-        <item name="colorAccent">#424242</item>
+        <item name="colorAccent">@color/appAccent</item>
         <!-- #eeeeee is a light bar, so this one theme of the light family wants dark icons. -->
         <item name="android:windowLightStatusBar">true</item>
     </style>
@@ -522,7 +522,7 @@
     <style name="AppTheme.Default.Dialog" parent="Base.AppTheme.Light.Dialog">
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
-        <item name="colorAccent">#424242</item>
+        <item name="colorAccent">@color/appAccent</item>
         <!-- Same light grey bar as AppTheme.Default, and the same need for dark icons. -->
         <item name="android:windowLightStatusBar">true</item>
     </style>
