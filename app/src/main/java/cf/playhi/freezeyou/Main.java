@@ -1123,7 +1123,7 @@ public class Main extends FreezeYouBaseActivity {
                                         actionMode.finish();
                                         return true;
                                     case R.id.list_menu_restoreImmediately:
-                                        RestoreUtils.showRestoreConfirmDialog(Main.this, new ArrayList<>(selectedPackages), "", () -> {
+                                        RestoreUtils.restorePackages(Main.this, new ArrayList<>(selectedPackages), () -> {
                                             new Thread(() -> generateList(currentFilter)).start();
                                         });
                                         actionMode.finish();

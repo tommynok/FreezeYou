@@ -594,7 +594,7 @@
     <string name="uninstall_completely">Uninstall completely</string>
     <string name="restore">Restore</string>
     <string name="onlyUninstalledSys">Uninstalled system</string>
-    <string name="app_is_uninstalled_restore_prompt">Application is uninstalled. Restore?</string>
+    <string name="app_is_uninstalled_restore_prompt">App is uninstalled. Please choose an action.</string>
     <string name="restoring_app">Restoring %1$s…</string>
     <string name="restore_completed">Application restored</string>
     <string name="restore_failed">Failed to restore application</string>

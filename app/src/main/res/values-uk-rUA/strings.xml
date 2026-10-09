@@ -496,7 +496,7 @@
     <string name="uninstall_completely">Видалити повністю</string>
     <string name="restore">Відновити</string>
     <string name="onlyUninstalledSys">Видалені системні</string>
-    <string name="app_is_uninstalled_restore_prompt">Програму видалено. Відновити?</string>
+    <string name="app_is_uninstalled_restore_prompt">Програму видалено. Будь ласка, виберіть дію.</string>
     <string name="restoring_app">Відновлення %1$s…</string>
     <string name="restore_completed">Програму відновлено</string>
     <string name="restore_failed">Не вдалося відновити програму</string>
