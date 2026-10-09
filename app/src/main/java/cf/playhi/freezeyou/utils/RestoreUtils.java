@@ -1,4 +1,4 @@
-﻿package cf.playhi.freezeyou.utils;
+package cf.playhi.freezeyou.utils;
 
 import android.app.Activity;
 import android.content.Context;
