@@ -258,10 +258,6 @@
     <string name="stateDidNotChange">系统已接受命令，但状态未改变</string>
     <string name="onlyUnfreeze">仅解冻</string>
     <string name="unknown">未知</string>
-    <string name="installPackage_colon">安装应用： </string>
-    <string name="requestFromPackage_colon">来源应用： </string>
-    <string name="whetherAllow">是否允许？</string>
-    <string name="uninstallPackage_colon">卸载应用：</string>
     <string name="install">安装</string>
     <string name="installFailed">安装失败</string>
     <string name="uninstallFailed">卸载失败</string>
@@ -508,5 +504,4 @@
     <string name="restore_partial">已恢复 %1$d / %2$d 个应用</string>
     <string name="restore_only_in_uninstalled_system_filter">要恢复此应用，请使用“已卸载系统应用”筛选器。</string>
     <string name="full_system_uninstall_requires_shell">完全移除已更新的系统应用需要 root 或 Shizuku。</string>
-    <string name="apps_restore_prompt">恢复选定的应用？</string>
 </resources>

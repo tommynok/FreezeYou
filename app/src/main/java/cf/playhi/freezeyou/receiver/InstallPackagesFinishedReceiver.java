@@ -80,6 +80,9 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_uninstallFinished), name),
                                 null,
                                 true);
+                context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                        .putExtra("pkgName", pkgName)
+                        .putExtra("refreshAppList", true));
             } else {
                 InstallPackagesUtils
                         .notifyFinishNotification(

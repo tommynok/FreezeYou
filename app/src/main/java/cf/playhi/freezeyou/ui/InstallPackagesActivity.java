@@ -14,7 +14,6 @@ import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
-import android.widget.CheckBox;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -25,7 +24,6 @@ import net.grandcentrix.tray.AppPreferences;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
-import java.util.List;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
@@ -312,8 +310,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
-                final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
-
+        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null
                 && processedPackageInfo.applicationInfo != null
@@ -458,7 +455,13 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         try {
                             shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
                         } catch (Throwable ignored) {}
-                        if (DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this) || FUFUtils.checkRootPermission() || shizukuAvailable) {
+                        boolean deviceOwnerAvailable = DevicePolicyManagerUtils
+                                .isDeviceOwner(InstallPackagesActivity.this);
+                        boolean rootAvailable = !shizukuAvailable
+                                && UninstallPolicyUtils.shouldCheckRootPermission(
+                                deviceOwnerAvailable, false)
+                                && FUFUtils.checkRootPermission();
+                        if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
                             ServiceUtils.startService(
                                     InstallPackagesActivity.this,
                                     new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
@@ -473,7 +476,8 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         }
                     });
         }
-        if (!preDefinedTryToAvoidUpdateWhenUsing
+        if (install == 1
+                && !preDefinedTryToAvoidUpdateWhenUsing
                 && processedPackageInfo != null
                 && AccessibilityUtils.isAccessibilitySettingsOn(this)) {
             installPackagesAlertDialog.setButton(

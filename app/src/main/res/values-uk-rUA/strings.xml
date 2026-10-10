@@ -252,10 +252,6 @@
     <string name="stateDidNotChange">Система прийняла команду, але стан не змінився</string>
     <string name="onlyUnfreeze">Тільки розморозити</string>
     <string name="unknown">Невідомий</string>
-    <string name="installPackage_colon">Встановити пакет:</string>
-    <string name="requestFromPackage_colon">З пакету:</string>
-    <string name="whetherAllow">Дозволити?</string>
-    <string name="uninstallPackage_colon">Видалення пакета:</string>
     <string name="install">Установка</string>
     <string name="installFailed">Установка не вдалася</string>
     <string name="uninstallFailed">Помилка видалення</string>
@@ -503,5 +499,4 @@
     <string name="restore_partial">Відновлено: %1$d із %2$d програм</string>
     <string name="restore_only_in_uninstalled_system_filter">Щоб відновити програму, відкрийте фільтр «Видалені системні».</string>
     <string name="full_system_uninstall_requires_shell">Для повного видалення оновленої системної програми потрібен root або Shizuku.</string>
-    <string name="apps_restore_prompt">Відновити вибрані програми?</string>
 </resources>

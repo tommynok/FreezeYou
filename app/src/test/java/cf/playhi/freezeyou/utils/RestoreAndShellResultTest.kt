@@ -16,14 +16,6 @@ class RestoreAndShellResultTest {
         assertTrue(RestoreUtils.isRestorableSystemAppFlags(uninstalledSystemApp))
         assertFalse(RestoreUtils.isRestorableSystemAppFlags(installedSystemApp))
         assertFalse(RestoreUtils.isRestorableSystemAppFlags(uninstalledUserApp))
-        assertFalse(RestoreUtils.areAllRestorableSystemAppFlags())
-        assertTrue(RestoreUtils.areAllRestorableSystemAppFlags(uninstalledSystemApp))
-        assertFalse(
-            RestoreUtils.areAllRestorableSystemAppFlags(
-                uninstalledSystemApp,
-                installedSystemApp
-            )
-        )
     }
 
     @Test
