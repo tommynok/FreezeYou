@@ -37,7 +37,7 @@
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">Allows installing APK files and uninstalling apps, including system apps.</string>
+    <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
@@ -269,7 +269,7 @@
     <string name="dangerous">Dangerous</string>
     <string name="alert_isObsd">The window is obscured, the operation has been rejected, please remove the mask layer and retry</string>
     <string name="retry">Retry</string>
-    <string name="enableInstallPkgFunc">Install and uninstall apps through FreezeYou</string>
+    <string name="enableInstallPkgFunc">Install APKs through FreezeYou</string>
     <string name="allow">Allow</string>
     <string name="reject">Reject</string>
     <string name="execute_colon">Execute: </string>
@@ -580,7 +580,7 @@
     <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
     <string name="summary_spr_notification">The quick notification after unfreezing, and how it behaves</string>
     <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
-    <string name="summary_spr_installUninstall">Options related to installing and uninstalling apps</string>
+    <string name="summary_spr_installUninstall">Settings related to installing APK files through FreezeYou</string>
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
     <string name="summary_spr_advance">Installing apps, debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
@@ -597,4 +597,7 @@
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
     <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
     <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
+    <string name="stepsToUnlock_d">You are %1$d steps away from unlocking update check.</string>
+    <string name="updateCheckUnlocked">Check for updates unlocked</string>
+    <string name="apkInstallation">APK Installation</string>
 </resources>

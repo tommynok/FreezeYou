@@ -434,6 +434,19 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                                 .putExtra("packageInfo", processedPackageInfo)
                                                 .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
                                 finish();
+                            } else if (install == 0) {
+                                if (isSystemApp) {
+                                    showToast(InstallPackagesActivity.this,
+                                            R.string.full_system_uninstall_requires_shell);
+                                } else {
+                                    startActivity(
+                                            new Intent(
+                                                    Intent.ACTION_DELETE,
+                                                    Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
+                                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    );
+                                    finish();
+                                }
                             } else {
                                 showInstallPermissionCheckFailedDialog(
                                         install, apkFilePath, packageUri,
@@ -472,7 +485,13 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                             .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
                             finish();
                         } else {
-                            showInstallPermissionCheckFailedDialog(install, apkFilePath, packageUri, processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
+                            startActivity(
+                                    new Intent(
+                                            Intent.ACTION_DELETE,
+                                            Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
+                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            );
+                            finish();
                         }
                     });
         }

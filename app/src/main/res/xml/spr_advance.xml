@@ -9,7 +9,7 @@
         app:key="spr_installUninstall"
         app:singleLineTitle="false"
         app:summary="@string/summary_spr_installUninstall"
-        app:title="@string/installAndUninstall" />
+        app:title="@string/apkInstallation" />
     <CheckBoxPreference
         app:defaultValue="false"
         app:iconSpaceReserved="false"

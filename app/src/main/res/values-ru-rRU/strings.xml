@@ -37,7 +37,7 @@
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы и удалять приложения, в том числе системные.</string>
+    <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
@@ -269,7 +269,7 @@
     <string name="dangerous">Опасно</string>
     <string name="alert_isObsd">Окно затемнено, операция была отклонена. Пожалуйста, отключите экранные наложения и повторите попытку.</string>
     <string name="retry">Повтор</string>
-    <string name="enableInstallPkgFunc">Устанавливать и удалять приложения через FreezeYou</string>
+    <string name="enableInstallPkgFunc">Установка APK через FreezeYou</string>
     <string name="allow">Разрешить</string>
     <string name="reject">Отклонить</string>
     <string name="execute_colon">Выполнить:</string>
@@ -482,7 +482,7 @@
     <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
     <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
-    <string name="summary_spr_installUninstall">Настройки, связанные с установкой и удалением приложений</string>
+    <string name="summary_spr_installUninstall">Настройки, связанные с установкой APK-файлов через FreezeYou</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
     <string name="summary_spr_advance">Установка приложений, отладка, специальные возможности, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
@@ -499,4 +499,7 @@
     <string name="restore_partial">Восстановлено: %1$d из %2$d приложений</string>
     <string name="restore_only_in_uninstalled_system_filter">Чтобы восстановить приложение, откройте фильтр «Удалённые системные».</string>
     <string name="full_system_uninstall_requires_shell">Для полного удаления обновлённого системного приложения нужен root или Shizuku.</string>
+    <string name="stepsToUnlock_d">Осталось шагов для открытия проверки обновлений: %1$d</string>
+    <string name="updateCheckUnlocked">Проверка обновлений открыта</string>
+    <string name="apkInstallation">Установка APK</string>
 </resources>

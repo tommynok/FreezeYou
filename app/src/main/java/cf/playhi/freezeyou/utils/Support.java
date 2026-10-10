@@ -328,18 +328,13 @@ public final class Support {
                                 } else {
                                     showToast(activity, R.string.restore_only_in_uninstalled_system_filter);
                                 }
-                            } else if (!(context.getString(R.string.notAvailable).equals(name)) &&
-                                    context.getPackageManager()
-                                            .getComponentEnabledSetting(
-                                                    new ComponentName("cf.playhi.freezeyou", "cf.playhi.freezeyou.InstallPackagesActivity"))
-                                            == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                            } else if (!(context.getString(R.string.notAvailable).equals(name))) {
                                 activity.startActivity(
                                         new Intent(
                                                 Intent.ACTION_DELETE,
                                                 Uri.parse("package:" + pkgName),
                                                 activity,
                                                 InstallPackagesActivity.class)
-
                                 );
                             } else {
                                 activity.startActivity(

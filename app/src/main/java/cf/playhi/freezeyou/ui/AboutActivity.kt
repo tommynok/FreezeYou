@@ -9,17 +9,19 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity
-import cf.playhi.freezeyou.utils.MoreUtils.joinQQGroup
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
-import cf.playhi.freezeyou.utils.VersionUtils.*
+import cf.playhi.freezeyou.utils.VersionUtils.getVersionCode
+import cf.playhi.freezeyou.utils.VersionUtils.getVersionName
+import java.util.ArrayList
 
-private class AboutMenuItem(val title: String, val enabled: Boolean, val action: () -> Unit)
+private class AboutMenuItem(val title: String, val action: () -> Unit)
 
 class AboutActivity : FreezeYouBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,112 +34,101 @@ class AboutActivity : FreezeYouBaseActivity() {
         val aboutListView = findViewById<ListView>(R.id.about_listView)
         val aboutAppName = findViewById<TextView>(R.id.about_appName)
 
-        val aboutMenuItems = listOf(
-            AboutMenuItem(resources.getString(R.string.hToUse), true) {
-                requestOpenWebSite(
-                    this@AboutActivity,
-                    "https://www.zidon.net/${getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)}/guide/how-to-use.html"
-                )
-            },
-            AboutMenuItem(resources.getString(R.string.faq), true) {
-                requestOpenWebSite(
-                    this@AboutActivity, String.format(
-                        "https://www.zidon.net/%1\$s/faq/",
-                        getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                    )
-                )
-            },
-            // This fork's translations are maintained directly — set enabled to true to restore.
-            AboutMenuItem(resources.getString(R.string.helpTranslate), false) {
-                requestOpenWebSite(
-                    this@AboutActivity,
-                    "https://github.com/FreezeYou/FreezeYou/blob/master/README_Translation.md"
-                )
-            },
-            AboutMenuItem(resources.getString(R.string.thanksList), true) {
-                requestOpenWebSite(
-                    this@AboutActivity, String.format(
-                        "https://www.zidon.net/%1\$s/thanks/",
-                        getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
-                    )
-                )
-            },
-            AboutMenuItem(resources.getString(R.string.visitWebsite), true) {
-                requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
-            },
-            AboutMenuItem(resources.getString(R.string.checkUpdate), true) {
-                requestOpenWebSite(this@AboutActivity, "https://github.com/tommynok/FreezeYou/releases")
-            },
-            // Fork has no Telegram/QQ support group — set enabled to true to restore.
-            AboutMenuItem(resources.getString(R.string.contactUs), false) {
-                FreezeYouAlertDialogBuilder(this@AboutActivity)
-                    .setMessage(
-                        String.format(
-                            getString(R.string.email_colon),
-                            "contact@zidon.net"
-                        ) + System.getProperty("line.separator")
-                                + String.format(
-                            getString(R.string.telegramGroup_colon),
-                            "t.me/FreezeYou"
-                        ) + System.getProperty("line.separator")
-                                + String.format(
-                            getString(R.string.qqGroup_colon),
-                            "704086494"
-                        )
-                    )
-                    .setTitle(R.string.contactUs)
-                    .setPositiveButton(R.string.okay, null)
-                    .setNegativeButton(
-                        R.string.addQQGroup
-                    ) { _: DialogInterface?, _: Int ->
-                        joinQQGroup(this@AboutActivity)
-                    }
-                    .setNeutralButton(
-                        R.string.more
-                    ) { _: DialogInterface?, _: Int ->
+        val sp = PreferenceManager.getDefaultSharedPreferences(this)
+        var isUpdateUnlocked = sp.getBoolean("unlockedUpdateCheck", false)
+        var tapCount = 0
+
+        val checkUpdateItem = AboutMenuItem(resources.getString(R.string.checkUpdate)) {
+            requestOpenWebSite(this@AboutActivity, "https://github.com/tommynok/FreezeYou/releases")
+        }
+
+        val aboutMenuItems = mutableListOf<AboutMenuItem>()
+
+        fun buildMenu() {
+            aboutMenuItems.clear()
+            aboutMenuItems.addAll(
+                listOf(
+                    AboutMenuItem(resources.getString(R.string.hToUse)) {
                         requestOpenWebSite(
                             this@AboutActivity,
-                            String.format(
-                                "https://www.zidon.net/%1\$s/about/contactUs.html",
+                            "https://www.zidon.net/${getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)}/guide/how-to-use.html"
+                        )
+                    },
+                    AboutMenuItem(resources.getString(R.string.faq)) {
+                        requestOpenWebSite(
+                            this@AboutActivity, String.format(
+                                "https://www.zidon.net/%1\$s/faq/",
                                 getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
                             )
                         )
+                    },
+                    AboutMenuItem(resources.getString(R.string.thanksList)) {
+                        requestOpenWebSite(
+                            this@AboutActivity, String.format(
+                                "https://www.zidon.net/%1\$s/thanks/",
+                                getString(R.string.correspondingAndAvailableWebsiteUrlLanguageCode)
+                            )
+                        )
+                    },
+                    AboutMenuItem(resources.getString(R.string.visitWebsite)) {
+                        requestOpenWebSite(this@AboutActivity, "https://www.zidon.net")
+                    },
+                    AboutMenuItem(
+                        "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})"
+                    ) {
+                        if (!isUpdateUnlocked) {
+                            tapCount++
+                            val remaining = 10 - tapCount
+                            if (remaining in 1..5) {
+                                showToast(
+                                    this@AboutActivity,
+                                    getString(R.string.stepsToUnlock_d, remaining)
+                                )
+                            } else if (remaining <= 0) {
+                                isUpdateUnlocked = true
+                                sp.edit().putBoolean("unlockedUpdateCheck", true).apply()
+                                showToast(this@AboutActivity, R.string.updateCheckUnlocked)
+                                buildMenu()
+                                val adapter = aboutListView.adapter as? ArrayAdapter<String>
+                                if (adapter != null) {
+                                    adapter.clear()
+                                    adapter.addAll(aboutMenuItems.map { it.title })
+                                    adapter.notifyDataSetChanged()
+                                }
+                            }
+                        } else {
+                            showToast(
+                                this@AboutActivity,
+                                "V" + getVersionName(this@AboutActivity) + "(" + getVersionCode(
+                                    this@AboutActivity
+                                ) + ")"
+                            )
+                        }
                     }
-                    .show()
-            },
-            // Fork has no update server — set enabled to true to restore.
-            AboutMenuItem(resources.getString(R.string.update), false) {
-                checkUpdate(this@AboutActivity)
-            },
-            AboutMenuItem(
-                "V${getVersionName(applicationContext)}(${getVersionCode(applicationContext)})",
-                true
-            ) {
-                showToast(
-                    this@AboutActivity,
-                    "V" + getVersionName(this@AboutActivity) + "(" + getVersionCode(
-                        this@AboutActivity
-                    ) + ")"
                 )
-            }
-        ).filter { it.enabled }
-
-        aboutListView.adapter =
-            ArrayAdapter(
-                this@AboutActivity,
-                android.R.layout.simple_list_item_1,
-                aboutMenuItems.map { it.title }.toTypedArray()
             )
+            if (isUpdateUnlocked) {
+                aboutMenuItems.add(checkUpdateItem)
+            }
+        }
+
+        buildMenu()
+
+        val adapter = ArrayAdapter(
+            this@AboutActivity,
+            android.R.layout.simple_list_item_1,
+            ArrayList(aboutMenuItems.map { it.title })
+        )
+        aboutListView.adapter = adapter
 
         aboutListView.onItemClickListener =
             OnItemClickListener { _: AdapterView<*>?, _: View?, position: Int, _: Long ->
-                aboutMenuItems[position].action()
+                if (position in 0 until aboutMenuItems.size) {
+                    aboutMenuItems[position].action()
+                }
             }
 
         aboutSlogan.text = String.format("V %s", getVersionCode(this@AboutActivity))
-        // The version used to open the original developer's changelog site; the fork has no
-        // site of its own, so the version is plain text now. A link to the fork's GitHub
-        // releases may replace it someday.
 
         aboutAppName.setOnClickListener {
             FreezeYouAlertDialogBuilder(this@AboutActivity)
