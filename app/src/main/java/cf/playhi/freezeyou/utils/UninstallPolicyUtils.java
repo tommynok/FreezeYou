@@ -22,4 +22,11 @@ public final class UninstallPolicyUtils {
             boolean uninstallUpdatesOnly) {
         return !uninstallUpdatesOnly || (isSystemApp && hasSystemUpdate);
     }
+
+    /** Avoid probing for root when Device Owner alone can perform the requested operation. */
+    public static boolean shouldCheckRootPermission(
+            boolean deviceOwnerAvailable,
+            boolean operationRequiresPrivilegedShell) {
+        return !deviceOwnerAvailable || operationRequiresPrivilegedShell;
+    }
 }

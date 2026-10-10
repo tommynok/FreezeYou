@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.utils
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +31,12 @@ class RestoreAndShellResultTest {
         assertTrue(RestoreUtils.isRestoreFilter("OUS"))
         assertFalse(RestoreUtils.isRestoreFilter("all"))
         assertFalse(RestoreUtils.isRestoreFilter(null))
+    }
+
+    @Test
+    fun androidUidMapsToItsOwningUser() {
+        assertEquals(0, AndroidUserUtils.userIdFromUid(12345))
+        assertEquals(10, AndroidUserUtils.userIdFromUid(1012345))
     }
 
     @Test

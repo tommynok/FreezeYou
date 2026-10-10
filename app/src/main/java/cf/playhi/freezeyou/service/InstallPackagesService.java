@@ -31,6 +31,7 @@ import cf.playhi.freezeyou.MainApplication;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
+import cf.playhi.freezeyou.utils.AndroidUserUtils;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
@@ -177,7 +178,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 if (hasSystemUpdate) {
                     commands.add("pm uninstall " + quotedPackage);
                 }
-                commands.add("pm uninstall --user 0 " + quotedPackage);
+                commands.add("pm uninstall --user " + AndroidUserUtils.currentUserId() + " " + quotedPackage);
             } else {
                 commands.add("pm uninstall " + quotedPackage);
             }
@@ -209,8 +210,8 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
             if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 // PackageInstaller can silently uninstall ordinary packages as Device Owner.
-                // It cannot express the two-step "remove update, then uninstall for user 0"
-                // operation, so do not claim a complete removal for an updated system app.
+                // It cannot express the two-step "remove update, then uninstall for the current
+                // user" operation, so do not claim a complete removal for an updated system app.
                 if (UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
                         isSystemApp, hasSystemUpdate, uninstallUpdatesOnly)) {
                     throw new IllegalStateException(

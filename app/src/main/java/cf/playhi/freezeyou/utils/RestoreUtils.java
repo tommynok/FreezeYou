@@ -138,14 +138,15 @@ public final class RestoreUtils {
                 if (!shizukuAvailable && !rootAvailable) continue;
 
                 String quotedPackage = PrivilegedShellUtils.shellQuote(packageName);
+                String userOption = "--user " + AndroidUserUtils.currentUserId() + " ";
                 try {
                     PrivilegedShellUtils.CommandResult result = runInstallExisting(
                             shizukuAvailable,
-                            "cmd package install-existing " + quotedPackage);
+                            "cmd package install-existing " + userOption + quotedPackage);
                     if (!result.isSuccessful()) {
                         result = runInstallExisting(
                                 shizukuAvailable,
-                                "pm install-existing " + quotedPackage);
+                                "pm install-existing " + userOption + quotedPackage);
                     }
                     if (result.isSuccessful()) restoredCount++;
                 } catch (InterruptedException e) {

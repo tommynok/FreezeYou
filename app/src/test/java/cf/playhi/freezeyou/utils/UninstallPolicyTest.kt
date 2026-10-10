@@ -15,6 +15,13 @@ class UninstallPolicyTest {
     }
 
     @Test
+    fun rootIsNotProbedWhenDeviceOwnerCanHandleTheOperation() {
+        assertFalse(UninstallPolicyUtils.shouldCheckRootPermission(true, false))
+        assertTrue(UninstallPolicyUtils.shouldCheckRootPermission(true, true))
+        assertTrue(UninstallPolicyUtils.shouldCheckRootPermission(false, false))
+    }
+
+    @Test
     fun updatesOnlyIsAcceptedOnlyForAnUpdatedSystemApp() {
         assertTrue(UninstallPolicyUtils.isValidUpdatesOnlyRequest(true, true, true))
         assertFalse(UninstallPolicyUtils.isValidUpdatesOnlyRequest(false, true, true))

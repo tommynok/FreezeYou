@@ -415,12 +415,16 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             } catch (Throwable ignored) {}
                             boolean deviceOwnerAvailable = DevicePolicyManagerUtils
                                     .isDeviceOwner(InstallPackagesActivity.this);
-                            boolean rootAvailable = !shizukuAvailable
+                            boolean fullUninstallNeedsShell = install == 0
+                                    && UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
+                                    isSystemApp, hasSystemUpdate, false);
+                            boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
+                                    deviceOwnerAvailable, fullUninstallNeedsShell);
+                            boolean rootAvailable = !shizukuAvailable && rootCheckRequired
                                     && FUFUtils.checkRootPermission();
                             boolean privilegedShellAvailable = rootAvailable || shizukuAvailable;
-                            if (install == 0 && deviceOwnerAvailable && !privilegedShellAvailable
-                                    && UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
-                                    isSystemApp, hasSystemUpdate, false)) {
+                            if (deviceOwnerAvailable && fullUninstallNeedsShell
+                                    && !privilegedShellAvailable) {
                                 showToast(InstallPackagesActivity.this,
                                         R.string.full_system_uninstall_requires_shell);
                                 return;
