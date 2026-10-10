@@ -26,8 +26,6 @@ private class AboutMenuItem(val title: String, val action: () -> Unit)
 
 class AboutActivity : FreezeYouBaseActivity() {
 
-    private var countdownToast: Toast? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         processSetTheme(this)
         super.onCreate(savedInstanceState)
@@ -82,20 +80,9 @@ class AboutActivity : FreezeYouBaseActivity() {
                     ) {
                         if (!isUpdateUnlocked) {
                             tapCount++
-                            val remaining = 10 - tapCount
-                            if (remaining in 1..5) {
-                                countdownToast?.cancel()
-                                countdownToast = Toast.makeText(
-                                    this@AboutActivity,
-                                    getString(R.string.stepsToUnlock_d, remaining),
-                                    Toast.LENGTH_SHORT
-                                )
-                                countdownToast?.show()
-                            } else if (remaining <= 0) {
+                            if (tapCount >= 10) {
                                 isUpdateUnlocked = true
                                 sp.edit().putBoolean("unlockedUpdateCheck", true).apply()
-                                countdownToast?.cancel()
-                                countdownToast = null
                                 Toast.makeText(
                                     this@AboutActivity,
                                     R.string.updateCheckUnlocked,
@@ -175,10 +162,5 @@ class AboutActivity : FreezeYouBaseActivity() {
                 .setNeutralButton(R.string.okay, null)
                 .show()
         }
-    }
-
-    override fun onDestroy() {
-        countdownToast?.cancel()
-        super.onDestroy()
     }
 }
