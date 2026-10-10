@@ -1,4 +1,0 @@
-app/src/main/res\values\strings.xml: <string name="restoring_app">Restoring %1$s…</string>
-app/src/main/res\values-ru-rRU\strings.xml: <string name="restoring_app">Восстановление %1$s…</string>
-app/src/main/res\values-uk-rUA\strings.xml: <string name="restoring_app">Відновлення %1$s…</string>
-app/src/main/res\values-zh-rCN\strings.xml: <string name="restoring_app">正在恢复 %1$s…</string>
