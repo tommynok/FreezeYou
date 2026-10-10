@@ -35,6 +35,8 @@ import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
+import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
+import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
@@ -155,12 +157,68 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     builder.build()
             );
 
+            boolean uninstallUpdatesOnly = intent.getBooleanExtra("uninstall_updates_only", false);
+            PackageInfo packageInfo = intent.getParcelableExtra("packageInfo");
+            boolean isSystemApp = packageInfo != null && packageInfo.applicationInfo != null
+                    && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+            boolean hasSystemUpdate = packageInfo != null && packageInfo.applicationInfo != null
+                    && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+
+            if (!UninstallPolicyUtils.isValidUpdatesOnlyRequest(
+                    isSystemApp, hasSystemUpdate, uninstallUpdatesOnly)) {
+                throw new IllegalArgumentException(getString(R.string.invalidArguments));
+            }
+
+            java.util.List<String> commands = new java.util.ArrayList<>();
+            String quotedPackage = PrivilegedShellUtils.shellQuote(packageName);
+            if (uninstallUpdatesOnly) {
+                commands.add("pm uninstall " + quotedPackage);
+            } else if (isSystemApp) {
+                if (hasSystemUpdate) {
+                    commands.add("pm uninstall " + quotedPackage);
+                }
+                commands.add("pm uninstall --user 0 " + quotedPackage);
+            } else {
+                commands.add("pm uninstall " + quotedPackage);
+            }
+
+            boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
+            boolean rootAvailable = !shizukuAvailable
+                    && cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission();
+            if (shizukuAvailable || rootAvailable) {
+                for (String command : commands) {
+                    PrivilegedShellUtils.CommandResult result = shizukuAvailable
+                            ? PrivilegedShellUtils.runShizukuCommand(command)
+                            : PrivilegedShellUtils.runRootCommand(command);
+                    if (!result.isSuccessful()) {
+                        String details = result.output == null || result.output.isEmpty()
+                                ? "exit code " + result.exitCode : result.output;
+                        throw new Exception(details);
+                    }
+                }
+
+                InstallPackagesUtils.notifyFinishNotification(
+                        this, notificationManager, builder,
+                        false,
+                        packageName,
+                        String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
+                        null,
+                        true);
+                return;
+            }
+
             if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
+                // PackageInstaller can silently uninstall ordinary packages as Device Owner.
+                // It cannot express the two-step "remove update, then uninstall for user 0"
+                // operation, so do not claim a complete removal for an updated system app.
+                if (UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
+                        isSystemApp, hasSystemUpdate, uninstallUpdatesOnly)) {
+                    throw new IllegalStateException(
+                            getString(R.string.full_system_uninstall_requires_shell));
+                }
                 getPackageManager().getPackageInstaller().uninstall(packageName,
                         PendingIntent.getBroadcast(this, packageName.hashCode(),
-                                        new Intent(
-                                                this,
-                                                InstallPackagesFinishedReceiver.class)
+                                        new Intent(this, InstallPackagesFinishedReceiver.class)
                                                 .putExtra("name", willBeUninstalledName)
                                                 .putExtra("pkgName", packageName)
                                                 .putExtra("install", false),
@@ -168,26 +226,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT)
                                 .getIntentSender());
-            } else {
-                // Root Mode
-                Process process = Runtime.getRuntime().exec("su");
-                DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                outputStream.writeBytes("pm uninstall -k \"" + packageName + "\"\n");
-                outputStream.writeBytes("exit\n");
-                outputStream.flush();
-                process.waitFor();
-                destroyProcess(outputStream, process);
-                InstallPackagesUtils
-                        .notifyFinishNotification(
-                                this, notificationManager, builder,
-                                false,
-                                packageName,
-                                String.format(
-                                        getString(R.string.app_uninstallFinished),
-                                        willBeUninstalledName),
-                                null,
-                                true);
+                return;
             }
+
+            throw new Exception("No sufficient privileges to uninstall.");
         } catch (final Exception e) {
             e.printStackTrace();
             InstallPackagesUtils

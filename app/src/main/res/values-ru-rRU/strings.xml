@@ -37,7 +37,7 @@
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
-    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы через встроенный установщик</string>
+    <string name="summary_enableInstallPkgFunc">Позволяет устанавливать APK-файлы и удалять приложения, в том числе системные.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
@@ -273,7 +273,7 @@
     <string name="dangerous">Опасно</string>
     <string name="alert_isObsd">Окно затемнено, операция была отклонена. Пожалуйста, отключите экранные наложения и повторите попытку.</string>
     <string name="retry">Повтор</string>
-    <string name="enableInstallPkgFunc">Устанавливать APK через FreezeYou</string>
+    <string name="enableInstallPkgFunc">Устанавливать и удалять приложения через FreezeYou</string>
     <string name="allow">Разрешить</string>
     <string name="reject">Отклонить</string>
     <string name="execute_colon">Выполнить:</string>
@@ -332,8 +332,8 @@
     <string name="myCustomization">Моя подборка</string>
     <string name="manageMyCustomization">Управление списком «Моя подборка»</string>
     <string name="copyAlias">Скопировать псевдоним</string>
-    <string name="version_colon_vN_longVC">Версия: %1$s (%2$s)</string>
-    <string name="existed_colon_vN_longVC">Уже установлено: %1$s (%2$s)</string>
+    <string name="version_colon_vN_longVC">Будет установлено: %1$s (%2$s)</string>
+    <string name="existed_colon_vN_longVC">Установлено: %1$s (%2$s)</string>
     <string name="application_colon_app">Приложение: %1$s</string>
     <string name="pkgName_colon_pkgName">Пакет: %1$s</string>
     <string name="cannotInstall_colon_msg">Не удается установить: %1$s</string>
@@ -486,9 +486,21 @@
     <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
     <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
-    <string name="summary_spr_installUninstall">Настройки, связанные с установкой приложений и удалением APK-файлов</string>
+    <string name="summary_spr_installUninstall">Настройки, связанные с установкой и удалением приложений</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
     <string name="summary_spr_advance">Установка приложений, отладка, специальные возможности, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
     <string name="summary_hToUse">Онлайн-справка на сайте оригинального приложения</string>
+    <string name="system_app_warning">Это системное приложение, будьте осторожны!</string>
+    <string name="uninstall_updates_only">Удалить обновления</string>
+    <string name="uninstall_completely">Удалить полностью</string>
+    <string name="restore">Восстановить</string>
+    <string name="onlyUninstalledSys">Удаленные системные</string>
+    <string name="app_is_uninstalled_restore_prompt">Приложение удалено. Пожалуйста, выберите действие.</string>
+    <string name="restoring_app">Восстановление %1$s…</string>
+    <string name="restore_completed">Приложение восстановлено</string>
+    <string name="restore_failed">Не удалось восстановить приложение</string>
+    <string name="restore_partial">Восстановлено: %1$d из %2$d приложений</string>
+    <string name="full_system_uninstall_requires_shell">Для полного удаления обновлённого системного приложения нужен root или Shizuku.</string>
+    <string name="apps_restore_prompt">Восстановить выбранные приложения?</string>
 </resources>

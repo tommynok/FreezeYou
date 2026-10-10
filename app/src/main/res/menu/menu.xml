@@ -80,6 +80,9 @@
                 </menu>
             </item>
             <item
+                android:id="@+id/menu_vM_onlyUninstalledSys"
+                android:title="@string/onlyUninstalledSys" />
+            <item
                 android:id="@+id/menu_vM_all"
                 android:title="@string/displayAll" />
         </menu>
