@@ -139,11 +139,13 @@ public final class Support {
             popup.getMenu().findItem(R.id.main_sca_menu_forceStop).setVisible(false);
             popup.getMenu().findItem(R.id.main_sca_menu_createDisEnableShortCut).setVisible(false);
             popup.getMenu().findItem(R.id.main_sca_menu_createActivityShortcut).setVisible(false);
-        } else {
-            if (FUFUtils.realGetFrozenStatus(context, pkgName, null)) {
+            boolean isFrozen = FUFUtils.realGetFrozenStatus(context, pkgName, null);
+            if (isFrozen) {
                 popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.UfSlashRun);
+                popup.getMenu().findItem(R.id.main_sca_menu_forceStop).setVisible(false);
             } else {
                 popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.freezeSlashRun);
+                popup.getMenu().findItem(R.id.main_sca_menu_forceStop).setVisible(true);
             }
         }
 
