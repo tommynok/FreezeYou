@@ -139,6 +139,7 @@ public final class Support {
             popup.getMenu().findItem(R.id.main_sca_menu_forceStop).setVisible(false);
             popup.getMenu().findItem(R.id.main_sca_menu_createDisEnableShortCut).setVisible(false);
             popup.getMenu().findItem(R.id.main_sca_menu_createActivityShortcut).setVisible(false);
+        } else {
             boolean isFrozen = FUFUtils.realGetFrozenStatus(context, pkgName, null);
             if (isFrozen) {
                 popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.UfSlashRun);

@@ -1613,8 +1613,6 @@ public class Main extends FreezeYouBaseActivity {
         // selected rows' cached flags rather than relying on the current filter alone.
         Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
         boolean hasUninstalledSystemSelection = false;
-        boolean hasFrozenSelection = false;
-        boolean hasUnfrozenSelection = false;
         if (mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
             for (Map<String, Object> row : ((MainAppListSimpleAdapter)
@@ -1623,11 +1621,7 @@ public class Main extends FreezeYouBaseActivity {
                 if (selectedPackageSet.contains(packageName)) {
                     if (Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
                         hasUninstalledSystemSelection = true;
-                    }
-                    if (Boolean.TRUE.equals(row.get("Frozen"))) {
-                        hasFrozenSelection = true;
-                    } else if (Boolean.FALSE.equals(row.get("Frozen"))) {
-                        hasUnfrozenSelection = true;
+                        break;
                     }
                 }
             }
@@ -1635,24 +1629,9 @@ public class Main extends FreezeYouBaseActivity {
         boolean installedAppActionsVisible = !uninstalledSystemFilter
                 && !hasUninstalledSystemSelection;
 
-        boolean isOnlyFrozenFilter = "OF".equals(currentFilter);
-        boolean isOnlyUnfrozenFilter = "UF".equals(currentFilter);
-
-        boolean canFreeze = installedAppActionsVisible
-                && !isOnlyFrozenFilter
-                && (hasUnfrozenSelection || (!hasFrozenSelection && selectedPackages.isEmpty()));
-
-        boolean canUnfreeze = installedAppActionsVisible
-                && !isOnlyUnfrozenFilter
-                && (hasFrozenSelection || (!hasUnfrozenSelection && selectedPackages.isEmpty()));
-
-        boolean canForceStop = installedAppActionsVisible
-                && !isOnlyFrozenFilter
-                && (hasUnfrozenSelection || (!hasFrozenSelection && selectedPackages.isEmpty()));
-
-        menu.findItem(R.id.list_menu_freezeImmediately).setVisible(canFreeze);
-        menu.findItem(R.id.list_menu_UFImmediately).setVisible(canUnfreeze);
-        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(canForceStop);
+        menu.findItem(R.id.list_menu_freezeImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(installedAppActionsVisible);
         menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
     }
 
@@ -1677,51 +1656,14 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
-        List<String> targetPackages = new ArrayList<>();
-        Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
-        if (mMainActivityAppListFragment != null
-                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedPackageSet.contains(packageName)) {
-                    boolean isFrozen = Boolean.TRUE.equals(row.get("Frozen"));
-                    if (freeze ? !isFrozen : isFrozen) {
-                        targetPackages.add(packageName);
-                    }
-                }
-            }
-        } else {
-            targetPackages.addAll(selectedPackages);
-        }
-        if (targetPackages.isEmpty()) {
-            return;
-        }
-        String[] pkgNameList = targetPackages.toArray(new String[0]);
+        int size = selectedPackages.size();
+        String[] pkgNameList = selectedPackages.toArray(new String[size]);
         FUFUtils.processBatchAction(Main.this, pkgNameList, freeze);
     }
 
     private void processForceStopImmediately() {
-        List<String> targetPackages = new ArrayList<>();
-        Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
-        if (mMainActivityAppListFragment != null
-                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedPackageSet.contains(packageName)) {
-                    if (!Boolean.TRUE.equals(row.get("Frozen"))) {
-                        targetPackages.add(packageName);
-                    }
-                }
-            }
-        } else {
-            targetPackages.addAll(selectedPackages);
-        }
-        if (targetPackages.isEmpty()) {
-            return;
-        }
-        String[] pkgNameList = targetPackages.toArray(new String[0]);
+        int size = selectedPackages.size();
+        String[] pkgNameList = selectedPackages.toArray(new String[size]);
         ServiceUtils.startService(
                 Main.this,
                 new Intent(Main.this, ForceStopService.class)
