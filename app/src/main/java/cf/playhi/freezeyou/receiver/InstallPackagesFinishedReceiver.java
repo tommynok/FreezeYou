@@ -13,6 +13,7 @@ import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
+import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
@@ -80,6 +81,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_uninstallFinished), name),
                                 null,
                                 true);
+                showToast(context, String.format(context.getString(R.string.app_uninstallFinished), name));
                 context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                         .putExtra("pkgName", pkgName)
                         .putExtra("refreshAppList", true));
@@ -92,6 +94,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_uninstallFailed), name),
                                 message,
                                 false);
+                showToast(context, String.format(context.getString(R.string.app_uninstallFailed), name));
             }
         }
 

@@ -160,6 +160,9 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     (packageName + "@InstallPackagesNotification").hashCode(),
                     builder.build()
             );
+            new Handler(Looper.getMainLooper()).post(() ->
+                    showToast(getApplicationContext(),
+                            String.format(getString(R.string.uninstalling_app), willBeUninstalledName)));
 
             boolean uninstallUpdatesOnly = intent.getBooleanExtra("uninstall_updates_only", false);
             // Re-read package state in the service instead of trusting a potentially stale UI
@@ -216,6 +219,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
                         String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
                         null,
                         true);
+                final String finishMessage = String.format(
+                        getString(R.string.app_uninstallFinished), willBeUninstalledName);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        showToast(getApplicationContext(), finishMessage));
                 sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                         .putExtra("pkgName", packageName)
                         .putExtra("refreshAppList", true));
