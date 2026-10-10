@@ -148,6 +148,7 @@
         <item name="colorSurface">@color/appSurfaceLight</item>
         <item name="elevationOverlayEnabled">false</item>
         <item name="colorPrimary">@color/appAccent</item>
+        <item name="colorAccent">@color/appAccent</item>
     </style>
 
     <!-- Main-page dialogs follow its popup tone; the Settings dialog overlay stays unchanged. -->

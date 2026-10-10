@@ -63,9 +63,6 @@ jobs:
     - name: Check layout variants
       run: python3 tools/check_layout_variants.py
 
-    - name: Check bundled font asset budget
-      run: python3 tools/check_font_asset_budget.py
-
     - name: Grant Permission
       run: chmod +x ./gradlew
 

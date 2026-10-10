@@ -284,21 +284,18 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 finish();
                 return;
             }
-
-            PackageInfo uninstalledPackageInfo = null;
+\n            PackageInfo uninstalledPackageInfo = null;
             try {
                 uninstalledPackageInfo = getPackageManager().getPackageInfo(packageName, 0);
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
-
-            if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
+\n            if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
                 alertDialogMessage.append(getString(R.string.system_app_warning));
                 alertDialogMessage.append(nl);
                 alertDialogMessage.append(nl);
             }
-
-            alertDialogMessage.append(
+\n            alertDialogMessage.append(
                     String.format(
                             getString(R.string.pkgName_colon_pkgName),
                             packageName
@@ -375,8 +372,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 positiveButtonText = getString(R.string.uninstall);
             }
         }
-
-        installPackagesAlertDialog.setButton(
+\n        installPackagesAlertDialog.setButton(
                 DialogInterface.BUTTON_POSITIVE,
                 positiveButtonText,
                 (dialog, which) -> {
@@ -453,8 +449,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             if (install != 0) clearTempFile(apkFilePath);
             finish();
         });
-
-        if (install == 0 && hasSystemUpdate) {
+\n        if (install == 0 && hasSystemUpdate) {
             installPackagesAlertDialog.setButton(
                     DialogInterface.BUTTON_NEUTRAL,
                     getString(R.string.uninstall_updates_only),
