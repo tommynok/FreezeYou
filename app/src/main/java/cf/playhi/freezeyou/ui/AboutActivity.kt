@@ -9,6 +9,7 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
@@ -24,6 +25,9 @@ import java.util.ArrayList
 private class AboutMenuItem(val title: String, val action: () -> Unit)
 
 class AboutActivity : FreezeYouBaseActivity() {
+
+    private var countdownToast: Toast? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         processSetTheme(this)
         super.onCreate(savedInstanceState)
@@ -80,14 +84,23 @@ class AboutActivity : FreezeYouBaseActivity() {
                             tapCount++
                             val remaining = 10 - tapCount
                             if (remaining in 1..5) {
-                                showToast(
+                                countdownToast?.cancel()
+                                countdownToast = Toast.makeText(
                                     this@AboutActivity,
-                                    getString(R.string.stepsToUnlock_d, remaining)
+                                    getString(R.string.stepsToUnlock_d, remaining),
+                                    Toast.LENGTH_SHORT
                                 )
+                                countdownToast?.show()
                             } else if (remaining <= 0) {
                                 isUpdateUnlocked = true
                                 sp.edit().putBoolean("unlockedUpdateCheck", true).apply()
-                                showToast(this@AboutActivity, R.string.updateCheckUnlocked)
+                                countdownToast?.cancel()
+                                countdownToast = null
+                                Toast.makeText(
+                                    this@AboutActivity,
+                                    R.string.updateCheckUnlocked,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 buildMenu()
                                 val adapter = aboutListView.adapter as? ArrayAdapter<String>
                                 if (adapter != null) {
@@ -162,5 +175,10 @@ class AboutActivity : FreezeYouBaseActivity() {
                 .setNeutralButton(R.string.okay, null)
                 .show()
         }
+    }
+
+    override fun onDestroy() {
+        countdownToast?.cancel()
+        super.onDestroy()
     }
 }
