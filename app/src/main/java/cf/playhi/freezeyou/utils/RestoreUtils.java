@@ -44,25 +44,6 @@ public final class RestoreUtils {
         return (flags & ApplicationInfo.FLAG_SYSTEM) != 0 && isAppUninstalledFlags(flags);
     }
 
-    public static boolean areAllRestorableSystemAppFlags(int... appFlags) {
-        if (appFlags == null || appFlags.length == 0) return false;
-        for (int flags : appFlags) {
-            if (!isRestorableSystemAppFlags(flags)) return false;
-        }
-        return true;
-    }
-
-    public static boolean areAllRestorableSystemApps(List<ApplicationInfo> appInfos) {
-        if (appInfos == null || appInfos.isEmpty()) return false;
-        int[] appFlags = new int[appInfos.size()];
-        int index = 0;
-        for (ApplicationInfo appInfo : appInfos) {
-            if (appInfo == null) return false;
-            appFlags[index++] = appInfo.flags;
-        }
-        return areAllRestorableSystemAppFlags(appFlags);
-    }
-
     public static boolean isRestorableSystemPackage(Context context, String packageName) {
         if (context == null || packageName == null || packageName.isEmpty()) return false;
         try {

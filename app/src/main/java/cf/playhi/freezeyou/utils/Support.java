@@ -136,6 +136,9 @@ public final class Support {
                 popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setTitle(R.string.restore);
             }
             popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setVisible(false);
+            popup.getMenu().findItem(R.id.main_sca_menu_forceStop).setVisible(false);
+            popup.getMenu().findItem(R.id.main_sca_menu_createDisEnableShortCut).setVisible(false);
+            popup.getMenu().findItem(R.id.main_sca_menu_createActivityShortcut).setVisible(false);
         } else {
             if (FUFUtils.realGetFrozenStatus(context, pkgName, null)) {
                 popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setTitle(R.string.UfSlashRun);
@@ -316,7 +319,9 @@ public final class Support {
                             if (RestoreUtils.isRestorableSystemPackage(context, pkgName)) {
                                 if (allowRestore) {
                                     RestoreUtils.showRestoreConfirmDialog(activity, java.util.Collections.singletonList(pkgName), name, () -> {
-                                        context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged").putExtra("pkgName", pkgName));
+                                        context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                                .putExtra("pkgName", pkgName)
+                                                .putExtra("refreshAppList", true));
                                     });
                                 } else {
                                     showToast(activity, R.string.restore_only_in_uninstalled_system_filter);

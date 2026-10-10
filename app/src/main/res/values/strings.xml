@@ -252,10 +252,6 @@
     <string name="stateDidNotChange">The system accepted the command but the state did not change</string>
     <string name="onlyUnfreeze">Only Unfreeze</string>
     <string name="unknown">Unknown</string>
-    <string name="installPackage_colon">Install Package: </string>
-    <string name="requestFromPackage_colon">From Package: </string>
-    <string name="whetherAllow">Allow?</string>
-    <string name="uninstallPackage_colon">Uninstall Package: </string>
     <string name="install">Install</string>
     <string name="installFailed">Installation Failed</string>
     <string name="uninstallFailed">Uninstallation Failed</string>
@@ -601,5 +597,4 @@
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
     <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
     <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
-    <string name="apps_restore_prompt">Restore selected apps?</string>
 </resources>

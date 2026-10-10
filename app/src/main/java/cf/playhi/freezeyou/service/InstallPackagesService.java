@@ -37,6 +37,7 @@ import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
+import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
@@ -134,15 +135,17 @@ public class InstallPackagesService extends FreezeYouBaseService {
     private void uninstall(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
 
         final Uri packageUri = intent.getParcelableExtra("packageUri");
-        String packageName = packageUri.getEncodedSchemeSpecificPart(); // 应用包名
-        String willBeUninstalledName = getApplicationLabel(this, null, null, packageName); // 应用名称
+        String packageName = packageUri == null ? null : packageUri.getEncodedSchemeSpecificPart();
         try {
-            if (packageName == null) {
+            if (packageUri == null || !"package".equals(packageUri.getScheme())
+                    || packageName == null || packageName.isEmpty()) {
                 new Handler(Looper.getMainLooper()).post(() ->
                         showToast(getApplicationContext(),
                                 getString(R.string.invalidArguments) + " " + packageUri));
                 return;
             }
+            final String willBeUninstalledName =
+                    getApplicationLabel(this, null, null, packageName);
 
             Drawable willBeUninstalledIcon =
                     getApplicationIcon(
@@ -159,32 +162,40 @@ public class InstallPackagesService extends FreezeYouBaseService {
             );
 
             boolean uninstallUpdatesOnly = intent.getBooleanExtra("uninstall_updates_only", false);
-            PackageInfo packageInfo = intent.getParcelableExtra("packageInfo");
-            boolean isSystemApp = packageInfo != null && packageInfo.applicationInfo != null
-                    && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
-            boolean hasSystemUpdate = packageInfo != null && packageInfo.applicationInfo != null
-                    && (packageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+            // Re-read package state in the service instead of trusting a potentially stale UI
+            // extra; these flags decide whether the shell operation affects one user or all.
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(
+                    packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+            if (packageInfo.applicationInfo == null
+                    || RestoreUtils.isAppUninstalled(packageInfo.applicationInfo)) {
+                throw new IllegalArgumentException(getString(R.string.invalidArguments));
+            }
+            boolean isSystemApp = (packageInfo.applicationInfo.flags
+                    & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+            boolean hasSystemUpdate = (packageInfo.applicationInfo.flags
+                    & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
 
             if (!UninstallPolicyUtils.isValidUpdatesOnlyRequest(
                     isSystemApp, hasSystemUpdate, uninstallUpdatesOnly)) {
                 throw new IllegalArgumentException(getString(R.string.invalidArguments));
             }
 
-            java.util.List<String> commands = new java.util.ArrayList<>();
-            String quotedPackage = PrivilegedShellUtils.shellQuote(packageName);
-            if (uninstallUpdatesOnly) {
-                commands.add("pm uninstall " + quotedPackage);
-            } else if (isSystemApp) {
-                if (hasSystemUpdate) {
-                    commands.add("pm uninstall " + quotedPackage);
-                }
-                commands.add("pm uninstall --user " + AndroidUserUtils.currentUserId() + " " + quotedPackage);
-            } else {
-                commands.add("pm uninstall " + quotedPackage);
-            }
+            java.util.List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
+                    isSystemApp,
+                    hasSystemUpdate,
+                    uninstallUpdatesOnly,
+                    AndroidUserUtils.currentUserId(),
+                    packageName);
 
             boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
-            boolean rootAvailable = !shizukuAvailable
+            boolean deviceOwnerAvailable = Build.VERSION.SDK_INT >= 21
+                    && DevicePolicyManagerUtils.isDeviceOwner(this);
+            boolean fullUninstallNeedsShell = UninstallPolicyUtils
+                    .requiresPrivilegedShellForFullUninstall(
+                            isSystemApp, hasSystemUpdate, uninstallUpdatesOnly);
+            boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
+                    deviceOwnerAvailable, fullUninstallNeedsShell);
+            boolean rootAvailable = !shizukuAvailable && rootCheckRequired
                     && cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission();
             if (shizukuAvailable || rootAvailable) {
                 for (String command : commands) {
@@ -205,15 +216,17 @@ public class InstallPackagesService extends FreezeYouBaseService {
                         String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
                         null,
                         true);
+                sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                        .putExtra("pkgName", packageName)
+                        .putExtra("refreshAppList", true));
                 return;
             }
 
-            if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
+            if (deviceOwnerAvailable) {
                 // PackageInstaller can silently uninstall ordinary packages as Device Owner.
                 // It cannot express the two-step "remove update, then uninstall for the current
                 // user" operation, so do not claim a complete removal for an updated system app.
-                if (UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
-                        isSystemApp, hasSystemUpdate, uninstallUpdatesOnly)) {
+                if (fullUninstallNeedsShell) {
                     throw new IllegalStateException(
                             getString(R.string.full_system_uninstall_requires_shell));
                 }

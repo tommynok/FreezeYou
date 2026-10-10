@@ -58,6 +58,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1409,7 +1410,9 @@ public class Main extends FreezeYouBaseActivity {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    if (currentFilter != null && currentFilter.startsWith("RUN")) {
+                    if (intent.getBooleanExtra("refreshAppList", false)) {
+                        new Thread(() -> generateList(currentFilter)).start();
+                    } else if (currentFilter != null && currentFilter.startsWith("RUN")) {
                         // Freezing or force-stopping an app can remove it from the
                         // Running list; a plain icon-status patch wouldn't drop it,
                         // so re-run the filter to re-query the running package set.
@@ -1540,6 +1543,8 @@ public class Main extends FreezeYouBaseActivity {
             keyValuePair.put("Name", name);
             processFrozenStatus(keyValuePair, packageName, packageManager);
             keyValuePair.put("PackageName", packageName);
+            keyValuePair.put("RestorableSystemApp",
+                    RestoreUtils.isRestorableSystemApp(packageInfo.applicationInfo));
             keyValuePair.put("InstallTime", packageInfo.firstInstallTime);
             keyValuePair.put("UpdateTime", packageInfo.lastUpdateTime);
             return keyValuePair;
@@ -1554,10 +1559,12 @@ public class Main extends FreezeYouBaseActivity {
             name = getApplicationLabel(getApplicationContext(), null, null, aPkg);
             long installTime = 0L;
             long updateTime = 0L;
+            boolean restorableSystemApp = false;
             try {
                 PackageInfo pi = getPackageManager().getPackageInfo(aPkg, PackageManager.GET_UNINSTALLED_PACKAGES);
                 installTime = pi.firstInstallTime;
                 updateTime = pi.lastUpdateTime;
+                restorableSystemApp = RestoreUtils.isRestorableSystemApp(pi.applicationInfo);
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
@@ -1573,6 +1580,7 @@ public class Main extends FreezeYouBaseActivity {
                 keyValuePair.put("Name", name);
                 processFrozenStatus(keyValuePair, aPkg, null);
                 keyValuePair.put("PackageName", aPkg);
+                keyValuePair.put("RestorableSystemApp", restorableSystemApp);
                 keyValuePair.put("InstallTime", installTime);
                 keyValuePair.put("UpdateTime", updateTime);
                 AppList.add(keyValuePair);
@@ -1595,10 +1603,34 @@ public class Main extends FreezeYouBaseActivity {
     private void updateRestoreMenuVisibility(Menu menu) {
         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
         if (restoreItem == null) return;
-        boolean eligible = RestoreUtils.isRestoreFilter(currentFilter)
+        boolean uninstalledSystemFilter = RestoreUtils.isRestoreFilter(currentFilter);
+        boolean eligible = uninstalledSystemFilter
                 && !selectedPackages.isEmpty()
                 && !selectedPackages.contains(getString(R.string.notAvailable));
         restoreItem.setVisible(eligible);
+
+        // Saved one-key/custom lists can retain an uninstalled system package, so inspect the
+        // selected rows' cached flags rather than relying on the current filter alone.
+        Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
+        boolean hasUninstalledSystemSelection = false;
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (selectedPackageSet.contains(packageName)
+                        && Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
+                    hasUninstalledSystemSelection = true;
+                    break;
+                }
+            }
+        }
+        boolean installedAppActionsVisible = !uninstalledSystemFilter
+                && !hasUninstalledSystemSelection;
+        menu.findItem(R.id.list_menu_freezeImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
     }
 
     private void processAddToOneKeyList(String string) {
