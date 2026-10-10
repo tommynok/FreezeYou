@@ -1,35 +1,26 @@
 package cf.playhi.freezeyou.utils
 
-import android.content.pm.ApplicationInfo
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class RestoreAndShellResultTest {
 
     @Test
     fun onlyUninstalledSystemAppsAreRestorable() {
-        val uninstalledSystemApp = ApplicationInfo().apply {
-            flags = ApplicationInfo.FLAG_SYSTEM
-        }
-        val installedSystemApp = ApplicationInfo().apply {
-            flags = ApplicationInfo.FLAG_SYSTEM or FLAG_INSTALLED
-        }
-        val uninstalledUserApp = ApplicationInfo().apply {
-            flags = 0
-        }
+        val uninstalledSystemApp = FLAG_SYSTEM
+        val installedSystemApp = FLAG_SYSTEM or FLAG_INSTALLED
+        val uninstalledUserApp = 0
 
-        assertTrue(RestoreUtils.isRestorableSystemApp(uninstalledSystemApp))
-        assertFalse(RestoreUtils.isRestorableSystemApp(installedSystemApp))
-        assertFalse(RestoreUtils.isRestorableSystemApp(uninstalledUserApp))
-        assertFalse(RestoreUtils.areAllRestorableSystemApps(emptyList()))
-        assertTrue(RestoreUtils.areAllRestorableSystemApps(listOf(uninstalledSystemApp)))
+        assertTrue(RestoreUtils.isRestorableSystemAppFlags(uninstalledSystemApp))
+        assertFalse(RestoreUtils.isRestorableSystemAppFlags(installedSystemApp))
+        assertFalse(RestoreUtils.isRestorableSystemAppFlags(uninstalledUserApp))
+        assertFalse(RestoreUtils.areAllRestorableSystemAppFlags())
+        assertTrue(RestoreUtils.areAllRestorableSystemAppFlags(uninstalledSystemApp))
         assertFalse(
-            RestoreUtils.areAllRestorableSystemApps(
-                listOf(uninstalledSystemApp, installedSystemApp)
+            RestoreUtils.areAllRestorableSystemAppFlags(
+                uninstalledSystemApp,
+                installedSystemApp
             )
         )
     }
@@ -51,6 +42,7 @@ class RestoreAndShellResultTest {
     }
 
     private companion object {
+        const val FLAG_SYSTEM = 0x00000001
         const val FLAG_INSTALLED = 0x00800000
     }
 }

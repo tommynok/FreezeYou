@@ -29,21 +29,38 @@ public final class RestoreUtils {
     }
 
     public static boolean isAppUninstalled(ApplicationInfo appInfo) {
-        return appInfo != null && (appInfo.flags & FLAG_INSTALLED) == 0;
+        return appInfo != null && isAppUninstalledFlags(appInfo.flags);
+    }
+
+    public static boolean isAppUninstalledFlags(int flags) {
+        return (flags & FLAG_INSTALLED) == 0;
     }
 
     public static boolean isRestorableSystemApp(ApplicationInfo appInfo) {
-        return appInfo != null
-                && (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-                && isAppUninstalled(appInfo);
+        return appInfo != null && isRestorableSystemAppFlags(appInfo.flags);
+    }
+
+    public static boolean isRestorableSystemAppFlags(int flags) {
+        return (flags & ApplicationInfo.FLAG_SYSTEM) != 0 && isAppUninstalledFlags(flags);
+    }
+
+    public static boolean areAllRestorableSystemAppFlags(int... appFlags) {
+        if (appFlags == null || appFlags.length == 0) return false;
+        for (int flags : appFlags) {
+            if (!isRestorableSystemAppFlags(flags)) return false;
+        }
+        return true;
     }
 
     public static boolean areAllRestorableSystemApps(List<ApplicationInfo> appInfos) {
         if (appInfos == null || appInfos.isEmpty()) return false;
+        int[] appFlags = new int[appInfos.size()];
+        int index = 0;
         for (ApplicationInfo appInfo : appInfos) {
-            if (!isRestorableSystemApp(appInfo)) return false;
+            if (appInfo == null) return false;
+            appFlags[index++] = appInfo.flags;
         }
-        return true;
+        return areAllRestorableSystemAppFlags(appFlags);
     }
 
     public static boolean isRestorableSystemPackage(Context context, String packageName) {
