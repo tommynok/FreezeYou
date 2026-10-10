@@ -599,6 +599,7 @@
     <string name="restore_completed">Application restored</string>
     <string name="restore_failed">Failed to restore application</string>
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
+    <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
     <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
     <string name="apps_restore_prompt">Restore selected apps?</string>
 </resources>

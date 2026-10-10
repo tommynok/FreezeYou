@@ -24,6 +24,10 @@ public final class RestoreUtils {
 
     private RestoreUtils() {}
 
+    public static boolean isRestoreFilter(String filter) {
+        return "OUS".equals(filter);
+    }
+
     public static boolean isAppUninstalled(ApplicationInfo appInfo) {
         return appInfo != null && (appInfo.flags & FLAG_INSTALLED) == 0;
     }

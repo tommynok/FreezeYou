@@ -501,6 +501,7 @@
     <string name="restore_completed">Приложение восстановлено</string>
     <string name="restore_failed">Не удалось восстановить приложение</string>
     <string name="restore_partial">Восстановлено: %1$d из %2$d приложений</string>
+    <string name="restore_only_in_uninstalled_system_filter">Чтобы восстановить приложение, откройте фильтр «Удалённые системные».</string>
     <string name="full_system_uninstall_requires_shell">Для полного удаления обновлённого системного приложения нужен root или Shizuku.</string>
     <string name="apps_restore_prompt">Восстановить выбранные приложения?</string>
 </resources>

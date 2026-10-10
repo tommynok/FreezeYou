@@ -35,6 +35,13 @@ class RestoreAndShellResultTest {
     }
 
     @Test
+    fun restoreActionIsRestrictedToUninstalledSystemFilter() {
+        assertTrue(RestoreUtils.isRestoreFilter("OUS"))
+        assertFalse(RestoreUtils.isRestoreFilter("all"))
+        assertFalse(RestoreUtils.isRestoreFilter(null))
+    }
+
+    @Test
     fun shellSuccessRequiresZeroExitAndNoFailureOutput() {
         assertTrue(PrivilegedShellUtils.isSuccessful(0, "Success"))
         assertTrue(PrivilegedShellUtils.isSuccessful(0, "Package restored for user: 0"))

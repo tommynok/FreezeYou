@@ -69,14 +69,18 @@ public final class Support {
     }
 
     public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name) {
-        showChooseActionPopupMenu(context, activity, view, pkgName, name, false, null);
+        showChooseActionPopupMenu(context, activity, view, pkgName, name, false);
+    }
+
+    public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name, final boolean allowRestore) {
+        generateChooseActionPopupMenu(context, activity, view, pkgName, name, false, null, allowRestore).show();
     }
 
     public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name, boolean canRemoveItem, final SharedPreferences folderPkgListSp) {
-        generateChooseActionPopupMenu(context, activity, view, pkgName, name, canRemoveItem, folderPkgListSp).show();
+        generateChooseActionPopupMenu(context, activity, view, pkgName, name, canRemoveItem, folderPkgListSp, false).show();
     }
 
-    private static PopupMenu generateChooseActionPopupMenu(final Context context, final Activity activity, View view, final String pkgName, final String name, final boolean canRemoveItem, final SharedPreferences folderPkgListSp) {
+    private static PopupMenu generateChooseActionPopupMenu(final Context context, final Activity activity, View view, final String pkgName, final String name, final boolean canRemoveItem, final SharedPreferences folderPkgListSp, final boolean allowRestore) {
         PopupMenu popup = new PopupMenu(context, view);
         popup.inflate(R.menu.main_single_choose_action_menu);
 
@@ -127,7 +131,10 @@ public final class Support {
 
         final boolean isRestorableSystemApp = RestoreUtils.isRestorableSystemPackage(context, pkgName);
         if (isRestorableSystemApp) {
-            popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setTitle(R.string.restore);
+            popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setVisible(allowRestore);
+            if (allowRestore) {
+                popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setTitle(R.string.restore);
+            }
             popup.getMenu().findItem(R.id.main_sca_menu_disableAEnable).setVisible(false);
         } else {
             if (FUFUtils.realGetFrozenStatus(context, pkgName, null)) {
@@ -306,10 +313,14 @@ public final class Support {
                             }
                             break;
                         case R.id.main_sca_menu_uninstall:
-                            if (isRestorableSystemApp) {
-                                RestoreUtils.showRestoreConfirmDialog(activity, java.util.Collections.singletonList(pkgName), name, () -> {
-                                    context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged").putExtra("pkgName", pkgName));
-                                });
+                            if (RestoreUtils.isRestorableSystemPackage(context, pkgName)) {
+                                if (allowRestore) {
+                                    RestoreUtils.showRestoreConfirmDialog(activity, java.util.Collections.singletonList(pkgName), name, () -> {
+                                        context.sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged").putExtra("pkgName", pkgName));
+                                    });
+                                } else {
+                                    showToast(activity, R.string.restore_only_in_uninstalled_system_filter);
+                                }
                             } else if (!(context.getString(R.string.notAvailable).equals(name)) &&
                                     context.getPackageManager()
                                             .getComponentEnabledSetting(

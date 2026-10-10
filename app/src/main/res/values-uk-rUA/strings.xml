@@ -501,6 +501,7 @@
     <string name="restore_completed">Програму відновлено</string>
     <string name="restore_failed">Не вдалося відновити програму</string>
     <string name="restore_partial">Відновлено: %1$d із %2$d програм</string>
+    <string name="restore_only_in_uninstalled_system_filter">Щоб відновити програму, відкрийте фільтр «Видалені системні».</string>
     <string name="full_system_uninstall_requires_shell">Для повного видалення оновленої системної програми потрібен root або Shizuku.</string>
     <string name="apps_restore_prompt">Відновити вибрані програми?</string>
 </resources>

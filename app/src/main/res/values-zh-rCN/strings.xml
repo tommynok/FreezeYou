@@ -506,6 +506,7 @@
     <string name="restore_completed">应用已恢复</string>
     <string name="restore_failed">恢复应用失败</string>
     <string name="restore_partial">已恢复 %1$d / %2$d 个应用</string>
+    <string name="restore_only_in_uninstalled_system_filter">要恢复此应用，请使用“已卸载系统应用”筛选器。</string>
     <string name="full_system_uninstall_requires_shell">完全移除已更新的系统应用需要 root 或 Shizuku。</string>
     <string name="apps_restore_prompt">恢复选定的应用？</string>
 </resources>

@@ -1130,7 +1130,7 @@ public class Main extends FreezeYouBaseActivity {
                                         return true;
                                     case R.id.list_menu_restoreImmediately: {
                                         List<String> packagesToRestore = new ArrayList<>(selectedPackages);
-                                        if (!"OUS".equals(currentFilter)
+                                        if (!RestoreUtils.isRestoreFilter(currentFilter)
                                                 || !RestoreUtils.canRestorePackages(Main.this, packagesToRestore)) {
                                             showToast(Main.this, R.string.restore_failed);
                                             actionMode.invalidate();
@@ -1220,16 +1220,22 @@ public class Main extends FreezeYouBaseActivity {
             final String name = (String) map.get("Name");
             final String pkgName = (String) map.get("PackageName");
             if (!getString(R.string.notAvailable).equals(name)) {
-                if (RestoreUtils.isRestorableSystemPackage(Main.this, pkgName)) {
+                boolean isRestorableSystemApp = RestoreUtils.isRestorableSystemPackage(Main.this, pkgName);
+                if (isRestorableSystemApp && RestoreUtils.isRestoreFilter(currentFilter)) {
                     RestoreUtils.showRestoreConfirmDialog(Main.this, java.util.Collections.singletonList(pkgName), name, () -> {
                         new Thread(() -> generateList(currentFilter)).start();
                     });
                     return;
                 }
+                if (isRestorableSystemApp && appListViewOnClickMode != APPListViewOnClickMode_chooseAction) {
+                    showToast(Main.this, R.string.restore_only_in_uninstalled_system_filter);
+                    return;
+                }
                 switch (appListViewOnClickMode) {
                     case APPListViewOnClickMode_chooseAction:
                         showChooseActionPopupMenu(
-                                getLightPopupContext(Main.this), Main.this, view, pkgName, name);
+                                getLightPopupContext(Main.this), Main.this, view, pkgName, name,
+                                RestoreUtils.isRestoreFilter(currentFilter));
                         break;
                     case APPListViewOnClickMode_autoUFOrFreeze:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
@@ -1589,7 +1595,7 @@ public class Main extends FreezeYouBaseActivity {
     private void updateRestoreMenuVisibility(Menu menu) {
         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
         if (restoreItem == null) return;
-        boolean eligible = "OUS".equals(currentFilter)
+        boolean eligible = RestoreUtils.isRestoreFilter(currentFilter)
                 && !selectedPackages.isEmpty()
                 && !selectedPackages.contains(getString(R.string.notAvailable));
         restoreItem.setVisible(eligible);
