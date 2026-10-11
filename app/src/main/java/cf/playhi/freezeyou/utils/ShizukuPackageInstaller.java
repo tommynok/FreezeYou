@@ -78,7 +78,7 @@ public final class ShizukuPackageInstaller {
                     boolean step1 = performBinderUninstall(context, packageName, 0, userId);
                     // Step 2: Disable/uninstall factory package for user (flags = DELETE_SYSTEM_APP)
                     boolean step2 = performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
-                    return step1 || step2;
+                    return step1 && step2;
                 }
             } else if (isSystemApp) {
                 // Non-updated system app: flags = DELETE_SYSTEM_APP
@@ -120,7 +120,7 @@ public final class ShizukuPackageInstaller {
 
         IntentFilter filter = new IntentFilter(uniqueAction);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
         } else {
             context.registerReceiver(receiver, filter);
         }
@@ -148,7 +148,10 @@ public final class ShizukuPackageInstaller {
                 return true;
             }
 
-            // Fallback verify if package was actually removed even if broadcast didn't arrive in time
+            // Fallback verify if package/update was actually removed even if broadcast didn't arrive in time
+            if (flags == 0) {
+                return !hasUpdatedSystemAppFlag(context, packageName);
+            }
             return !isPackageInstalled(context, packageName);
         } finally {
             try {
@@ -259,6 +262,16 @@ public final class ShizukuPackageInstaller {
         try {
             context.getPackageManager().getPackageInfo(packageName, 0);
             return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean hasUpdatedSystemAppFlag(Context context, String packageName) {
+        try {
+            android.content.pm.PackageInfo pi = context.getPackageManager().getPackageInfo(packageName, 0);
+            return pi != null && pi.applicationInfo != null
+                    && (pi.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
         } catch (PackageManager.NameNotFoundException e) {
             return false;
         }
