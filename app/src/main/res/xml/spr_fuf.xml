@@ -71,13 +71,6 @@
             app:singleLineTitle="false"
             app:summary="@string/openImmediatelyEx"
             app:title="@string/openImmediately" />
-        <CheckBoxPreference
-            app:defaultValue="false"
-            app:iconSpaceReserved="false"
-            app:key="openAndUFImmediately"
-            app:singleLineTitle="false"
-            app:summary="@string/openAndUFImmediatelyEx"
-            app:title="@string/openAndUFImmediately" />
 
     </PreferenceCategory>
 
@@ -91,6 +84,13 @@
             app:key="allowEditWhenCreateShortcut"
             app:singleLineTitle="false"
             app:title="@string/allowEditWhCreateShortcut" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="openAndUFImmediately"
+            app:singleLineTitle="false"
+            app:summary="@string/openAndUFImmediatelyEx"
+            app:title="@string/openAndUFImmediately" />
         <CheckBoxPreference
             app:defaultValue="false"
             app:disableDependentsState="false"

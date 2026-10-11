@@ -7,6 +7,7 @@ import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog
 import cf.playhi.freezeyou.utils.TasksUtils.deleteAllScheduledTasks
+import cf.playhi.freezeyou.utils.ToastUtils.showToast
 
 @Keep
 class SettingsAutomationFragment : CardPreferenceFragment() {
@@ -23,6 +24,7 @@ class SettingsAutomationFragment : CardPreferenceFragment() {
             )
                 .setPositiveButton(R.string.yes) { _, _ ->
                     deleteAllScheduledTasks(requireContext())
+                    showToast(requireActivity(), R.string.success)
                 }
                 .setNegativeButton(R.string.no, null)
                 .show()

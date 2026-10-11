@@ -86,13 +86,13 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                                     )
                                 showToast(requireActivity(), R.string.success)
                             } else {
-                                // TODO: Unsupported
+                                showToast(requireActivity(), R.string.sysVerLow)
                             }
-                        } catch (e: SecurityException) {
-                            // TODO: Is not an active profile owner, or the method is being called from a managed profile.
+                        } catch (e: Exception) {
+                            showToast(requireActivity(), R.string.failed)
                         }
                     } else {
-                        // TODO: Is not an active profile owner
+                        showToast(requireActivity(), R.string.isNotProfileOwner)
                     }
                 }
                 .setNegativeButton(R.string.no, null)

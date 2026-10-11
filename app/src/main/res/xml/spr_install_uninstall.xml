@@ -10,6 +10,7 @@
         app:title="@string/enableInstallPkgFunc" />
     <CheckBoxPreference
         app:defaultValue="false"
+        app:dependency="enableInstallPkgFunc"
         app:iconSpaceReserved="false"
         app:key="tryDelApkAfterInstalled"
         app:singleLineTitle="false"
@@ -17,6 +18,7 @@
         app:title="@string/tryDelApkAfterInstalled" />
     <CheckBoxPreference
         app:defaultValue="true"
+        app:dependency="enableInstallPkgFunc"
         app:iconSpaceReserved="false"
         app:key="notAllowInstallWhenIsObsd"
         app:singleLineTitle="false"
@@ -24,12 +26,14 @@
         app:title="@string/notAllowWhenIsObsd" />
     <CheckBoxPreference
         app:defaultValue="false"
+        app:dependency="enableInstallPkgFunc"
         app:iconSpaceReserved="false"
         app:key="tryToAvoidUpdateWhenUsing"
         app:singleLineTitle="false"
         app:summary="@string/summary_tryToAvoidUpdateWhenUsing"
         app:title="@string/tryToAvoidUpdateWhenUsing" />
     <Preference
+        app:dependency="enableInstallPkgFunc"
         app:iconSpaceReserved="false"
         app:key="manageIpaAutoAllow"
         app:singleLineTitle="false"

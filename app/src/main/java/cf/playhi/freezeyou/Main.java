@@ -1613,6 +1613,7 @@ public class Main extends FreezeYouBaseActivity {
         // selected rows' cached flags rather than relying on the current filter alone.
         Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
         boolean hasUninstalledSystemSelection = false;
+        boolean hasUnfrozenSelection = false;
         if (mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
             for (Map<String, Object> row : ((MainAppListSimpleAdapter)
@@ -1621,7 +1622,9 @@ public class Main extends FreezeYouBaseActivity {
                 if (selectedPackageSet.contains(packageName)) {
                     if (Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
                         hasUninstalledSystemSelection = true;
-                        break;
+                    }
+                    if (!Boolean.TRUE.equals(row.get("Frozen"))) {
+                        hasUnfrozenSelection = true;
                     }
                 }
             }
@@ -1629,9 +1632,11 @@ public class Main extends FreezeYouBaseActivity {
         boolean installedAppActionsVisible = !uninstalledSystemFilter
                 && !hasUninstalledSystemSelection;
 
+        boolean canForceStop = installedAppActionsVisible && hasUnfrozenSelection;
+
         menu.findItem(R.id.list_menu_freezeImmediately).setVisible(installedAppActionsVisible);
         menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
-        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(installedAppActionsVisible);
+        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(canForceStop);
         menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
     }
 
@@ -1656,14 +1661,46 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            Set<String> selectedSet = new HashSet<>(selectedPackages);
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (selectedSet.contains(packageName)) {
+                    row.put("Frozen", freeze);
+                    row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
+                }
+            }
+            ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter()).notifyDataSetChanged();
+        }
         int size = selectedPackages.size();
         String[] pkgNameList = selectedPackages.toArray(new String[size]);
         FUFUtils.processBatchAction(Main.this, pkgNameList, freeze);
     }
 
     private void processForceStopImmediately() {
-        int size = selectedPackages.size();
-        String[] pkgNameList = selectedPackages.toArray(new String[size]);
+        Set<String> frozenPackageSet = new HashSet<>();
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (Boolean.TRUE.equals(row.get("Frozen"))) {
+                    frozenPackageSet.add(packageName);
+                }
+            }
+        }
+        List<String> targetPackages = new ArrayList<>();
+        for (String pkg : selectedPackages) {
+            if (!frozenPackageSet.contains(pkg)) {
+                targetPackages.add(pkg);
+            }
+        }
+        if (targetPackages.isEmpty()) {
+            return;
+        }
+        String[] pkgNameList = targetPackages.toArray(new String[0]);
         ServiceUtils.startService(
                 Main.this,
                 new Intent(Main.this, ForceStopService.class)

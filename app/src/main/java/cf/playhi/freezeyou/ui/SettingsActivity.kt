@@ -13,6 +13,7 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsFragment
@@ -102,6 +103,7 @@ class SettingsActivity : FreezeYouBaseActivity(),
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
         if (languagePref.name == s
             || uiStyleSelection.name == s
+            || themeOfAutoSwitchDarkMode.name == s
             || allowFollowSystemAutoSwitchDarkMode.name == s
             || mainActivityPattern.name == s
         ) {
