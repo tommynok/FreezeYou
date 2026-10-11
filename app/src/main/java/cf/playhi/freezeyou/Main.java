@@ -97,6 +97,7 @@ import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
+import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
 import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
@@ -1910,23 +1911,44 @@ public class Main extends FreezeYouBaseActivity {
 
                 for (BatchUninstallItem item : items) {
                     try {
-                        List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
-                                item.isSystemApp,
-                                item.hasSystemUpdate,
-                                item.uninstallUpdatesOnly,
-                                userId,
-                                item.packageName
-                        );
-                        boolean ok = true;
-                        for (String cmd : commands) {
-                            PrivilegedShellUtils.CommandResult result = shizukuAvailable
-                                    ? PrivilegedShellUtils.runShizukuCommand(cmd)
-                                    : PrivilegedShellUtils.runRootCommand(cmd);
-                            if (!result.isSuccessful()) {
+                        boolean ok = false;
+                        if (shizukuAvailable) {
+                            try {
+                                ok = ShizukuPackageInstaller.uninstall(
+                                        Main.this,
+                                        item.packageName,
+                                        item.isSystemApp,
+                                        item.hasSystemUpdate,
+                                        item.uninstallUpdatesOnly
+                                );
+                            } catch (Throwable t) {
+                                t.printStackTrace();
                                 ok = false;
-                                break;
                             }
                         }
+
+                        // Fallback or pure Root execution via shell commands
+                        if (!ok) {
+                            List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
+                                    item.isSystemApp,
+                                    item.hasSystemUpdate,
+                                    item.uninstallUpdatesOnly,
+                                    userId,
+                                    item.packageName
+                            );
+                            boolean cmdSuccess = true;
+                            for (String cmd : commands) {
+                                PrivilegedShellUtils.CommandResult result = shizukuAvailable
+                                        ? PrivilegedShellUtils.runShizukuCommand(cmd)
+                                        : PrivilegedShellUtils.runRootCommand(cmd);
+                                if (!result.isSuccessful()) {
+                                    cmdSuccess = false;
+                                    break;
+                                }
+                            }
+                            ok = cmdSuccess;
+                        }
+
                         if (ok) {
                             successCount++;
                             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
