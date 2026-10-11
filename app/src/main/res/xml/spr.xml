@@ -11,19 +11,19 @@
         app:title="@string/category_settings">
 
         <Preference
-            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsMainScreenFragment"
-            app:iconSpaceReserved="false"
-            app:key="spr_mainScreen"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_spr_mainScreen"
-            app:title="@string/mainScreenSettings" />
-        <Preference
             app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsAppearanceFragment"
             app:iconSpaceReserved="false"
             app:key="spr_appearance"
             app:singleLineTitle="false"
             app:summary="@string/summary_spr_appearance"
             app:title="@string/appearance" />
+        <Preference
+            app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsMainScreenFragment"
+            app:iconSpaceReserved="false"
+            app:key="spr_mainScreen"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_spr_mainScreen"
+            app:title="@string/mainScreenSettings" />
         <Preference
             app:fragment="cf.playhi.freezeyou.ui.fragment.settings.SettingsFufFragment"
             app:iconSpaceReserved="false"

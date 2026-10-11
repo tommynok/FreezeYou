@@ -484,7 +484,7 @@
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
     <string name="summary_spr_installUninstall">Настройки, связанные с установкой APK-файлов через FreezeYou</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
-    <string name="summary_spr_advance">Установка приложений, отладка, специальные возможности, опасная зона</string>
+    <string name="summary_spr_advance">Установка APK, журнал и отладка, специальные возможности, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
     <string name="summary_hToUse">Онлайн-справка на сайте оригинального приложения</string>
     <string name="system_app_warning">Это системное приложение, будьте осторожны!</string>
