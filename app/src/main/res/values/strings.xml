@@ -600,4 +600,12 @@
     <string name="stepsToUnlock_d">You are %1$d steps away from unlocking update check.</string>
     <string name="updateCheckUnlocked">Check for updates unlocked</string>
     <string name="apkInstallation">APK Installation</string>
+    <string name="batch_uninstall">Uninstall selected</string>
+    <string name="user_applications">User applications</string>
+    <string name="system_applications">System applications</string>
+    <string name="system_applications_with_updates">System applications with updates</string>
+    <string name="batch_uninstall_action_for_updated_system">For system applications with updates:</string>
+    <string name="batch_uninstall_system_apps_require_shell">Root or Shizuku is required to uninstall %1$d system application(s). They will be skipped.</string>
+    <string name="batch_uninstall_result">Uninstalled %1$d application(s)</string>
+    <string name="batch_uninstalling">Uninstalling…</string>
 </resources>

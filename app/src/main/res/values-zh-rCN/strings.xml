@@ -507,4 +507,12 @@
     <string name="stepsToUnlock_d">还需点击 %1$d 次即可开启检查更新。</string>
     <string name="updateCheckUnlocked">已开启检查更新</string>
     <string name="apkInstallation">APK 安装</string>
+    <string name="batch_uninstall">卸载所选应用</string>
+    <string name="user_applications">用户应用</string>
+    <string name="system_applications">系统应用</string>
+    <string name="system_applications_with_updates">含更新的系统应用</string>
+    <string name="batch_uninstall_action_for_updated_system">含更新的系统应用处理方式：</string>
+    <string name="batch_uninstall_system_apps_require_shell">卸载 %1$d 个系统应用需要 Root 或 Shizuku 权限。这些应用将被跳过。</string>
+    <string name="batch_uninstall_result">已卸载应用：%1$d</string>
+    <string name="batch_uninstalling">正在卸载…</string>
 </resources>

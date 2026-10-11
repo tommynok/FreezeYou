@@ -32,9 +32,17 @@ import android.view.animation.RotateAnimation;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.EditText;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
+import android.content.pm.PackageInstaller;
+import android.net.Uri;
+import android.util.TypedValue;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -59,12 +67,15 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
@@ -75,14 +86,18 @@ import cf.playhi.freezeyou.ui.SettingsActivity;
 import cf.playhi.freezeyou.ui.ShortcutLauncherFolderActivity;
 import cf.playhi.freezeyou.ui.fragment.MainActivityAppListFragment;
 import cf.playhi.freezeyou.utils.AccessibilityUtils;
+import cf.playhi.freezeyou.utils.AndroidUserUtils;
 import cf.playhi.freezeyou.utils.LauncherShortcutUtils;
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
+import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
+import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RunningAppsUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
+import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast;
@@ -170,6 +185,9 @@ public class Main extends FreezeYouBaseActivity {
     private boolean isGridMode = false;
 
     private MainActivityAppListFragment mMainActivityAppListFragment;
+    private final Queue<String> mUnprivilegedUninstallQueue = new LinkedList<>();
+    private String mCurrentUnprivilegedUninstallPkg = null;
+    private int mUnprivilegedUninstallSuccessCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -267,6 +285,9 @@ public class Main extends FreezeYouBaseActivity {
                             (Bitmap) data.getParcelableExtra(Intent.EXTRA_SHORTCUT_ICON)
                     );
                 }
+                break;
+            case 80002:
+                processNextUnprivilegedUninstall();
                 break;
             default:
                 break;
@@ -1129,6 +1150,9 @@ public class Main extends FreezeYouBaseActivity {
                                         processForceStopImmediately();
                                         actionMode.finish();
                                         return true;
+                                    case R.id.list_menu_uninstallImmediately:
+                                        processBatchUninstall();
+                                        return true;
                                     case R.id.list_menu_restoreImmediately: {
                                         List<String> packagesToRestore = new ArrayList<>(selectedPackages);
                                         if (!RestoreUtils.isRestoreFilter(currentFilter)
@@ -1638,6 +1662,10 @@ public class Main extends FreezeYouBaseActivity {
         menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
         menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(canForceStop);
         menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
+        MenuItem uninstallItem = menu.findItem(R.id.list_menu_uninstallImmediately);
+        if (uninstallItem != null) {
+            uninstallItem.setVisible(installedAppActionsVisible);
+        }
     }
 
     private void processAddToOneKeyList(String string) {
@@ -1706,6 +1734,310 @@ public class Main extends FreezeYouBaseActivity {
                 new Intent(Main.this, ForceStopService.class)
                         .putExtra("packages", pkgNameList)
         );
+    }
+
+    private void processBatchUninstall() {
+        if (selectedPackages.isEmpty()) {
+            return;
+        }
+
+        final List<String> userApps = new ArrayList<>();
+        final List<String> systemAppsWithUpdates = new ArrayList<>();
+        final List<String> systemApps = new ArrayList<>();
+
+        PackageManager pm = getPackageManager();
+        String notAvailableStr = getString(R.string.notAvailable);
+        for (String pkg : selectedPackages) {
+            if (notAvailableStr.equals(pkg)) continue;
+            try {
+                PackageInfo pi = pm.getPackageInfo(pkg, PackageManager.GET_UNINSTALLED_PACKAGES);
+                if (pi.applicationInfo == null || RestoreUtils.isAppUninstalled(pi.applicationInfo)) {
+                    continue;
+                }
+                boolean isSystem = (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                boolean hasUpdate = (pi.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+                if (!isSystem) {
+                    userApps.add(pkg);
+                } else if (hasUpdate) {
+                    systemAppsWithUpdates.add(pkg);
+                } else {
+                    systemApps.add(pkg);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        int totalFound = userApps.size() + systemAppsWithUpdates.size() + systemApps.size();
+        if (totalFound == 0) {
+            return;
+        }
+
+        boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
+        boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+        boolean hasPrivilegedShell = shizukuAvailable || rootAvailable;
+        int skippedSystemCount = systemAppsWithUpdates.size() + systemApps.size();
+
+        if (!hasPrivilegedShell) {
+            if (userApps.isEmpty()) {
+                FreezeYouAlertDialogBuilder(this)
+                        .setTitle(R.string.batch_uninstall)
+                        .setMessage(R.string.full_system_uninstall_requires_shell)
+                        .setPositiveButton(R.string.okay, null)
+                        .show();
+                return;
+            }
+
+            StringBuilder msg = new StringBuilder();
+            msg.append("• ").append(getString(R.string.user_applications)).append(": ").append(userApps.size());
+            if (skippedSystemCount > 0) {
+                msg.append("\n\n").append(getString(R.string.batch_uninstall_system_apps_require_shell, skippedSystemCount));
+            }
+
+            FreezeYouAlertDialogBuilder(this)
+                    .setTitle(R.string.batch_uninstall)
+                    .setMessage(msg.toString())
+                    .setPositiveButton(getString(R.string.uninstall) + " (" + userApps.size() + ")", (dialog, which) -> {
+                        confirmIfCriticalSelectedThenRun(() -> {
+                            if (currentSelectionActionMode != null) {
+                                currentSelectionActionMode.finish();
+                            }
+                            executeBatchUninstall(userApps, Collections.emptyList(), Collections.emptyList(), false, false, false);
+                        });
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+            return;
+        }
+
+        StringBuilder summary = new StringBuilder();
+        if (!userApps.isEmpty()) {
+            summary.append("• ").append(getString(R.string.user_applications)).append(": ").append(userApps.size()).append("\n");
+        }
+        if (!systemAppsWithUpdates.isEmpty()) {
+            summary.append("• ").append(getString(R.string.system_applications_with_updates)).append(": ").append(systemAppsWithUpdates.size()).append("\n");
+        }
+        if (!systemApps.isEmpty()) {
+            summary.append("• ").append(getString(R.string.system_applications)).append(": ").append(systemApps.size()).append("\n");
+        }
+
+        AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.batch_uninstall)
+                .setNegativeButton(R.string.cancel, null);
+
+        if (!systemAppsWithUpdates.isEmpty()) {
+            LinearLayout layout = new LinearLayout(this);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            int padding = (int) (18 * getResources().getDisplayMetrics().density);
+            layout.setPadding(padding, padding / 2, padding, 0);
+
+            TextView messageView = new TextView(this);
+            messageView.setText(summary.toString().trim());
+            messageView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            layout.addView(messageView);
+
+            TextView promptView = new TextView(this);
+            promptView.setText(R.string.batch_uninstall_action_for_updated_system);
+            promptView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            promptView.setPadding(0, padding / 2, 0, padding / 4);
+            layout.addView(promptView);
+
+            RadioGroup radioGroup = new RadioGroup(this);
+            RadioButton rbCompletely = new RadioButton(this);
+            rbCompletely.setText(R.string.uninstall_completely);
+            rbCompletely.setChecked(true);
+            radioGroup.addView(rbCompletely);
+
+            RadioButton rbUpdatesOnly = new RadioButton(this);
+            rbUpdatesOnly.setText(R.string.uninstall_updates_only);
+            radioGroup.addView(rbUpdatesOnly);
+
+            layout.addView(radioGroup);
+            builder.setView(layout);
+
+            builder.setPositiveButton(getString(R.string.uninstall) + " (" + totalFound + ")", (dialog, which) -> {
+                boolean uninstallUpdatesOnly = rbUpdatesOnly.isChecked();
+                confirmIfCriticalSelectedThenRun(() -> {
+                    if (currentSelectionActionMode != null) {
+                        currentSelectionActionMode.finish();
+                    }
+                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, uninstallUpdatesOnly, true, shizukuAvailable);
+                });
+            });
+        } else {
+            builder.setMessage(summary.toString().trim());
+            builder.setPositiveButton(getString(R.string.uninstall) + " (" + totalFound + ")", (dialog, which) -> {
+                confirmIfCriticalSelectedThenRun(() -> {
+                    if (currentSelectionActionMode != null) {
+                        currentSelectionActionMode.finish();
+                    }
+                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, false, true, shizukuAvailable);
+                });
+            });
+        }
+
+        builder.show();
+    }
+
+    private void executeBatchUninstall(
+            List<String> userApps,
+            List<String> systemAppsWithUpdates,
+            List<String> systemApps,
+            boolean uninstallUpdatesOnly,
+            boolean hasPrivilegedShell,
+            boolean shizukuAvailable) {
+
+        if (hasPrivilegedShell) {
+            ProgressDialog progressDialog = new ProgressDialog(Main.this);
+            progressDialog.setMessage(getString(R.string.batch_uninstalling));
+            progressDialog.setCancelable(false);
+            progressDialog.setCanceledOnTouchOutside(false);
+            progressDialog.show();
+
+            new Thread(() -> {
+                int successCount = 0;
+                int userId = AndroidUserUtils.currentUserId();
+                List<BatchUninstallItem> items = new ArrayList<>();
+                for (String pkg : userApps) {
+                    items.add(new BatchUninstallItem(pkg, false, false, false));
+                }
+                for (String pkg : systemAppsWithUpdates) {
+                    items.add(new BatchUninstallItem(pkg, true, true, uninstallUpdatesOnly));
+                }
+                for (String pkg : systemApps) {
+                    items.add(new BatchUninstallItem(pkg, true, false, false));
+                }
+
+                for (BatchUninstallItem item : items) {
+                    try {
+                        List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
+                                item.isSystemApp,
+                                item.hasSystemUpdate,
+                                item.uninstallUpdatesOnly,
+                                userId,
+                                item.packageName
+                        );
+                        boolean ok = true;
+                        for (String cmd : commands) {
+                            PrivilegedShellUtils.CommandResult result = shizukuAvailable
+                                    ? PrivilegedShellUtils.runShizukuCommand(cmd)
+                                    : PrivilegedShellUtils.runRootCommand(cmd);
+                            if (!result.isSuccessful()) {
+                                ok = false;
+                                break;
+                            }
+                        }
+                        if (ok) {
+                            successCount++;
+                            sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                    .putExtra("pkgName", item.packageName)
+                                    .putExtra("refreshAppList", false));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                final int finalSuccessCount = successCount;
+                runOnUiThread(() -> {
+                    try {
+                        if (progressDialog.isShowing() && !isFinishing()) {
+                            progressDialog.dismiss();
+                        }
+                    } catch (Exception ignored) {}
+                    showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), finalSuccessCount));
+                    sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                            .putExtra("refreshAppList", true));
+                    new Thread(() -> generateList(currentFilter)).start();
+                });
+            }).start();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && DevicePolicyManagerUtils.isDeviceOwner(Main.this)) {
+            int count = 0;
+            PackageManager pm = getPackageManager();
+            PackageInstaller packageInstaller = pm.getPackageInstaller();
+            for (String pkg : userApps) {
+                try {
+                    packageInstaller.uninstall(pkg,
+                            PendingIntent.getBroadcast(Main.this, pkg.hashCode(),
+                                    new Intent(Main.this, InstallPackagesFinishedReceiver.class)
+                                            .putExtra("name", getApplicationLabel(Main.this, pm, null, pkg))
+                                            .putExtra("pkgName", pkg)
+                                            .putExtra("install", false),
+                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+                                            : PendingIntent.FLAG_UPDATE_CURRENT)
+                                    .getIntentSender());
+                    count++;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), count));
+            new Thread(() -> generateList(currentFilter)).start();
+            return;
+        }
+
+        startUnprivilegedUninstallQueue(userApps);
+    }
+
+    private void startUnprivilegedUninstallQueue(List<String> userApps) {
+        mUnprivilegedUninstallQueue.clear();
+        mUnprivilegedUninstallQueue.addAll(userApps);
+        mUnprivilegedUninstallSuccessCount = 0;
+        mCurrentUnprivilegedUninstallPkg = null;
+        processNextUnprivilegedUninstall();
+    }
+
+    private void processNextUnprivilegedUninstall() {
+        if (mCurrentUnprivilegedUninstallPkg != null) {
+            boolean stillInstalled = true;
+            try {
+                getPackageManager().getPackageInfo(mCurrentUnprivilegedUninstallPkg, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                stillInstalled = false;
+            }
+            if (!stillInstalled) {
+                mUnprivilegedUninstallSuccessCount++;
+            }
+            mCurrentUnprivilegedUninstallPkg = null;
+        }
+
+        if (mUnprivilegedUninstallQueue.isEmpty()) {
+            showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), mUnprivilegedUninstallSuccessCount));
+            sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                    .putExtra("refreshAppList", true));
+            new Thread(() -> generateList(currentFilter)).start();
+            return;
+        }
+
+        mCurrentUnprivilegedUninstallPkg = mUnprivilegedUninstallQueue.poll();
+        try {
+            startActivityForResult(
+                    new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + mCurrentUnprivilegedUninstallPkg)),
+                    80002
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            processNextUnprivilegedUninstall();
+        }
+    }
+
+    private static final class BatchUninstallItem {
+        final String packageName;
+        final boolean isSystemApp;
+        final boolean hasSystemUpdate;
+        final boolean uninstallUpdatesOnly;
+
+        BatchUninstallItem(String packageName, boolean isSystemApp, boolean hasSystemUpdate, boolean uninstallUpdatesOnly) {
+            this.packageName = packageName;
+            this.isSystemApp = isSystemApp;
+            this.hasSystemUpdate = hasSystemUpdate;
+            this.uninstallUpdatesOnly = uninstallUpdatesOnly;
+        }
     }
 
     /**
