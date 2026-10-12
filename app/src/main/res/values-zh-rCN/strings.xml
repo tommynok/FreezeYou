@@ -383,7 +383,9 @@
     <string name="onlyRunning">运行中</string>
     <string name="onlyRunningSys">运行中：系统</string>
     <string name="onlyRunningUser">运行中：用户</string>
-    <string name="criticalPackagesWarning">所选内容包含系统依赖的包：\n\n%1$s\n\n冻结它们可能导致设备失去状态栏、设置或键盘，且难以恢复。仍要继续吗？</string>
+    <string name="criticalPackagesWarning">所选列表中包含影响系统稳定运行的应用：\n\n%1$s\n\n冻结它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
+    <string name="critical_packages_uninstall_warning_batch">所选列表中包含影响系统稳定运行的应用：\n\n%1$s\n\n卸载它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
+    <string name="critical_package_uninstall_warning_single">这是影响系统稳定运行的关键应用（键盘、设置或界面）。卸载它可能会影响正常操作。</string>
     <string name="runningFilterUnavailable">“运行中”筛选需要 ROOT 或 Shizuku 冻结模式。请在 设置 → 冻结与解冻 → 选择冻结模式 中更改。</string>
     <string name="scheduledTaskCommandsSyntax">计划任务</string>
     <string name="lastInstall">最近安装</string>

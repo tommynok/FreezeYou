@@ -378,7 +378,9 @@
     <string name="onlyRunning">Running</string>
     <string name="onlyRunningSys">Running: System</string>
     <string name="onlyRunningUser">Running: User</string>
-    <string name="criticalPackagesWarning">The selection includes packages the system depends on:\n\n%1$s\n\nFreezing these can leave the device without a status bar, Settings or a keyboard, and hard to recover. Continue anyway?</string>
+    <string name="criticalPackagesWarning">The selection includes applications that system stability depends on:\n\n%1$s\n\nFreezing these can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
+    <string name="critical_packages_uninstall_warning_batch">The selection includes applications that system stability depends on:\n\n%1$s\n\nUninstalling these can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
+    <string name="critical_package_uninstall_warning_single">This is a critical application that system stability depends on (keyboard, Settings, or system interface). Uninstalling it may make the device difficult to operate.</string>
     <string name="runningFilterUnavailable">The Running filter needs a ROOT or Shizuku freeze mode. Change it in Settings \u2192 Freeze and unfreeze \u2192 Select freeze mode.</string>
     <string name="scheduledTaskCommandsSyntax">Task Setup</string>
     <!-- The language code of the offline help page: assets/help/scheduled_task_commands_<value>.html.

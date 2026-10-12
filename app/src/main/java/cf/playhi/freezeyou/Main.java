@@ -1138,7 +1138,7 @@ public class Main extends FreezeYouBaseActivity {
                                         processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
                                         return true;
                                     case R.id.list_menu_freezeImmediately:
-                                        confirmIfCriticalSelectedThenRun(() -> {
+                                        confirmIfCriticalSelectedThenRun(false, () -> {
                                             processDisableAndEnableImmediately(true);
                                             actionMode.finish();
                                         });
@@ -1799,7 +1799,7 @@ public class Main extends FreezeYouBaseActivity {
                     .setTitle(R.string.batch_uninstall)
                     .setMessage(msg.toString())
                     .setPositiveButton(getString(R.string.uninstall) + " (" + userApps.size() + ")", (dialog, which) -> {
-                        confirmIfCriticalSelectedThenRun(() -> {
+                        confirmIfCriticalSelectedThenRun(true, () -> {
                             if (currentSelectionActionMode != null) {
                                 currentSelectionActionMode.finish();
                             }
@@ -1858,7 +1858,7 @@ public class Main extends FreezeYouBaseActivity {
 
             builder.setPositiveButton(getString(R.string.uninstall) + " (" + totalFound + ")", (dialog, which) -> {
                 boolean uninstallUpdatesOnly = rbUpdatesOnly.isChecked();
-                confirmIfCriticalSelectedThenRun(() -> {
+                confirmIfCriticalSelectedThenRun(true, () -> {
                     if (currentSelectionActionMode != null) {
                         currentSelectionActionMode.finish();
                     }
@@ -1868,7 +1868,7 @@ public class Main extends FreezeYouBaseActivity {
         } else {
             builder.setMessage(summary.toString().trim());
             builder.setPositiveButton(getString(R.string.uninstall) + " (" + totalFound + ")", (dialog, which) -> {
-                confirmIfCriticalSelectedThenRun(() -> {
+                confirmIfCriticalSelectedThenRun(true, () -> {
                     if (currentSelectionActionMode != null) {
                         currentSelectionActionMode.finish();
                     }
@@ -2836,7 +2836,7 @@ public class Main extends FreezeYouBaseActivity {
      * without a status bar, Settings or a keyboard, with no easy way back. Freezing them stays
      * allowed — this only asks first, and only when such a package is actually in the selection.
      */
-    private void confirmIfCriticalSelectedThenRun(Runnable action) {
+    private void confirmIfCriticalSelectedThenRun(boolean isUninstall, Runnable action) {
         final List<String> critical =
                 CriticalPackagesUtils.findCriticalPackages(this, selectedPackages);
         if (critical.isEmpty()) {
@@ -2854,9 +2854,13 @@ public class Main extends FreezeYouBaseActivity {
                     .append(" (").append(pkgName).append(")");
         }
 
+        int warningResId = isUninstall
+                ? R.string.critical_packages_uninstall_warning_batch
+                : R.string.criticalPackagesWarning;
+
         FreezeYouAlertDialogBuilder(this)
                 .setTitle(R.string.caution)
-                .setMessage(getString(R.string.criticalPackagesWarning, names.toString()))
+                .setMessage(getString(warningResId, names.toString()))
                 .setPositiveButton(R.string.yes, (dialog, which) -> action.run())
                 .setNegativeButton(R.string.cancel, null)
                 .show();

@@ -376,7 +376,9 @@
     <string name="onlyRunning">Активні</string>
     <string name="onlyRunningSys">Активні: системні</string>
     <string name="onlyRunningUser">Активні: користувацькі</string>
-    <string name="criticalPackagesWarning">У виділенні є пакети, від яких залежить система:\n\n%1$s\n\nЇх заморожування може залишити пристрій без рядка стану, Налаштувань або клавіатури, і повернути все буде непросто. Все одно продовжити?</string>
+    <string name="criticalPackagesWarning">У вибраному списку є програми, від яких залежить стабільність роботи системи:\n\n%1$s\n\nЇх заморожування може залишити пристрій без рядка стану, Налаштувань або клавіатури, що ускладнить керування пристроєм. Все одно продовжити?</string>
+    <string name="critical_packages_uninstall_warning_batch">У вибраному списку є програми, від яких залежить стабільність роботи системи:\n\n%1$s\n\nЇх видалення може залишити пристрій без рядка стану, Налаштувань або клавіатури, що ускладнить керування пристроєм. Все одно продовжити?</string>
+    <string name="critical_package_uninstall_warning_single">Це ключова програма, від якої залежить стабільність роботи системи (клавіатура, Налаштування або інтерфейс). Її видалення може ускладнити керування пристроєм.</string>
     <string name="runningFilterUnavailable">Фільтр «Активні» доступний лише в режимах root або Shizuku. Змініть режим: Налаштування \u2192 Заморожування і розморожування \u2192 Вибрати режим.</string>
     <string name="scheduledTaskCommandsSyntax">Налаштування завдань</string>
     <string name="correspondingAndAvailableWebsiteUrlLanguageCode" translatable="false">ru-RU</string>

@@ -297,7 +297,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             java.util.List<String> critical = CriticalPackagesUtils.findCriticalPackages(this, java.util.Collections.singletonList(packageName));
             if (!critical.isEmpty()) {
                 alertDialogMessage.append(getString(R.string.caution)).append(": ");
-                alertDialogMessage.append(getString(R.string.criticalPackagesWarning, packageName));
+                alertDialogMessage.append(getString(R.string.critical_package_uninstall_warning_single));
                 alertDialogMessage.append(nl);
                 alertDialogMessage.append(nl);
             }
@@ -329,6 +329,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 && (processedPackageInfo.applicationInfo.flags
                 & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
 
+        final String uninstallPkg = packageUri == null ? "" : packageUri.getEncodedSchemeSpecificPart();
+        final boolean isCriticalApp = install == 0 && uninstallPkg != null && !uninstallPkg.isEmpty()
+                && !CriticalPackagesUtils.findCriticalPackages(this, java.util.Collections.singletonList(uninstallPkg)).isEmpty();
+
         switch (install) {
             case 0:
                 installPackagesAlertDialog.setTitle(
@@ -337,7 +341,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 packageUri == null ? "" : packageUri.getEncodedSchemeSpecificPart()
                         )
                 );
-                if (isSystemApp) {
+                if (isSystemApp || isCriticalApp) {
                     installPackagesAlertDialog.setIcon(R.drawable.ic_warning);
                 }
                 break;
