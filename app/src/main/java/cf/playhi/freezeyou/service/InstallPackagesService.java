@@ -223,9 +223,18 @@ public class InstallPackagesService extends FreezeYouBaseService {
                         getString(R.string.app_uninstallFinished), willBeUninstalledName);
                 new Handler(Looper.getMainLooper()).post(() ->
                         showToast(getApplicationContext(), finishMessage));
+                File cacheIcon = new File(getCacheDir() + "/icon/" + packageName + ".png");
+                if (cacheIcon.exists()) {
+                    cacheIcon.delete();
+                }
+                File filesIcon = new File(getFilesDir() + "/icon/" + packageName + ".png");
+                if (filesIcon.exists()) {
+                    filesIcon.delete();
+                }
+
                 sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                         .putExtra("pkgName", packageName)
-                        .putExtra("refreshAppList", true));
+                        .putExtra("refreshAppList", !uninstallUpdatesOnly));
                 return;
             }
 

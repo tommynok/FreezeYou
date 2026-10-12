@@ -138,11 +138,11 @@ public class MainActivityAppListFragment extends Fragment {
         Activity activity = getActivity();
         if (activity != null) {
             if (mUseGridMode) {
-                if (mAppListGridView != null) {
+                if (mAppListGridView != null && mAppListGridView.getAdapter() != mAppListAdapter) {
                     activity.runOnUiThread(() -> mAppListGridView.setAdapter(mAppListAdapter));
                 }
             } else {
-                if (mAppListListView != null) {
+                if (mAppListListView != null && mAppListListView.getAdapter() != mAppListAdapter) {
                     activity.runOnUiThread(() -> mAppListListView.setAdapter(mAppListAdapter));
                 }
             }

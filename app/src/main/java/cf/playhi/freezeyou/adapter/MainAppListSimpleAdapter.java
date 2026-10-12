@@ -120,8 +120,10 @@ public class MainAppListSimpleAdapter extends SimpleAdapter {
         if (icon instanceof ImageView) {
             // Views are recycled and setImageDrawable leaves the filter in place, so the row
             // has to clear it as explicitly as it sets it.
-            boolean grey =
-                    mGreyFrozenIcons && Boolean.TRUE.equals(mAppList.get(position).get("Frozen"));
+            Map<String, Object> itemData = mAppList.get(position);
+            boolean isRestorable = Boolean.TRUE.equals(itemData.get("RestorableSystemApp"));
+            boolean grey = isRestorable ||
+                    (mGreyFrozenIcons && Boolean.TRUE.equals(itemData.get("Frozen")));
             ((ImageView) icon).setColorFilter(grey ? GREYSCALE : null);
         }
 

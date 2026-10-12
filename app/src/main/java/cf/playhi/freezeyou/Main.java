@@ -1568,8 +1568,12 @@ public class Main extends FreezeYouBaseActivity {
             keyValuePair.put("Name", name);
             processFrozenStatus(keyValuePair, packageName, packageManager);
             keyValuePair.put("PackageName", packageName);
-            keyValuePair.put("RestorableSystemApp",
-                    RestoreUtils.isRestorableSystemApp(packageInfo.applicationInfo));
+            boolean isRestorable = RestoreUtils.isRestorableSystemApp(packageInfo.applicationInfo);
+            keyValuePair.put("RestorableSystemApp", isRestorable);
+            if (isRestorable) {
+                keyValuePair.put("isFrozen", customThemeDisabledDot);
+                keyValuePair.put("Frozen", true);
+            }
             keyValuePair.put("InstallTime", packageInfo.firstInstallTime);
             keyValuePair.put("UpdateTime", packageInfo.lastUpdateTime);
             return keyValuePair;
@@ -1606,6 +1610,10 @@ public class Main extends FreezeYouBaseActivity {
                 processFrozenStatus(keyValuePair, aPkg, null);
                 keyValuePair.put("PackageName", aPkg);
                 keyValuePair.put("RestorableSystemApp", restorableSystemApp);
+                if (restorableSystemApp) {
+                    keyValuePair.put("isFrozen", customThemeDisabledDot);
+                    keyValuePair.put("Frozen", true);
+                }
                 keyValuePair.put("InstallTime", installTime);
                 keyValuePair.put("UpdateTime", updateTime);
                 AppList.add(keyValuePair);
@@ -2154,8 +2162,19 @@ public class Main extends FreezeYouBaseActivity {
                     continue;
                 }
 
+                if (onlyPkgName != null) {
+                    hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
+                    hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
+                }
+
+                boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+                hm.put("RestorableSystemApp", restorable);
                 //更新冻结状态点与置灰标记。图标本身不再重新生成，置灰由适配器完成。
                 processFrozenStatus(hm, pkgName, pm);
+                if (restorable) {
+                    hm.put("isFrozen", customThemeDisabledDot);
+                    hm.put("Frozen", true);
+                }
                 if (onlyPkgName != null) {
                     break;
                 }
