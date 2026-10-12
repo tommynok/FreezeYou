@@ -2854,9 +2854,16 @@ public class Main extends FreezeYouBaseActivity {
                     .append(" (").append(pkgName).append(")");
         }
 
-        int warningResId = isUninstall
-                ? R.string.critical_packages_uninstall_warning_batch
-                : R.string.criticalPackagesWarning;
+        final int warningResId;
+        if (critical.size() == 1) {
+            warningResId = isUninstall
+                    ? R.string.critical_package_uninstall_warning_single_confirm
+                    : R.string.critical_package_freeze_warning_single;
+        } else {
+            warningResId = isUninstall
+                    ? R.string.critical_packages_uninstall_warning_batch
+                    : R.string.criticalPackagesWarning;
+        }
 
         FreezeYouAlertDialogBuilder(this)
                 .setTitle(R.string.caution)
