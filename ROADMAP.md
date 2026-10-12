@@ -1317,20 +1317,18 @@ CI run `38015844432` относится только к `ec7dce1`; он не п�
   4. В `AppTheme.Default.Main`, `Base.AppTheme.Light.Core` и `values-v31/styles.xml` задан `actionMenuTextColor = @color/appOnLightPopup`.
   5. В `Support.generateChooseActionPopupMenu` контекст теперь обернут в `ThemeUtils.getLightPopupContext(context)`.
 
-### Итерация 12.10: Исправление цвета кнопок в окне удаления InstallPackagesActivity (Build 320)
+### Итерация 12.10: Скругление диалога удаления и безопасный цвет кнопок (Build 321)
 
-- **Регрессия фиолетовых кнопок диалога удаления:** В `InstallPackagesActivity` надписи кнопок диалога («Удалить», «Отмена», «Удалить обновления») отображались фиолетовым цветом.
+- **Критический урок: НЕ оборачивать `ObsdAlertDialog` в `materialAlertDialogTheme`:**
+  В Build 320 попытка задать синий цвет кнопок через `ContextThemeWrapper(this, materialAlertDialogTheme)` привела к регрессии: диалог удаления стал прямоугольным, потеряв скругленные углы.
   **Причина:**
-  1. Активити `InstallPackagesActivity` работает под темой диалога `AppTheme.Default.Dialog`. На Android 12+ (API 31+) родитель этой темы — `Theme.Material3.Light`.
-  2. В базовой теме `Theme.Material3.Light` атрибут `colorPrimary` равен baseline purple (`#6750A4`).
-  3. При вызове `new ObsdAlertDialog(this)` кнопки `ButtonBar` красились в цвет `colorPrimary` темы активити (фиолетовый).
-  4. Ранее это уже исправлялось в коммите `c0f31c6f` через оборачивание контекста в `ContextThemeWrapper` с `materialAlertDialogTheme` (`ThemeOverlay.App.Dialog.Main.Light`, где `colorPrimary = @color/appAccent`). Но из-за отсутствия записи в роадмапе правка была случайно затерта при слиянии веток и откатилась к `new ObsdAlertDialog(this)`.
-  **Решение:**
-  1. В `ObsdAlertDialog.java` добавлен конструктор `ObsdAlertDialog(Context context, int themeResId)`.
-  2. В `InstallPackagesActivity.java` в методе `showInstallDialog` восстановлено надежное оборачивание контекста в `materialAlertDialogTheme`:
-     `getTheme().resolveAttribute(com.google.android.material.R.attr.materialAlertDialogTheme, outValue, true)` с fallback на `ThemeOverlay.App.Dialog.Light` и созданием `new ContextThemeWrapper(this, dialogTheme)`.
-  3. В `app/src/main/res/values-v31/styles.xml` в `AppTheme.Default.Dialog` явно добавлен `<item name="colorPrimary">@color/appAccent</item>`. Теперь даже при создании диалога на контексте активити кнопки гарантированно получают синий акцент `#1976D2`.
-  4. В `CriticalPackagesTest.kt` тестовые данные приведены к нейтральным именам пакетов (`com.example.keyboard`), убраны любые упоминания сторонних вендоров.
+  `ObsdAlertDialog` наследуется от `androidx.appcompat.app.AlertDialog`. Атрибут `materialAlertDialogTheme` указывает на оверлей Material 3 (`ThemeOverlay.App.Dialog.Main.Light`), который переопределяет оконные параметры под компоненты Material 3. Для AppCompat AlertDialog это ломает системную скругленную рамку (`android:dialogCornerRadius = 16dp`) и сбрасывает фон окна в плоский прямоугольник с прямыми углами.
+  **Правильное и безопасное решение:**
+  1. `ObsdAlertDialog` создается строго через нативный контекст активности: `new ObsdAlertDialog(this)`. В `ObsdAlertDialog.java` удален лишний конструктор с темой.
+  2. Скругленная рамка диалога (16dp) сохраняется полностью.
+  3. Цвет текста кнопок («Удалить», «Отмена», «Удалить обновления») безопасно задается в слушателе `installPackagesAlertDialog.setOnShowListener`:
+     если включена светлая тема (`ThemeUtils.isLightUiTheme(this)`), кнопкам явно присваивается `@color/appAccent` (`#1976D2`). В темной и черной темах кнопки не перезаписываются и сохраняют белый цвет темы (`appOnDarkSurface`).
+  4. В `values-v31/styles.xml` в `AppTheme.Default.Dialog` сохранен `colorPrimary = @color/appAccent`.
 
 
 ---
@@ -1566,7 +1564,7 @@ DISABLED -> из shell не разморозить (включить root, ра�
 | **Скоростной Shizuku Binder IPC для пакетного удаления** (Build 316): `ShizukuPackageInstaller` на базе прямых Binder-транзакций через `ShizukuBinderWrapper` над `IPackageInstaller` (по архитектуре Canta) с авто-откатом на `pm uninstall` | 12.10, коммит `5ad679b4` |
 | **Шлифовка ShizukuPackageInstaller и терминологии** (Build 317): `RECEIVER_EXPORTED` для исключения таймаутов на Android 13+, условие `step1 && step2` для надёжного полного сноса системных с обновлениями, точная проверка сброса флага `FLAG_UPDATED_SYSTEM_APP` и строгое соответствие терминологии проекта | 12.10, коммит `d55a688c` |
 | **Защита клавиатуры по умолчанию и исправление цвета текста попапов в светлой теме** (Build 318–319): надежный резолв клавиатур через `InputMethodManager.enabledInputMethodList` + `Settings.Secure` + shell fallback; устранение фиолетового каста Material 3 в светлых popup-меню через `@color/appOnLightPopup` (`#1C1B1F`), `actionMenuTextColor` и оверлеи; предупреждение об удалении критических пакетов при одиночном удалении | 12.10, коммит `2b8f933c` |
-| **Устранение фиолетовых кнопок в окне удаления и универсальная защита клавиатуры** (Build 320): восстановлено оборачивание `materialAlertDialogTheme` для `ObsdAlertDialog` в `InstallPackagesActivity`, добавлен явный `colorPrimary = @color/appAccent` в `AppTheme.Default.Dialog` (`values-v31`); вычищены вендорные привязки в тестах детекта клавиатуры | 12.10, коммит `c8a06f55` |
+| **Скругление диалога удаления и безопасный синий цвет кнопок** (Build 321): отказ от ContextThemeWrapper в ObsdAlertDialog (возвращены 16dp скругления диалога удаления); цвет кнопок задается через setOnShowListener для светлой темы | 12.10 |
 
 ## Сведение истории ROADMAP по веткам (06.10.2026)
 

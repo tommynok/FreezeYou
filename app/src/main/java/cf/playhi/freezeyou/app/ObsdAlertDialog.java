@@ -12,9 +12,6 @@ public class ObsdAlertDialog extends AlertDialog {
         super(context);
     }
 
-    public ObsdAlertDialog(Context context, int themeResId) {
-        super(context, themeResId);
-    }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {

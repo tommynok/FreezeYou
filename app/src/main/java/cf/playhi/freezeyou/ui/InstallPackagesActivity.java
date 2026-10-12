@@ -318,10 +318,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
-        android.util.TypedValue outValue = new android.util.TypedValue();
-        getTheme().resolveAttribute(com.google.android.material.R.attr.materialAlertDialogTheme, outValue, true);
-        int dialogTheme = outValue.resourceId != 0 ? outValue.resourceId : R.style.ThemeOverlay_App_Dialog_Light;
-        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(new android.view.ContextThemeWrapper(this, dialogTheme));
+        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null
                 && processedPackageInfo.applicationInfo != null
@@ -562,6 +559,17 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         }
 
         if (isFinishing()) return;
+        installPackagesAlertDialog.setOnShowListener(dialog -> {
+            if (cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme(InstallPackagesActivity.this)) {
+                int accentColor = androidx.core.content.ContextCompat.getColor(InstallPackagesActivity.this, R.color.appAccent);
+                android.widget.Button positiveButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
+                if (positiveButton != null) positiveButton.setTextColor(accentColor);
+                android.widget.Button negativeButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
+                if (negativeButton != null) negativeButton.setTextColor(accentColor);
+                android.widget.Button neutralButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL);
+                if (neutralButton != null) neutralButton.setTextColor(accentColor);
+            }
+        });
         installPackagesAlertDialog.show();
         Window w = installPackagesAlertDialog.getWindow();
         if (w != null) {
