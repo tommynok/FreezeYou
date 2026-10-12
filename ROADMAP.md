@@ -1564,7 +1564,7 @@ DISABLED -> из shell не разморозить (включить root, ра�
 | **Скоростной Shizuku Binder IPC для пакетного удаления** (Build 316): `ShizukuPackageInstaller` на базе прямых Binder-транзакций через `ShizukuBinderWrapper` над `IPackageInstaller` (по архитектуре Canta) с авто-откатом на `pm uninstall` | 12.10, коммит `5ad679b4` |
 | **Шлифовка ShizukuPackageInstaller и терминологии** (Build 317): `RECEIVER_EXPORTED` для исключения таймаутов на Android 13+, условие `step1 && step2` для надёжного полного сноса системных с обновлениями, точная проверка сброса флага `FLAG_UPDATED_SYSTEM_APP` и строгое соответствие терминологии проекта | 12.10, коммит `d55a688c` |
 | **Защита клавиатуры по умолчанию и исправление цвета текста попапов в светлой теме** (Build 318–319): надежный резолв клавиатур через `InputMethodManager.enabledInputMethodList` + `Settings.Secure` + shell fallback; устранение фиолетового каста Material 3 в светлых popup-меню через `@color/appOnLightPopup` (`#1C1B1F`), `actionMenuTextColor` и оверлеи; предупреждение об удалении критических пакетов при одиночном удалении | 12.10, коммит `2b8f933c` |
-| **Скругление диалога удаления и безопасный синий цвет кнопок** (Build 321): отказ от ContextThemeWrapper в ObsdAlertDialog (возвращены 16dp скругления диалога удаления); цвет кнопок задается через setOnShowListener для светлой темы | 12.10 |
+| **Скругление диалога удаления и безопасный синий цвет кнопок** (Build 321): отказ от ContextThemeWrapper в ObsdAlertDialog (возвращены 16dp скругления диалога удаления); цвет кнопок задается через setOnShowListener для светлой темы | 12.10, коммит `b6fd9dff` |
 
 ## Сведение истории ROADMAP по веткам (06.10.2026)
 
