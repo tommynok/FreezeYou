@@ -630,6 +630,8 @@ object FUFUtils {
                 if (triggered.isNotEmpty()) {
                     withContext(Dispatchers.Main) { TasksUtils.runCollectedTasks(appContext, triggered) }
                 }
+            } else if (failed.isNotEmpty()) {
+                sendStatusChangedBroadcast(appContext)
             }
 
             val bookkeepingDoneAt = System.currentTimeMillis()

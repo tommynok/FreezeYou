@@ -76,16 +76,18 @@ public final class ShizukuPackageInstaller {
                     // Complete uninstall: 2 steps
                     // Step 1: Revert system update (flags = 0)
                     boolean step1 = performBinderUninstall(context, packageName, 0, userId);
+                    if (!step1) {
+                        return false;
+                    }
                     // Step 2: Disable/uninstall factory package for user (flags = DELETE_SYSTEM_APP)
-                    boolean step2 = performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
-                    return step1 && step2;
+                    return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
                 }
             } else if (isSystemApp) {
                 // Non-updated system app: flags = DELETE_SYSTEM_APP
                 return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
             } else {
-                // User app: flags = DELETE_ALL_USERS
-                return performBinderUninstall(context, packageName, DELETE_ALL_USERS, userId);
+                // User app: scope to target user only (flags = 0)
+                return performBinderUninstall(context, packageName, 0, userId);
             }
         } catch (Throwable t) {
             t.printStackTrace();
@@ -142,8 +144,8 @@ public final class ShizukuPackageInstaller {
             Object[] args = buildUninstallArgs(uninstallMethod, packageName, "com.android.shell", flags, statusReceiver, userId);
             uninstallMethod.invoke(installerProxy, args);
 
-            // Await async broadcast from system_server (typically 20-200ms)
-            boolean completed = latch.await(4, TimeUnit.SECONDS);
+            // Await async broadcast from system_server (typically 20-200ms, up to 8s for large packages)
+            boolean completed = latch.await(8, TimeUnit.SECONDS);
             if (completed && resultStatus.get() == PackageInstaller.STATUS_SUCCESS) {
                 return true;
             }

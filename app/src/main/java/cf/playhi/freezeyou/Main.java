@@ -1911,6 +1911,16 @@ public class Main extends FreezeYouBaseActivity {
 
                 for (BatchUninstallItem item : items) {
                     try {
+                        try {
+                            PackageInfo freshPi = getPackageManager().getPackageInfo(item.packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+                            if (freshPi != null && freshPi.applicationInfo != null) {
+                                boolean isSystem = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                                boolean hasUpdate = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+                                item.isSystemApp = isSystem;
+                                item.hasSystemUpdate = hasUpdate;
+                            }
+                        } catch (Exception ignored) {}
+
                         boolean ok = false;
                         if (shizukuAvailable) {
                             try {
@@ -1978,28 +1988,80 @@ public class Main extends FreezeYouBaseActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                 && DevicePolicyManagerUtils.isDeviceOwner(Main.this)) {
-            int count = 0;
-            PackageManager pm = getPackageManager();
-            PackageInstaller packageInstaller = pm.getPackageInstaller();
-            for (String pkg : userApps) {
+            ProgressDialog progressDialog = new ProgressDialog(Main.this);
+            progressDialog.setMessage(getString(R.string.batch_uninstalling));
+            progressDialog.setCancelable(false);
+            progressDialog.setCanceledOnTouchOutside(false);
+            progressDialog.show();
+
+            new Thread(() -> {
+                PackageManager pm = getPackageManager();
+                PackageInstaller packageInstaller = pm.getPackageInstaller();
+                final int total = userApps.size();
+                final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(total);
+                final java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+                final String uniqueAction = "cf.playhi.freezeyou.action.DO_UNINSTALL_RESULT." + java.util.UUID.randomUUID().toString();
+
+                BroadcastReceiver receiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (intent != null) {
+                            int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
+                            if (status == PackageInstaller.STATUS_SUCCESS) {
+                                successCount.incrementAndGet();
+                            }
+                            latch.countDown();
+                        }
+                    }
+                };
+
+                androidx.core.content.ContextCompat.registerReceiver(
+                        Main.this,
+                        receiver,
+                        new IntentFilter(uniqueAction),
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ? androidx.core.content.ContextCompat.RECEIVER_EXPORTED : 0
+                );
+
                 try {
-                    packageInstaller.uninstall(pkg,
-                            PendingIntent.getBroadcast(Main.this, pkg.hashCode(),
-                                    new Intent(Main.this, InstallPackagesFinishedReceiver.class)
-                                            .putExtra("name", getApplicationLabel(Main.this, pm, null, pkg))
-                                            .putExtra("pkgName", pkg)
-                                            .putExtra("install", false),
-                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
-                                            : PendingIntent.FLAG_UPDATE_CURRENT)
-                                    .getIntentSender());
-                    count++;
+                    for (String pkg : userApps) {
+                        try {
+                            Intent statusIntent = new Intent(uniqueAction).setPackage(getPackageName());
+                            int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                                    ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+                                    : PendingIntent.FLAG_UPDATE_CURRENT;
+                            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                                    Main.this,
+                                    pkg.hashCode(),
+                                    statusIntent,
+                                    pendingFlags
+                            );
+                            packageInstaller.uninstall(pkg, pendingIntent.getIntentSender());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            latch.countDown();
+                        }
+                    }
+                    latch.await(Math.min(total * 4L, 30L), java.util.concurrent.TimeUnit.SECONDS);
                 } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    try {
+                        unregisterReceiver(receiver);
+                    } catch (Exception ignored) {}
                 }
-            }
-            showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), count));
-            new Thread(() -> generateList(currentFilter)).start();
+
+                runOnUiThread(() -> {
+                    try {
+                        if (progressDialog.isShowing() && !isFinishing()) {
+                            progressDialog.dismiss();
+                        }
+                    } catch (Exception ignored) {}
+                    showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), successCount.get()));
+                    sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                            .putExtra("refreshAppList", true));
+                    new Thread(() -> generateList(currentFilter)).start();
+                });
+            }).start();
             return;
         }
 

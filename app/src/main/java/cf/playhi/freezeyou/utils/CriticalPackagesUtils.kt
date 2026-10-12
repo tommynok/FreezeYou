@@ -88,7 +88,8 @@ object CriticalPackagesUtils {
             e.printStackTrace()
         }
 
-        // 3. Fallback: query default IME via privileged shell if list is empty and Shizuku/Root available
+        // 3. Fallback: query default IME via Shizuku shell if list is empty and Shizuku is available
+        // (Root su is deliberately omitted here to prevent blocking UI thread with interactive prompt)
         if (result.isEmpty()) {
             try {
                 if (PrivilegedShellUtils.isShizukuAvailable()) {

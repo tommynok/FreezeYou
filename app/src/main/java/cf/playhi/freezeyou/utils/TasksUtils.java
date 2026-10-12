@@ -17,6 +17,8 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -557,6 +559,10 @@ public final class TasksUtils {
      * by the request codes recorded for them when they were scheduled.
      */
     public static void deleteAllScheduledTasks(Context context) {
+        deleteAllScheduledTasks(context, null);
+    }
+
+    public static void deleteAllScheduledTasks(Context context, Runnable onComplete) {
         // Called from a dialog button, so off the main thread: this reads a database, talks to
         // the preference provider and deletes files.
         final Context appContext = context.getApplicationContext();
@@ -568,6 +574,9 @@ public final class TasksUtils {
                 if (file.exists() && !file.delete()) {
                     Log.e("FreezeYou", "Could not delete the database " + name);
                 }
+            }
+            if (onComplete != null) {
+                new Handler(Looper.getMainLooper()).post(onComplete);
             }
         }).start();
     }

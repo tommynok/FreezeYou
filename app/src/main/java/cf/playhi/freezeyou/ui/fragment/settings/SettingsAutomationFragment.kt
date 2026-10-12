@@ -23,8 +23,12 @@ class SettingsAutomationFragment : CardPreferenceFragment() {
                 R.string.caution
             )
                 .setPositiveButton(R.string.yes) { _, _ ->
-                    deleteAllScheduledTasks(requireContext())
-                    showToast(requireActivity(), R.string.success)
+                    val activity = activity
+                    deleteAllScheduledTasks(requireContext()) {
+                        if (activity != null && !activity.isFinishing) {
+                            showToast(activity, R.string.success)
+                        }
+                    }
                 }
                 .setNegativeButton(R.string.no, null)
                 .show()
