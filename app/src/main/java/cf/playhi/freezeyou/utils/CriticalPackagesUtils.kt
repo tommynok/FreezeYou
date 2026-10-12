@@ -91,10 +91,12 @@ object CriticalPackagesUtils {
         // 3. Fallback: query default IME via privileged shell if list is empty and Shizuku/Root available
         if (result.isEmpty()) {
             try {
-                val shellOut = PrivilegedShellUtils.runPrivilegedCommand(
-                    "settings get secure default_input_method", null
-                )
-                parsePackageNameFromImeId(shellOut)?.let { result.add(it) }
+                if (PrivilegedShellUtils.isShizukuAvailable()) {
+                    val res = PrivilegedShellUtils.runShizukuCommand("settings get secure default_input_method")
+                    if (res.isSuccessful) {
+                        parsePackageNameFromImeId(res.output)?.let { result.add(it) }
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
