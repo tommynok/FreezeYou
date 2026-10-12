@@ -1911,13 +1911,13 @@ public class Main extends FreezeYouBaseActivity {
 
                 for (BatchUninstallItem item : items) {
                     try {
+                        boolean isSystem = item.isSystemApp;
+                        boolean hasUpdate = item.hasSystemUpdate;
                         try {
                             PackageInfo freshPi = getPackageManager().getPackageInfo(item.packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
                             if (freshPi != null && freshPi.applicationInfo != null) {
-                                boolean isSystem = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-                                boolean hasUpdate = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
-                                item.isSystemApp = isSystem;
-                                item.hasSystemUpdate = hasUpdate;
+                                isSystem = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                                hasUpdate = (freshPi.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
                             }
                         } catch (Exception ignored) {}
 
@@ -1927,8 +1927,8 @@ public class Main extends FreezeYouBaseActivity {
                                 ok = ShizukuPackageInstaller.uninstall(
                                         Main.this,
                                         item.packageName,
-                                        item.isSystemApp,
-                                        item.hasSystemUpdate,
+                                        isSystem,
+                                        hasUpdate,
                                         item.uninstallUpdatesOnly
                                 );
                             } catch (Throwable t) {
@@ -1940,8 +1940,8 @@ public class Main extends FreezeYouBaseActivity {
                         // Fallback or pure Root execution via shell commands
                         if (!ok) {
                             List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
-                                    item.isSystemApp,
-                                    item.hasSystemUpdate,
+                                    isSystem,
+                                    hasUpdate,
                                     item.uninstallUpdatesOnly,
                                     userId,
                                     item.packageName
