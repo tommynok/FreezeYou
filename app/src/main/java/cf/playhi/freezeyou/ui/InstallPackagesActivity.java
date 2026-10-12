@@ -318,7 +318,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
-        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
+        android.util.TypedValue outValue = new android.util.TypedValue();
+        getTheme().resolveAttribute(com.google.android.material.R.attr.materialAlertDialogTheme, outValue, true);
+        int dialogTheme = outValue.resourceId != 0 ? outValue.resourceId : R.style.ThemeOverlay_App_Dialog_Light;
+        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(new android.view.ContextThemeWrapper(this, dialogTheme));
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null
                 && processedPackageInfo.applicationInfo != null

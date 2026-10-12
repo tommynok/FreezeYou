@@ -68,7 +68,7 @@ object CriticalPackagesUtils {
         val result = mutableSetOf<String>()
 
         // 1. Resolve from InputMethodManager (standard public framework API available across all Android versions
-        // without requiring any special permissions; reliable on Samsung OneUI, Pixel, MIUI, etc.)
+        // without requiring any special permissions, reliably returning all active/enabled keyboards).
         try {
             val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             imm?.enabledInputMethodList?.forEach { imi ->

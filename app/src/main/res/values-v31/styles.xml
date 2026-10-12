@@ -53,6 +53,7 @@
              the container is the colour the Material dialog paints itself with. -->
         <item name="colorSurface">@color/appSurfaceLight</item>
         <item name="shapeAppearanceSmallComponent">@style/Shape.App.Small</item>
+        <item name="colorPrimary">@color/appAccent</item>
         <item name="colorAccent">@color/appAccent</item>
         <!-- This theme replaces Base.AppTheme.Light.Dialog on Android 12+, and it is the only
              dialog theme here whose parent is an outside Material3 theme rather than ours, so it

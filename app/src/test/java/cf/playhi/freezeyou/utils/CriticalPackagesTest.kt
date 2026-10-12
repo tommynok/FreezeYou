@@ -74,12 +74,12 @@ class CriticalPackagesTest {
     @Test
     fun `parsePackageNameFromImeId extracts package name correctly`() {
         assertEquals(
-            "com.samsung.android.honeyboard",
-            CriticalPackagesUtils.parsePackageNameFromImeId("com.samsung.android.honeyboard/.service.HoneyBoardService")
+            "com.example.keyboard",
+            CriticalPackagesUtils.parsePackageNameFromImeId("com.example.keyboard/.service.ExampleKeyboardService")
         )
         assertEquals(
-            "com.google.android.inputmethod.latin",
-            CriticalPackagesUtils.parsePackageNameFromImeId("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+            "com.android.inputmethod.latin",
+            CriticalPackagesUtils.parsePackageNameFromImeId("com.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
         )
         assertEquals(
             "com.example.ime",

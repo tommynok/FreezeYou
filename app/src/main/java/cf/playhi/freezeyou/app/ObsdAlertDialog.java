@@ -12,6 +12,10 @@ public class ObsdAlertDialog extends AlertDialog {
         super(context);
     }
 
+    public ObsdAlertDialog(Context context, int themeResId) {
+        super(context, themeResId);
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         isObsd = (ev.getFlags() & MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0;

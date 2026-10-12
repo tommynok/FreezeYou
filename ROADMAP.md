@@ -1303,9 +1303,9 @@ CI run `38015844432` относится только к `ec7dce1`; он не п�
 
 ### Итерация 12.10: Защита клавиатур и исправление цвета букв в светлых попапах (Build 318–319)
 
-- **Резолв клавиатур по умолчанию на OEM-прошивках:** `Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)` на современных устройствах (особенно Samsung OneUI с Knox и SELinux) возвращает `null` для сторонних приложений без спецправ. В результате `CriticalPackagesUtils.findCriticalPackages` не находил Samsung HoneyBoard (`com.samsung.android.honeyboard`), и диалог защиты от случайной заморозки или удаления клавиатуры молча пропускал действие.
+- **Резолв системной клавиатуры по умолчанию:** `Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)` на современных устройствах и версиях Android возвращает `null` для сторонних приложений без системных привилегий. В результате `CriticalPackagesUtils.findCriticalPackages` не находил главную клавиатуру, и диалог защиты от случайной заморозки или удаления клавиатуры молча пропускал действие.
   **Решение:**
-  1. Стандартный публичный API `InputMethodManager.enabledInputMethodList` доступен с API 3 без каких-либо разрешений и гарантированно возвращает все включенные на устройстве клавиатуры (включая HoneyBoard на OneUI, Gboard на Pixel и т.д.).
+  1. Стандартный публичный API `InputMethodManager.enabledInputMethodList` доступен с API 3 без каких-либо разрешений и гарантированно возвращает все включенные на устройстве клавиатуры.
   2. Парсинг `Settings.Secure.DEFAULT_INPUT_METHOD` (если доступен) извлечением имени пакета через `parsePackageNameFromImeId` (отсекая компонент сервиса `/.service...`).
   3. Fallback через privileged shell (`settings get secure default_input_method`), если Shizuku/Root активен.
   4. Защита распространена как на пакетные действия, так и на одиночное удаление через `InstallPackagesActivity`.
@@ -1316,6 +1316,22 @@ CI run `38015844432` относится только к `ec7dce1`; он не п�
   3. В оверлей `ThemeOverlay.App.Popup.Main.Light` добавлены `actionMenuTextColor`, `android:textColor`, `android:textColorPrimary`, `textAppearanceLargePopupMenu` и `textAppearanceSmallPopupMenu`.
   4. В `AppTheme.Default.Main`, `Base.AppTheme.Light.Core` и `values-v31/styles.xml` задан `actionMenuTextColor = @color/appOnLightPopup`.
   5. В `Support.generateChooseActionPopupMenu` контекст теперь обернут в `ThemeUtils.getLightPopupContext(context)`.
+
+### Итерация 12.10: Исправление цвета кнопок в окне удаления InstallPackagesActivity (Build 320)
+
+- **Регрессия фиолетовых кнопок диалога удаления:** В `InstallPackagesActivity` надписи кнопок диалога («Удалить», «Отмена», «Удалить обновления») отображались фиолетовым цветом.
+  **Причина:**
+  1. Активити `InstallPackagesActivity` работает под темой диалога `AppTheme.Default.Dialog`. На Android 12+ (API 31+) родитель этой темы — `Theme.Material3.Light`.
+  2. В базовой теме `Theme.Material3.Light` атрибут `colorPrimary` равен baseline purple (`#6750A4`).
+  3. При вызове `new ObsdAlertDialog(this)` кнопки `ButtonBar` красились в цвет `colorPrimary` темы активити (фиолетовый).
+  4. Ранее это уже исправлялось в коммите `c0f31c6f` через оборачивание контекста в `ContextThemeWrapper` с `materialAlertDialogTheme` (`ThemeOverlay.App.Dialog.Main.Light`, где `colorPrimary = @color/appAccent`). Но из-за отсутствия записи в роадмапе правка была случайно затерта при слиянии веток и откатилась к `new ObsdAlertDialog(this)`.
+  **Решение:**
+  1. В `ObsdAlertDialog.java` добавлен конструктор `ObsdAlertDialog(Context context, int themeResId)`.
+  2. В `InstallPackagesActivity.java` в методе `showInstallDialog` восстановлено надежное оборачивание контекста в `materialAlertDialogTheme`:
+     `getTheme().resolveAttribute(com.google.android.material.R.attr.materialAlertDialogTheme, outValue, true)` с fallback на `ThemeOverlay.App.Dialog.Light` и созданием `new ContextThemeWrapper(this, dialogTheme)`.
+  3. В `app/src/main/res/values-v31/styles.xml` в `AppTheme.Default.Dialog` явно добавлен `<item name="colorPrimary">@color/appAccent</item>`. Теперь даже при создании диалога на контексте активити кнопки гарантированно получают синий акцент `#1976D2`.
+  4. В `CriticalPackagesTest.kt` тестовые данные приведены к нейтральным именам пакетов (`com.example.keyboard`), убраны любые упоминания сторонних вендоров.
+
 
 ---
 
@@ -1549,7 +1565,8 @@ DISABLED -> из shell не разморозить (включить root, ра�
 | **Пакетное удаление в мультивыборе** (Build 315): строгая типизация (пользовательские, системные с обновлениями, системные), выбор действий для обновлений, модальный диалог прогресса без шторки уведомлений, локализация (RU, UK, ZH, EN) | 12.10, коммит `a7834b5a` |
 | **Скоростной Shizuku Binder IPC для пакетного удаления** (Build 316): `ShizukuPackageInstaller` на базе прямых Binder-транзакций через `ShizukuBinderWrapper` над `IPackageInstaller` (по архитектуре Canta) с авто-откатом на `pm uninstall` | 12.10, коммит `5ad679b4` |
 | **Шлифовка ShizukuPackageInstaller и терминологии** (Build 317): `RECEIVER_EXPORTED` для исключения таймаутов на Android 13+, условие `step1 && step2` для надёжного полного сноса системных с обновлениями, точная проверка сброса флага `FLAG_UPDATED_SYSTEM_APP` и строгое соответствие терминологии проекта | 12.10, коммит `d55a688c` |
-| **Защита клавиатуры по умолчанию и исправление цвета текста попапов в светлой теме** (Build 318–319): надежный резолв клавиатур через `InputMethodManager.enabledInputMethodList` + `Settings.Secure` + shell fallback (решает сбой на Samsung OneUI); устранение фиолетового каста Material 3 в светлых popup-меню через `@color/appOnLightPopup` (`#1C1B1F`), `actionMenuTextColor` и оверлеи; предупреждение об удалении критических пакетов при одиночном удалении | 12.10, коммит `2b8f933c` |
+| **Защита клавиатуры по умолчанию и исправление цвета текста попапов в светлой теме** (Build 318–319): надежный резолв клавиатур через `InputMethodManager.enabledInputMethodList` + `Settings.Secure` + shell fallback; устранение фиолетового каста Material 3 в светлых popup-меню через `@color/appOnLightPopup` (`#1C1B1F`), `actionMenuTextColor` и оверлеи; предупреждение об удалении критических пакетов при одиночном удалении | 12.10, коммит `2b8f933c` |
+| **Устранение фиолетовых кнопок в окне удаления и универсальная защита клавиатуры** (Build 320): восстановлено оборачивание `materialAlertDialogTheme` для `ObsdAlertDialog` в `InstallPackagesActivity`, добавлен явный `colorPrimary = @color/appAccent` в `AppTheme.Default.Dialog` (`values-v31`); вычищены вендорные привязки в тестах детекта клавиатуры | 12.10 |
 
 ## Сведение истории ROADMAP по веткам (06.10.2026)
 
