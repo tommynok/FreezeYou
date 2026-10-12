@@ -106,6 +106,7 @@
     </style>
 
     <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/appOnLightPopup</item>
         <item name="android:fontFamily">@font/fira_condensed</item>
         <item name="fontFamily">@font/fira_condensed</item>
     </style>

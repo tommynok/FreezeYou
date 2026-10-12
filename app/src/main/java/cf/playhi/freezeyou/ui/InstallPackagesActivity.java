@@ -31,6 +31,7 @@ import cf.playhi.freezeyou.app.ObsdAlertDialog;
 import cf.playhi.freezeyou.service.InstallPackagesService;
 import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.AlertDialogUtils;
+import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
@@ -290,6 +291,13 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             }
             if (uninstalledPackageInfo != null && (uninstalledPackageInfo.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
                 alertDialogMessage.append(getString(R.string.system_app_warning));
+                alertDialogMessage.append(nl);
+                alertDialogMessage.append(nl);
+            }
+            java.util.List<String> critical = CriticalPackagesUtils.findCriticalPackages(this, java.util.Collections.singletonList(packageName));
+            if (!critical.isEmpty()) {
+                alertDialogMessage.append(getString(R.string.caution)).append(": ");
+                alertDialogMessage.append(getString(R.string.criticalPackagesWarning, packageName));
                 alertDialogMessage.append(nl);
                 alertDialogMessage.append(nl);
             }

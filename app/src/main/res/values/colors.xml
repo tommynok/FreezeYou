@@ -66,4 +66,7 @@
     <!-- Neutral secondary foreground for dark and black screen themes; B-R is +2, separate from
          the unchanged pure-white primary text above. Dialog themes keep their Material3 defaults. -->
     <color name="appOnDarkSurfaceVariant">#C4C4C6</color>
+    <!-- Foreground of text in light popups and menus. Material3 defaults to a purple/grey cast
+         (?attr/colorSecondary #625B71); this pins clear neutral dark text on the light popup surface. -->
+    <color name="appOnLightPopup">#1C1B1F</color>
 </resources>

@@ -1301,6 +1301,22 @@ CI run `38015844432` относится только к `ec7dce1`; он не п�
 - **Никаких уведомлений в шторку при интерактивных операциях:** В окне приложения процесс отображается через блокирующий `ProgressDialog`, завершаясь единым тостом результата. Шторка Android не засоряется.
 - **Следить за устоявшейся терминологией:** Никаких «базовых» (только «Системные приложения»), никаких «откатить» (только «Удалить обновления» / «Удалить полностью»).
 
+### Итерация 12.10: Защита клавиатур и исправление цвета букв в светлых попапах (Build 318)
+
+- **Резолв клавиатур по умолчанию на OEM-прошивках:** `Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)` на современных устройствах (особенно Samsung OneUI с Knox и SELinux) возвращает `null` для сторонних приложений без спецправ. В результате `CriticalPackagesUtils.findCriticalPackages` не находил Samsung HoneyBoard (`com.samsung.android.honeyboard`), и диалог защиты от случайной заморозки или удаления клавиатуры молча пропускал действие.
+  **Решение:**
+  1. Стандартный публичный API `InputMethodManager.enabledInputMethodList` доступен с API 3 без каких-либо разрешений и гарантированно возвращает все включенные на устройстве клавиатуры (включая HoneyBoard на OneUI, Gboard на Pixel и т.д.).
+  2. Парсинг `Settings.Secure.DEFAULT_INPUT_METHOD` (если доступен) извлечением имени пакета через `parsePackageNameFromImeId` (отсекая компонент сервиса `/.service...`).
+  3. Fallback через privileged shell (`settings get secure default_input_method`), если Shizuku/Root активен.
+  4. Защита распространена как на пакетные действия, так и на одиночное удаление через `InstallPackagesActivity`.
+- **Фиолетовый каст букв в светлых попапах Material 3:** В светлой теме на фоне `#F0EFF7` буквы в popup-меню (меню трех точек, меню действий, выбор действия для приложения) отображались серо-фиолетовыми (`#625B71`/`#6750A4`). Причина: `TextAppearance.App.PopupMenu.Light` не объявлял `android:textColor`, полагаясь на наследование от `TextAppearance.Material3.BodyLarge`. В AppCompat раскладка пунктов попапа берет оформление из `?attr/textAppearanceLargePopupMenu` и `?attr/actionMenuTextColor`, которые в Material 3 Light по умолчанию сваливаются в baseline purple.
+  **Решение:**
+  1. Введен явный цветовой токен `@color/appOnLightPopup` (`#1C1B1F` — нейтральный темный цвет текста).
+  2. В `TextAppearance.App.PopupMenu.Light` (`values` и `values-v26`) жестко зафиксирован `<item name="android:textColor">@color/appOnLightPopup</item>`.
+  3. В оверлей `ThemeOverlay.App.Popup.Main.Light` добавлены `actionMenuTextColor`, `android:textColor`, `android:textColorPrimary`, `textAppearanceLargePopupMenu` и `textAppearanceSmallPopupMenu`.
+  4. В `AppTheme.Default.Main`, `Base.AppTheme.Light.Core` и `values-v31/styles.xml` задан `actionMenuTextColor = @color/appOnLightPopup`.
+  5. В `Support.generateChooseActionPopupMenu` контекст теперь обернут в `ThemeUtils.getLightPopupContext(context)`.
+
 ---
 
 ## Смена темы, языка и шаблона главного экрана — мгновенно
@@ -1532,7 +1548,8 @@ DISABLED -> из shell не разморозить (включить root, ра�
 | **Реорганизация настроек** (Build 314): блок «Внешний вид» перемещён на самое первое место в `spr.xml`, описание раздела «Прочие настройки» дополнено журналом и отладкой на всех 4 языках | 11.10, коммит `9eae7991` |
 | **Пакетное удаление в мультивыборе** (Build 315): строгая типизация (пользовательские, системные с обновлениями, системные), выбор действий для обновлений, модальный диалог прогресса без шторки уведомлений, локализация (RU, UK, ZH, EN) | 12.10, коммит `a7834b5a` |
 | **Скоростной Shizuku Binder IPC для пакетного удаления** (Build 316): `ShizukuPackageInstaller` на базе прямых Binder-транзакций через `ShizukuBinderWrapper` над `IPackageInstaller` (по архитектуре Canta) с авто-откатом на `pm uninstall` | 12.10, коммит `5ad679b4` |
-| **Шлифовка ShizukuPackageInstaller и терминологии** (Build 317): `RECEIVER_EXPORTED` для исключения таймаутов на Android 13+, условие `step1 && step2` для надёжного полного сноса системных с обновлениями, точная проверка сброса флага `FLAG_UPDATED_SYSTEM_APP` и строгое соответствие терминологии проекта | 12.10, коммит текущий |
+| **Шлифовка ShizukuPackageInstaller и терминологии** (Build 317): `RECEIVER_EXPORTED` для исключения таймаутов на Android 13+, условие `step1 && step2` для надёжного полного сноса системных с обновлениями, точная проверка сброса флага `FLAG_UPDATED_SYSTEM_APP` и строгое соответствие терминологии проекта | 12.10, коммит `d55a688c` |
+| **Защита клавиатуры по умолчанию и исправление цвета текста попапов в светлой теме** (Build 318): надежный резолв клавиатур через `InputMethodManager.enabledInputMethodList` + `Settings.Secure` + shell fallback (решает сбой на Samsung OneUI); устранение фиолетового каста Material 3 в светлых popup-меню через `@color/appOnLightPopup` (`#1C1B1F`), `actionMenuTextColor` и оверлеи; предупреждение об удалении критических пакетов при одиночном удалении | 12.10, коммит текущий |
 
 ## Сведение истории ROADMAP по веткам (06.10.2026)
 

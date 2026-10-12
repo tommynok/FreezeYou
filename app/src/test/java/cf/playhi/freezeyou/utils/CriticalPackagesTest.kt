@@ -70,4 +70,24 @@ class CriticalPackagesTest {
                 .isEmpty()
         )
     }
+
+    @Test
+    fun `parsePackageNameFromImeId extracts package name correctly`() {
+        assertEquals(
+            "com.samsung.android.honeyboard",
+            CriticalPackagesUtils.parsePackageNameFromImeId("com.samsung.android.honeyboard/.service.HoneyBoardService")
+        )
+        assertEquals(
+            "com.google.android.inputmethod.latin",
+            CriticalPackagesUtils.parsePackageNameFromImeId("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+        )
+        assertEquals(
+            "com.example.ime",
+            CriticalPackagesUtils.parsePackageNameFromImeId("com.example.ime")
+        )
+        org.junit.Assert.assertNull(CriticalPackagesUtils.parsePackageNameFromImeId(null))
+        org.junit.Assert.assertNull(CriticalPackagesUtils.parsePackageNameFromImeId(""))
+        org.junit.Assert.assertNull(CriticalPackagesUtils.parsePackageNameFromImeId("   "))
+        org.junit.Assert.assertNull(CriticalPackagesUtils.parsePackageNameFromImeId("null"))
+    }
 }

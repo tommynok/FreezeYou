@@ -124,6 +124,11 @@
         <item name="popupMenuStyle">@style/Widget.App.PopupMenu.Main</item>
         <item name="listPopupWindowStyle">@style/Widget.App.ListPopup.Main</item>
         <item name="actionOverflowMenuStyle">@style/Widget.App.Overflow.Main</item>
+        <item name="android:textColor">@color/appOnLightPopup</item>
+        <item name="android:textColorPrimary">@color/appOnLightPopup</item>
+        <item name="actionMenuTextColor">@color/appOnLightPopup</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
     </style>
 
     <!-- The app bar carries its own title colour. Material3 leaves the title to the default text
@@ -383,6 +388,7 @@
         <item name="android:listSeparatorTextViewStyle">@style/Widget.App.ListSeparator</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
         <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.PopupMenu.Light</item>
+        <item name="actionMenuTextColor">@color/appOnLightPopup</item>
     </style>
 
         <!-- The app-wide typeface, and the only thing about these themes that differs by API
@@ -415,6 +421,7 @@
     <style name="AppTheme.Default.Main" parent="AppTheme.Default">
         <item name="actionBarPopupTheme">@style/ThemeOverlay.App.Popup.Main.Light</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Main.Light</item>
+        <item name="actionMenuTextColor">@color/appOnLightPopup</item>
     </style>
 
     <style name="Base.AppTheme.Dark.Dialog.Core" parent="Theme.Material3.Dark.Dialog">
@@ -630,8 +637,9 @@
         <item name="android:textSize">12sp</item>
     </style>
 
-    <!-- Light popups keep the stock size and colour; only the family changes. -->
+    <!-- Light popups keep the stock size; explicit neutral dark colour overrides Material3 purple. -->
     <style name="TextAppearance.App.PopupMenu.Light" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/appOnLightPopup</item>
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="fontFamily">sans-serif-condensed</item>
     </style>

@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.utils
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.view.inputmethod.InputMethodManager
 
 /**
  * Packages whose freezing leaves the device hard to recover from: no status bar or navigation,
@@ -15,6 +16,7 @@ object CriticalPackagesUtils {
 
     private const val ANDROID_SYSTEM = "android"
     private const val AOSP_SYSTEM_UI = "com.android.systemui"
+    private const val AOSP_SETTINGS = "com.android.settings"
 
     /**
      * Critical on every device, whatever the OEM: the system image itself and the status bar with
@@ -47,7 +49,7 @@ object CriticalPackagesUtils {
         // Resolved rather than hardcoded: OEM builds ship Settings and the keyboard under their
         // own package names, and a stale hardcoded list would silently protect nothing.
         resolveSettingsPackage(context)?.let { critical.add(it) }
-        resolveCurrentInputMethodPackage(context)?.let { critical.add(it) }
+        critical.addAll(resolveInputMethodPackages(context))
         return critical
     }
 
@@ -59,18 +61,53 @@ object CriticalPackagesUtils {
         } catch (e: Exception) {
             e.printStackTrace()
             null
-        }
+        } ?: AOSP_SETTINGS
     }
 
-    private fun resolveCurrentInputMethodPackage(context: Context): String? {
-        return try {
-            // Stored as "package/.ServiceName".
-            Settings.Secure.getString(
-                context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD
-            )?.substringBefore('/')?.takeIf { it.isNotEmpty() }
+    internal fun resolveInputMethodPackages(context: Context): Set<String> {
+        val result = mutableSetOf<String>()
+
+        // 1. Resolve from InputMethodManager (standard public framework API available across all Android versions
+        // without requiring any special permissions; reliable on Samsung OneUI, Pixel, MIUI, etc.)
+        try {
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.enabledInputMethodList?.forEach { imi ->
+                imi.packageName?.takeIf { it.isNotBlank() }?.let { result.add(it) }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
-            null
         }
+
+        // 2. Resolve default IME from Settings.Secure
+        try {
+            val raw = Settings.Secure.getString(
+                context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD
+            )
+            parsePackageNameFromImeId(raw)?.let { result.add(it) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 3. Fallback: query default IME via privileged shell if list is empty and Shizuku/Root available
+        if (result.isEmpty()) {
+            try {
+                val shellOut = PrivilegedShellUtils.runPrivilegedCommand(
+                    "settings get secure default_input_method", null
+                )
+                parsePackageNameFromImeId(shellOut)?.let { result.add(it) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return result
+    }
+
+    internal fun parsePackageNameFromImeId(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        val trimmed = raw.trim()
+        if (trimmed.equals("null", ignoreCase = true)) return null
+        val pkg = trimmed.substringBefore('/').trim()
+        return if (pkg.isNotEmpty() && !pkg.equals("null", ignoreCase = true)) pkg else null
     }
 }
