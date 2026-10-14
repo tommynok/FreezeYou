@@ -514,6 +514,7 @@
     <string name="batch_uninstall_result">Удалено приложений: %1$d</string>
     <string name="batch_uninstalling">Удаление…</string>
     <string name="uninstall_completed">Удаление завершено</string>
+    <string name="updates_uninstallFinished">Завершено удаление обновлений %1$s</string>
     <string name="installUninstallTitle">Установка и удаление</string>
     <string name="uninstallAndRestoreCategory">Удаление и восстановление</string>
     <string name="hideUninstallSuccessDialog">Скрывать окно завершения операций</string>

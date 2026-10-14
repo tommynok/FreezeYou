@@ -613,6 +613,7 @@
     <string name="batch_uninstall_result">Uninstalled %1$d application(s)</string>
     <string name="batch_uninstalling">Uninstalling…</string>
     <string name="uninstall_completed">Uninstallation completed</string>
+    <string name="updates_uninstallFinished">%1$s updates uninstalled</string>
     <string name="installUninstallTitle">Installation and uninstallation</string>
     <string name="uninstallAndRestoreCategory">Uninstallation and restoration</string>
     <string name="hideUninstallSuccessDialog">Hide operation completion dialog</string>

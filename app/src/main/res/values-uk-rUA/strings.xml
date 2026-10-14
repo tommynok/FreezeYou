@@ -515,6 +515,7 @@
     <string name="batch_uninstall_result">Видалено додатків: %1$d</string>
     <string name="batch_uninstalling">Видалення…</string>
     <string name="uninstall_completed">Видалення завершено</string>
+    <string name="updates_uninstallFinished">Видалення оновлень %1$s завершено</string>
     <string name="installUninstallTitle">Встановлення та видалення</string>
     <string name="uninstallAndRestoreCategory">Видалення та відновлення</string>
     <string name="hideUninstallSuccessDialog">Приховувати вікно завершення операцій</string>
