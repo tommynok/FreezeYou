@@ -1992,9 +1992,12 @@ public class Main extends FreezeYouBaseActivity {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                } finally {
-                    mIsBatchUninstallRunning = false;
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                mIsBatchUninstallRunning = false;
+            }
 
                 final int finalSuccessCount = successCount;
                 runOnUiThread(() -> {
