@@ -101,6 +101,7 @@ import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
 import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.hideUninstallSuccessDialog;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.cacheApplicationsIcons;
@@ -265,6 +266,12 @@ public class Main extends FreezeYouBaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mUninstallCompletedDialog != null && mUninstallCompletedDialog.isShowing()) {
+            try {
+                mUninstallCompletedDialog.dismiss();
+            } catch (Exception ignored) {}
+            mUninstallCompletedDialog = null;
+        }
         if (updateFrozenStatusBroadcastReceiver != null)
             unregisterReceiver(updateFrozenStatusBroadcastReceiver);
     }
@@ -1435,6 +1442,13 @@ public class Main extends FreezeYouBaseActivity {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    if (intent.getBooleanExtra("uninstallSuccess", false)) {
+                        showUninstallCompletedDialog(
+                                intent.getStringExtra("appName"),
+                                intent.getBooleanExtra("uninstallUpdatesOnly", false),
+                                intent.getIntExtra("batchCount", -1)
+                        );
+                    }
                     if (intent.getBooleanExtra("refreshAppList", false)) {
                         new Thread(() -> generateList(currentFilter)).start();
                     } else if (currentFilter != null && currentFilter.startsWith("RUN")) {
@@ -1985,7 +1999,7 @@ public class Main extends FreezeYouBaseActivity {
                             progressDialog.dismiss();
                         }
                     } catch (Exception ignored) {}
-                    showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), finalSuccessCount));
+                    showUninstallCompletedDialog(null, false, finalSuccessCount);
                     sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                             .putExtra("refreshAppList", true));
                     new Thread(() -> generateList(currentFilter)).start();
@@ -2064,7 +2078,7 @@ public class Main extends FreezeYouBaseActivity {
                             progressDialog.dismiss();
                         }
                     } catch (Exception ignored) {}
-                    showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), successCount.get()));
+                    showUninstallCompletedDialog(null, false, successCount.get());
                     sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                             .putExtra("refreshAppList", true));
                     new Thread(() -> generateList(currentFilter)).start();
@@ -2099,7 +2113,7 @@ public class Main extends FreezeYouBaseActivity {
         }
 
         if (mUnprivilegedUninstallQueue.isEmpty()) {
-            showToast(Main.this, String.format(getString(R.string.batch_uninstall_result), mUnprivilegedUninstallSuccessCount));
+            showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                     .putExtra("refreshAppList", true));
             new Thread(() -> generateList(currentFilter)).start();
@@ -2116,6 +2130,50 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
             processNextUnprivilegedUninstall();
         }
+    }
+
+    private AlertDialog mUninstallCompletedDialog = null;
+
+    private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (hideUninstallSuccessDialog.getValue(this)) {
+            return;
+        }
+        String message;
+        if (batchCount > 0) {
+            message = String.format(getString(R.string.batch_uninstall_result), batchCount);
+        } else if (appName != null) {
+            message = String.format(getString(updatesOnly
+                    ? R.string.updates_uninstallFinished
+                    : R.string.app_uninstallFinished), appName);
+        } else {
+            message = getString(R.string.uninstall_completed);
+        }
+
+        try {
+            if (mUninstallCompletedDialog != null && mUninstallCompletedDialog.isShowing()) {
+                mUninstallCompletedDialog.dismiss();
+            }
+        } catch (Exception ignored) {}
+
+        AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this);
+        builder.setIcon(R.mipmap.ic_launcher_new_round);
+        builder.setTitle(R.string.uninstall_completed);
+        builder.setMessage(message);
+        builder.setPositiveButton(R.string.okay, null);
+        mUninstallCompletedDialog = builder.create();
+        mUninstallCompletedDialog.setCanceledOnTouchOutside(true);
+        if (isLightUiTheme(this)) {
+            mUninstallCompletedDialog.setOnShowListener(dialog -> {
+                android.widget.Button positiveButton = mUninstallCompletedDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+                if (positiveButton != null) {
+                    positiveButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.appAccent));
+                }
+            });
+        }
+        mUninstallCompletedDialog.show();
     }
 
     private static final class BatchUninstallItem {

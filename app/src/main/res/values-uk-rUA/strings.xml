@@ -514,4 +514,8 @@
     <string name="batch_uninstall_system_apps_require_shell">Для видалення системних додатків (%1$d) потрібні права Shizuku або Root. Їх буде пропущено.</string>
     <string name="batch_uninstall_result">Видалено додатків: %1$d</string>
     <string name="batch_uninstalling">Видалення…</string>
+    <string name="uninstall_completed">Видалення завершено</string>
+    <string name="updates_uninstallFinished">Видалення оновлень %1$s завершено</string>
+    <string name="hideUninstallSuccessDialog">Приховувати діалог завершення видалення</string>
+    <string name="summary_hideUninstallSuccessDialog">Не показувати діалог підтвердження після успішного видалення (для досвідчених користувачів)</string>
 </resources>

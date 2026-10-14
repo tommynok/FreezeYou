@@ -321,13 +321,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 this, notificationManager, builder,
                 false,
                 packageName,
-                String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
+                String.format(getString(uninstallUpdatesOnly
+                        ? R.string.updates_uninstallFinished
+                        : R.string.app_uninstallFinished), willBeUninstalledName),
                 null,
                 true);
-        final String finishMessage = String.format(
-                getString(R.string.app_uninstallFinished), willBeUninstalledName);
-        new Handler(Looper.getMainLooper()).post(() ->
-                showToast(getApplicationContext(), finishMessage));
         File cacheIcon = new File(getCacheDir() + "/icon/" + packageName + ".png");
         if (cacheIcon.exists()) {
             cacheIcon.delete();
@@ -339,7 +337,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
         sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                 .putExtra("pkgName", packageName)
-                .putExtra("refreshAppList", !uninstallUpdatesOnly));
+                .putExtra("refreshAppList", !uninstallUpdatesOnly)
+                .putExtra("uninstallSuccess", true)
+                .putExtra("appName", willBeUninstalledName)
+                .putExtra("uninstallUpdatesOnly", uninstallUpdatesOnly));
     }
 
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {

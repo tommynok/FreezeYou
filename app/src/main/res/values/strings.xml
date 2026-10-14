@@ -612,4 +612,8 @@
     <string name="batch_uninstall_system_apps_require_shell">Root or Shizuku is required to uninstall %1$d system application(s). They will be skipped.</string>
     <string name="batch_uninstall_result">Uninstalled %1$d application(s)</string>
     <string name="batch_uninstalling">Uninstalling…</string>
+    <string name="uninstall_completed">Uninstallation completed</string>
+    <string name="updates_uninstallFinished">%1$s updates uninstalled</string>
+    <string name="hideUninstallSuccessDialog">Hide uninstall completion dialog</string>
+    <string name="summary_hideUninstallSuccessDialog">Do not show a confirmation dialog after successful uninstallation (for advanced users)</string>
 </resources>

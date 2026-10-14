@@ -39,5 +39,12 @@
         app:singleLineTitle="false"
         app:summary="@string/summary_manageIpaAutoAllow"
         app:title="@string/manageIpaAutoAllow" />
+    <CheckBoxPreference
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="hideUninstallSuccessDialog"
+        app:singleLineTitle="false"
+        app:summary="@string/summary_hideUninstallSuccessDialog"
+        app:title="@string/hideUninstallSuccessDialog" />
 
 </PreferenceScreen>

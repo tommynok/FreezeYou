@@ -132,6 +132,12 @@ enum class DefaultMultiProcessMMKVStorageBooleanKeys : AbstractMMKVKey<Boolean> 
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_INSTALL_UNINSTALL
     },
 
+    hideUninstallSuccessDialog {
+        override fun defaultValue(): Boolean = false
+        override fun titleTextStringId(): Int = R.string.hideUninstallSuccessDialog
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_INSTALL_UNINSTALL
+    },
+
     createQuickFUFNotiAfterUnfrozen {
         override fun defaultValue(): Boolean = true
         override fun titleTextStringId(): Int = R.string.createQuickFUFNotiAfterUnfrozen
