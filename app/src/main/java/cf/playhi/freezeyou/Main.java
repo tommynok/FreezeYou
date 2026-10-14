@@ -2162,6 +2162,19 @@ public class Main extends FreezeYouBaseActivity {
                     continue;
                 }
 
+                boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
+                boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
+                if (onlyPkgName != null) {
+                    if (isUninstalled && !isRestoreFilter) {
+                        new Thread(() -> generateList(currentFilter)).start();
+                        return;
+                    }
+                    if (isRestoreFilter && !isUninstalled) {
+                        new Thread(() -> generateList(currentFilter)).start();
+                        return;
+                    }
+                }
+
                 if (onlyPkgName != null) {
                     hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
                     hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));

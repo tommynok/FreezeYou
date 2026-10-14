@@ -69,12 +69,12 @@ public final class ShizukuPackageInstaller {
 
             if (isSystemApp && hasSystemUpdate) {
                 if (uninstallUpdatesOnly) {
-                    // Revert update only: flags = DELETE_SYSTEM_APP
-                    return performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, true);
+                    // Revert update only: flags = 0 (removes update from /data/app without disabling factory app)
+                    return performSingleUninstall(context, installer, packageName, 0, true);
                 } else {
                     // Complete uninstall:
-                    // Step 1: Revert system update (DELETE_SYSTEM_APP)
-                    boolean step1 = performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, true);
+                    // Step 1: Revert system update (flags = 0)
+                    boolean step1 = performSingleUninstall(context, installer, packageName, 0, true);
                     if (!step1) {
                         if (debug) {
                             Log.w("FreezeYouDebug", "Step 1 (revert update) failed for " + packageName);
