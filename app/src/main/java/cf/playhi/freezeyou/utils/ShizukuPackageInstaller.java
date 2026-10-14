@@ -1,10 +1,7 @@
 package cf.playhi.freezeyou.utils;
 
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
@@ -15,36 +12,26 @@ import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import cf.playhi.freezeyou.utils.DebugModeUtils;
-import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import rikka.shizuku.ShizukuBinderWrapper;
 import rikka.shizuku.SystemServiceHelper;
 
 /**
  * High-performance package uninstallation using direct Binder IPC with Shizuku credentials,
- * inspired by Canta's architecture.
+ * reproducing Canta's architecture 1-to-1.
  *
- * Calls IPackageInstaller directly through ShizukuBinderWrapper without spawning slow
- * shell/CLI processes (pm uninstall). Automatically adapts to Android version differences
- * and falls back to shell CLI if Binder calls fail.
+ * Connects directly to the framework's IPackageInstaller via ShizukuBinderWrapper,
+ * instantiates client PackageInstaller, and captures uninstallation completion in-process
+ * via LocalIntentSender without slow shell processes (pm uninstall) or delayed broadcasts.
  */
 public final class ShizukuPackageInstaller {
-
-    private static final String ACTION_UNINSTALL_RESULT =
-            "cf.playhi.freezeyou.action.SHIZUKU_UNINSTALL_RESULT";
 
     // Flags from android.content.pm.PackageManager
     public static final int DELETE_ALL_USERS = 0x00000002;
     public static final int DELETE_SYSTEM_APP = 0x00000004;
 
-    private static volatile Object sCachedPackageInstallerProxy = null;
-    private static volatile Method sCachedUninstallMethod = null;
+    private static final String INSTALLER_PACKAGE = "com.android.shell";
+    private static final long RESULT_TIMEOUT_MS = 15000L;
 
     private ShizukuPackageInstaller() {}
 
@@ -65,20 +52,6 @@ public final class ShizukuPackageInstaller {
             boolean hasSystemUpdate,
             boolean uninstallUpdatesOnly) {
 
-        if (Build.VERSION.SDK_INT >= 34) {
-            // Android 14+ (API 34+) framework AIDL stubs compiled into boot.oat invoke
-            // Parcel.obtain(asBinder()), which passes ShizukuBinderWrapper to native
-            // Parcel::markForBinder. Because ShizukuBinderWrapper is a pure Java IBinder wrapper
-            // and not a native BpBinder/BBinder, native ibinderForJavaObject returns NULL,
-            // resulting in an uncatchable fatal SIGSEGV (signal 11) in libc.
-            // On API 34+, immediately return false to let the caller use privileged shell commands.
-            if (DebugModeUtils.isDebugModeEnabled()) {
-                Log.d("FreezeYouDebug", "ShizukuPackageInstaller: skipping Binder IPC on Android 14+ (API "
-                        + Build.VERSION.SDK_INT + ") to avoid native Parcel.markForBinder crash; falling back to shell");
-            }
-            return false;
-        }
-
         if (!PrivilegedShellUtils.isShizukuAvailable()) {
             return false;
         }
@@ -92,186 +65,95 @@ public final class ShizukuPackageInstaller {
                         + ", updatesOnly=" + uninstallUpdatesOnly + ", userId=" + userId + ")");
             }
 
+            PackageInstaller installer = getPackageInstaller(userId);
+
             if (isSystemApp && hasSystemUpdate) {
                 if (uninstallUpdatesOnly) {
-                    // Revert update only: flags = 0
-                    return performBinderUninstall(context, packageName, 0, userId, true);
+                    // Revert update only: flags = DELETE_SYSTEM_APP
+                    return performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, true);
                 } else {
-                    // Complete uninstall: 2 steps
-                    // Step 1: Revert system update (flags = 0)
-                    boolean step1 = performBinderUninstall(context, packageName, 0, userId, true);
+                    // Complete uninstall:
+                    // Step 1: Revert system update (DELETE_SYSTEM_APP)
+                    boolean step1 = performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, true);
                     if (!step1) {
+                        if (debug) {
+                            Log.w("FreezeYouDebug", "Step 1 (revert update) failed for " + packageName);
+                        }
                         return false;
                     }
-                    // Step 2: Disable/uninstall factory package for user (flags = DELETE_SYSTEM_APP)
-                    return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId, false);
+                    // Step 2: Disable / uninstall factory package for user (DELETE_SYSTEM_APP)
+                    return performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, false);
                 }
             } else if (isSystemApp) {
                 // Non-updated system app: flags = DELETE_SYSTEM_APP
-                return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId, false);
+                return performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, false);
             } else {
-                // User app: scope to target user only (flags = 0)
-                return performBinderUninstall(context, packageName, 0, userId, false);
+                // User app: flags = DELETE_ALL_USERS
+                return performSingleUninstall(context, installer, packageName, DELETE_ALL_USERS, false);
             }
         } catch (Throwable t) {
             t.printStackTrace();
             if (DebugModeUtils.isDebugModeEnabled()) {
                 Log.e("FreezeYouDebug", "ShizukuPackageInstaller.uninstall error: " + t.getMessage(), t);
             }
-            invalidateCache();
             return false;
         }
     }
 
-    private static boolean performBinderUninstall(
+    private static boolean performSingleUninstall(
             Context context,
+            PackageInstaller installer,
             String packageName,
             int flags,
-            int userId,
             boolean isRemovingUpdateOnly) throws Exception {
 
         long startTime = System.currentTimeMillis();
         boolean debug = DebugModeUtils.isDebugModeEnabled();
+
+        LocalIntentSender receiver = new LocalIntentSender();
+        IntentSender sender = receiver.getIntentSender();
+
         if (debug) {
-            Log.d("FreezeYouDebug", "performBinderUninstall invoking for " + packageName
-                    + " flags=" + flags + " userId=" + userId);
+            Log.d("FreezeYouDebug", "performSingleUninstall: calling PackageInstaller.uninstall for "
+                    + packageName + " with flags=" + flags);
         }
 
-        Object installerProxy = getOrCreatePackageInstallerProxy();
-        Method uninstallMethod = getOrCreateUninstallMethod(installerProxy);
+        invokeUninstall(installer, packageName, flags, sender);
 
-        final String uniqueAction = ACTION_UNINSTALL_RESULT + "." + UUID.randomUUID().toString();
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicInteger resultStatus = new AtomicInteger(-1);
-
-        BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context ctx, Intent intent) {
-                if (intent != null) {
-                    int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
-                    resultStatus.set(status);
-                    latch.countDown();
-                }
+        Intent resultIntent = receiver.await(RESULT_TIMEOUT_MS);
+        if (resultIntent != null) {
+            int status = resultIntent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            String message = resultIntent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+            if (debug) {
+                Log.d("FreezeYouDebug", "performSingleUninstall received status=" + status
+                        + " (" + message + ") in " + (System.currentTimeMillis() - startTime) + " ms");
             }
-        };
-
-        IntentFilter filter = new IntentFilter(uniqueAction);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
-        } else {
-            context.registerReceiver(receiver, filter);
-        }
-
-        try {
-            Intent statusIntent = new Intent(uniqueAction).setPackage(context.getPackageName());
-            int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                    ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
-                    : PendingIntent.FLAG_UPDATE_CURRENT;
-
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    packageName.hashCode(),
-                    statusIntent,
-                    pendingFlags
-            );
-            IntentSender statusReceiver = pendingIntent.getIntentSender();
-
-            Object[] args = buildUninstallArgs(uninstallMethod, packageName, "com.android.shell", flags, statusReceiver, userId);
-            uninstallMethod.invoke(installerProxy, args);
-
-            // Await async broadcast from system_server (typically 20-200ms, up to 8s for large packages)
-            boolean completed = latch.await(8, TimeUnit.SECONDS);
-            if (completed && resultStatus.get() == PackageInstaller.STATUS_SUCCESS) {
-                if (debug) {
-                    Log.d("FreezeYouDebug", "performBinderUninstall succeeded via broadcast in "
-                            + (System.currentTimeMillis() - startTime) + " ms for " + packageName);
-                }
+            if (status == PackageInstaller.STATUS_SUCCESS) {
                 return true;
             }
-
-            if (debug) {
-                Log.w("FreezeYouDebug", "performBinderUninstall broadcast status="
-                        + resultStatus.get() + " completed=" + completed + " for " + packageName
-                        + ", checking fallback verification");
-            }
-
-            // Fallback verify if package/update was actually removed even if broadcast didn't arrive in time
-            boolean ok;
-            if (isRemovingUpdateOnly) {
-                ok = !hasUpdatedSystemAppFlag(context, packageName);
-            } else {
-                ok = !isPackageInstalled(context, packageName);
-            }
-            if (debug) {
-                Log.d("FreezeYouDebug", "performBinderUninstall fallback verification result: "
-                        + ok + " in " + (System.currentTimeMillis() - startTime) + " ms for " + packageName);
-            }
-            return ok;
-        } finally {
-            try {
-                context.unregisterReceiver(receiver);
-            } catch (Exception ignored) {}
-        }
-    }
-
-    private static Object[] buildUninstallArgs(
-            Method method,
-            String packageName,
-            String callerPackageName,
-            int flags,
-            IntentSender statusReceiver,
-            int userId) throws Exception {
-
-        Class<?>[] paramTypes = method.getParameterTypes();
-        Object[] args = new Object[paramTypes.length];
-
-        if (paramTypes.length >= 5) {
-            // First argument: VersionedPackage (API 26+) or String (API 21-25)
-            if (paramTypes[0].getName().equals("android.content.pm.VersionedPackage")) {
-                Class<?> vpClass = Class.forName("android.content.pm.VersionedPackage");
-                Object versionedPackage = null;
-                try {
-                    Constructor<?> ctor = vpClass.getConstructor(String.class, int.class);
-                    versionedPackage = ctor.newInstance(packageName, -1);
-                } catch (NoSuchMethodException e) {
-                    try {
-                        Constructor<?> ctor = vpClass.getConstructor(String.class, long.class);
-                        versionedPackage = ctor.newInstance(packageName, -1L);
-                    } catch (NoSuchMethodException e2) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            versionedPackage = HiddenApiBypass.newInstance(vpClass, packageName, -1L);
-                        } else {
-                            throw e2;
-                        }
-                    }
-                }
-                args[0] = versionedPackage;
-            } else {
-                args[0] = packageName;
-            }
-
-            // Second argument: callerPackageName
-            args[1] = callerPackageName;
-
-            // Third argument: flags
-            args[2] = flags;
-
-            // Fourth argument: statusReceiver
-            args[3] = statusReceiver;
-
-            // Fifth argument: userId
-            args[4] = userId;
         } else {
-            throw new NoSuchMethodException("Unexpected uninstall method signature with " + paramTypes.length + " parameters");
+            if (debug) {
+                Log.w("FreezeYouDebug", "performSingleUninstall: timed out awaiting result for " + packageName);
+            }
         }
 
-        return args;
+        // Fallback verification: check if package or update was actually removed
+        boolean verified;
+        if (isRemovingUpdateOnly) {
+            verified = !hasUpdatedSystemAppFlag(context, packageName);
+        } else {
+            verified = !isPackageInstalled(context, packageName);
+        }
+
+        if (debug) {
+            Log.d("FreezeYouDebug", "performSingleUninstall fallback verification result: "
+                    + verified + " in " + (System.currentTimeMillis() - startTime) + " ms for " + packageName);
+        }
+        return verified;
     }
 
-    private static synchronized Object getOrCreatePackageInstallerProxy() throws Exception {
-        if (sCachedPackageInstallerProxy != null) {
-            return sCachedPackageInstallerProxy;
-        }
+    private static PackageInstaller getPackageInstaller(int userId) throws Exception {
+        LocalIntentSender.allowHiddenApis();
 
         IBinder packageBinder = SystemServiceHelper.getSystemService("package");
         if (packageBinder == null) {
@@ -279,23 +161,13 @@ public final class ShizukuPackageInstaller {
         }
 
         Class<?> pmStubClass = Class.forName("android.content.pm.IPackageManager$Stub");
-        Method asInterface = pmStubClass.getMethod("asInterface", IBinder.class);
-        Object pmProxy = asInterface.invoke(null, new ShizukuBinderWrapper(packageBinder));
+        Method pmAsInterface = pmStubClass.getMethod("asInterface", IBinder.class);
+        Object pmProxy = pmAsInterface.invoke(null, new ShizukuBinderWrapper(packageBinder));
         if (pmProxy == null) {
             throw new IllegalStateException("Failed to get IPackageManager proxy");
         }
 
-        Method getPackageInstallerMethod;
-        try {
-            getPackageInstallerMethod = pmProxy.getClass().getMethod("getPackageInstaller");
-        } catch (NoSuchMethodException e) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                getPackageInstallerMethod = HiddenApiBypass.getDeclaredMethod(
-                        pmProxy.getClass(), "getPackageInstaller");
-            } else {
-                throw e;
-            }
-        }
+        Method getPackageInstallerMethod = pmProxy.getClass().getMethod("getPackageInstaller");
         Object rawInstaller = getPackageInstallerMethod.invoke(pmProxy);
         if (rawInstaller == null) {
             throw new IllegalStateException("Failed to get raw IPackageInstaller");
@@ -304,42 +176,57 @@ public final class ShizukuPackageInstaller {
         IBinder installerRawBinder = ((IInterface) rawInstaller).asBinder();
         Class<?> installerStubClass = Class.forName("android.content.pm.IPackageInstaller$Stub");
         Method installerAsInterface = installerStubClass.getMethod("asInterface", IBinder.class);
-        Object installerProxy = installerAsInterface.invoke(null, new ShizukuBinderWrapper(installerRawBinder));
+        Object privilegedInstaller = installerAsInterface.invoke(null, new ShizukuBinderWrapper(installerRawBinder));
 
-        sCachedPackageInstallerProxy = installerProxy;
-        return installerProxy;
-    }
+        Class<?> iPackageInstallerClass = Class.forName("android.content.pm.IPackageInstaller");
 
-    private static synchronized Method getOrCreateUninstallMethod(Object installerProxy) throws Exception {
-        if (sCachedUninstallMethod != null) {
-            return sCachedUninstallMethod;
-        }
-
-        Method[] methods;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) { // SDK > 30 (Android 12+)
             try {
-                List<Method> list = HiddenApiBypass.getDeclaredMethods(installerProxy.getClass());
-                methods = list.toArray(new Method[0]);
-            } catch (Throwable ignored) {
-                methods = installerProxy.getClass().getMethods();
-            }
-        } else {
-            methods = installerProxy.getClass().getMethods();
-        }
-
-        for (Method m : methods) {
-            if ("uninstall".equals(m.getName()) && m.getParameterTypes().length >= 5) {
-                sCachedUninstallMethod = m;
-                return m;
+                Constructor<PackageInstaller> ctor = PackageInstaller.class.getConstructor(
+                        iPackageInstallerClass, String.class, String.class, int.class);
+                return ctor.newInstance(privilegedInstaller, INSTALLER_PACKAGE, null, userId);
+            } catch (NoSuchMethodException ignored) {
             }
         }
 
-        throw new NoSuchMethodException("Could not find uninstall method on IPackageInstaller");
+        Constructor<PackageInstaller> ctor = PackageInstaller.class.getConstructor(
+                iPackageInstallerClass, String.class, int.class);
+        return ctor.newInstance(privilegedInstaller, INSTALLER_PACKAGE, userId);
     }
 
-    public static synchronized void invalidateCache() {
-        sCachedPackageInstallerProxy = null;
-        sCachedUninstallMethod = null;
+    private static void invokeUninstall(
+            PackageInstaller installer,
+            String packageName,
+            int flags,
+            IntentSender statusSender) throws Exception {
+
+        Method uninstallMethod = null;
+        try {
+            uninstallMethod = PackageInstaller.class.getMethod(
+                    "uninstall", String.class, int.class, IntentSender.class);
+            uninstallMethod.invoke(installer, packageName, flags, statusSender);
+            return;
+        } catch (NoSuchMethodException ignored) {
+        }
+
+        try {
+            Class<?> vpClass = Class.forName("android.content.pm.VersionedPackage");
+            Constructor<?> vpCtor = vpClass.getConstructor(String.class, int.class);
+            Object vp = vpCtor.newInstance(packageName, -1);
+            uninstallMethod = PackageInstaller.class.getMethod(
+                    "uninstall", vpClass, int.class, IntentSender.class);
+            uninstallMethod.invoke(installer, vp, flags, statusSender);
+            return;
+        } catch (NoSuchMethodException ignored) {
+        }
+
+        uninstallMethod = PackageInstaller.class.getMethod(
+                "uninstall", String.class, IntentSender.class);
+        uninstallMethod.invoke(installer, packageName, statusSender);
+    }
+
+    public static void invalidateCache() {
+        // Retained for backward compatibility
     }
 
     private static boolean isPackageInstalled(Context context, String packageName) {
