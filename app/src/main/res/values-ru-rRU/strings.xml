@@ -485,7 +485,7 @@
     <string name="summary_spr_automation">Запланированные задания, блокировка экрана, выход из приложения</string>
     <string name="summary_spr_notification">Быстрое уведомление после разморозки и его поведение</string>
     <string name="summary_spr_access">Блокировка, значки в лаунчере, вход через звонилку</string>
-    <string name="summary_spr_installUninstall">Настройки, связанные с установкой APK-файлов через FreezeYou</string>
+    <string name="summary_spr_installUninstall">Настройки установки APK-файлов, удаления и восстановления приложений</string>
     <string name="summary_spr_manageSpace">Кеши, статистика, чистка списков от удаленных приложений</string>
     <string name="summary_spr_advance">Установка APK, журнал и отладка, специальные возможности, опасная зона</string>
     <string name="dangerZoneSummary">Стирание данных самого FreezeYou, отзыв прав владельца, удаление FreezeYou</string>
@@ -514,7 +514,11 @@
     <string name="batch_uninstall_result">Удалено приложений: %1$d</string>
     <string name="batch_uninstalling">Удаление…</string>
     <string name="uninstall_completed">Удаление завершено</string>
-    <string name="updates_uninstallFinished">Завершено удаление обновлений %1$s</string>
-    <string name="hideUninstallSuccessDialog">Скрывать диалог завершения удаления</string>
-    <string name="summary_hideUninstallSuccessDialog">Не показывать диалог подтверждения после успешного удаления (для опытных пользователей)</string>
+    <string name="installUninstallTitle">Установка и удаление</string>
+    <string name="uninstallAndRestoreCategory">Удаление и восстановление</string>
+    <string name="hideUninstallSuccessDialog">Скрывать окно завершения операций</string>
+    <string name="summary_hideUninstallSuccessDialog">Не показывать всплывающее окно после успешного удаления, сброса обновлений или восстановления приложений (быстрый режим)</string>
+    <string name="restore_completed_title">Восстановление завершено</string>
+    <string name="restore_completed_single_app">Приложение «%1$s» успешно восстановлено</string>
+    <string name="batch_restoring">Восстановление…</string>
 </resources>

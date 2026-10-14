@@ -491,7 +491,7 @@
     <string name="summary_spr_automation">计划任务、锁屏、离开应用</string>
     <string name="summary_spr_notification">解冻后的快速通知及其行为</string>
     <string name="summary_spr_access">锁定、桌面图标、通过拨号器进入</string>
-    <string name="summary_spr_installUninstall">通过 FreezeYou 安装 APK 文件的相关设置</string>
+    <string name="summary_spr_installUninstall">安装 APK 文件、卸载及恢复应用的相关设置</string>
     <string name="summary_spr_manageSpace">缓存、统计、清理已卸载应用的列表</string>
     <string name="summary_spr_advance">APK 安装、日志与调试、无障碍、危险区</string>
     <string name="dangerZoneSummary">清除 FreezeYou 数据、撤销所有者权限、卸载 FreezeYou</string>
@@ -520,7 +520,11 @@
     <string name="batch_uninstall_result">已卸载应用：%1$d</string>
     <string name="batch_uninstalling">正在卸载…</string>
     <string name="uninstall_completed">卸载完成</string>
-    <string name="updates_uninstallFinished">%1$s 更新卸载完成</string>
-    <string name="hideUninstallSuccessDialog">隐藏卸载完成对话框</string>
-    <string name="summary_hideUninstallSuccessDialog">卸载成功后不显示确认对话框（适合熟练用户）</string>
+    <string name="installUninstallTitle">安装与卸载</string>
+    <string name="uninstallAndRestoreCategory">卸载与恢复</string>
+    <string name="hideUninstallSuccessDialog">隐藏操作完成弹窗</string>
+    <string name="summary_hideUninstallSuccessDialog">卸载应用、还原更新或恢复应用成功后不显示完成弹窗（快速模式）</string>
+    <string name="restore_completed_title">恢复完成</string>
+    <string name="restore_completed_single_app">应用“%1$s”已成功恢复</string>
+    <string name="batch_restoring">正在恢复…</string>
 </resources>

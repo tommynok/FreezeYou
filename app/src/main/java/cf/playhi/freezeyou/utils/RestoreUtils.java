@@ -1,11 +1,17 @@
 package cf.playhi.freezeyou.utils;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Button;
+
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -15,7 +21,9 @@ import java.util.Set;
 import cf.playhi.freezeyou.R;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
-import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.hideUninstallSuccessDialog;
+import static cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme;
+import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 
 public final class RestoreUtils {
 
@@ -78,7 +86,7 @@ public final class RestoreUtils {
                                                 final Runnable onRestoredCallback) {
         if (activity == null || activity.isFinishing()) return;
         if (!canRestorePackages(activity, packageNames)) {
-            showToast(activity, R.string.restore_failed);
+            showShortToast(activity, R.string.restore_failed);
             return;
         }
 
@@ -86,7 +94,7 @@ public final class RestoreUtils {
                 .setTitle(appName)
                 .setMessage(R.string.app_is_uninstalled_restore_prompt)
                 .setPositiveButton(R.string.restore, (dialog, which) -> {
-                    restorePackages(activity, packageNames, onRestoredCallback);
+                    restorePackages(activity, packageNames, appName, onRestoredCallback);
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -95,18 +103,33 @@ public final class RestoreUtils {
     public static void restorePackages(final Context context,
                                        final List<String> packageNames,
                                        final Runnable onFinishedCallback) {
+        restorePackages(context, packageNames, null, onFinishedCallback);
+    }
+
+    public static void restorePackages(final Context context,
+                                       final List<String> packageNames,
+                                       final String appName,
+                                       final Runnable onFinishedCallback) {
         if (context == null || packageNames == null || packageNames.isEmpty()) return;
 
         Set<String> uniqueNames = new LinkedHashSet<>(packageNames);
         final List<String> packages = new ArrayList<>(uniqueNames);
         if (!canRestorePackages(context, packages)) {
-            postRestoreResult(context, 0, packages.size(), onFinishedCallback);
+            postRestoreResult(context, 0, packages.size(), appName, onFinishedCallback);
             return;
         }
 
-        showToast(context, String.format(
-                context.getString(R.string.restoring_app),
-                packages.size() == 1 ? packages.get(0) : ""));
+        ProgressDialog progressDialog = null;
+        if (packages.size() > 1 && context instanceof Activity && !((Activity) context).isFinishing()) {
+            try {
+                progressDialog = new ProgressDialog(context);
+                progressDialog.setMessage(context.getString(R.string.batch_restoring));
+                progressDialog.setCancelable(false);
+                progressDialog.setCanceledOnTouchOutside(false);
+                progressDialog.show();
+            } catch (Exception ignored) {}
+        }
+        final ProgressDialog finalProgressDialog = progressDialog;
 
         new Thread(() -> {
             final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
@@ -138,7 +161,15 @@ public final class RestoreUtils {
                 }
             }
 
-            postRestoreResult(context, restoredCount, packages.size(), onFinishedCallback);
+            if (finalProgressDialog != null) {
+                try {
+                    if (finalProgressDialog.isShowing()) {
+                        finalProgressDialog.dismiss();
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            postRestoreResult(context, restoredCount, packages.size(), appName, onFinishedCallback);
         }).start();
     }
 
@@ -150,20 +181,66 @@ public final class RestoreUtils {
                 : PrivilegedShellUtils.runRootCommand(command);
     }
 
-    private static void postRestoreResult(Context context,
-                                          int restoredCount,
-                                          int totalCount,
-                                          Runnable onFinishedCallback) {
+    private static void postRestoreResult(final Context context,
+                                          final int restoredCount,
+                                          final int totalCount,
+                                          final String appName,
+                                          final Runnable onFinishedCallback) {
         new Handler(Looper.getMainLooper()).post(() -> {
-            if (restoredCount == totalCount) {
-                showToast(context, R.string.restore_completed);
+            boolean stealth = hideUninstallSuccessDialog.getValue(context);
+            if (!stealth) {
+                if (restoredCount == 0) {
+                    showShortToast(context, R.string.restore_failed);
+                } else if (context instanceof Activity && !((Activity) context).isFinishing()) {
+                    showRestoreCompletedDialog((Activity) context, restoredCount, totalCount, appName);
+                } else {
+                    if (restoredCount == totalCount) {
+                        showShortToast(context, R.string.restore_completed);
+                    } else {
+                        showShortToast(context, context.getString(
+                                R.string.restore_partial, restoredCount, totalCount));
+                    }
+                }
             } else if (restoredCount == 0) {
-                showToast(context, R.string.restore_failed);
-            } else {
-                showToast(context, context.getString(
-                        R.string.restore_partial, restoredCount, totalCount));
+                showShortToast(context, R.string.restore_failed);
             }
             if (onFinishedCallback != null) onFinishedCallback.run();
         });
+    }
+
+    private static void showRestoreCompletedDialog(
+            final Activity activity,
+            final int restoredCount,
+            final int totalCount,
+            final String appName) {
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+            return;
+        }
+
+        String message;
+        if (totalCount > 1) {
+            message = activity.getString(R.string.restore_partial, restoredCount, totalCount);
+        } else if (appName != null && !appName.isEmpty()) {
+            message = activity.getString(R.string.restore_completed_single_app, appName);
+        } else {
+            message = activity.getString(R.string.restore_completed);
+        }
+
+        AlertDialog dialog = FreezeYouAlertDialogBuilder(activity)
+                .setIcon(R.mipmap.ic_launcher_new_round)
+                .setTitle(R.string.restore_completed_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.okay, null)
+                .create();
+        dialog.setCanceledOnTouchOutside(true);
+        if (isLightUiTheme(activity)) {
+            dialog.setOnShowListener(d -> {
+                Button positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+                if (positiveButton != null) {
+                    positiveButton.setTextColor(ContextCompat.getColor(activity, R.color.appAccent));
+                }
+            });
+        }
+        dialog.show();
     }
 }

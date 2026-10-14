@@ -584,7 +584,7 @@
     <string name="summary_spr_automation">Scheduled tasks, screen lock, leaving an application</string>
     <string name="summary_spr_notification">The quick notification after unfreezing, and how it behaves</string>
     <string name="summary_spr_access">Lock, launcher icons, entry through the dialer</string>
-    <string name="summary_spr_installUninstall">Settings related to installing APK files through FreezeYou</string>
+    <string name="summary_spr_installUninstall">Settings for installing APK files, uninstalling and restoring apps</string>
     <string name="summary_spr_manageSpace">Caches, statistics, cleaning lists of uninstalled applications</string>
     <string name="summary_spr_advance">APK installation, log and debugging, accessibility, danger zone</string>
     <string name="dangerZoneSummary">Erasing FreezeYou data, revoking ownership, uninstalling FreezeYou</string>
@@ -613,7 +613,11 @@
     <string name="batch_uninstall_result">Uninstalled %1$d application(s)</string>
     <string name="batch_uninstalling">Uninstalling…</string>
     <string name="uninstall_completed">Uninstallation completed</string>
-    <string name="updates_uninstallFinished">%1$s updates uninstalled</string>
-    <string name="hideUninstallSuccessDialog">Hide uninstall completion dialog</string>
-    <string name="summary_hideUninstallSuccessDialog">Do not show a confirmation dialog after successful uninstallation (for advanced users)</string>
+    <string name="installUninstallTitle">Installation and uninstallation</string>
+    <string name="uninstallAndRestoreCategory">Uninstallation and restoration</string>
+    <string name="hideUninstallSuccessDialog">Hide operation completion dialog</string>
+    <string name="summary_hideUninstallSuccessDialog">Do not show a popup dialog after successful uninstallation, update revert, or package restoration (fast mode)</string>
+    <string name="restore_completed_title">Restoration completed</string>
+    <string name="restore_completed_single_app">Application \"%1$s\" restored successfully</string>
+    <string name="batch_restoring">Restoring…</string>
 </resources>

@@ -1,50 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <CheckBoxPreference
-        app:defaultValue="false"
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="enableInstallPkgFunc"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_enableInstallPkgFunc"
-        app:title="@string/enableInstallPkgFunc" />
-    <CheckBoxPreference
-        app:defaultValue="false"
-        app:dependency="enableInstallPkgFunc"
+        app:title="@string/apkInstallation">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enableInstallPkgFunc"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_enableInstallPkgFunc"
+            app:title="@string/enableInstallPkgFunc" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="enableInstallPkgFunc"
+            app:iconSpaceReserved="false"
+            app:key="tryDelApkAfterInstalled"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_tryDelApkAfterInstalled"
+            app:title="@string/tryDelApkAfterInstalled" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:dependency="enableInstallPkgFunc"
+            app:iconSpaceReserved="false"
+            app:key="notAllowInstallWhenIsObsd"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_notAllowWhenIsObsd"
+            app:title="@string/notAllowWhenIsObsd" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="enableInstallPkgFunc"
+            app:iconSpaceReserved="false"
+            app:key="tryToAvoidUpdateWhenUsing"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_tryToAvoidUpdateWhenUsing"
+            app:title="@string/tryToAvoidUpdateWhenUsing" />
+        <Preference
+            app:dependency="enableInstallPkgFunc"
+            app:iconSpaceReserved="false"
+            app:key="manageIpaAutoAllow"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_manageIpaAutoAllow"
+            app:title="@string/manageIpaAutoAllow" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="tryDelApkAfterInstalled"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_tryDelApkAfterInstalled"
-        app:title="@string/tryDelApkAfterInstalled" />
-    <CheckBoxPreference
-        app:defaultValue="true"
-        app:dependency="enableInstallPkgFunc"
-        app:iconSpaceReserved="false"
-        app:key="notAllowInstallWhenIsObsd"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_notAllowWhenIsObsd"
-        app:title="@string/notAllowWhenIsObsd" />
-    <CheckBoxPreference
-        app:defaultValue="false"
-        app:dependency="enableInstallPkgFunc"
-        app:iconSpaceReserved="false"
-        app:key="tryToAvoidUpdateWhenUsing"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_tryToAvoidUpdateWhenUsing"
-        app:title="@string/tryToAvoidUpdateWhenUsing" />
-    <Preference
-        app:dependency="enableInstallPkgFunc"
-        app:iconSpaceReserved="false"
-        app:key="manageIpaAutoAllow"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_manageIpaAutoAllow"
-        app:title="@string/manageIpaAutoAllow" />
-    <CheckBoxPreference
-        app:defaultValue="false"
-        app:iconSpaceReserved="false"
-        app:key="hideUninstallSuccessDialog"
-        app:singleLineTitle="false"
-        app:summary="@string/summary_hideUninstallSuccessDialog"
-        app:title="@string/hideUninstallSuccessDialog" />
+        app:title="@string/uninstallAndRestoreCategory">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="hideUninstallSuccessDialog"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_hideUninstallSuccessDialog"
+            app:title="@string/hideUninstallSuccessDialog" />
+    </PreferenceCategory>
 
 </PreferenceScreen>

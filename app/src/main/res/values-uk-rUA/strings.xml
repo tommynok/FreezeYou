@@ -486,7 +486,7 @@
     <string name="summary_spr_automation">Заплановані завдання, блокування екрана, вихід із додатка</string>
     <string name="summary_spr_notification">Швидке сповіщення після розморожування та його поведінка</string>
     <string name="summary_spr_access">Блокування, значки в лаунчері, вхід через дзвонилку</string>
-    <string name="summary_spr_installUninstall">Налаштування, пов’язані з встановленням APK-файлів через FreezeYou</string>
+    <string name="summary_spr_installUninstall">Налаштування встановлення APK-файлів, видалення та відновлення додатків</string>
     <string name="summary_spr_manageSpace">Кеші, статистика, чищення списків від видалених додатків</string>
     <string name="summary_spr_advance">Встановлення APK, журнал та налагодження, спеціальні можливості, небезпечна зона</string>
     <string name="dangerZoneSummary">Стирання даних самого FreezeYou, відкликання прав власника, видалення FreezeYou</string>
@@ -515,7 +515,11 @@
     <string name="batch_uninstall_result">Видалено додатків: %1$d</string>
     <string name="batch_uninstalling">Видалення…</string>
     <string name="uninstall_completed">Видалення завершено</string>
-    <string name="updates_uninstallFinished">Видалення оновлень %1$s завершено</string>
-    <string name="hideUninstallSuccessDialog">Приховувати діалог завершення видалення</string>
-    <string name="summary_hideUninstallSuccessDialog">Не показувати діалог підтвердження після успішного видалення (для досвідчених користувачів)</string>
+    <string name="installUninstallTitle">Встановлення та видалення</string>
+    <string name="uninstallAndRestoreCategory">Видалення та відновлення</string>
+    <string name="hideUninstallSuccessDialog">Приховувати вікно завершення операцій</string>
+    <string name="summary_hideUninstallSuccessDialog">Не показувати спливаюче вікно після успішного видалення, скидання оновлень або відновлення додатків (швидкий режим)</string>
+    <string name="restore_completed_title">Відновлення завершено</string>
+    <string name="restore_completed_single_app">Додаток «%1$s» успішно відновлено</string>
+    <string name="batch_restoring">Відновлення…</string>
 </resources>
