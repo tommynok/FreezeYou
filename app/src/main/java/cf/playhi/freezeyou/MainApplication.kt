@@ -62,6 +62,17 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
+    override fun attachBaseContext(base: android.content.Context?) {
+        super.attachBaseContext(base)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions("L")
+            } catch (t: Throwable) {
+                t.printStackTrace()
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(this)

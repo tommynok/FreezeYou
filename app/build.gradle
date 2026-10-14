@@ -209,6 +209,7 @@ dependencies {
     implementation "dev.rikka.shizuku:provider:$shizuku_version"
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
 
 //    implementation 'com.google.zxing:core:3.3.3' 先把文本方式稳定下来，再做 QRCode
 

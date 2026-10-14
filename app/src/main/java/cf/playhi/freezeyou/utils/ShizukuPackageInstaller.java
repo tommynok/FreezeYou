@@ -15,12 +15,14 @@ import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import cf.playhi.freezeyou.utils.DebugModeUtils;
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import rikka.shizuku.ShizukuBinderWrapper;
 import rikka.shizuku.SystemServiceHelper;
 
@@ -218,8 +220,16 @@ public final class ShizukuPackageInstaller {
                     Constructor<?> ctor = vpClass.getConstructor(String.class, int.class);
                     versionedPackage = ctor.newInstance(packageName, -1);
                 } catch (NoSuchMethodException e) {
-                    Constructor<?> ctor = vpClass.getConstructor(String.class, long.class);
-                    versionedPackage = ctor.newInstance(packageName, -1L);
+                    try {
+                        Constructor<?> ctor = vpClass.getConstructor(String.class, long.class);
+                        versionedPackage = ctor.newInstance(packageName, -1L);
+                    } catch (NoSuchMethodException e2) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            versionedPackage = HiddenApiBypass.newInstance(vpClass, packageName, -1L);
+                        } else {
+                            throw e2;
+                        }
+                    }
                 }
                 args[0] = versionedPackage;
             } else {
@@ -249,6 +259,16 @@ public final class ShizukuPackageInstaller {
             return sCachedPackageInstallerProxy;
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                HiddenApiBypass.addHiddenApiExemptions("L");
+            } catch (Throwable t) {
+                if (DebugModeUtils.isDebugModeEnabled()) {
+                    Log.w("FreezeYouDebug", "HiddenApiBypass.addHiddenApiExemptions error: " + t.getMessage());
+                }
+            }
+        }
+
         IBinder packageBinder = SystemServiceHelper.getSystemService("package");
         if (packageBinder == null) {
             throw new IllegalStateException("Failed to obtain system service: package");
@@ -261,7 +281,17 @@ public final class ShizukuPackageInstaller {
             throw new IllegalStateException("Failed to get IPackageManager proxy");
         }
 
-        Method getPackageInstallerMethod = pmProxy.getClass().getMethod("getPackageInstaller");
+        Method getPackageInstallerMethod;
+        try {
+            getPackageInstallerMethod = pmProxy.getClass().getMethod("getPackageInstaller");
+        } catch (NoSuchMethodException e) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                getPackageInstallerMethod = HiddenApiBypass.getDeclaredMethod(
+                        pmProxy.getClass(), "getPackageInstaller");
+            } else {
+                throw e;
+            }
+        }
         Object rawInstaller = getPackageInstallerMethod.invoke(pmProxy);
         if (rawInstaller == null) {
             throw new IllegalStateException("Failed to get raw IPackageInstaller");
@@ -281,7 +311,19 @@ public final class ShizukuPackageInstaller {
             return sCachedUninstallMethod;
         }
 
-        for (Method m : installerProxy.getClass().getMethods()) {
+        Method[] methods;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                List<Method> list = HiddenApiBypass.getDeclaredMethods(installerProxy.getClass());
+                methods = list.toArray(new Method[0]);
+            } catch (Throwable ignored) {
+                methods = installerProxy.getClass().getMethods();
+            }
+        } else {
+            methods = installerProxy.getClass().getMethods();
+        }
+
+        for (Method m : methods) {
             if ("uninstall".equals(m.getName()) && m.getParameterTypes().length >= 5) {
                 sCachedUninstallMethod = m;
                 return m;

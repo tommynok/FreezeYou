@@ -6,7 +6,8 @@
         rikka.shizuku.aidl,
         rikka.shizuku.api,
         rikka.shizuku.provider,
-        rikka.shizuku.shared" />
+        rikka.shizuku.shared,
+        org.lsposed.hiddenapibypass" />
 
     <uses-feature
         android:name="android.hardware.bluetooth"
