@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.utils;
 
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,16 +38,36 @@ public final class PrivilegedShellUtils {
     }
 
     public static CommandResult runShizukuCommand(String command) throws Exception {
+        long start = System.currentTimeMillis();
+        boolean debug = DebugModeUtils.isDebugModeEnabled();
+        if (debug) {
+            Log.d("FreezeYouDebug", "runShizukuCommand starting: " + command);
+        }
         Process process = rikka.shizuku.Shizuku.newProcess(
                 new String[]{"sh", "-c", redirectOutput(command)}, null, null);
-        return collectResult(process);
+        CommandResult result = collectResult(process);
+        if (debug) {
+            Log.d("FreezeYouDebug", "runShizukuCommand finished in " + (System.currentTimeMillis() - start)
+                    + " ms, exitCode=" + result.exitCode + ", output=" + result.output);
+        }
+        return result;
     }
 
     public static CommandResult runRootCommand(String command)
             throws IOException, InterruptedException {
+        long start = System.currentTimeMillis();
+        boolean debug = DebugModeUtils.isDebugModeEnabled();
+        if (debug) {
+            Log.d("FreezeYouDebug", "runRootCommand starting: " + command);
+        }
         Process process = Runtime.getRuntime().exec(
                 new String[]{"su", "-c", redirectOutput(command)});
-        return collectResult(process);
+        CommandResult result = collectResult(process);
+        if (debug) {
+            Log.d("FreezeYouDebug", "runRootCommand finished in " + (System.currentTimeMillis() - start)
+                    + " ms, exitCode=" + result.exitCode + ", output=" + result.output);
+        }
+        return result;
     }
 
     public static String shellQuote(String value) {

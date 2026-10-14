@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -33,11 +34,13 @@ import cf.playhi.freezeyou.app.FreezeYouBaseService;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.utils.AndroidUserUtils;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
+import cf.playhi.freezeyou.utils.DebugModeUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
+import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
 import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
@@ -160,9 +163,6 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     (packageName + "@InstallPackagesNotification").hashCode(),
                     builder.build()
             );
-            new Handler(Looper.getMainLooper()).post(() ->
-                    showToast(getApplicationContext(),
-                            String.format(getString(R.string.uninstalling_app), willBeUninstalledName)));
 
             boolean uninstallUpdatesOnly = intent.getBooleanExtra("uninstall_updates_only", false);
             // Re-read package state in the service instead of trusting a potentially stale UI
@@ -183,6 +183,14 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 throw new IllegalArgumentException(getString(R.string.invalidArguments));
             }
 
+            long opStartTime = System.currentTimeMillis();
+            boolean debug = DebugModeUtils.isDebugModeEnabled();
+            if (debug) {
+                Log.d("FreezeYouDebug", "InstallPackagesService: starting uninstall for " + packageName
+                        + " (updatesOnly=" + uninstallUpdatesOnly + ", isSystem=" + isSystemApp
+                        + ", hasUpdate=" + hasSystemUpdate + ")");
+            }
+
             java.util.List<String> commands = UninstallPolicyUtils.buildUninstallCommands(
                     isSystemApp,
                     hasSystemUpdate,
@@ -200,11 +208,33 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     deviceOwnerAvailable, fullUninstallNeedsShell);
             boolean rootAvailable = !shizukuAvailable && rootCheckRequired
                     && cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission();
-            if (shizukuAvailable || rootAvailable) {
+
+            if (shizukuAvailable) {
+                boolean binderSuccess = false;
+                try {
+                    binderSuccess = ShizukuPackageInstaller.uninstall(
+                            this, packageName, isSystemApp, hasSystemUpdate, uninstallUpdatesOnly);
+                } catch (Throwable t) {
+                    if (debug) {
+                        Log.w("FreezeYouDebug", "InstallPackagesService: Shizuku Binder IPC uninstall failed: "
+                                + t.getMessage(), t);
+                    }
+                }
+
+                if (binderSuccess) {
+                    if (debug) {
+                        Log.d("FreezeYouDebug", "InstallPackagesService: successfully uninstalled " + packageName
+                                + " via Shizuku Binder IPC in " + (System.currentTimeMillis() - opStartTime) + " ms");
+                    }
+                    onUninstallSuccess(packageName, willBeUninstalledName, uninstallUpdatesOnly, builder, notificationManager);
+                    return;
+                }
+
+                if (debug) {
+                    Log.d("FreezeYouDebug", "InstallPackagesService: falling back to Shizuku shell commands");
+                }
                 for (String command : commands) {
-                    PrivilegedShellUtils.CommandResult result = shizukuAvailable
-                            ? PrivilegedShellUtils.runShizukuCommand(command)
-                            : PrivilegedShellUtils.runRootCommand(command);
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runShizukuCommand(command);
                     if (!result.isSuccessful()) {
                         String details = result.output == null || result.output.isEmpty()
                                 ? "exit code " + result.exitCode : result.output;
@@ -212,29 +242,27 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     }
                 }
 
-                InstallPackagesUtils.notifyFinishNotification(
-                        this, notificationManager, builder,
-                        false,
-                        packageName,
-                        String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
-                        null,
-                        true);
-                final String finishMessage = String.format(
-                        getString(R.string.app_uninstallFinished), willBeUninstalledName);
-                new Handler(Looper.getMainLooper()).post(() ->
-                        showToast(getApplicationContext(), finishMessage));
-                File cacheIcon = new File(getCacheDir() + "/icon/" + packageName + ".png");
-                if (cacheIcon.exists()) {
-                    cacheIcon.delete();
+                if (debug) {
+                    Log.d("FreezeYouDebug", "InstallPackagesService: successfully uninstalled " + packageName
+                            + " via Shizuku shell in " + (System.currentTimeMillis() - opStartTime) + " ms");
                 }
-                File filesIcon = new File(getFilesDir() + "/icon/" + packageName + ".png");
-                if (filesIcon.exists()) {
-                    filesIcon.delete();
+                onUninstallSuccess(packageName, willBeUninstalledName, uninstallUpdatesOnly, builder, notificationManager);
+                return;
+            } else if (rootAvailable) {
+                for (String command : commands) {
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runRootCommand(command);
+                    if (!result.isSuccessful()) {
+                        String details = result.output == null || result.output.isEmpty()
+                                ? "exit code " + result.exitCode : result.output;
+                        throw new Exception(details);
+                    }
                 }
 
-                sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
-                        .putExtra("pkgName", packageName)
-                        .putExtra("refreshAppList", !uninstallUpdatesOnly));
+                if (debug) {
+                    Log.d("FreezeYouDebug", "InstallPackagesService: successfully uninstalled " + packageName
+                            + " via root shell in " + (System.currentTimeMillis() - opStartTime) + " ms");
+                }
+                onUninstallSuccess(packageName, willBeUninstalledName, uninstallUpdatesOnly, builder, notificationManager);
                 return;
             }
 
@@ -262,6 +290,9 @@ public class InstallPackagesService extends FreezeYouBaseService {
             throw new Exception("No sufficient privileges to uninstall.");
         } catch (final Exception e) {
             e.printStackTrace();
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.e("FreezeYouDebug", "InstallPackagesService: uninstall failed for " + packageName + ": " + e.getMessage(), e);
+            }
             InstallPackagesUtils
                     .notifyFinishNotification(
                             this, notificationManager, builder,
@@ -278,6 +309,37 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     )
             );
         }
+    }
+
+    private void onUninstallSuccess(
+            String packageName,
+            String willBeUninstalledName,
+            boolean uninstallUpdatesOnly,
+            Notification.Builder builder,
+            NotificationManager notificationManager) {
+        InstallPackagesUtils.notifyFinishNotification(
+                this, notificationManager, builder,
+                false,
+                packageName,
+                String.format(getString(R.string.app_uninstallFinished), willBeUninstalledName),
+                null,
+                true);
+        final String finishMessage = String.format(
+                getString(R.string.app_uninstallFinished), willBeUninstalledName);
+        new Handler(Looper.getMainLooper()).post(() ->
+                showToast(getApplicationContext(), finishMessage));
+        File cacheIcon = new File(getCacheDir() + "/icon/" + packageName + ".png");
+        if (cacheIcon.exists()) {
+            cacheIcon.delete();
+        }
+        File filesIcon = new File(getFilesDir() + "/icon/" + packageName + ".png");
+        if (filesIcon.exists()) {
+            filesIcon.delete();
+        }
+
+        sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                .putExtra("pkgName", packageName)
+                .putExtra("refreshAppList", !uninstallUpdatesOnly));
     }
 
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {

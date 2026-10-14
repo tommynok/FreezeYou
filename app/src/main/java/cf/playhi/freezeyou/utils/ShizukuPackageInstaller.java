@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.IInterface;
+import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -19,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import cf.playhi.freezeyou.utils.DebugModeUtils;
 import rikka.shizuku.ShizukuBinderWrapper;
 import rikka.shizuku.SystemServiceHelper;
 
@@ -67,30 +69,39 @@ public final class ShizukuPackageInstaller {
 
         try {
             int userId = AndroidUserUtils.currentUserId();
+            boolean debug = DebugModeUtils.isDebugModeEnabled();
+            if (debug) {
+                Log.d("FreezeYouDebug", "ShizukuPackageInstaller.uninstall started for " + packageName
+                        + " (isSystem=" + isSystemApp + ", hasUpdate=" + hasSystemUpdate
+                        + ", updatesOnly=" + uninstallUpdatesOnly + ", userId=" + userId + ")");
+            }
 
             if (isSystemApp && hasSystemUpdate) {
                 if (uninstallUpdatesOnly) {
                     // Revert update only: flags = 0
-                    return performBinderUninstall(context, packageName, 0, userId);
+                    return performBinderUninstall(context, packageName, 0, userId, true);
                 } else {
                     // Complete uninstall: 2 steps
                     // Step 1: Revert system update (flags = 0)
-                    boolean step1 = performBinderUninstall(context, packageName, 0, userId);
+                    boolean step1 = performBinderUninstall(context, packageName, 0, userId, true);
                     if (!step1) {
                         return false;
                     }
                     // Step 2: Disable/uninstall factory package for user (flags = DELETE_SYSTEM_APP)
-                    return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
+                    return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId, false);
                 }
             } else if (isSystemApp) {
                 // Non-updated system app: flags = DELETE_SYSTEM_APP
-                return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId);
+                return performBinderUninstall(context, packageName, DELETE_SYSTEM_APP, userId, false);
             } else {
                 // User app: scope to target user only (flags = 0)
-                return performBinderUninstall(context, packageName, 0, userId);
+                return performBinderUninstall(context, packageName, 0, userId, false);
             }
         } catch (Throwable t) {
             t.printStackTrace();
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.e("FreezeYouDebug", "ShizukuPackageInstaller.uninstall error: " + t.getMessage(), t);
+            }
             invalidateCache();
             return false;
         }
@@ -100,7 +111,15 @@ public final class ShizukuPackageInstaller {
             Context context,
             String packageName,
             int flags,
-            int userId) throws Exception {
+            int userId,
+            boolean isRemovingUpdateOnly) throws Exception {
+
+        long startTime = System.currentTimeMillis();
+        boolean debug = DebugModeUtils.isDebugModeEnabled();
+        if (debug) {
+            Log.d("FreezeYouDebug", "performBinderUninstall invoking for " + packageName
+                    + " flags=" + flags + " userId=" + userId);
+        }
 
         Object installerProxy = getOrCreatePackageInstallerProxy();
         Method uninstallMethod = getOrCreateUninstallMethod(installerProxy);
@@ -147,14 +166,31 @@ public final class ShizukuPackageInstaller {
             // Await async broadcast from system_server (typically 20-200ms, up to 8s for large packages)
             boolean completed = latch.await(8, TimeUnit.SECONDS);
             if (completed && resultStatus.get() == PackageInstaller.STATUS_SUCCESS) {
+                if (debug) {
+                    Log.d("FreezeYouDebug", "performBinderUninstall succeeded via broadcast in "
+                            + (System.currentTimeMillis() - startTime) + " ms for " + packageName);
+                }
                 return true;
             }
 
-            // Fallback verify if package/update was actually removed even if broadcast didn't arrive in time
-            if (flags == 0) {
-                return !hasUpdatedSystemAppFlag(context, packageName);
+            if (debug) {
+                Log.w("FreezeYouDebug", "performBinderUninstall broadcast status="
+                        + resultStatus.get() + " completed=" + completed + " for " + packageName
+                        + ", checking fallback verification");
             }
-            return !isPackageInstalled(context, packageName);
+
+            // Fallback verify if package/update was actually removed even if broadcast didn't arrive in time
+            boolean ok;
+            if (isRemovingUpdateOnly) {
+                ok = !hasUpdatedSystemAppFlag(context, packageName);
+            } else {
+                ok = !isPackageInstalled(context, packageName);
+            }
+            if (debug) {
+                Log.d("FreezeYouDebug", "performBinderUninstall fallback verification result: "
+                        + ok + " in " + (System.currentTimeMillis() - startTime) + " ms for " + packageName);
+            }
+            return ok;
         } finally {
             try {
                 context.unregisterReceiver(receiver);
