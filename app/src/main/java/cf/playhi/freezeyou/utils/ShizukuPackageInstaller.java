@@ -65,6 +65,20 @@ public final class ShizukuPackageInstaller {
             boolean hasSystemUpdate,
             boolean uninstallUpdatesOnly) {
 
+        if (Build.VERSION.SDK_INT >= 34) {
+            // Android 14+ (API 34+) framework AIDL stubs compiled into boot.oat invoke
+            // Parcel.obtain(asBinder()), which passes ShizukuBinderWrapper to native
+            // Parcel::markForBinder. Because ShizukuBinderWrapper is a pure Java IBinder wrapper
+            // and not a native BpBinder/BBinder, native ibinderForJavaObject returns NULL,
+            // resulting in an uncatchable fatal SIGSEGV (signal 11) in libc.
+            // On API 34+, immediately return false to let the caller use privileged shell commands.
+            if (DebugModeUtils.isDebugModeEnabled()) {
+                Log.d("FreezeYouDebug", "ShizukuPackageInstaller: skipping Binder IPC on Android 14+ (API "
+                        + Build.VERSION.SDK_INT + ") to avoid native Parcel.markForBinder crash; falling back to shell");
+            }
+            return false;
+        }
+
         if (!PrivilegedShellUtils.isShizukuAvailable()) {
             return false;
         }
@@ -257,16 +271,6 @@ public final class ShizukuPackageInstaller {
     private static synchronized Object getOrCreatePackageInstallerProxy() throws Exception {
         if (sCachedPackageInstallerProxy != null) {
             return sCachedPackageInstallerProxy;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                HiddenApiBypass.addHiddenApiExemptions("L");
-            } catch (Throwable t) {
-                if (DebugModeUtils.isDebugModeEnabled()) {
-                    Log.w("FreezeYouDebug", "HiddenApiBypass.addHiddenApiExemptions error: " + t.getMessage());
-                }
-            }
         }
 
         IBinder packageBinder = SystemServiceHelper.getSystemService("package");
