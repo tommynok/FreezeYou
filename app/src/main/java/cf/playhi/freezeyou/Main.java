@@ -1911,6 +1911,7 @@ public class Main extends FreezeYouBaseActivity {
             boolean shizukuAvailable) {
 
         if (hasPrivilegedShell) {
+            mIsBatchUninstallRunning = true;
             ProgressDialog progressDialog = new ProgressDialog(Main.this);
             progressDialog.setMessage(getString(R.string.batch_uninstalling));
             progressDialog.setCancelable(false);
@@ -1919,7 +1920,8 @@ public class Main extends FreezeYouBaseActivity {
 
             new Thread(() -> {
                 int successCount = 0;
-                int userId = AndroidUserUtils.currentUserId();
+                try {
+                    int userId = AndroidUserUtils.currentUserId();
                 List<BatchUninstallItem> items = new ArrayList<>();
                 for (String pkg : userApps) {
                     items.add(new BatchUninstallItem(pkg, false, false, false));
@@ -1990,6 +1992,8 @@ public class Main extends FreezeYouBaseActivity {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                } finally {
+                    mIsBatchUninstallRunning = false;
                 }
 
                 final int finalSuccessCount = successCount;
@@ -2000,8 +2004,6 @@ public class Main extends FreezeYouBaseActivity {
                         }
                     } catch (Exception ignored) {}
                     showUninstallCompletedDialog(null, false, finalSuccessCount);
-                    sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
-                            .putExtra("refreshAppList", true));
                     new Thread(() -> generateList(currentFilter)).start();
                 });
             }).start();
@@ -2010,6 +2012,7 @@ public class Main extends FreezeYouBaseActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                 && DevicePolicyManagerUtils.isDeviceOwner(Main.this)) {
+            mIsBatchUninstallRunning = true;
             ProgressDialog progressDialog = new ProgressDialog(Main.this);
             progressDialog.setMessage(getString(R.string.batch_uninstalling));
             progressDialog.setCancelable(false);
@@ -2067,6 +2070,7 @@ public class Main extends FreezeYouBaseActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
+                    mIsBatchUninstallRunning = false;
                     try {
                         unregisterReceiver(receiver);
                     } catch (Exception ignored) {}
@@ -2079,8 +2083,6 @@ public class Main extends FreezeYouBaseActivity {
                         }
                     } catch (Exception ignored) {}
                     showUninstallCompletedDialog(null, false, successCount.get());
-                    sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
-                            .putExtra("refreshAppList", true));
                     new Thread(() -> generateList(currentFilter)).start();
                 });
             }).start();
@@ -2133,6 +2135,7 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private AlertDialog mUninstallCompletedDialog = null;
+    private volatile boolean mIsBatchUninstallRunning = false;
 
     private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
         if (isFinishing() || isDestroyed()) {
@@ -2222,7 +2225,7 @@ public class Main extends FreezeYouBaseActivity {
 
                 boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
                 boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
-                if (onlyPkgName != null) {
+                if (onlyPkgName != null && !mIsBatchUninstallRunning) {
                     if (isUninstalled && !isRestoreFilter) {
                         new Thread(() -> generateList(currentFilter)).start();
                         return;

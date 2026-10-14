@@ -31,7 +31,7 @@ public final class ShizukuPackageInstaller {
     public static final int DELETE_SYSTEM_APP = 0x00000004;
 
     private static final String INSTALLER_PACKAGE = "com.android.shell";
-    private static final long RESULT_TIMEOUT_MS = 15000L;
+    private static final long RESULT_TIMEOUT_MS = 30000L;
 
     private ShizukuPackageInstaller() {}
 
@@ -88,8 +88,8 @@ public final class ShizukuPackageInstaller {
                 // Non-updated system app: flags = DELETE_SYSTEM_APP
                 return performSingleUninstall(context, installer, packageName, DELETE_SYSTEM_APP, false);
             } else {
-                // User app: flags = DELETE_ALL_USERS
-                return performSingleUninstall(context, installer, packageName, DELETE_ALL_USERS, false);
+                // User app: flags = 0 (uninstalls for current userId only, matching shell policy)
+                return performSingleUninstall(context, installer, packageName, 0, false);
             }
         } catch (Throwable t) {
             t.printStackTrace();
@@ -138,11 +138,15 @@ public final class ShizukuPackageInstaller {
         }
 
         // Fallback verification: check if package or update was actually removed
-        boolean verified;
-        if (isRemovingUpdateOnly) {
-            verified = !hasUpdatedSystemAppFlag(context, packageName);
-        } else {
-            verified = !isPackageInstalled(context, packageName);
+        boolean verified = checkRemovalVerified(context, packageName, isRemovingUpdateOnly);
+        if (!verified && resultIntent == null) {
+            // Grace polling in case system_server is finishing disk sync right after timeout
+            for (int i = 0; i < 4 && !verified; i++) {
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException ignored) {}
+                verified = checkRemovalVerified(context, packageName, isRemovingUpdateOnly);
+            }
         }
 
         if (debug) {
@@ -220,6 +224,11 @@ public final class ShizukuPackageInstaller {
         } catch (NoSuchMethodException ignored) {
         }
 
+        if (flags != 0) {
+            throw new UnsupportedOperationException(
+                    "PackageInstaller does not support uninstall flags on API < 28");
+        }
+
         uninstallMethod = PackageInstaller.class.getMethod(
                 "uninstall", String.class, IntentSender.class);
         uninstallMethod.invoke(installer, packageName, statusSender);
@@ -227,6 +236,14 @@ public final class ShizukuPackageInstaller {
 
     public static void invalidateCache() {
         // Retained for backward compatibility
+    }
+
+    private static boolean checkRemovalVerified(Context context, String packageName, boolean isRemovingUpdateOnly) {
+        if (isRemovingUpdateOnly) {
+            return !hasUpdatedSystemAppFlag(context, packageName);
+        } else {
+            return !isPackageInstalled(context, packageName);
+        }
     }
 
     private static boolean isPackageInstalled(Context context, String packageName) {

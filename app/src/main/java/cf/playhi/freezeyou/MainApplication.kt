@@ -66,7 +66,11 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         super.attachBaseContext(base)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions("L")
+                org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions(
+                    "Landroid/content/pm/",
+                    "Landroid/content/IIntentSender",
+                    "Landroid/content/IntentSender;"
+                )
             } catch (t: Throwable) {
                 t.printStackTrace()
             }
