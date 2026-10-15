@@ -29,6 +29,7 @@ import android.view.SubMenu;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.EditText;
@@ -44,6 +45,8 @@ import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+
+import androidx.activity.OnBackPressedCallback;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -200,6 +203,7 @@ public class Main extends FreezeYouBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         applyOriginalLightMainBackground();
+        setupBackNavigation();
         try {
             manageCrashLog();
         } catch (Exception e) {
@@ -207,6 +211,48 @@ public class Main extends FreezeYouBaseActivity {
             checkIfNeedAskFirstTimeSetupAndShowDialog();
         }
 //        throw new RuntimeException("自定义异常：仅于异常上报测试中使用");//发版前务必注释
+    }
+
+    /**
+     * Intercepts back navigation on Main:
+     * 1. If multi-choice action mode is active, dismiss it.
+     * 2. If search text or search focus is active, clear search and focus.
+     * 3. If any filter other than "all" is active, return to the default "all" list.
+     * 4. If already on the unfiltered "all" list, exit the activity/app.
+     */
+    private void setupBackNavigation() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (currentSelectionActionMode != null) {
+                    currentSelectionActionMode.finish();
+                    return;
+                }
+                EditText searchEditText = findViewById(R.id.search_editText);
+                if (searchEditText != null) {
+                    boolean hasText = !TextUtils.isEmpty(searchEditText.getText());
+                    boolean hasFocus = searchEditText.hasFocus();
+                    if (hasText || hasFocus) {
+                        if (hasText) {
+                            searchEditText.setText("");
+                        }
+                        searchEditText.clearFocus();
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) {
+                            imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
+                        }
+                        return;
+                    }
+                }
+                if (currentFilter != null && !"all".equals(currentFilter)) {
+                    new Thread(() -> generateList("all")).start();
+                    return;
+                }
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
+            }
+        });
     }
 
     /**
