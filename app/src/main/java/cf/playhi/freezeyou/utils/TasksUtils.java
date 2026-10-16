@@ -371,7 +371,7 @@ public final class TasksUtils {
                                                 | PendingIntent.FLAG_IMMUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT);
                         createDelayTasks(alarmMgr, delayAtSeconds, pendingIntent);
-                        if (taskTrigger != null) {//定时或无撤回判断能力或目前不计划实现撤销的任务直接null
+                        if (taskTrigger != null) { // null for timed tasks or tasks where cancellation is unsupported
                             AppPreferences appPreferences = new AppPreferences(context);
                             appPreferences.put(taskTrigger, appPreferences.getString(taskTrigger, "") + requestCode + ",");
                         }
@@ -488,7 +488,7 @@ public final class TasksUtils {
 
     private static void setMobileDataEnabled(Context context, boolean enable) {
         //https://stackoverflow.com/questions/21511216/toggle-mobile-data-programmatically-on-android-4-4-2
-        try {//4.4及以下
+        try { // Android <= 4.4
             ConnectivityManager mConnectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             Class aClass = mConnectivityManager.getClass();
             Class[] argsClass = new Class[1];
@@ -497,13 +497,13 @@ public final class TasksUtils {
             method.invoke(mConnectivityManager, enable);
         } catch (Exception e) {
             e.printStackTrace();
-            try {//pri-app方法
+            try { // Privileged app method
                 TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
                 Method methodSet = Class.forName(tm.getClass().getName()).getDeclaredMethod("setDataEnabled", Boolean.TYPE);
                 methodSet.invoke(tm, true);
             } catch (Exception ee) {
                 ee.printStackTrace();
-                try {//Root方法
+                try { // Root method
                     Process process = Runtime.getRuntime().exec("su");
                     DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
                     outputStream.writeBytes("svc data " + (enable ? "enable" : "disable") + "\n");
@@ -511,7 +511,7 @@ public final class TasksUtils {
                     outputStream.flush();
                     process.waitFor();
                     destroyProcess(outputStream, process);
-                } catch (Exception eee) {//暂时无计可施……
+                } catch (Exception eee) { // All methods failed
                     eee.printStackTrace();
                     showToast(context, R.string.failed);
                 }
@@ -751,7 +751,7 @@ public final class TasksUtils {
     }
 
     public static void checkTriggerTasks(Context context) {
-        //事件触发器
+        // Event triggers
         final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"

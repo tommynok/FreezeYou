@@ -28,7 +28,7 @@ import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys;
 
 import static android.content.Context.MODE_PRIVATE;
 
-//导入导出整体结构复杂度高，处理流程复杂度高，待有可用的优化方案时需要进行优化（提示：后续导出时可修改导出时的 version，用以导入时区分方案）
+// Note: Backup/restore schema and process is complex. Version flag in backup format can be used to distinguish schemas.
 public final class BackupUtils {
 
     public static String convertSharedPreference(
@@ -250,7 +250,7 @@ public final class BackupUtils {
     private static boolean importIntSharedPreferences(
             Context context, Activity activity,
             JSONObject jsonObject, SharedPreferences defSP) {
-        // Int 开始
+        // Int start
         JSONArray array = jsonObject.optJSONArray("generalSettings_int");
         if (array == null) {
             return false;
@@ -262,7 +262,7 @@ public final class BackupUtils {
 
         importIntSharedPreferencesFromProcessedJSONObject(
                 context, activity, generalSettingsIntJSONObject, defSP);
-        // Int 结束
+        // Int end
         return true;
     }
 
@@ -288,7 +288,7 @@ public final class BackupUtils {
     private static boolean importStringSharedPreferences(
             Context context, Activity activity,
             JSONObject jsonObject, SharedPreferences defSP) {
-        // String 开始
+        // String start
         JSONArray array = jsonObject.optJSONArray("generalSettings_string");
         if (array == null) {
             return false;
@@ -299,7 +299,7 @@ public final class BackupUtils {
         }
         importStringSharedPreferencesFromProcessedJSONObject(
                 context, activity, generalSettingsStringJSONObject, defSP);
-        // String 结束
+        // String end
         return true;
     }
 
@@ -337,7 +337,7 @@ public final class BackupUtils {
     private static boolean importBooleanSharedPreferences(
             Context context, Activity activity,
             JSONObject jsonObject, SharedPreferences defSP) {
-        // boolean 开始
+        // boolean start
         JSONArray array = jsonObject.optJSONArray("generalSettings_boolean");
         if (array == null) {
             return false;
@@ -349,7 +349,7 @@ public final class BackupUtils {
 
         importBooleanSharedPreferencesFromProcessedJSONObject(
                 context, activity, generalSettingsBooleanJSONObject, defSP);
-        // boolean 结束
+        // boolean end
         return true;
     }
 
@@ -422,7 +422,7 @@ public final class BackupUtils {
         Iterator<String> jsonKeysIterator = jsonObject.keys();
         while (jsonKeysIterator.hasNext()) {
             switch (jsonKeysIterator.next()) {
-                // 通用设置转入（更多设置 中的选项，不转移图标选择相关设置） 开始
+                // General settings import (from More Settings, excluding icon selection) start
                 case "generalSettings_boolean":
                     importBooleanSharedPreferences(context, activity, jsonObject, defSP);
                     break;
@@ -432,37 +432,37 @@ public final class BackupUtils {
                 case "generalSettings_int":
                     importIntSharedPreferences(context, activity, jsonObject, defSP);
                     break;
-                // 通用设置转出 结束
-                // 一键冻结、一键解冻、离开冻结列表 开始
+                // General settings import end
+                // One-key freeze/unfreeze/leave lists start
                 case "oneKeyList":
                     importOneKeyLists(context, jsonObject, appPreferences);
                     break;
-                // 一键冻结、一键解冻、离开冻结列表 结束
-                // 计划任务 - 时间 开始
+                // One-key freeze/unfreeze/leave lists end
+                // Scheduled tasks - Time start
                 case "userTimeScheduledTasks":
                     importUserTimeTasksJSONArray(activity, jsonObject);
                     break;
-                // 计划任务 - 时间 结束
-                // 计划任务 - 触发器 开始
+                // Scheduled tasks - Time end
+                // Scheduled tasks - Triggers start
                 case "userTriggerScheduledTasks":
                     importUserTriggerTasksJSONArray(activity, jsonObject);
                     break;
-                // 计划任务 - 触发器 结束
-                // 用户自定分类（我的列表） 开始
+                // Scheduled tasks - Triggers end
+                // User defined categories start
                 case "userDefinedCategories":
                     importUserDefinedCategoriesJSONArray(activity, jsonObject);
                     break;
-                // 用户自定分类（我的列表） 结束
-                // URI 请求白名单 开始
+                // User defined categories end
+                // URI request whitelist start
                 case "uriAutoAllowPkgs_allows":
                     importUriAutoAllowPkgsJSONArray(jsonObject, appPreferences);
                     break;
-                // URI 请求白名单 结束
-                // 安装应用请求白名单 开始
+                // URI request whitelist end
+                // Install request whitelist start
                 case "installPkgs_autoAllowPkgs_allows":
                     importInstallPkgsAutoAllowPkgsJSONArray(jsonObject, appPreferences);
                     break;
-                // 安装应用请求白名单 结束
+                // Install request whitelist end
                 default:
                     break;
             }
@@ -477,18 +477,18 @@ public final class BackupUtils {
         JSONObject finalOutputJsonObject = new JSONObject();
 
         try {
-            // 标记转出格式版本 开始
+            // Format version tag start
             JSONArray formatVersionJSONArray = new JSONArray();
             JSONObject formatVersionJSONObject = new JSONObject();
-            formatVersionJSONObject.put("version", 1); // 标记备份文件格式版本
-            formatVersionJSONObject.put("generateTime", new Date().getTime()); // 标记备份文件格式版本
+            formatVersionJSONObject.put("version", 1); // Backup format version
+            formatVersionJSONObject.put("generateTime", new Date().getTime()); // Backup generation timestamp
             formatVersionJSONArray.put(formatVersionJSONObject);
             finalOutputJsonObject.put("format_version", formatVersionJSONArray);
-            // 标记转出格式版本 结束
+            // Format version tag end
 
-            // 通用设置转出（更多设置 中的选项，不转移图标选择相关设置） 开始
+            // General settings export (from More Settings, excluding icon selection) start
 
-            // boolean 开始
+            // boolean start
             JSONArray generalSettingsBooleanJSONArray = new JSONArray();
             JSONObject generalSettingsBooleanJSONObject = new JSONObject();
 
@@ -503,9 +503,9 @@ public final class BackupUtils {
 
             generalSettingsBooleanJSONArray.put(generalSettingsBooleanJSONObject);
             finalOutputJsonObject.put("generalSettings_boolean", generalSettingsBooleanJSONArray);
-            // boolean 结束
+            // boolean end
 
-            // String 开始
+            // String start
             JSONArray generalSettingsStringJSONArray = new JSONArray();
             JSONObject generalSettingsStringJSONObject = new JSONObject();
 
@@ -520,9 +520,9 @@ public final class BackupUtils {
 
             generalSettingsStringJSONArray.put(generalSettingsStringJSONObject);
             finalOutputJsonObject.put("generalSettings_string", generalSettingsStringJSONArray);
-            // String 结束
+            // String end
 
-            // Int 开始
+            // Int start
             JSONArray generalSettingsIntJSONArray = new JSONArray();
             JSONObject generalSettingsIntJSONObject = new JSONObject();
             generalSettingsIntJSONObject.put(
@@ -535,11 +535,11 @@ public final class BackupUtils {
             );
             generalSettingsIntJSONArray.put(generalSettingsIntJSONObject);
             finalOutputJsonObject.put("generalSettings_int", generalSettingsIntJSONArray);
-            // Int 结束
+            // Int end
 
-            // 通用设置转出 结束
+            // General settings export end
 
-            // 一键冻结、一键解冻、离开冻结列表 开始
+            // One-key freeze/unfreeze/leave lists start
             JSONArray oneKeyListJSONArray = new JSONArray();
             JSONObject oneKeyListJSONObject = new JSONObject();
             oneKeyListJSONObject.put(
@@ -556,24 +556,24 @@ public final class BackupUtils {
             );
             oneKeyListJSONArray.put(oneKeyListJSONObject);
             finalOutputJsonObject.put("oneKeyList", oneKeyListJSONArray);
-            // 一键冻结、一键解冻、离开冻结列表 结束
+            // One-key freeze/unfreeze/leave lists end
 
-            // 安装应用请求、URI 请求白名单 开始
+            // Install package request and URI request whitelist start
             finalOutputJsonObject.put("uriAutoAllowPkgs_allows", generateUriAutoAllowPkgsJSONArray(context));
             finalOutputJsonObject.put("installPkgs_autoAllowPkgs_allows", generateInstallPkgsAutoAllowPkgsJSONArray(context));
-            // 安装应用请求、URI 请求白名单 结束
+            // Install package request and URI request whitelist end
 
-            // 计划任务 - 时间 开始
+            // Scheduled tasks - Time start
             finalOutputJsonObject.put("userTimeScheduledTasks", generateUserTimeTasksJSONArray(context));
-            // 计划任务 - 时间 结束
+            // Scheduled tasks - Time end
 
-            // 计划任务 - 触发器 开始
+            // Scheduled tasks - Triggers start
             finalOutputJsonObject.put("userTriggerScheduledTasks", generateUserTriggerTasksJSONArray(context));
-            // 计划任务 - 触发器 结束
+            // Scheduled tasks - Triggers end
 
-            // 用户自定分类（我的列表） 开始
+            // User defined categories start
             finalOutputJsonObject.put("userDefinedCategories", generateUserDefinedCategoriesJSONArray(context));
-            // 用户自定分类（我的列表） 结束
+            // User defined categories end
 
         } catch (JSONException e) {
             e.printStackTrace();

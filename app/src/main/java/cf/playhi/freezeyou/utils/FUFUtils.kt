@@ -120,11 +120,11 @@ object FUFUtils {
      * @param enable               Enable
      * @param showUnnecessaryToast ShowUnnecessaryToast
      * @param askRun               AskRun
-     * @param target               Target, askRun 为 true 时使用
-     * @param tasks                Tasks, askRun 为 true 时使用
-     * @param runImmediately       RunImmediately, askRun 为 true 时使用
-     * @param activity             Activity, askRun 为 true 时使用
-     * @param finish               Finish, askRun 为 true 时使用
+     * @param target               Target (used when askRun is true)
+     * @param tasks                Tasks (used when askRun is true)
+     * @param runImmediately       RunImmediately (used when askRun is true)
+     * @param activity             Activity (used when askRun is true)
+     * @param finish               Finish (used when askRun is true)
      * @return boolean
      */
     @JvmStatic
@@ -768,8 +768,8 @@ object FUFUtils {
                 .putExtra("askRun", askRun)
                 .putExtra("pkgName", pkgName)
                 .putExtra("freeze", false)
-                .putExtra("target", target) //目标 Activity
-                .putExtra("tasks", tasks) //追加任务
+                .putExtra("target", target) // Target Activity
+                .putExtra("tasks", tasks) // Additional tasks
                 .putExtra("single", true)
                 .putExtra("runImmediately", runImmediately)
         )
@@ -790,8 +790,8 @@ object FUFUtils {
             context, Intent(context, FUFService::class.java)
                 .putExtra("askRun", askRun)
                 .putExtra("pkgName", pkgName)
-                .putExtra("target", target) //目标 Activity
-                .putExtra("tasks", tasks) //追加任务
+                .putExtra("target", target) // Target Activity
+                .putExtra("tasks", tasks) // Additional tasks
                 .putExtra("freeze", true)
                 .putExtra("single", true)
         )
@@ -831,8 +831,8 @@ object FUFUtils {
     }
 
     /**
-     * @param packageName 应用包名
-     * @return true 则已冻结
+     * @param packageName Package name
+     * @return true if frozen
      */
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String): Boolean {
@@ -841,8 +841,8 @@ object FUFUtils {
     }
 
     /**
-     * @param packageName 应用包名
-     * @return true 则已冻结
+     * @param packageName Package name
+     * @return true if frozen
      */
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String, pm: PackageManager?): Boolean {

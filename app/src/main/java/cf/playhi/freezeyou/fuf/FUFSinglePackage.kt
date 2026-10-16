@@ -454,62 +454,62 @@ open class FUFSinglePackage(
         const val ERROR_STATE_DID_NOT_CHANGE = -17
 
         /**
-         * 使用 FreezeYou 的 自动（免ROOT(DPM)/ROOT(DISABLE)） 模式
+         * Use FreezeYou legacy auto mode (DPM / ROOT DISABLE).
          *
-         * 推荐直接使用 [API_FREEZEYOU_MROOT_DPM]
-         * 与 [API_FREEZEYOU_ROOT_DISABLE_ENABLE]
-         * 与 [API_FREEZEYOU_ROOT_UNHIDE_HIDE]
+         * Recommended: use [API_FREEZEYOU_MROOT_DPM],
+         * [API_FREEZEYOU_ROOT_DISABLE_ENABLE],
+         * or [API_FREEZEYOU_ROOT_UNHIDE_HIDE] directly.
          */
         @Deprecated("Use API_FREEZEYOU_MROOT_DPM or API_FREEZEYOU_ROOT_DISABLE_ENABLE instead.")
         const val API_FREEZEYOU_LEGACY_AUTO = 0
 
         /**
-         * 使用 FreezeYou 的 免ROOT(DPM) 模式
+         * Use FreezeYou non-ROOT (DPM) mode.
          */
         const val API_FREEZEYOU_MROOT_DPM = 1
 
         /**
-         * 使用 FreezeYou 的 ROOT(DISABLE) 模式
+         * Use FreezeYou ROOT (DISABLE) mode.
          */
         const val API_FREEZEYOU_ROOT_DISABLE_ENABLE = 2
 
         /**
-         * 使用 FreezeYou 的 ROOT(UNHIDE) 模式
+         * Use FreezeYou ROOT (UNHIDE) mode.
          */
         const val API_FREEZEYOU_ROOT_UNHIDE_HIDE = 3
 
         /**
-         * 使用 FreezeYou 的 System App (DISABLE_UNTIL_USED) 模式
+         * Use FreezeYou System App (DISABLE_UNTIL_USED) mode.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 4
 
         /**
-         * 使用 FreezeYou 的 System App (DISABLE_USER) 模式
+         * Use FreezeYou System App (DISABLE_USER) mode.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER = 5
 
         /**
-         * 使用 FreezeYou 的 System App (DISABLE) 模式
+         * Use FreezeYou System App (DISABLE) mode.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE = 6
 
         /**
-         * 使用 FreezeYou 的 免ROOT (Profile Owner) 模式
+         * Use FreezeYou non-ROOT (Profile Owner) mode.
          */
         const val API_FREEZEYOU_MROOT_PROFILE_OWNER = 7
 
         /**
-         * 使用 FreezeYou 的借助 Shizuku 的 System App (DISABLE_UNTIL_USED) 模式
+         * Use FreezeYou Shizuku System App (DISABLE_UNTIL_USED) mode.
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 8
 
         /**
-         * 使用 FreezeYou 的借助 Shizuku 的 System App (DISABLE_USER) 模式
+         * Use FreezeYou Shizuku System App (DISABLE_USER) mode.
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER = 9
 
         /**
-         * 使用 FreezeYou 的借助 Shizuku 的 System App (DISABLE) 模式
+         * Use FreezeYou Shizuku System App (DISABLE) mode.
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE = 10
 
