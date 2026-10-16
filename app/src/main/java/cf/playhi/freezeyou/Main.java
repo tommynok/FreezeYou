@@ -210,7 +210,6 @@ public class Main extends FreezeYouBaseActivity {
             e.printStackTrace();
             checkIfNeedAskFirstTimeSetupAndShowDialog();
         }
-//        throw new RuntimeException("自定义异常：仅于异常上报测试中使用");//发版前务必注释
     }
 
     /**
@@ -270,13 +269,6 @@ public class Main extends FreezeYouBaseActivity {
             content.setBackgroundColor(ContextCompat.getColor(this, R.color.appMainScreenLight));
         }
     }
-
-//    @Override
-//    protected void onNewIntent(Intent intent) {
-//        super.onNewIntent(intent);
-//        setIntent(intent);
-//        go();
-//    }
 
     @Override
     protected void onResume() {
@@ -443,8 +435,8 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * @param filter   筛选规则 或 所有需要显示的软件包包名（以“,”分割）
-     * @param sortRule 排序规则
+     * @param filter   Filter rule or comma-separated package names
+     * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
         currentFilter = filter;
@@ -1031,7 +1023,7 @@ public class Main extends FreezeYouBaseActivity {
                         try {
                             SubMenu addToUserDefinedSubMenu = menu.findItem(R.id.list_menu_groupItem_addToUserDefined).getSubMenu();
                             SubMenu removeFromUserDefinedSubMenu = menu.findItem(R.id.list_menu_groupItem_removeFromUserDefined).getSubMenu();
-                            addToUserDefinedSubMenu.clear(); // 清空先前产生的数据
+                            addToUserDefinedSubMenu.clear();
                             removeFromUserDefinedSubMenu.clear();
 
                             addToUserDefinedSubMenu.add(
@@ -1039,15 +1031,15 @@ public class Main extends FreezeYouBaseActivity {
                                     R.id.list_menu_groupItem_addToUserDefined_newClassification,
                                     0,
                                     R.string.newClassification
-                            ); // 加入“新建分类”
+                            );
                             removeFromUserDefinedSubMenu.add(
                                     R.id.list_menu_groupItem_removeFromUserDefined_menuGroup,
                                     R.id.list_menu_groupItem_removeFromUserDefined_newClassification,
                                     0,
                                     R.string.newClassification
-                            ); // 加入“新建分类”
+                            );
 
-                            // 添加用户定义的自定义分类
+                            // Add user-defined categories
                             SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
                             userDefinedDb.execSQL(
                                     "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
@@ -1558,7 +1550,7 @@ public class Main extends FreezeYouBaseActivity {
         initThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                String mode = getIntent().getStringExtra("pkgName"); // 快捷方式提供
+                String mode = getIntent().getStringExtra("pkgName");
                 if (mode == null) {
                     mode = launchMode.getValue(Main.this);
                 }
@@ -2266,7 +2258,7 @@ public class Main extends FreezeYouBaseActivity {
                 }
                 ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
 
-                //检查是否已卸载
+                // Check if uninstalled
                 if (applicationInfo == null) {
                     hm.put("Name", getString(R.string.uninstalled));
                     continue;
@@ -2292,7 +2284,7 @@ public class Main extends FreezeYouBaseActivity {
 
                 boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
                 hm.put("RestorableSystemApp", restorable);
-                //更新冻结状态点与置灰标记。图标本身不再重新生成，置灰由适配器完成。
+                // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
                 processFrozenStatus(hm, pkgName, pm);
                 if (restorable) {
                     hm.put("isFrozen", customThemeDisabledDot);
@@ -2356,7 +2348,7 @@ public class Main extends FreezeYouBaseActivity {
         }).start();
     }
 
-    private void createFUFShortcutsBatch() { //小于 Android 8.0 适用
+    private void createFUFShortcutsBatch() { // Android < 8.0
         int sps = selectedPackages.size();
         String pkgName;
         for (int i = 0; i < sps; i++) {
@@ -2464,16 +2456,16 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void addUserDefinedCategoriesTo(SubMenu subMenu, int groupId, int newClassificationId, int idBase) {
-        subMenu.clear(); // 清空先前产生的数据
+        subMenu.clear();
 
         subMenu.add(
                 groupId,
                 newClassificationId,
                 0,
                 R.string.newClassification
-        ); // 加入“新建分类”
+        );
 
-        // 添加用户定义的自定义分类
+        // Add user-defined categories
         SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
         userDefinedDb.execSQL(
                 "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
