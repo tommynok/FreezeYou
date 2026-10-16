@@ -20,6 +20,32 @@ import rikka.shizuku.SystemServiceHelper
 import rikka.shizuku.Shizuku
 import java.lang.reflect.InvocationTargetException
 
+/**
+ * Core engine for freezing (disabling/hiding) and unfreezing (enabling/unhiding) a single package.
+ *
+ * <p><b>Architecture &amp; System Modes Overview:</b><br>
+ * Android provides several distinct mechanisms to suppress application execution, each with
+ * different privilege requirements, persistence semantics, and launcher integration:
+ * <ul>
+ *   <li><b>Device Policy Manager (DPM) Modes (1, 7):</b> Uses {@code DevicePolicyManager.setApplicationHidden}.
+ *       The package remains installed and retains all permissions and data, but its components and
+ *       launcher icons are completely hidden from the user. Requires Device Owner (mode 1) or Profile
+ *       Owner (mode 7).</li>
+ *   <li><b>Root Shell Modes (2, 3):</b> Dispatches privileged shell commands ({@code pm disable}/{@code pm enable}
+ *       or {@code pm hide}/{@code pm unhide}) via su/app_process. Mode 3 (hide) mirrors DPM hiding without
+ *       device owner setup. Mode 2 toggles package component state.</li>
+ *   <li><b>Privileged System App Modes (4, 5, 6):</b> Uses {@link PackageManager#setApplicationEnabledSetting}
+ *       directly when FreezeYou is installed as a privileged system app ({@code /system/priv-app}).</li>
+ *   <li><b>Shizuku / Sui Binder IPC Modes (8, 9, 10):</b> Uses Shizuku to invoke hidden
+ *       {@code IPackageManager.setApplicationEnabledSetting} directly over Binder IPC without spawning
+ *       slow shell processes. Handles Android 14+ UID 2000 permission constraints automatically.</li>
+ * </ul>
+ *
+ * @property context Application or Activity context
+ * @property singlePackageName Target package identifier
+ * @property actionMode Operation target: [ACTION_MODE_FREEZE] (0) or [ACTION_MODE_UNFREEZE] (1)
+ * @property apiMode Specific API implementation to execute (0 through 10)
+ */
 open class FUFSinglePackage(
     open val context: Context,
     open val singlePackageName: String,
@@ -27,6 +53,14 @@ open class FUFSinglePackage(
     open val apiMode: Int
 ) {
 
+    /**
+     * Executes the requested freeze or unfreeze operation according to [apiMode].
+     *
+     * <p>Includes self-preservation validation preventing FreezeYou from freezing its own package
+     * (matching dynamic {@code context.packageName} to accommodate custom application IDs).
+     *
+     * @return Result status code: [ERROR_NO_ERROR_SUCCESS] (0) on success, or a negative error code on failure
+     */
     open suspend fun commit(): Int {
         if (singlePackageName.isBlank()) return ERROR_SINGLE_PACKAGE_NAME_IS_BLANK
 
@@ -63,6 +97,11 @@ open class FUFSinglePackage(
         }
     }
 
+    /**
+     * Legacy automatic resolution mode (Mode 0).
+     * Attempts Device Owner (DPM) if available on API 21+, otherwise falls back to Root.
+     * When unfreezing, checks whether the package was hidden via DPM or disabled via Root.
+     */
     private fun pureExecuteAPIAutoAction(): Int {
         return if (actionMode == ACTION_MODE_FREEZE) {
             if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
@@ -79,6 +118,16 @@ open class FUFSinglePackage(
         }
     }
 
+    /**
+     * Executes freeze/unfreeze via Device Policy Manager (Mode 1: Device Owner).
+     *
+     * <p>Uses {@link android.app.admin.DevicePolicyManager#setApplicationHidden}.
+     * When hidden, the application is disabled from running and its launcher icons are hidden,
+     * but its APK, user data, and runtime permissions remain completely preserved.
+     *
+     * <p>Optimized with early short-circuiting: if an unfreeze is requested and the package
+     * is already unhidden, returns success immediately without issuing redundant Binder IPC.
+     */
     private fun pureExecuteAPIDPMAction(): Int {
 
         if (Build.VERSION.SDK_INT < 21) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
@@ -105,6 +154,9 @@ open class FUFSinglePackage(
 
     }
 
+    /**
+     * Resolves the appropriate root command variant (hide vs disable) based on [apiMode].
+     */
     private fun pureExecuteAPIRootAction(): Int {
         return when (apiMode) {
             @Suppress("DEPRECATION")
@@ -117,6 +169,12 @@ open class FUFSinglePackage(
         }
     }
 
+    /**
+     * Executes root freeze/unfreeze via {@link ProcessUtils#fAURoot}.
+     *
+     * @param hideMode If true, executes {@code pm hide} / {@code pm unhide} (Mode 3);
+     *                 if false, executes {@code pm disable} / {@code pm enable} (Mode 2).
+     */
     private fun pureExecuteAPIRootAction(hideMode: Boolean): Int {
 
         var returnValue = ERROR_OTHER
@@ -141,6 +199,12 @@ open class FUFSinglePackage(
         return returnValue
     }
 
+    /**
+     * Privileged System App Mode 4: {@code COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED}.
+     *
+     * <p>Requires FreezeYou to reside in {@code /system/priv-app}. The target application
+     * remains disabled until explicitly invoked by a user action or system intent.
+     */
     private fun pureExecuteAPISystemAppDisabledUntilUsedAction(): Int {
 
         if (Build.VERSION.SDK_INT < 18) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
@@ -157,6 +221,12 @@ open class FUFSinglePackage(
         return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
     }
 
+    /**
+     * Privileged System App Mode 5: {@code COMPONENT_ENABLED_STATE_DISABLED_USER}.
+     *
+     * <p>Requires FreezeYou to reside in {@code /system/priv-app}. Marks the package as
+     * disabled explicitly by user action, preventing third-party packages from auto-re-enabling it.
+     */
     private fun pureExecuteAPISystemAppDisabledUserAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
@@ -172,6 +242,12 @@ open class FUFSinglePackage(
         return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
     }
 
+    /**
+     * Privileged System App Mode 6: {@code COMPONENT_ENABLED_STATE_DISABLED}.
+     *
+     * <p>Requires FreezeYou to reside in {@code /system/priv-app}. Completely disables the package
+     * at framework level regardless of user context.
+     */
     private fun pureExecuteAPISystemAppDisabledAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
@@ -187,6 +263,12 @@ open class FUFSinglePackage(
         return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
     }
 
+    /**
+     * Executes freeze/unfreeze via Device Policy Manager in Profile Owner mode (Mode 7).
+     *
+     * <p>Functions identically to Mode 1 (Device Owner) using {@code setApplicationHidden},
+     * but scoped specifically to a Managed Profile (Work Profile).
+     */
     private fun pureExecuteAPIProfileOwnerAction(): Int {
 
         if (Build.VERSION.SDK_INT < 21) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
@@ -213,6 +295,29 @@ open class FUFSinglePackage(
 
     }
 
+    /**
+     * Executes freeze/unfreeze using direct Binder IPC via Shizuku / Sui (Modes 8, 9, 10).
+     *
+     * <p><b>Android 14 (API 34) Security Restrictions:</b><br>
+     * In Android 14+, {@code PackageManagerService} introduced strict caller UID validation on
+     * {@code setApplicationEnabledSetting}. Plain Shizuku runs as UID 2000 (shell). Shell UID
+     * is permitted to toggle applications only between {@code ENABLED}, {@code DISABLED_USER},
+     * and {@code DEFAULT}. Attempting to pass {@code DISABLED} or {@code DISABLED_UNTIL_USED}
+     * throws a {@link SecurityException}.
+     *
+     * <p>FreezeYou inspects the Shizuku server UID via [resolveShizukuUid]:
+     * <ul>
+     *   <li>If UID is 0 (Sui / root-backed Shizuku): preserves exact requested states (Modes 8, 9, 10).</li>
+     *   <li>If UID is 2000 (standard ADB Shizuku): automatically remaps all freeze modes to
+     *       {@link PackageManager#COMPONENT_ENABLED_STATE_DISABLED_USER}, ensuring compatibility
+     *       without SecurityExceptions.</li>
+     * </ul>
+     *
+     * <p><b>Self-Healing &amp; Verification:</b><br>
+     * Handles {@link android.os.DeadObjectException} by refreshing cached proxies when Shizuku restarts.
+     * Verifies the effective state via [verifyFrozenStateSettled] to handle asynchronous disk commits
+     * and OEM ROM quirks (MIUI/HyperOS).
+     */
     private fun pureExecuteAPIShizukuAction(): Int {
         if (Build.VERSION.SDK_INT < 23) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         val debug = isDebugModeEnabled()
@@ -433,6 +538,7 @@ open class FUFSinglePackage(
 
         const val ACTION_MODE_FREEZE = 0
         const val ACTION_MODE_UNFREEZE = 1
+
         const val ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT = 1
         const val ERROR_NO_ERROR_SUCCESS = 0
         const val ERROR_OTHER = -1
@@ -454,62 +560,101 @@ open class FUFSinglePackage(
         const val ERROR_STATE_DID_NOT_CHANGE = -17
 
         /**
-         * Use FreezeYou legacy auto mode (DPM / ROOT DISABLE).
+         * Mode 0: FreezeYou legacy automatic resolution mode.
          *
-         * Recommended: use [API_FREEZEYOU_MROOT_DPM],
-         * [API_FREEZEYOU_ROOT_DISABLE_ENABLE],
-         * or [API_FREEZEYOU_ROOT_UNHIDE_HIDE] directly.
+         * <p>Inspects runtime environment: prioritizes Device Owner (DPM) if provisioned on API 21+,
+         * falling back to Root shell commands otherwise.
+         *
+         * @deprecated Use explicit modes ([API_FREEZEYOU_MROOT_DPM], [API_FREEZEYOU_ROOT_DISABLE_ENABLE],
+         * or [API_FREEZEYOU_ROOT_UNHIDE_HIDE]) to avoid unexpected privilege fallback behavior.
          */
         @Deprecated("Use API_FREEZEYOU_MROOT_DPM or API_FREEZEYOU_ROOT_DISABLE_ENABLE instead.")
         const val API_FREEZEYOU_LEGACY_AUTO = 0
 
         /**
-         * Use FreezeYou non-ROOT (DPM) mode.
+         * Mode 1: Device Policy Manager (DPM) Device Owner mode.
+         *
+         * <p>Calls {@link android.app.admin.DevicePolicyManager#setApplicationHidden}.
+         * Requires FreezeYou to be configured as device owner via {@code dpm set-device-owner}.
+         * Hides the app and halts background processes while preserving all application data and permissions.
          */
         const val API_FREEZEYOU_MROOT_DPM = 1
 
         /**
-         * Use FreezeYou ROOT (DISABLE) mode.
+         * Mode 2: Root Shell Disable mode.
+         *
+         * <p>Executes {@code pm disable} / {@code pm enable} via su/app_process.
+         * Toggles component state to disabled. May trigger launcher icon reorganization on some devices.
          */
         const val API_FREEZEYOU_ROOT_DISABLE_ENABLE = 2
 
         /**
-         * Use FreezeYou ROOT (UNHIDE) mode.
+         * Mode 3: Root Shell Hide mode.
+         *
+         * <p>Executes {@code pm hide} / {@code pm unhide} via su/app_process.
+         * Packages are hidden similarly to DPM mode without altering component enabled states.
          */
         const val API_FREEZEYOU_ROOT_UNHIDE_HIDE = 3
 
         /**
-         * Use FreezeYou System App (DISABLE_UNTIL_USED) mode.
+         * Mode 4: Privileged System App (DISABLE_UNTIL_USED) mode.
+         *
+         * <p>Uses {@link PackageManager#COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED}.
+         * Requires FreezeYou to be installed in {@code /system/priv-app}. The app is suppressed until
+         * explicitly triggered by user launch or system intent. Available on API 18+.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 4
 
         /**
-         * Use FreezeYou System App (DISABLE_USER) mode.
+         * Mode 5: Privileged System App (DISABLE_USER) mode.
+         *
+         * <p>Uses {@link PackageManager#COMPONENT_ENABLED_STATE_DISABLED_USER}.
+         * Requires FreezeYou in {@code /system/priv-app}. Marks the application as explicitly disabled
+         * by the user, preventing automatic re-activation by third-party intents.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER = 5
 
         /**
-         * Use FreezeYou System App (DISABLE) mode.
+         * Mode 6: Privileged System App (DISABLE) mode.
+         *
+         * <p>Uses {@link PackageManager#COMPONENT_ENABLED_STATE_DISABLED}.
+         * Unconditionally disables the package at the framework package manager level.
          */
         const val API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE = 6
 
         /**
-         * Use FreezeYou non-ROOT (Profile Owner) mode.
+         * Mode 7: Device Policy Manager (DPM) Profile Owner mode.
+         *
+         * <p>Calls {@code setApplicationHidden} within a Managed Profile (Work Profile).
+         * Enables non-root freezing inside enterprise work containers without requiring full device ownership.
          */
         const val API_FREEZEYOU_MROOT_PROFILE_OWNER = 7
 
         /**
-         * Use FreezeYou Shizuku System App (DISABLE_UNTIL_USED) mode.
+         * Mode 8: Shizuku / Sui Binder IPC (DISABLE_UNTIL_USED) mode.
+         *
+         * <p>Direct Binder IPC invocation of {@code IPackageManager.setApplicationEnabledSetting}.
+         * On Android 14+ with plain Shizuku (UID 2000), PMS blocks this state with SecurityException;
+         * FreezeYou automatically remaps to [API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER].
+         * Full state fidelity is preserved when running under root-backed Sui (UID 0).
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 8
 
         /**
-         * Use FreezeYou Shizuku System App (DISABLE_USER) mode.
+         * Mode 9: Shizuku / Sui Binder IPC (DISABLE_USER) mode.
+         *
+         * <p>Direct Binder IPC invocation setting {@code COMPONENT_ENABLED_STATE_DISABLED_USER}.
+         * The standard, recommended non-root freezing mode: universally supported by Android shell UID (2000)
+         * across all Android versions without PMS security restrictions.
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER = 9
 
         /**
-         * Use FreezeYou Shizuku System App (DISABLE) mode.
+         * Mode 10: Shizuku / Sui Binder IPC (DISABLE) mode.
+         *
+         * <p>Direct Binder IPC invocation setting {@code COMPONENT_ENABLED_STATE_DISABLED}.
+         * Remapped to [API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER] on Android 14+ plain Shizuku (UID 2000)
+         * to satisfy PMS security checks; preserved natively under Sui (UID 0).
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE = 10
 
