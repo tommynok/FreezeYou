@@ -51,8 +51,48 @@ import static cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess;
 import static cf.playhi.freezeyou.utils.ServiceUtils.startService;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
+/**
+ * Automation orchestrator and task execution engine for FreezeYou.
+ *
+ * <p><b>Automation Architecture &amp; Task Models:</b>
+ * <ul>
+ *   <li><b>Timed Tasks (Alarm Clock Schedule):</b> Managed via {@link AlarmManager#RTC_WAKEUP} and
+ *       stored in {@code scheduledTasks.db}. Fired at specific times of day or repeating weekday intervals
+ *       ([publishTask]), leveraging {@link AlarmManager#setExactAndAllowWhileIdle} on API 23+ to bypass Doze mode.</li>
+ *   <li><b>Trigger Tasks (Event-Driven Automation):</b> Stored in {@code scheduledTriggerTasks.db}. Fired by system
+ *       and lifecycle events (e.g. screen on/off, network change, [onUFApplications], [onFApplications],
+ *       or [AccessibilityService] foreground transitions).</li>
+ *   <li><b>Deferred Command Execution ({@code -d <seconds>}):</b> Any command can specify an execution delay
+ *       using the {@code -d} switch. Deferred tasks are scheduled using {@link AlarmManager#ELAPSED_REALTIME_WAKEUP}
+ *       and tracked in persistent storage ([AppPreferences]).</li>
+ *   <li><b>State-Aware Task Cancellation ([cancelAllUnexecutedDelayTasks]):</b>
+ *       When an action is scheduled with a trigger-specific prefix (e.g. {@code OLA_<pkg>} for "on-leave"),
+ *       its pending alarm request code is recorded. If the user re-enters or foregrounds the application before
+ *       the countdown expires, the pending alarm is cancelled immediately, preventing unintended freeze/kill actions.</li>
+ * </ul>
+ *
+ * <p><b>Mini Task DSL Syntax:</b><br>
+ * Semicolon-delimited command strings supporting:
+ * <ul>
+ *   <li>{@code okff} / {@code okuf}: One-key freeze / unfreeze</li>
+ *   <li>{@code ff,<packages>} / {@code uf,<packages>}: Freeze / unfreeze specified package list</li>
+ *   <li>{@code fc,<packages>}: Force-stop packages</li>
+ *   <li>{@code ls}: Lock screen via Device Admin</li>
+ *   <li>{@code ds,<setting>} / {@code es,<setting>}: Disable / enable system toggles (wifi, bluetooth, cellular data)</li>
+ *   <li>{@code sp,<packages>}: Launch applications</li>
+ *   <li>{@code sn,<title>,<text>}: Post user notification</li>
+ *   <li>{@code st,<message>}: Display toast message</li>
+ *   <li>{@code su,<uri>}: Open URI via Intent</li>
+ * </ul>
+ */
 public final class TasksUtils {
 
+    /**
+     * Publishes a timed alarm task to {@link AlarmManager}.
+     *
+     * <p>Calculates the next occurrence considering 24-hour time and repeating weekday masks.
+     * Uses {@code RTC_WAKEUP} with exact delivery to wake the device at the scheduled moment.
+     */
     public static void publishTask(
             Context context, int id, int hour, int minute, String repeat, String task) {
         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -153,6 +193,16 @@ public final class TasksUtils {
         return last - first;
     }
 
+    /**
+     * Parses and dispatches a compound task string conforming to FreezeYou's mini-DSL.
+     *
+     * <p>Statements are delimited by semicolons ({@code ;}). Each sub-task is evaluated against
+     * supported command verbs (e.g. {@code ff}, {@code uf}, {@code okff}, {@code ls}, {@code ds}, etc.).
+     *
+     * @param task task string to execute (e.g. "ff,com.example.app;ls")
+     * @param context execution context
+     * @param taskTrigger trigger identifier tag (e.g. "OLA_com.example" or "onScreenOn") used for cancellation tracking
+     */
     public static void runTask(String task, Context context, String taskTrigger) {
         String[] sTasks = task.split(";");
         for (String asTasks : sTasks) {
@@ -345,6 +395,19 @@ public final class TasksUtils {
         }
     }
 
+    /**
+     * Inspects a task string for the {@code -d <seconds>} execution delay flag.
+     *
+     * <p>If a delay is specified:
+     * <ol>
+     *   <li>Schedules a one-shot alarm via {@link AlarmManager#ELAPSED_REALTIME_WAKEUP} targeting {@link TasksNeedExecuteReceiver}.</li>
+     *   <li>If {@code taskTrigger} is non-null (e.g. {@code OLA_<pkg>}), records the generated request code in
+     *       {@link AppPreferences} so that it can be cancelled if the user returns to the app.</li>
+     *   <li>Returns {@code false} to indicate the task has been deferred.</li>
+     * </ol>
+     *
+     * @return true if the task contains no delay flag and should execute immediately; false if deferred
+     */
     private static boolean parseTaskAndReturnIfNeedExecuteImmediately(Context context, String task, String taskTrigger) {
         String[] splitTask = task.split(" ");
         int splitTaskLength = splitTask.length;
@@ -519,6 +582,17 @@ public final class TasksUtils {
         }
     }
 
+    /**
+     * Cancels all pending delayed tasks associated with the specified trigger identifier.
+     *
+     * <p>Scans [AppPreferences] for all alarm request codes registered under {@code typeNeedsCheckTaskTrigger}
+     * (e.g. {@code OLA_<pkg>} for "on-leave" or {@code OSA_<pkg>} for "on-start").
+     * Calls {@link AlarmManager#cancel} on each pending intent, preventing actions scheduled during an app exit
+     * from firing if the user re-enters the application before the timer elapses.
+     *
+     * @param context application or activity context
+     * @param typeNeedsCheckTaskTrigger trigger key prefix (e.g. "OLA_com.example")
+     */
     public static void cancelAllUnexecutedDelayTasks(Context context, String typeNeedsCheckTaskTrigger) {
         if (typeNeedsCheckTaskTrigger != null) {
             AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
