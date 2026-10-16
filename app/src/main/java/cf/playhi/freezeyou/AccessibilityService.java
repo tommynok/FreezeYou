@@ -29,8 +29,30 @@ import static cf.playhi.freezeyou.utils.Support.checkLanguage;
 import static cf.playhi.freezeyou.utils.Support.getLocalString;
 import static cf.playhi.freezeyou.utils.TasksUtils.cancelAllUnexecutedDelayTasks;
 
-// Needs to be retained for compatibility
-// with old FreezeYou structures and settings.
+/**
+ * Foreground application monitor and automation trigger engine backed by Android's Accessibility framework.
+ *
+ * <p><b>Architecture &amp; Rationale:</b><br>
+ * Detecting the active foreground application on modern Android without continuous CPU-heavy polling
+ * (e.g. {@code UsageStatsManager}) is achieved efficiently via accessibility window change events
+ * ({@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED}). This service tracks window focus transitions
+ * in real time to power:
+ * <ul>
+ *   <li><b>"Freeze Once Quit" Automation:</b> Freezes configured applications immediately when the user
+ *       navigates away from them.</li>
+ *   <li><b>Foreground Guard:</b> Protects the currently viewed application from being frozen by background
+ *       timers or scheduled tasks.</li>
+ *   <li><b>Event Triggers:</b> Dispatches {@code onApplicationsForeground} and {@code onLeaveApplications}
+ *       rules defined in the automation trigger database.</li>
+ * </ul>
+ *
+ * <p><b>OEM Overlay Filtering (MIUI / HyperOS Quirks):</b><br>
+ * Many OEM skins (particularly Xiaomi's MIUI/HyperOS) dispatch full-screen window state events for
+ * transient UI elements like volume sliders, floating sound assistants, and input method windows.
+ * Without explicit heuristic filtering, adjusting the media volume or typing on a soft keyboard would
+ * erroneously register as "exiting the app", causing the active application to freeze abruptly while
+ * in use.
+ */
 public class AccessibilityService extends android.accessibilityservice.AccessibilityService {
 
     @Override
@@ -57,6 +79,20 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         super.onCreate();
     }
 
+    /**
+     * Intercepts window state transitions and identifies genuine application switches.
+     *
+     * <p><b>Filtering Pipeline:</b>
+     * <ol>
+     *   <li>Ensures the event represents a full-screen window change ({@code isFullScreen()}).</li>
+     *   <li>Filters out system packages ({@code android}, {@code com.android.systemui}, {@code com.android.packageinstaller}).</li>
+     *   <li>Filters out OEM overlays (e.g. {@code miui.systemui.plugin}, MIUI volume panel dialogs).</li>
+     *   <li>Filters out soft keyboards ({@code SoftInputWindow}) to prevent freezing apps while typing.</li>
+     *   <li>Validates that the screen is actively illuminated ({@code pm.isScreenOn()}).</li>
+     *   <li>If the user switched to a different package, updates [MainApplication#getCurrentPackage] and
+     *       dispatches exit triggers ([onLeaveApplications]) and entry triggers ([onApplicationsForeground]).</li>
+     * </ol>
+     */
     @Override
     public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
         int type = accessibilityEvent.getEventType();
@@ -131,6 +167,13 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         return super.onUnbind(intent);
     }
 
+    /**
+     * Handles transitions when an application is brought to the foreground.
+     *
+     * <p>Cancels any pending delayed open-app tasks for {@code previousPkg} (keyed with prefix {@code OSA_})
+     * to prevent stale executions, then evaluates and executes matching {@code onApplicationsForeground}
+     * automation rules from the scheduled trigger database.
+     */
     private void onApplicationsForeground(String previousPkg, String pkgNameString) {
 
         if (!pkgNameString.equals(previousPkg) && !"cf.playhi.freezeyou".equals(previousPkg)) {
@@ -166,6 +209,13 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         }
     }
 
+    /**
+     * Handles transitions when the user navigates away from an application.
+     *
+     * <p>Checks if an update or package installation was deferred pending the user exiting this app,
+     * cancels stale pending leave-app delayed tasks (keyed with prefix {@code OLA_}), and executes
+     * registered {@code onLeaveApplications} automation rules.
+     */
     private void onLeaveApplications(String previousPkg, String pkgNameString) {
 
         checkAndInstallWaitingForLeavingToInstallApplication(previousPkg);
