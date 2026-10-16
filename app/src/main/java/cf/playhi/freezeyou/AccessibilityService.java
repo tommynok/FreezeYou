@@ -69,13 +69,13 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 if (pkgName == null) return;
                 String pkgNameString = pkgName.toString();
 
-                addUpUseTimes(pkgNameString);//使用次数计数（增加）
+                addUpUseTimes(pkgNameString);
 
                 if ("".equals(pkgNameString)
                         || "android".equals(pkgNameString)
                         || "com.android.systemui".equals(pkgNameString)
                         || "com.android.packageinstaller".equals(pkgNameString) // Grant permissions, etc.
-                        || "miui.systemui.plugin".equals(pkgNameString) // MIUI 系统界面组件：各类弹窗，声音助手（含音量条）、无线反向充电等
+                        || "miui.systemui.plugin".equals(pkgNameString) // MIUI System UI plugin (popups, volume dialogs, etc.)
 
                 ) {
                     return;
@@ -83,7 +83,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
                 String className = accessibilityEvent.getClassName().toString();
                 if ("android.inputmethodservice.SoftInputWindow".equals(className)
-                        || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(className) // MIUI 音质音效：声音助手 - 多应用媒体音调节浮窗
+                        || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(className) // MIUI volume panel
                 ) {
                     return;
                 }
@@ -104,9 +104,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     );
                 }
 
-                onLeaveApplications(previousPkg, pkgNameString);//检测+执行
+                onLeaveApplications(previousPkg, pkgNameString);
 
-                onApplicationsForeground(previousPkg, pkgNameString);//检测+执行
+                onApplicationsForeground(previousPkg, pkgNameString);
 
                 break;
             default:
@@ -134,7 +134,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     private void onApplicationsForeground(String previousPkg, String pkgNameString) {
 
         if (!pkgNameString.equals(previousPkg) && !"cf.playhi.freezeyou".equals(previousPkg)) {
-            cancelAllUnexecutedDelayTasks(this, "OSA_" + previousPkg);//撤销全部属于上一应用的未执行的打开应用时
+            cancelAllUnexecutedDelayTasks(this, "OSA_" + previousPkg); // Cancel pending open-app delayed tasks
             final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
             db.execSQL(
                     "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
@@ -171,7 +171,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         checkAndInstallWaitingForLeavingToInstallApplication(previousPkg);
 
         if (!pkgNameString.equals(previousPkg) && !"cf.playhi.freezeyou".equals(previousPkg)) {
-            cancelAllUnexecutedDelayTasks(this, "OLA_" + pkgNameString);//撤销全部属于被打开应用的未执行的离开应用时
+            cancelAllUnexecutedDelayTasks(this, "OLA_" + pkgNameString); // Cancel pending leave-app delayed tasks
             final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
             db.execSQL(
                     "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
@@ -209,7 +209,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {
         final Intent intent = MainApplication.getWaitingForLeavingToInstallApplicationIntent();
-        if (intent == null) return; //无待处理
+        if (intent == null) return;
         final Parcelable packageInfoParcelable = intent.getParcelableExtra("packageInfo");
         final PackageInfo packageInfo =
                 packageInfoParcelable instanceof PackageInfo

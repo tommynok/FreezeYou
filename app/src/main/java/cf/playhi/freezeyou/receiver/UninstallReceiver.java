@@ -28,7 +28,7 @@ public class UninstallReceiver extends BroadcastReceiver {
                     removeFromOneKeyList(context, context.getString(R.string.sAutoFreezeApplicationList), pkgName);
                     removeFromOneKeyList(context, context.getString(R.string.sOneKeyUFApplicationList), pkgName);
                     removeFromOneKeyList(context, context.getString(R.string.sFreezeOnceQuit), pkgName);
-                    //清理被卸载应用程序的图标数据
+                    // Clean up icon cache for uninstalled application
                     File file = new File(context.getFilesDir() + "/icon/" + pkgName + ".png");
                     if (file.exists() && file.isFile()) {
                         file.delete();
@@ -37,10 +37,10 @@ public class UninstallReceiver extends BroadcastReceiver {
                     if (file2.exists() && file2.isFile()) {
                         file2.delete();
                     }
-                    //清理被卸载应用程序的名称
+                    // Clean up cached name for uninstalled application
                     context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                             .edit().remove(pkgName).apply();
-                    //清理可能存在的通知栏提示重新显示数据
+                    // Clean up notification data if present
                     deleteNotification(context, pkgName);
                 }
             }

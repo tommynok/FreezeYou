@@ -386,11 +386,11 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         @JvmStatic
         var waitingForLeavingToInstallApplicationIntent: Intent? = null
             /**
-             * @return Intent，可能为 null （无等待处理内容）
+             * @return Intent, or null if no pending request
              */
             get() = field
             /**
-             * @param intent 可空，使用后尽快置空
+             * @param intent Intent (nullable)
              */
             set(intent) {
                 field = intent

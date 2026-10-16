@@ -15,7 +15,7 @@ public class TasksNeedExecuteReceiver extends BroadcastReceiver {
         int minute = intent.getIntExtra("minute", -1);
         String task = intent.getStringExtra("task");
         String repeat = intent.getStringExtra("repeat");
-        if (id != -6) {//-6为延时任务
+        if (id != -6) { // -6 is delayed task
             if ("0".equals(repeat) && id != -5) {
                 SQLiteDatabase db =
                         context.openOrCreateDatabase("scheduledTasks",

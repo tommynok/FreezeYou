@@ -129,7 +129,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
             uninstall(intent, builder, notificationManager);
         }
 
-        //移除已完成的
+        // Remove completed intent
         intentArrayList.remove(intent);
 
         checkIfAllTaskDoneAndStopSelf();

@@ -10,7 +10,7 @@ public final class FUFMode {
     public static final String MODE_AUTO = "MODE_AUTO";
 
     /**
-     * 不建议使用自动切换模式
+     * Auto mode is not recommended
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated

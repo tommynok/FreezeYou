@@ -27,7 +27,7 @@ public class PackageReplacedReceiver extends BroadcastReceiver {
                 ApplicationInfo applicationInfo =
                         ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context);
                 if (applicationInfo != null) {
-                    // 检查设置并更新应用程序图标数据
+                    // Check settings and update application icon cache
                     if (cacheApplicationsIcons.getValue(context)) {
                         File file2 = new File(context.getCacheDir() + "/icon/" + pkgName + ".png");
                         if (file2.exists() && file2.isFile()) {
@@ -42,7 +42,7 @@ public class PackageReplacedReceiver extends BroadcastReceiver {
                                         context, pkgName,
                                         applicationInfo, false, true);
                     }
-                    //更新应用程序名称
+                    // Update application label cache
                     context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                             .edit()
                             .putString(

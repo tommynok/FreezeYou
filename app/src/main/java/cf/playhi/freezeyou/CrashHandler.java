@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Date;
 
-//部分参考 https://blog.csdn.net/soul_code/article/details/50601960
+// Reference: https://blog.csdn.net/soul_code/article/details/50601960
 class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     private Context mContext;
@@ -73,7 +73,7 @@ class CrashHandler implements Thread.UncaughtExceptionHandler {
     }
 
     private void saveLocationAndMore(String filePath, Date date) {
-        //保存需要提交文件位置
+        // Save crash log location
         File file = new File(filePath);
         if (!file.exists()) {
             if (!file.mkdirs()) {

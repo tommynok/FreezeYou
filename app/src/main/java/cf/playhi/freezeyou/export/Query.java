@@ -151,7 +151,7 @@ public class Query extends ContentProvider {
                 return bundle;
             case QUERY_IF_CAN_INSTALL_APPLICATIONS_STATUS:
                 if (context == null) {
-                    bundle.putBooleanArray("status", new boolean[]{false, false, false, false}); // 可用状态、installActivityEnabled、hasRootPerm、hasDpmPerm
+                    bundle.putBooleanArray("status", new boolean[]{false, false, false, false}); // available, installActivityEnabled, hasRootPerm, hasDpmPerm
                 } else {
                     boolean installActivityEnabled, hasRootPerm, hasDpmPerm;
                     switch (context.getPackageManager().getComponentEnabledSetting(

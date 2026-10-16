@@ -19,7 +19,7 @@ public class LocaleChangedReceiver extends BroadcastReceiver {
         if (Intent.ACTION_LOCALE_CHANGED.equals(intent.getAction())) {
             PackageManager packageManager = context.getPackageManager();
             List<ApplicationInfo> applicationInfo = packageManager.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES);
-            //更新所有应用程序名称
+            // Update cached names of all installed applications
             for (ApplicationInfo applicationInfo1 : applicationInfo) {
                 context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                         .edit()
