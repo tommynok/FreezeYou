@@ -25,33 +25,78 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme;
 import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 
+/**
+ * Utility class for detecting and restoring uninstalled system applications.
+ *
+ * <p><b>Android System App Lifecycle Rationale:</b><br>
+ * When a system app residing in read-only partitions ({@code /system}, {@code /product},
+ * {@code /vendor}, {@code /system_ext}) is uninstalled for a specific Android user (e.g. via
+ * {@code pm uninstall -k --user 0} or {@link android.content.pm.PackageManager#DELETE_SYSTEM_APP}),
+ * its APK binaries remain intact in the system image. The framework merely removes the user's
+ * private data directory from {@code /data/user/<id>/} and unsets the {@code FLAG_INSTALLED}
+ * bit in {@link ApplicationInfo#flags}.
+ *
+ * <p>Unlike third-party user apps (whose APKs in {@code /data/app} are permanently wiped upon
+ * uninstallation), system apps can be restored instantly without APK re-downloading or root remounting
+ * using Android's built-in {@code cmd package install-existing} (or {@code pm install-existing}) command.
+ *
+ * <p><b>Privilege Model:</b><br>
+ * Restoration requires privileged execution permissions ({@code android.permission.INSTALL_PACKAGES}),
+ * granted via either Shizuku (UID 2000 shell) or Root (UID 0). Shizuku is always prioritized.
+ */
 public final class RestoreUtils {
 
-    // FLAG_INSTALLED is 1 << 23. Keep the value local so it can be checked on older Android APIs.
+    /**
+     * Hidden framework flag indicating that the package is currently installed for the targeted user.
+     * Value corresponds to {@code ApplicationInfo.FLAG_INSTALLED} (1 &lt;&lt; 23, 0x00800000).
+     * Defined locally to ensure safe compilation and runtime checks without reflection or hidden API bypass.
+     */
     private static final int FLAG_INSTALLED = 0x00800000;
 
     private RestoreUtils() {}
 
+    /**
+     * Checks if the filter string corresponds to the "Only Uninstalled System" (OUS) category.
+     */
     public static boolean isRestoreFilter(String filter) {
         return "OUS".equals(filter);
     }
 
+    /**
+     * Checks if the package represented by {@code appInfo} is marked as uninstalled for the current user.
+     */
     public static boolean isAppUninstalled(ApplicationInfo appInfo) {
         return appInfo != null && isAppUninstalledFlags(appInfo.flags);
     }
 
+    /**
+     * Evaluates package flags to determine if {@link #FLAG_INSTALLED} is absent.
+     */
     public static boolean isAppUninstalledFlags(int flags) {
         return (flags & FLAG_INSTALLED) == 0;
     }
 
+    /**
+     * Checks if the application is a restorable system app: it must have
+     * {@link ApplicationInfo#FLAG_SYSTEM} set and {@link #FLAG_INSTALLED} unset.
+     * User applications cannot be restored via {@code install-existing} because their APKs
+     * in {@code /data/app} are wiped upon uninstallation.
+     */
     public static boolean isRestorableSystemApp(ApplicationInfo appInfo) {
         return appInfo != null && isRestorableSystemAppFlags(appInfo.flags);
     }
 
+    /**
+     * Evaluates package flags to verify whether the package is a system app and currently uninstalled.
+     */
     public static boolean isRestorableSystemAppFlags(int flags) {
         return (flags & ApplicationInfo.FLAG_SYSTEM) != 0 && isAppUninstalledFlags(flags);
     }
 
+    /**
+     * Queries {@link PackageManager} with {@code GET_UNINSTALLED_PACKAGES} to determine
+     * whether the specified package exists in the system partition and is currently uninstalled for this user.
+     */
     public static boolean isRestorableSystemPackage(Context context, String packageName) {
         if (context == null || packageName == null || packageName.isEmpty()) return false;
         try {
@@ -63,7 +108,10 @@ public final class RestoreUtils {
         }
     }
 
-    /** True only when every requested package is currently an uninstalled system package. */
+    /**
+     * Validates that every package in the provided list is currently an uninstalled system package
+     * eligible for restoration. Returns false if any package is invalid, already installed, or a user app.
+     */
     public static boolean canRestorePackages(Context context, List<String> packageNames) {
         if (context == null || packageNames == null || packageNames.isEmpty()) return false;
         PackageManager packageManager = context.getPackageManager();
@@ -80,6 +128,14 @@ public final class RestoreUtils {
         return true;
     }
 
+    /**
+     * Shows a confirmation dialog to the user before restoring uninstalled system apps.
+     *
+     * @param activity active activity hosting the dialog
+     * @param packageNames list of package names to restore
+     * @param appName user-visible label of the app (or null for batch operations)
+     * @param onRestoredCallback callback executed on the main looper after restoration completes
+     */
     public static void showRestoreConfirmDialog(final Activity activity,
                                                 final List<String> packageNames,
                                                 final String appName,
@@ -100,12 +156,34 @@ public final class RestoreUtils {
                 .show();
     }
 
+    /**
+     * Convenience overload for restoring multiple packages without a specific app name label.
+     */
     public static void restorePackages(final Context context,
                                        final List<String> packageNames,
                                        final Runnable onFinishedCallback) {
         restorePackages(context, packageNames, null, onFinishedCallback);
     }
 
+    /**
+     * Dispatches restoration of the specified system packages on a background thread.
+     *
+     * <p><b>Execution flow:</b>
+     * <ol>
+     *   <li>Deduplicates package names using {@link LinkedHashSet} to avoid redundant operations.</li>
+     *   <li>Verifies eligibility with {@link #canRestorePackages(Context, List)}.</li>
+     *   <li>Displays an indeterminate {@link ProgressDialog} if batch restoring (&gt; 1 package) in an Activity.</li>
+     *   <li>Iterates packages and executes {@code cmd package install-existing --user <userId> <package>}.
+     *       If that fails, falls back to legacy {@code pm install-existing --user <userId> <package>}.</li>
+     *   <li>Prioritizes Shizuku execution; if unavailable, uses Root.</li>
+     *   <li>Dismisses progress dialog and posts results to the main thread via {@link #postRestoreResult}.</li>
+     * </ol>
+     *
+     * @param context execution context
+     * @param packageNames list of package names to restore
+     * @param appName user-facing label (for single-app restoration dialog) or null
+     * @param onFinishedCallback callback executed on the main thread when operation concludes
+     */
     public static void restorePackages(final Context context,
                                        final List<String> packageNames,
                                        final String appName,
@@ -173,6 +251,9 @@ public final class RestoreUtils {
         }).start();
     }
 
+    /**
+     * Executes the shell command via Shizuku (preferred) or Root (fallback).
+     */
     private static PrivilegedShellUtils.CommandResult runInstallExisting(
             boolean shizukuAvailable,
             String command) throws Exception {
@@ -181,6 +262,13 @@ public final class RestoreUtils {
                 : PrivilegedShellUtils.runRootCommand(command);
     }
 
+    /**
+     * Dispatches restoration feedback to the user on the main looper.
+     *
+     * <p>Respects the "Stealth" preference ({@link #hideUninstallSuccessDialog}):
+     * when stealth mode is active, success dialogs and toasts are silenced, notifying
+     * the user only if the operation failed completely.
+     */
     private static void postRestoreResult(final Context context,
                                           final int restoredCount,
                                           final int totalCount,
@@ -208,6 +296,10 @@ public final class RestoreUtils {
         });
     }
 
+    /**
+     * Displays a Material completion dialog summarizing restored package counts.
+     * Applies accent color tinting to positive dialog buttons when running under light themes.
+     */
     private static void showRestoreCompletedDialog(
             final Activity activity,
             final int restoredCount,
