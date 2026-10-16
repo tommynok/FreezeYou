@@ -23,26 +23,26 @@ public final class InstallPackagesUtils {
             String title, String text, boolean success) {
 
         if (beOperatedPackageName == null)
-            return;// null 无法取得通知特征 hashcode
+            return; // null package cannot produce notification tag hashcode
 
-        // 小图标
+        // Small icon
         builder.setSmallIcon(R.drawable.ic_notification);
 
         builder.setProgress(0, 0, false);
 
         if (install) {
 
-            // 提示标题
+            // Content title
             if (title != null)
                 builder.setContentTitle(title);
 
-            // 提示文本
+            // Content text
             if (text != null)
                 builder.setContentText(text);
 
             if (success) {
 
-                // 大图标
+                // Large icon
                 builder.setLargeIcon(
                         ApplicationIconUtils.getBitmapFromDrawable(
                                 ApplicationIconUtils.getApplicationIcon(
@@ -56,7 +56,7 @@ public final class InstallPackagesUtils {
                         )
                 );
 
-                // 点击打开
+                // Launch on click
                 Intent resultIntent =
                         context.getPackageManager().getLaunchIntentForPackage(beOperatedPackageName);
                 if (resultIntent != null) {
@@ -77,7 +77,7 @@ public final class InstallPackagesUtils {
 
                 }
             } else {
-                // 错误信息弹窗
+                // Error dialog
                 PendingIntent resultPendingIntent =
                         PendingIntent
                                 .getActivity(
@@ -123,8 +123,8 @@ public final class InstallPackagesUtils {
 
     /**
      * @param context     Context
-     * @param apkFilePath 文件路径
-     * @param noCheck     不检查是否为安装过程生成的，直接删除
+     * @param apkFilePath File path
+     * @param noCheck     Delete directly without checking if generated during install
      */
     public static void deleteTempFile(Context context, String apkFilePath, boolean noCheck) {
         if (noCheck || apkFilePath.startsWith(context.getExternalCacheDir() + File.separator + "ZDF-")) {

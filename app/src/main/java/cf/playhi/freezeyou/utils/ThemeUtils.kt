@@ -38,7 +38,7 @@ internal object ThemeUtils {
     }
 
     /**
-     * 主要用于各点的 getThemeDot 的另一（相对/相反）状态
+     * Opposite/secondary dot state corresponding to getThemeDot
      *
      * The dot for "not frozen" is meant to be seen by nobody: it exists so that the row keeps its
      * shape whether or not the application is frozen. It used to be painted in the theme's
@@ -47,7 +47,7 @@ internal object ThemeUtils {
      * of its own. Nothing to see is the same on every background.
      *
      * @param context Context
-     * @return 资源 Id
+     * @return resource ID
      */
     @Suppress("UNUSED_PARAMETER")
     @JvmStatic

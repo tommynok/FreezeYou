@@ -27,11 +27,13 @@ import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBool
 public final class ApplicationIconUtils {
 
     /**
-     * Drawable 转 Bitmap<p>
-     * 最初参考 http://www.cnblogs.com/zhou2016/p/6281678.html<p>
-     * 后续参考 https://stackoverflow.com/a/10600736/10011687
+     * Convert Drawable to Bitmap.
+     * References:
+     * - http://www.cnblogs.com/zhou2016/p/6281678.html
+     * - https://stackoverflow.com/a/10600736/10011687
      * <p>
-     * 待切至 Kotlin 后可换用 DrawableKt.toBitmap()，但仍需注意 Intrinsic == -1 的情况
+     * Once migrated to Kotlin, DrawableKt.toBitmap() can be used,
+     * but care must still be taken when intrinsic width/height == -1.
      *
      * @param drawable drawable
      * @return Bitmap
@@ -144,27 +146,20 @@ public final class ApplicationIconUtils {
     }
 
     /**
-     * 参考：https://blog.csdn.net/xuwenneng/article/details/52634979
-     * 对图片进行灰度化处理
+     * Convert bitmap to greyscale.
+     * Reference: https://blog.csdn.net/xuwenneng/article/details/52634979
      *
-     * @param bm 原始图片
-     * @return 灰度化图片
+     * @param bm Original bitmap
+     * @return Greyscale bitmap
      */
     public static Bitmap getGrayBitmap(Bitmap bm) {
         Bitmap bitmap = Bitmap.createBitmap(bm.getWidth(), bm.getHeight(), Bitmap.Config.ARGB_8888);
-        //创建画布
         Canvas canvas = new Canvas(bitmap);
-        //创建画笔
         Paint paint = new Paint();
-        //创建颜色矩阵
         ColorMatrix matrix = new ColorMatrix();
-        //设置颜色矩阵的饱和度:0代表灰色,1表示原图
-        matrix.setSaturation(0);
-        //颜色过滤器
+        matrix.setSaturation(0); // 0 = greyscale, 1 = original
         ColorMatrixColorFilter cmcf = new ColorMatrixColorFilter(matrix);
-        //设置画笔颜色过滤器
         paint.setColorFilter(cmcf);
-        //画图
         canvas.drawBitmap(bm, 0, 0, paint);
         return bitmap;
     }

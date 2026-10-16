@@ -11,11 +11,11 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class GZipUtils {
-    //参考 http://www.cnblogs.com/whoislcj/p/5473806.html
+    // Reference: http://www.cnblogs.com/whoislcj/p/5473806.html
 
     /**
-     * @param unGzipStr 被压缩字符串
-     * @return 压缩后字符串，失败返回 String s=""
+     * @param unGzipStr String to compress
+     * @return Compressed string, or "" on failure
      */
     public static String gzipCompress(String unGzipStr) {
 
@@ -41,8 +41,8 @@ public final class GZipUtils {
     }
 
     /**
-     * @param gzipStr 已压缩过的 String
-     * @return 解压缩后的 String
+     * @param gzipStr Compressed string
+     * @return Decompressed string
      */
     public static String gzipDecompress(String gzipStr) {
         if (TextUtils.isEmpty(gzipStr)) {

@@ -156,13 +156,13 @@ object LauncherShortcutUtils {
     }
 
     /**
-     * bm 和 icon 至少有一个不为 null,如均为非空则使用 bm
+     * At least one of bm or icon must be non-null; if both are present, bm is used.
      *
-     * @param title   Title 标题
+     * @param title   Title
      * @param intent  Intent
-     * @param icon    Icon Drawable 图标
+     * @param icon    Icon Drawable
      * @param context Context
-     * @param bm      Bitmap 图标
+     * @param bm      Bitmap icon
      */
     private fun requestCreateShortCutOldApi(
         title: String,

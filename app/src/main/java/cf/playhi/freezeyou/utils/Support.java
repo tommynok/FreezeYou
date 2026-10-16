@@ -91,7 +91,7 @@ public final class Support {
                 R.id.main_sca_menu_userDefined_newClassification,
                 0,
                 R.string.newClassification
-        ); // 加入“新建分类”
+        );
 
         final HashMap<Integer, String> userDefinedCategoriesHashMap = new HashMap<>();
 

@@ -34,12 +34,12 @@ public final class DevicePolicyManagerUtils {
     }
 
     /**
-     * 优先 ROOT 模式锁屏，失败则尝试 免ROOT 模式锁屏
+     * Lock screen using ROOT if available, otherwise fall back to non-ROOT (DPM)
      *
      * @param context Context
      */
     public static void doLockScreen(Context context) {
-        //先走ROOT，有权限的话就可以不影响SmartLock之类的了
+        // Try ROOT first to avoid breaking Smart Lock
         try {
             Process process = Runtime.getRuntime().exec("su");
             DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
