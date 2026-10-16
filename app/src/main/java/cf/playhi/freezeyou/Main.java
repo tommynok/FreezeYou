@@ -213,11 +213,23 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * Intercepts back navigation on Main:
-     * 1. If multi-choice action mode is active, dismiss it.
-     * 2. If search text or search focus is active, clear search and focus.
-     * 3. If any filter other than "all" is active, return to the default "all" list.
-     * 4. If already on the unfiltered "all" list, exit the activity/app.
+     * Configures the modern, multi-tiered back button dispatcher on Main.
+     *
+     * <p><b>Back Navigation Hierarchy:</b>
+     * <ol>
+     *   <li><b>Tier 1 (Multi-Choice Selection):</b> If multi-choice action mode is currently active
+     *       ([currentSelectionActionMode] != null), pressing back dismisses the selection mode and clears
+     *       checked items, keeping the current scroll position and category intact.</li>
+     *   <li><b>Tier 2 (Search Query &amp; Focus):</b> If the search field contains query text or has focus,
+     *       clears the search text, releases focus, and dismisses the soft input keyboard via
+     *       {@link InputMethodManager#hideSoftInputFromWindow}.</li>
+     *   <li><b>Tier 3 (Category Filter Reset):</b> If a specific category filter is active (e.g. "frozen",
+     *       "user", "system", "OUS"), pressing back returns the user to the root "all" application list
+     *       by asynchronously triggering {@code generateList("all")}.</li>
+     *   <li><b>Tier 4 (Exit Application):</b> If already situated at the top-level, unfiltered "all" list,
+     *       temporarily disables this callback and delegates to {@link androidx.activity.OnBackPressedDispatcher#onBackPressed}
+     *       to finish the activity / exit the application naturally.</li>
+     * </ol>
      */
     private void setupBackNavigation() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -2235,7 +2247,21 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * @param onlyPkgName refresh just this row; null re-checks every row.
+     * Updates application freeze status indicators in-place across the visible list adapter.
+     *
+     * <p><b>Scroll Position Preservation Rationale:</b><br>
+     * Rebuilding the entire application list via {@link #generateList} causes the ListView to reset
+     * its scroll position to the top, causing annoying visual jumps whenever an app is frozen or
+     * unfrozen. Instead, this method mutates the existing data maps within
+     * {@link MainAppListSimpleAdapter#getStoredArrayList} and calls {@link android.widget.BaseAdapter#notifyDataSetChanged},
+     * preserving scroll offsets perfectly.
+     *
+     * <p><b>Granular Row Targeting:</b><br>
+     * When invoked with a specific {@code onlyPkgName} (such as from {@link #updateFrozenStatusBroadcastReceiver}
+     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), the loop terminates immediately
+     * after updating the matching package in memory, minimizing CPU overhead and preventing UI stutter.
+     *
+     * @param onlyPkgName target package name to refresh individually, or null to re-evaluate all rows (e.g. onResume)
      */
     private void updateFrozenStatus(String onlyPkgName) {
 
