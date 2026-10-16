@@ -114,7 +114,7 @@ public class FUFLauncherShortcutCreator extends FreezeYouBaseActivity {
                                 (ArrayList<Map<String, Object>>) AppList.clone(),
                                 R.layout.app_list_1,
                                 new String[]{"Img", "Name", "PackageName", "isFrozen"},
-                                new int[]{R.id.img, R.id.name, R.id.pkgName, R.id.isFrozen});//isFrozen、isAutoList传图像资源id
+                                new int[]{R.id.img, R.id.name, R.id.pkgName, R.id.isFrozen});
 
                 adapter.setViewBinder(new ReplaceableSimpleAdapter.ViewBinder() {
                     public boolean setViewValue(View view, Object data, String textRepresentation) {
@@ -201,8 +201,8 @@ public class FUFLauncherShortcutCreator extends FreezeYouBaseActivity {
     }
 
     /**
-     * @param packageName 应用包名
-     * @return 资源 Id
+     * @param packageName package name
+     * @return resource ID
      */
     private int getFrozenStatus(String packageName, PackageManager packageManager) {
         return realGetFrozenStatus(FUFLauncherShortcutCreator.this, packageName, packageManager)

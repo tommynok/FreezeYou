@@ -176,7 +176,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
         Intent intent = getIntent();
 
         String name = checkAndAvoidNull(intent.getStringExtra("name"), getString(R.string.name));
-        String id = checkAndAvoidNull(intent.getStringExtra("id"), Long.toString(new Date().getTime()));//若桌面（类小部件快捷方式）发起，id 值无需考虑，无需使用。
+        String id = checkAndAvoidNull(intent.getStringExtra("id"), Long.toString(new Date().getTime())); // Not needed for launcher widget-like shortcuts
         String pkgName = checkAndAvoidNull(intent.getStringExtra("pkgName"), getString(R.string.plsSelect));
 
         Button lscaga_package_button = findViewById(R.id.lscaga_package_button);

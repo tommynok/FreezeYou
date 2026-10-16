@@ -304,7 +304,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         SQLiteDatabase db = openOrCreateDatabase("scheduledTasks", MODE_PRIVATE, null);
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,hour integer(2),minutes integer(2),repeat varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-        );//column1\2 留作备用
+        ); // column1 and column2 reserved
         if (id == -5) {
             db.execSQL(
                     "insert into tasks(_id,hour,minutes,repeat,enabled,label,task,column1,column2) values(null,"
@@ -339,7 +339,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         String label = defaultSharedPreferences.getString("stma_add_label", getString(R.string.label));
         String task = defaultSharedPreferences.getString("stma_add_task", "okuf");
         String trigger = defaultSharedPreferences.getString("stma_add_trigger", "");
-        if ("".equals(trigger)) {//未指定触发器，直接return，抛failed
+        if ("".equals(trigger)) { // No trigger specified
             showToast(this, R.string.failed);
             return false;
         }

@@ -70,17 +70,17 @@ public class SelectShortcutIconActivity extends FreezeYouBaseActivity {
     private void init() {
         final ArrayList<HashMap<String, Drawable>> icons = new ArrayList<>();
 
-        //选择更多（扔第一个，免得被淹没看不到）
+        // "Add more" icon (placed first for visibility)
         addToIconsArrayList(icons, getResources().getDrawable(R.drawable.grid_add));
-        //自带
+        // Built-in
         addToIconsArrayList(icons, getResources().getDrawable(R.mipmap.ic_launcher_new_round));
-        //自带
+        // Built-in
         addToIconsArrayList(icons, getResources().getDrawable(R.mipmap.ic_launcher_round));
-        //自带
+        // Built-in
         addToIconsArrayList(icons, getResources().getDrawable(R.mipmap.ic_launcher));
-        //自带
+        // Built-in
         addToIconsArrayList(icons, getResources().getDrawable(R.drawable.screenlock));
-        //自带
+        // Built-in
         addToIconsArrayList(icons, getResources().getDrawable(R.drawable.ic_notification));
 
         List<ApplicationInfo> applicationInfoS = getPackageManager().getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES);

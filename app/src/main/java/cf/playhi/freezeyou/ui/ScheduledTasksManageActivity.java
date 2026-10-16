@@ -276,7 +276,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
     }
 
     private void generateTimeTaskList(ArrayList<Integer> integerArrayList, ArrayList<Map<String, Object>> tasksData) {
-        //时间触发
+        // Time triggers
         final SQLiteDatabase db = ScheduledTasksManageActivity.this.openOrCreateDatabase("scheduledTasks", MODE_PRIVATE, null);
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,hour integer(2),minutes integer(2),repeat varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
@@ -304,7 +304,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
     }
 
     private void generateTriggerTaskList(ArrayList<Integer> integerArrayList, ArrayList<Map<String, Object>> tasksData) {
-        //事件触发器触发
+        // Event triggers
         final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
