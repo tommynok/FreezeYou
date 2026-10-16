@@ -12,3 +12,10 @@
 /.idea/caches
 /.idea
 /release-keystore.jks
+
+# Internal notes and documentation (tracked in private tommynok/freezeyou-docs)
+CLAUDE.md
+ROADMAP.md
+ROADMAP.en.md
+LOCALE_TITLES_CHECK.md
+freezeyou_zh-CN_combined.md
