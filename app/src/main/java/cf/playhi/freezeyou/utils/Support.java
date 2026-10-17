@@ -215,9 +215,9 @@ public final class Support {
                                 }
                                 boolean existed = existsInOneKeyList(pkgs, pkgName);
                                 if (existed) {
-                                    pkgs = pkgs.replace(pkgName + ",", "");
+                                    pkgs = OneKeyListUtils.removePkgFromPkgNames(pkgs, pkgName);
                                 } else {
-                                    pkgs = pkgs + pkgName + ",";
+                                    pkgs = OneKeyListUtils.addPkgToPkgNames(pkgs, pkgName);
                                 }
                                 vmUserDefinedDb1.execSQL(
                                         "UPDATE categories SET packages = '"
@@ -302,7 +302,7 @@ public final class Support {
                                 String folderPkgs = folderPkgListSp.getString("pkgS", "");
                                 if (existsInOneKeyList(folderPkgs, pkgName)) {
                                     folderPkgListSp.edit()
-                                            .putString("pkgS", folderPkgs.replace(pkgName + ",", ""))
+                                            .putString("pkgS", OneKeyListUtils.removePkgFromPkgNames(folderPkgs, pkgName))
                                             .apply();
                                 }
                             }

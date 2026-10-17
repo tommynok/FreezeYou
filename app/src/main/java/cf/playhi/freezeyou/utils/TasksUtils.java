@@ -436,7 +436,10 @@ public final class TasksUtils {
                         createDelayTasks(alarmMgr, delayAtSeconds, pendingIntent);
                         if (taskTrigger != null) { // null for timed tasks or tasks where cancellation is unsupported
                             AppPreferences appPreferences = new AppPreferences(context);
-                            appPreferences.put(taskTrigger, appPreferences.getString(taskTrigger, "") + requestCode + ",");
+                            appPreferences.put(
+                                    taskTrigger,
+                                    addIdToList(appPreferences.getString(taskTrigger, ""), requestCode)
+                            );
                         }
                         return false;
                     }
@@ -602,24 +605,22 @@ public final class TasksUtils {
             if (unprocessed == null)
                 unprocessed = "";
 
-            for (String id : unprocessed.split(",")) {
-                if (id != null && !"".equals(id)) {
-                    final int requestCode;
-                    try {
-                        requestCode = Integer.parseInt(id);
-                    } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                        continue;
-                    }
-                    PendingIntent alarmIntent =
-                            PendingIntent.getBroadcast(
-                                    context, requestCode, intent,
-                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                            ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                            : PendingIntent.FLAG_CANCEL_CURRENT);
-                    if (alarmMgr != null) {
-                        alarmMgr.cancel(alarmIntent);
-                    }
+            for (String id : splitIdList(unprocessed)) {
+                final int requestCode;
+                try {
+                    requestCode = Integer.parseInt(id);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+                PendingIntent alarmIntent =
+                        PendingIntent.getBroadcast(
+                                context, requestCode, intent,
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                        ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                                        : PendingIntent.FLAG_CANCEL_CURRENT);
+                if (alarmMgr != null) {
+                    alarmMgr.cancel(alarmIntent);
                 }
             }
             appPreferences.put(typeNeedsCheckTaskTrigger, "");

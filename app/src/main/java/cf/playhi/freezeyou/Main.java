@@ -64,7 +64,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -97,6 +96,7 @@ import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RunningAppsUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.LogSharingUtils;
+import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
@@ -1089,7 +1089,6 @@ public class Main extends FreezeYouBaseActivity {
                                                 menuItem.getGroupId()
                                                         == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
                                         String title = menuItem.getTitle().toString();
-                                        List<String> existsPkgsList = new ArrayList<>();
                                         String existsPkgs = "";
                                         SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
                                         userDefinedDb.execSQL(
@@ -1108,29 +1107,19 @@ public class Main extends FreezeYouBaseActivity {
                                                     cursor.getString(
                                                             cursor.getColumnIndex("packages")
                                                     );
-                                            existsPkgsList =
-                                                    Arrays.asList(existsPkgs.split(","));
                                         }
 
                                         int size = selectedPackages.size();
-                                        if (isInRemoveMode) {
-                                            for (int i = 0; i < size; i++) {
-                                                if (existsPkgsList.contains(selectedPackages.get(i))) {
-                                                    existsPkgs =
-                                                            existsPkgs.replace(
-                                                                    selectedPackages.get(i) + ",",
-                                                                    ""
-                                                            );
-                                                }
+                                        for (int i = 0; i < size; i++) {
+                                            if (isInRemoveMode) {
+                                                existsPkgs = OneKeyListUtils.removePkgFromPkgNames(
+                                                        existsPkgs, selectedPackages.get(i)
+                                                );
+                                            } else {
+                                                existsPkgs = OneKeyListUtils.addPkgToPkgNames(
+                                                        existsPkgs, selectedPackages.get(i)
+                                                );
                                             }
-                                        } else {
-                                            StringBuilder existsPkgsBuilder = new StringBuilder(existsPkgs);
-                                            for (int i = 0; i < size; i++) {
-                                                if (!existsPkgsList.contains(selectedPackages.get(i))) {
-                                                    existsPkgsBuilder.append(selectedPackages.get(i)).append(",");
-                                                }
-                                            }
-                                            existsPkgs = existsPkgsBuilder.toString();
                                         }
                                         userDefinedDb.execSQL(
                                                 "UPDATE categories SET packages = '"
