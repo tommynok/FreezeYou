@@ -136,6 +136,9 @@
     <string name="automation">Automation</string>
     <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
     <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
+    <string name="screenLockFreezeNotiTitle">Freeze when the screen goes off</string>
+    <string name="screenLockFreezeNotiText">Waiting for the screen to go off to freeze the apps in your One-key freeze list</string>
+    <string name="screenLockFreezeNotiTapHint">Tap to turn this off</string>
     <string name="backgroundService">Background Services</string>
     <string name="useForegroundService">Use the foreground service</string>
     <string name="serviceLongerEx">Reduce the probability of failure of the background function</string>

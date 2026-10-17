@@ -172,9 +172,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     private fun checkAndStartScreenLockOneKeyFreezeService() {
-        if (AppPreferences(this)
-                .getBoolean("onekeyFreezeWhenLockScreen", false)
-        ) {
+        if (onekeyFreezeWhenLockScreen.getValue()) {
             ServiceUtils.startService(
                 this,
                 Intent(this, ScreenLockOneKeyFreezeService::class.java)

@@ -142,6 +142,9 @@
     <string name="automation">自动化</string>
     <string name="freezeAfterScreenLock">锁屏后一键冻结</string>
     <string name="freezeAfterScreenLockSummary">每次屏幕熄灭时冻结“一键冻结”列表中的应用。</string>
+    <string name="screenLockFreezeNotiTitle">锁屏后自动冻结</string>
+    <string name="screenLockFreezeNotiText">等待屏幕熄灭后冻结“一键冻结”列表中的应用</string>
+    <string name="screenLockFreezeNotiTapHint">点按可关闭</string>
     <string name="backgroundService">后台服务</string>
     <string name="useForegroundService">使用前台服务(安卓8.0及以上强制开启)</string>
     <string name="serviceLongerEx">减小后台功能失效的概率</string>

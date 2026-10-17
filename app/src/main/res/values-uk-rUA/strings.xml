@@ -136,6 +136,9 @@
     <string name="automation">Автоматизація</string>
     <string name="freezeAfterScreenLock">Запускати OneKey-заморожування при вимкненні екрана</string>
     <string name="freezeAfterScreenLockSummary">Заморожує додатки зі списку «OneKey-заморожування» щоразу, коли гасне екран.</string>
+    <string name="screenLockFreezeNotiTitle">Заморожування після вимкнення екрана</string>
+    <string name="screenLockFreezeNotiText">Очікування вимкнення екрана: буде заморожено додатки зі списку «OneKey-заморожування»</string>
+    <string name="screenLockFreezeNotiTapHint">Натисніть, щоб вимкнути</string>
     <string name="backgroundService">Фоновий сервіс</string>
     <string name="useForegroundService">Використовувати сервіс переднього плану</string>
     <string name="serviceLongerEx">Знизить ймовірність збою фонового сервісу</string>

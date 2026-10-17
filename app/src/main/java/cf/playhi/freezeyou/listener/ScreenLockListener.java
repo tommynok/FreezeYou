@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 
 import cf.playhi.freezeyou.service.OneKeyFreezeService;
+import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.onekeyFreezeWhenLockScreen;
@@ -32,6 +33,8 @@ public class ScreenLockListener {
                                     new Intent(context, OneKeyFreezeService.class)
                                             .putExtra("autoCheckAndLockScreen", false)
                             );
+                        } else {
+                            context.stopService(new Intent(context, ScreenLockOneKeyFreezeService.class));
                         }
                         break;
                     default:
