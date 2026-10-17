@@ -11,6 +11,7 @@ public final class RootUtils {
             "su",
             "/system/bin/su",
             "/system/xbin/su",
+            "/su/bin/su",
             "/data/adb/ksu/bin/su",
             "/data/adb/ap/bin/su",
             "/sbin/su"

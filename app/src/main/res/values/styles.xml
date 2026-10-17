@@ -408,7 +408,7 @@
          and they would be invisible on a light dialog; the overlay replaces that one colour with
          the accent. From Android 12 on this style is redefined in values-v31 as the Material3
          light theme. -->
-    <style name="AppTheme.Default" parent="Base.AppTheme.Light">
+    <style name="AppTheme.Default" parent="Base.AppTheme.Light.DarkActionBar">
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog.Light</item>
         <item name="colorPrimaryDark">#eeeeee</item>
         <item name="colorPrimary">#fafafa</item>
