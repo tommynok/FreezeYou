@@ -54,7 +54,7 @@ class CrashHandler implements Thread.UncaughtExceptionHandler {
                     + Build.VERSION.SDK_INT + ","
                     + android.os.Build.VERSION.RELEASE + "\n");
             StackTraceElement[] stackTrace = throwable.getStackTrace();
-            PackageInfo packageInfo = mContext.getPackageManager().getPackageInfo("cf.playhi.freezeyou", 0);
+            PackageInfo packageInfo = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0);
             fw.write("VN:" + packageInfo.versionName + "\n");
             fw.write("VC:" + packageInfo.versionCode + "\n");
             fw.write("LM:" + throwable.getLocalizedMessage() + "\n");

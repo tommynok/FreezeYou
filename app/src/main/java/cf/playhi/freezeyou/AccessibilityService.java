@@ -176,7 +176,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      */
     private void onApplicationsForeground(String previousPkg, String pkgNameString) {
 
-        if (!pkgNameString.equals(previousPkg) && !"cf.playhi.freezeyou".equals(previousPkg)) {
+        if (!pkgNameString.equals(previousPkg) && !getPackageName().equals(previousPkg)) {
             cancelAllUnexecutedDelayTasks(this, "OSA_" + previousPkg); // Cancel pending open-app delayed tasks
             final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
             db.execSQL(
@@ -220,7 +220,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
         checkAndInstallWaitingForLeavingToInstallApplication(previousPkg);
 
-        if (!pkgNameString.equals(previousPkg) && !"cf.playhi.freezeyou".equals(previousPkg)) {
+        if (!pkgNameString.equals(previousPkg) && !getPackageName().equals(previousPkg)) {
             cancelAllUnexecutedDelayTasks(this, "OLA_" + pkgNameString); // Cancel pending leave-app delayed tasks
             final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
             db.execSQL(

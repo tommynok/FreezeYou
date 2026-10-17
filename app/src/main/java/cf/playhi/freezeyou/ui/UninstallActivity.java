@@ -29,7 +29,7 @@ public class UninstallActivity extends FreezeYouBaseActivity {
                                 DevicePolicyManagerUtils
                                         .getDevicePolicyManager(
                                                 getApplicationContext())
-                                        .clearDeviceOwnerApp("cf.playhi.freezeyou");
+                                        .clearDeviceOwnerApp(getPackageName());
                                 showToast(getApplicationContext(), R.string.success);
                             } else {
                                 showToast(getApplicationContext(), R.string.noRootNotActivated);

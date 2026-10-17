@@ -1617,7 +1617,7 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private Map<String, Object> processAppStatus(String name, String packageName, PackageInfo packageInfo, PackageManager packageManager, boolean saveIconCache) {
-        if (!("android".equals(packageName) || "cf.playhi.freezeyou".equals(packageName))) {
+        if (!("android".equals(packageName) || getPackageName().equals(packageName))) {
             Map<String, Object> keyValuePair = new HashMap<>();
             keyValuePair.put(
                     "Img",
@@ -1661,7 +1661,7 @@ public class Main extends FreezeYouBaseActivity {
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
-            if (!("android".equals(aPkg) || "cf.playhi.freezeyou".equals(aPkg) || "".equals(aPkg))) {
+            if (!("android".equals(aPkg) || getPackageName().equals(aPkg) || "".equals(aPkg))) {
                 Map<String, Object> keyValuePair = new HashMap<>();
                 icon = getApplicationIcon(
                         Main.this,
