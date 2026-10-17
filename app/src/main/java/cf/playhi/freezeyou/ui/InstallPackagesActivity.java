@@ -624,7 +624,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         showInstallPermissionCheckFailedDialog(
                                 install, apkFilePath, packageUri,
                                 processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
-                        Uri packageUri1 = Uri.parse("package:cf.playhi.freezeyou");
+                        Uri packageUri1 = Uri.parse("package:" + getPackageName());
                         Intent intent =
                                 new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, packageUri1);
                         startActivity(intent);
