@@ -10,6 +10,9 @@ $files = @(
     "CLAUDE.md",
     "ROADMAP.md",
     "ROADMAP.en.md",
+    "ARCHITECTURE.md",
+    "LESSONS_LEARNED.md",
+    "HISTORY_ARCHIVE.md",
     "LOCALE_TITLES_CHECK.md",
     "freezeyou_zh-CN_combined.md"
 )
