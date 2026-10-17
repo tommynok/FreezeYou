@@ -27,6 +27,7 @@ import java.util.Map;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.adapter.ReplaceableSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.OneKeyListUtils;
 
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
@@ -162,7 +163,7 @@ public class FUFLauncherShortcutCreator extends FreezeYouBaseActivity {
                     if (isSlfMode) {
                         SharedPreferences sp = getSharedPreferences(getIntent().getStringExtra("slf_n"), MODE_PRIVATE);
                         if (!existsInOneKeyList(sp.getString("pkgS", ""), pkgName)) {
-                            sp.edit().putString("pkgS", sp.getString("pkgS", "") + pkgName + ",").apply();
+                            sp.edit().putString("pkgS", OneKeyListUtils.addPkgToPkgNames(sp.getString("pkgS", ""), pkgName)).apply();
                             showToast(FUFLauncherShortcutCreator.this, R.string.added);
                         } else {
                             showToast(FUFLauncherShortcutCreator.this, R.string.alreadyExist);
