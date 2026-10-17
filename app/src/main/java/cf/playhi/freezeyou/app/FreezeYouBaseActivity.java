@@ -139,6 +139,18 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        try {
+            return super.dispatchTouchEvent(ev);
+        } catch (Throwable t) {
+            // Guard against broken third-party Xposed modules or accessibility
+            // hooks (e.g. TextXposed) that throw exceptions during touch event dispatch.
+            t.printStackTrace();
+            return false;
+        }
+    }
+
     /**
      * If the activity does not need the app lock logic,
      * override the method and return false.

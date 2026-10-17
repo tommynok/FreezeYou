@@ -9,7 +9,6 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
@@ -83,11 +82,7 @@ class AboutActivity : FreezeYouBaseActivity() {
                             if (tapCount >= 10) {
                                 isUpdateUnlocked = true
                                 sp.edit().putBoolean("unlockedUpdateCheck", true).apply()
-                                Toast.makeText(
-                                    this@AboutActivity,
-                                    R.string.updateCheckUnlocked,
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                showToast(this@AboutActivity, R.string.updateCheckUnlocked)
                                 buildMenu()
                                 val adapter = aboutListView.adapter as? ArrayAdapter<String>
                                 if (adapter != null) {
