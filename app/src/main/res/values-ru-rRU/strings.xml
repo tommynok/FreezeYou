@@ -33,7 +33,7 @@
     <string name="mayUnrooted">Нет root прав, или режим без-root не был включен</string>
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
-    <string name="andNMoreApplications">, и ещё %1$d</string>
+    <string name="andNMoreApplications">, и еще %1$d</string>
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
@@ -50,9 +50,9 @@
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>
-    <string name="summary_resetFreezeTimes">Обнуляет счётчик заморозок для каждого приложения, отображаемый в списке</string>
-    <string name="summary_resetUFTimes">Обнуляет счётчик разморозок для каждого приложения, отображаемый в списке</string>
-    <string name="summary_resetUseTimes">Обнуляет счётчик использования для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetFreezeTimes">Обнуляет счетчик заморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUFTimes">Обнуляет счетчик разморозок для каждого приложения, отображаемый в списке</string>
+    <string name="summary_resetUseTimes">Обнуляет счетчик использования для каждого приложения, отображаемый в списке</string>
     <string name="summary_deleteAllScheduledTasks">Безвозвратно удаляет все созданные вами запланированные задачи</string>
     <string name="unfreeze">Разморозка</string>
     <string name="unfreezedAndAskLaunch">Запрошена разморозка, попробовать сразу запустить?</string>
@@ -73,8 +73,6 @@
     <string name="moreSettings">Настройки</string>
     <string name="visitWebsite">Вебсайт оригинального FreezeYou</string>
     <string name="checkUpdate">Проверить обновления</string>
-    <string name="summary_checkUpdate">Страница релизов форка - канал обновлений этой сборки</string>
-    <string name="addQQGroup">Присоединиться к QQ группе</string>
     <string name="dangerZone">Опасная зона</string>
     <string name="disableMRootMode">Отключить режим без-root</string>
     <string name="disableMRootModeEx">Если вы включили режим без-root, вам необходимо отключить его перед удалением FreezeYou-Fork</string>
@@ -128,7 +126,6 @@
     <string name="disabled">Отключено</string>
     <string name="notUpdatedForALongTimeMessage">Давно не обновлялось, хотите проверить наличие обновлений сейчас?</string>
     <string name="uiStyle">Цветовая схема</string>
-    <string name="willTakeEffectsNextLaunch">Вступит в силу при следующем запуске приложения</string>
     <string name="freezeAUF">Заморозка и разморозка</string>
     <string name="notificationBar">Уведомления</string>
     <string name="disableSlideOut">Не исчезать при смахивании</string>
@@ -301,7 +298,6 @@
     <string name="backupViaTextHint">Либо перенести текстом через буфер обмена:</string>
     <string name="backupGroupOneKeyLists">Списки OneKey</string>
     <string name="backupGroupAllowLists">Белые списки</string>
-    <string name="appStore">Магазин приложений</string>
     <string name="finish">Готово</string>
     <string name="welcomeToUseAppName">Добро пожаловать в %1$s</string>
     <string name="quickSetup">Быстрая настройка</string>
@@ -344,9 +340,6 @@
     <string name="removeFromMyCustomization">Удалить из «Моя подборка»</string>
     <string name="waitingToInstall_app">Ожидание установки после выхода %1$s</string>
     <string name="installWhenNotUsing">Установить, если не используется</string>
-    <string name="contactUs">Связаться с нами</string>
-    <string name="email_colon">Email: %1$s</string>
-    <string name="qqGroup_colon">QQ сообщество: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Не обновлять приложение во время использования</string>
     <string name="selectFUFMode">Выберите режим заморозки и разморозки</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">Следовать системной темной теме</string>
@@ -363,7 +356,6 @@
     <string name="noSuchApiMode">Нет такого режима API</string>
     <string name="executeFailedFromSystem">Сбой выполнения из системы</string>
     <string name="isNotSystemApp">Это не системное приложение</string>
-    <string name="telegramGroup_colon">Telegram группа: %1$s</string>
     <string name="unlock">Разблокировать</string>
     <string name="security">Безопасность</string>
     <string name="enableAuthentication">Включить аутентификацию</string>
@@ -497,13 +489,11 @@
     <string name="restore">Восстановить</string>
     <string name="onlyUninstalledSys">Удаленные системные</string>
     <string name="app_is_uninstalled_restore_prompt">Приложение удалено. Пожалуйста, выберите действие.</string>
-    <string name="restoring_app">Восстановление %1$s…</string>
     <string name="restore_completed">Приложение восстановлено</string>
     <string name="restore_failed">Не удалось восстановить приложение</string>
     <string name="restore_partial">Восстановлено: %1$d из %2$d приложений</string>
     <string name="restore_only_in_uninstalled_system_filter">Чтобы восстановить приложение, откройте фильтр «Удаленные системные».</string>
     <string name="full_system_uninstall_requires_shell">Для полного удаления обновленного системного приложения нужен root или Shizuku.</string>
-    <string name="stepsToUnlock_d">Осталось шагов для открытия проверки обновлений: %1$d</string>
     <string name="updateCheckUnlocked">Проверка обновлений открыта</string>
     <string name="apkInstallation">Установка APK</string>
     <string name="batch_uninstall">Удаление выбранных приложений</string>

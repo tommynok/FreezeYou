@@ -73,8 +73,6 @@
     <string name="moreSettings">Налаштування</string>
     <string name="visitWebsite">Вебсайт оригінального FreezeYou</string>
     <string name="checkUpdate">Перевірити оновлення</string>
-    <string name="summary_checkUpdate">Сторінка релізів форку - канал оновлень цієї збірки</string>
-    <string name="addQQGroup">Приєднатися до QQ групи</string>
     <string name="dangerZone">Небезпечна зона</string>
     <string name="disableMRootMode">Відключити режим без-root</string>
     <string name="disableMRootModeEx">Якщо ви включили режим без-root, вам необхідно відключити його перед видаленням FreezeYou.</string>
@@ -128,7 +126,6 @@
     <string name="disabled">Відключено</string>
     <string name="notUpdatedForALongTimeMessage">Давно не оновлювалося, хочете перевірити наявність оновлень зараз?</string>
     <string name="uiStyle">Колірна схема</string>
-    <string name="willTakeEffectsNextLaunch">Вступить в силу при наступному запуску програми</string>
     <string name="freezeAUF">Заморожування і розморожування</string>
     <string name="notificationBar">Сповіщення</string>
     <string name="disableSlideOut">Не зникати при змахуванні</string>
@@ -301,7 +298,6 @@
     <string name="backupViaTextHint">Або перенести текстом через буфер обміну:</string>
     <string name="backupGroupOneKeyLists">Списки OneKey</string>
     <string name="backupGroupAllowLists">Білі списки</string>
-    <string name="appStore">Play Маркет</string>
     <string name="finish">Готово</string>
     <string name="welcomeToUseAppName">Ласкаво просимо в %1$s</string>
     <string name="quickSetup">Швидке налаштування</string>
@@ -344,9 +340,6 @@
     <string name="removeFromMyCustomization">Видалити з «Моя підбірка»</string>
     <string name="waitingToInstall_app">Очікування установки після виходу %1$s</string>
     <string name="installWhenNotUsing">Встановити, якщо не використовується</string>
-    <string name="contactUs">Зв\'язатися з нами</string>
-    <string name="email_colon">Email: %1$s</string>
-    <string name="qqGroup_colon">QQ група: %1$s</string>
     <string name="tryToAvoidUpdateWhenUsing">Не оновлювати додаток під час використання</string>
     <string name="selectFUFMode">Виберіть режим заморожування і розморожування</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">Слідувати системній темній темі</string>
@@ -363,7 +356,6 @@
     <string name="noSuchApiMode">Немає такого режиму API</string>
     <string name="executeFailedFromSystem">Збій виконання з системи</string>
     <string name="isNotSystemApp">Це не системний додаток</string>
-    <string name="telegramGroup_colon">Telegram група: %1$s</string>
     <string name="unlock">Розблокування</string>
     <string name="security">Безпека</string>
     <string name="enableAuthentication">Ввімкнути автентифікацію</string>
@@ -497,13 +489,11 @@
     <string name="restore">Відновити</string>
     <string name="onlyUninstalledSys">Видалені системні</string>
     <string name="app_is_uninstalled_restore_prompt">Програму видалено. Будь ласка, виберіть дію.</string>
-    <string name="restoring_app">Відновлення %1$s…</string>
     <string name="restore_completed">Програму відновлено</string>
     <string name="restore_failed">Не вдалося відновити програму</string>
     <string name="restore_partial">Відновлено: %1$d із %2$d програм</string>
     <string name="restore_only_in_uninstalled_system_filter">Щоб відновити програму, відкрийте фільтр «Видалені системні».</string>
     <string name="full_system_uninstall_requires_shell">Для повного видалення оновленої системної програми потрібен root або Shizuku.</string>
-    <string name="stepsToUnlock_d">Залишилося кроків для відкриття перевірки оновлень: %1$d</string>
     <string name="updateCheckUnlocked">Перевірку оновлень відкрито</string>
     <string name="apkInstallation">Встановлення APK</string>
     <string name="batch_uninstall">Видалення вибраних додатків</string>

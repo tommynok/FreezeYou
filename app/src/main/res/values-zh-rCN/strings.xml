@@ -79,8 +79,6 @@
     <string name="moreSettings">更多设置</string>
     <string name="visitWebsite">原 FreezeYou 网站</string>
     <string name="checkUpdate">检查更新</string>
-    <string name="summary_checkUpdate">本分支的发布页面 - 此构建的更新渠道</string>
-    <string name="addQQGroup">加入QQ群</string>
     <string name="dangerZone">危险区</string>
     <string name="disableMRootMode">解除免ROOT</string>
     <string name="disableMRootModeEx">如果启用免ROOT模式成功，需要解除后才能正常卸载本应用程序。</string>
@@ -134,7 +132,6 @@
     <string name="disabled">已停用</string>
     <string name="notUpdatedForALongTimeMessage">已经很久没有更新过了，是否立即检查更新？</string>
     <string name="uiStyle">界面风格</string>
-    <string name="willTakeEffectsNextLaunch">将会在下次启动应用时生效</string>
     <string name="freezeAUF">冻结与解冻</string>
     <string name="notificationBar">通知栏</string>
     <string name="disableSlideOut">禁止滑动移除</string>
@@ -307,7 +304,6 @@
     <string name="backupViaTextHint">或通过剪贴板以文本方式传输：</string>
     <string name="backupGroupOneKeyLists">一键列表</string>
     <string name="backupGroupAllowLists">白名单</string>
-    <string name="appStore">应用市场</string>
     <string name="finish">完成</string>
     <string name="welcomeToUseAppName">欢迎使用 %1$s</string>
     <string name="quickSetup">快速设置</string>
@@ -350,9 +346,6 @@
     <string name="removeFromMyCustomization">移出我的自选</string>
     <string name="waitingToInstall_app">正在等待离开 %1$s 后安装</string>
     <string name="installWhenNotUsing">非前台时安装</string>
-    <string name="contactUs">联系我们</string>
-    <string name="email_colon">邮箱：%1$s </string>
-    <string name="qqGroup_colon">QQ群：%1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">使用中不更新应用</string>
     <string name="selectFUFMode">选择冻结解冻模式</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">允许跟随系统自动切换暗色模式</string>
@@ -369,7 +362,6 @@
     <string name="noSuchApiMode">无该 API 模式</string>
     <string name="executeFailedFromSystem">系统内部错误</string>
     <string name="isNotSystemApp">非系统应用</string>
-    <string name="telegramGroup_colon">电报群组：%1$s</string>
     <string name="unlock">解锁</string>
     <string name="security">安全</string>
     <string name="enableAuthentication">启用身份验证</string>
@@ -502,13 +494,11 @@
     <string name="restore">恢复</string>
     <string name="onlyUninstalledSys">已卸载系统应用</string>
     <string name="app_is_uninstalled_restore_prompt">应用已卸载。请选择一个操作。</string>
-    <string name="restoring_app">正在恢复 %1$s…</string>
     <string name="restore_completed">应用已恢复</string>
     <string name="restore_failed">恢复应用失败</string>
     <string name="restore_partial">已恢复 %1$d / %2$d 个应用</string>
     <string name="restore_only_in_uninstalled_system_filter">要恢复此应用，请使用“已卸载系统应用”筛选器。</string>
     <string name="full_system_uninstall_requires_shell">完全移除已更新的系统应用需要 root 或 Shizuku。</string>
-    <string name="stepsToUnlock_d">还需点击 %1$d 次即可开启检查更新。</string>
     <string name="updateCheckUnlocked">已开启检查更新</string>
     <string name="apkInstallation">APK 安装</string>
     <string name="batch_uninstall">卸载所选应用</string>

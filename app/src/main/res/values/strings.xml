@@ -73,8 +73,6 @@
     <string name="moreSettings">Settings</string>
     <string name="visitWebsite">Original FreezeYou website</string>
     <string name="checkUpdate">Check for updates</string>
-    <string name="summary_checkUpdate">The fork\'s releases page - the update channel for this build</string>
-    <string name="addQQGroup">Join QQ Group</string>
     <string name="dangerZone">Danger Zone</string>
     <string name="disableMRootMode">Release no-root mode permission</string>
     <string name="disableMRootModeEx">If you enable the no-root mode success, you need to release it before uninstalling the application.</string>
@@ -128,7 +126,6 @@
     <string name="disabled">Disabled</string>
     <string name="notUpdatedForALongTimeMessage">Has not been updated for a long time, do you want to check for update now?</string>
     <string name="uiStyle">Colour scheme</string>
-    <string name="willTakeEffectsNextLaunch">Will take effect the next time the application is launched</string>
     <string name="freezeAUF">Freeze and Unfreeze</string>
     <string name="notificationBar">Notification</string>
     <string name="disableSlideOut">Do not disappear when slide out</string>
@@ -302,7 +299,6 @@
     <string name="backupGroupOneKeyLists">Onekey lists</string>
     <string name="backupGroupAllowLists">Allowlists</string>
     <string name="backupGroupWithCount" translatable="false">%1$s (%2$d)</string>
-    <string name="appStore">App Store</string>
     <string name="finish">Done</string>
     <string name="welcomeToUseAppName">Welcome to %1$s</string>
     <string name="quickSetup">Quick Setup</string>
@@ -345,9 +341,6 @@
     <string name="removeFromMyCustomization">Remove from my customization</string>
     <string name="waitingToInstall_app">Waiting to install after leaving %1$s</string>
     <string name="installWhenNotUsing">InstallWhenNotUsing</string>
-    <string name="contactUs">Contact Us</string>
-    <string name="email_colon">Email: %1$s </string>
-    <string name="qqGroup_colon">QQ Group: %1$s </string>
     <string name="tryToAvoidUpdateWhenUsing">Don\'t update an app while it\'s in use</string>
     <string name="selectFUFMode">Select freeze and unfreeze mode</string>
     <string name="allowFollowSystemAutoSwitchDarkMode">Follow the system dark theme</string>
@@ -364,7 +357,6 @@
     <string name="noSuchApiMode">No such api mode</string>
     <string name="executeFailedFromSystem">Execute failed from system</string>
     <string name="isNotSystemApp">Is not system app</string>
-    <string name="telegramGroup_colon">Telegram Group: %1$s</string>
     <string name="unlock">Unlock</string>
     <string name="security">Security</string>
     <string name="enableAuthentication">Enable authentication</string>
@@ -501,20 +493,6 @@
         <item>onUFApplications</item>
         <item>onFApplications</item>
     </string-array>
-    <string-array name="onClickFuncChooseActionStyles" translatable="false">
-        <item>1</item>
-        <item>2</item>
-    </string-array>
-    <string-array name="sortBySelectionValues" translatable="false">
-        <item>default</item>
-        <item>no</item>
-        <item>uf_a</item>
-        <item>uf_d</item>
-        <item>ff_a</item>
-        <item>ff_d</item>
-        <item>use_a</item>
-        <item>use_d</item>
-    </string-array>
     <string-array name="displayLanguageOptionsSelection" translatable="false">
         <item>Default</item>
         <item>English</item>
@@ -595,13 +573,11 @@
     <string name="restore">Restore</string>
     <string name="onlyUninstalledSys">Uninstalled system</string>
     <string name="app_is_uninstalled_restore_prompt">App is uninstalled. Please choose an action.</string>
-    <string name="restoring_app">Restoring %1$s…</string>
     <string name="restore_completed">Application restored</string>
     <string name="restore_failed">Failed to restore application</string>
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
     <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
     <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
-    <string name="stepsToUnlock_d">You are %1$d steps away from unlocking update check.</string>
     <string name="updateCheckUnlocked">Check for updates unlocked</string>
     <string name="apkInstallation">APK Installation</string>
     <string name="batch_uninstall">Uninstall selected</string>

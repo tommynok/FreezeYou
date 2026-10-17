@@ -13,7 +13,6 @@ def effectiveVersionCode = forkBuildNumber + 100
 
 android {
     compileSdk 37
-    buildToolsVersion '32.0.0'
     defaultConfig {
         applicationId "cf.playhi.freezeyou"
         minSdkVersion 16
@@ -210,8 +209,6 @@ dependencies {
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
-
-//    implementation 'com.google.zxing:core:3.3.3' 先把文本方式稳定下来，再做 QRCode
 
     testImplementation "junit:junit:4.13.2"
     // Runs the Android framework on the JVM, so layouts and themes can be inflated for real
