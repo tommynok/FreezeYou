@@ -21,7 +21,6 @@ import cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
 import cf.playhi.freezeyou.utils.FileUtils.clearIconCache
 import cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess
-import cf.playhi.freezeyou.utils.VersionUtils.isOutdated
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -52,9 +51,6 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 loadingProgress.postValue(5)
 
                 checkSystemVersion()
-                loadingProgress.postValue(10)
-
-                checkLongTimeNoUpdate()
                 loadingProgress.postValue(15)
 
                 checkAccessibilityService()
@@ -121,7 +117,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.sysVerLow),
-                    getApplication<Application>().getString(R.string.someFuncUn),
+                    getApplication<Application>().getString(R.string.sysVerLowSummary),
                     "-50",
                     R.drawable.ic_warning
                 )
@@ -129,8 +125,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.sysVerLow),
-                    getApplication<Application>().getString(R.string.someFuncUn),
+                    getApplication<Application>().getString(R.string.sysVerOk),
+                    getApplication<Application>().getString(R.string.sysVerOkSummary),
                     "-1",
                     R.drawable.ic_done
                 )
@@ -139,31 +135,25 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun checkAccessibilityService() {
-        problemsList.value!!.add(
-            if (isAccessibilitySettingsOn(getApplication())) {
+        if (isAccessibilitySettingsOn(getApplication())) {
+            problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.ACBSNotEnabled),
-                    getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
-                        R.string.avoidFreezeForegroundApplications
-                    ) + " " + getApplication<Application>().getString(
-                        R.string.scheduledTasks
-                    ) + " " + getApplication<Application>().getString(R.string.etc),
+                    getApplication<Application>().getString(R.string.accessibilityServiceEnabled),
+                    getApplication<Application>().getString(R.string.accessibilityServiceEnabledSummary),
                     "1",
                     R.drawable.ic_done
                 )
-            } else {
+            )
+        } else {
+            problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.ACBSNotEnabled),
-                    getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
-                        R.string.avoidFreezeForegroundApplications
-                    ) + " " + getApplication<Application>().getString(
-                        R.string.scheduledTasks
-                    ) + " " + getApplication<Application>().getString(R.string.etc),
+                    getApplication<Application>().getString(R.string.accessibilityServiceDisabledSummary),
                     "1",
                     R.drawable.ic_warning
                 )
-            }
-        )
+            )
+        }
     }
 
     private fun checkNotificationListenerPermission() {
@@ -172,29 +162,27 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 getApplication<Application>().contentResolver,
                 "enabled_notification_listeners"
             )
-            problemsList.value!!.add(
-                if (s == null
-                    || !s.contains("cf.playhi.freezeyou/cf.playhi.freezeyou.MyNotificationListenerService")
-                ) {
+            if (s == null
+                || !s.contains("cf.playhi.freezeyou/cf.playhi.freezeyou.MyNotificationListenerService")
+            ) {
+                problemsList.value!!.add(
                     generateHashMap(
                         getApplication<Application>().getString(R.string.noNotificationListenerPermission),
-                        getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
-                            R.string.avoidFreezeNotifyingApplications
-                        ),
+                        getApplication<Application>().getString(R.string.notificationListenerPermissionNotGrantedSummary),
                         "2",
                         R.drawable.ic_warning
                     )
-                } else {
+                )
+            } else {
+                problemsList.value!!.add(
                     generateHashMap(
-                        getApplication<Application>().getString(R.string.noNotificationListenerPermission),
-                        getApplication<Application>().getString(R.string.affect) + " " + getApplication<Application>().getString(
-                            R.string.avoidFreezeNotifyingApplications
-                        ),
+                        getApplication<Application>().getString(R.string.notificationListenerPermissionGranted),
+                        getApplication<Application>().getString(R.string.notificationListenerPermissionGrantedSummary),
                         "2",
                         R.drawable.ic_done
                     )
-                }
-            )
+                )
+            }
         }
     }
 
@@ -205,7 +193,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noNotifyPermission),
-                    getApplication<Application>().getString(R.string.mayCannotNotify),
+                    getApplication<Application>().getString(R.string.noNotifyPermissionSummary),
                     "6",
                     R.drawable.ic_warning
                 )
@@ -213,8 +201,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.noNotifyPermission),
-                    getApplication<Application>().getString(R.string.mayCannotNotify),
+                    getApplication<Application>().getString(R.string.notifyPermissionGranted),
+                    getApplication<Application>().getString(R.string.notifyPermissionGrantedSummary),
                     "6",
                     R.drawable.ic_done
                 )
@@ -226,8 +214,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         if (isDeviceOwner(getApplication())) {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.noMRootPermission),
-                    getApplication<Application>().getString(R.string.someFuncMayRestrict),
+                    getApplication<Application>().getString(R.string.deviceOwnerActive),
+                    getApplication<Application>().getString(R.string.deviceOwnerActiveSummary),
                     "-3",
                     R.drawable.ic_done
                 )
@@ -236,31 +224,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noMRootPermission),
-                    getApplication<Application>().getString(R.string.someFuncMayRestrict),
+                    getApplication<Application>().getString(R.string.deviceOwnerNotActiveSummary),
                     "-3",
                     R.drawable.ic_warning
-                )
-            )
-        }
-    }
-
-    private fun checkLongTimeNoUpdate() {
-        if (isOutdated(getApplication<Application>())) {
-            problemsList.value!!.add(
-                generateHashMap(
-                    getApplication<Application>().getString(R.string.notUpdatedForALongTime),
-                    getApplication<Application>().getString(R.string.someNewFuncMayPub),
-                    "-30",
-                    R.drawable.ic_warning
-                )
-            )
-        } else {
-            problemsList.value!!.add(
-                generateHashMap(
-                    getApplication<Application>().getString(R.string.notUpdatedForALongTime),
-                    getApplication<Application>().getString(R.string.someNewFuncMayPub),
-                    "-30",
-                    R.drawable.ic_done
                 )
             )
         }
@@ -287,7 +253,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noRootPermission),
-                    getApplication<Application>().getString(R.string.someFuncMayRestrict),
+                    getApplication<Application>().getString(R.string.rootPermissionNotGrantedSummary),
                     "-3",
                     R.drawable.ic_warning
                 )
@@ -295,8 +261,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.noRootPermission),
-                    getApplication<Application>().getString(R.string.someFuncMayRestrict),
+                    getApplication<Application>().getString(R.string.rootPermissionGranted),
+                    getApplication<Application>().getString(R.string.rootPermissionGrantedSummary),
                     "-3",
                     R.drawable.ic_done
                 )
@@ -312,7 +278,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noIgnoringBO),
-                    getApplication<Application>().getString(R.string.someFuncMayBeAff),
+                    getApplication<Application>().getString(R.string.batteryOptimizationNotIgnoredSummary),
                     "4",
                     R.drawable.ic_warning
                 )
@@ -320,8 +286,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.noIgnoringBO),
-                    getApplication<Application>().getString(R.string.someFuncMayBeAff),
+                    getApplication<Application>().getString(R.string.batteryOptimizationIgnored),
+                    getApplication<Application>().getString(R.string.batteryOptimizationIgnoredSummary),
                     "4",
                     R.drawable.ic_done
                 )
@@ -336,7 +302,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.inPowerSaveMode),
-                    getApplication<Application>().getString(R.string.someFuncMayBeAff),
+                    getApplication<Application>().getString(R.string.powerSaveModeOnSummary),
                     "5",
                     R.drawable.ic_warning
                 )
@@ -344,8 +310,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.inPowerSaveMode),
-                    getApplication<Application>().getString(R.string.someFuncMayBeAff),
+                    getApplication<Application>().getString(R.string.powerSaveModeOff),
+                    getApplication<Application>().getString(R.string.powerSaveModeOffSummary),
                     "5",
                     R.drawable.ic_done
                 )
@@ -364,7 +330,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.bluetoothPermissionIsNotGranted),
-                    getApplication<Application>().getString(R.string.mayCannotUseScheduledTaskToEnableOrDisableBluetooth),
+                    getApplication<Application>().getString(R.string.bluetoothPermissionNotGrantedSummary),
                     "7",
                     R.drawable.ic_warning
                 )
@@ -372,8 +338,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         } else {
             problemsList.value!!.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.bluetoothPermissionIsNotGranted),
-                    getApplication<Application>().getString(R.string.mayCannotUseScheduledTaskToEnableOrDisableBluetooth),
+                    getApplication<Application>().getString(R.string.bluetoothPermissionGranted),
+                    getApplication<Application>().getString(R.string.bluetoothPermissionGrantedSummary),
                     "7",
                     R.drawable.ic_done
                 )

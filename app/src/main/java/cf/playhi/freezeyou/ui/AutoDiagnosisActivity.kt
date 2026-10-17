@@ -26,7 +26,6 @@ import cf.playhi.freezeyou.databinding.AutodiagnosisBinding
 import cf.playhi.freezeyou.utils.AccessibilityUtils.openAccessibilitySettings
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.NotificationUtils.startAppNotificationSettingsSystemActivity
-import cf.playhi.freezeyou.utils.VersionUtils.checkUpdate
 
 class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     private lateinit var binding: AutodiagnosisBinding
@@ -75,7 +74,6 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                     (binding.adgListView.adapter?.getItem(position) as Map<*, *>?)?.get("id") as String?
                 if (s != null) {
                     when (s) {
-                        "-30" -> checkUpdate(this@AutoDiagnosisActivity)
                         "1" -> openAccessibilitySettings(this@AutoDiagnosisActivity)
                         "2" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
                             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
@@ -100,9 +98,15 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                                 startActivity(intent)
                             }
                         }
+                        "5" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                            val intent = Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+                            if (intent.resolveActivity(packageManager) != null) {
+                                startActivity(intent)
+                            }
+                        }
                         "6" -> startAppNotificationSettingsSystemActivity(
                             this@AutoDiagnosisActivity,
-                            "cf.play" + "hi.free" + "zeyou",
+                            packageName,
                             applicationInfo.uid
                         )
                         "7" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
