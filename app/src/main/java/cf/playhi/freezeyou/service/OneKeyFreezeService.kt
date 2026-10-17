@@ -49,8 +49,8 @@ class OneKeyFreezeService : FreezeYouBaseService() {
                 pkgNames,
                 selectFUFMode.getValue()!!.toInt()
             )
-            checkAuto(auto, this)
         }
+        checkAuto(auto, this)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -75,6 +75,12 @@ class OneKeyFreezeService : FreezeYouBaseService() {
     }
 
     private fun doFinish() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
         mNotificationManager?.cancel(2)
         stopSelf()
