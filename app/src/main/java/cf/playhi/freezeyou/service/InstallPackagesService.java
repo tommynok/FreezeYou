@@ -38,6 +38,7 @@ import cf.playhi.freezeyou.utils.DebugModeUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
+import cf.playhi.freezeyou.utils.RootUtils;
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -411,7 +412,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 // Root Mode
                 String result = null;
                 try {
-                    Process process = Runtime.getRuntime().exec("su");
+                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
                     DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
                     outputStream.writeBytes("pm install -r \"" + apkFilePath + "\"\n");
                     outputStream.writeBytes("exit\n");

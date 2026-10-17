@@ -55,7 +55,7 @@ public final class ForceStopUtils {
                     }
                     process = Shizuku.newProcess(new String[]{"sh"}, null, null);
                 } else {
-                    process = Runtime.getRuntime().exec("su");
+                    process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
                 }
                 outputStream = new DataOutputStream(process.getOutputStream());
                 for (String aPkgNameList : pkgNameList) {

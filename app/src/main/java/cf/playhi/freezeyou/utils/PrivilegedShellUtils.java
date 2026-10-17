@@ -53,6 +53,10 @@ public final class PrivilegedShellUtils {
         return result;
     }
 
+    public static boolean isRootAvailable() {
+        return RootUtils.checkRootPermission();
+    }
+
     public static CommandResult runRootCommand(String command)
             throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
@@ -61,7 +65,7 @@ public final class PrivilegedShellUtils {
             Log.d("FreezeYouDebug", "runRootCommand starting: " + command);
         }
         Process process = Runtime.getRuntime().exec(
-                new String[]{"su", "-c", redirectOutput(command)});
+                new String[]{RootUtils.getSuBinary(), "-c", redirectOutput(command)});
         CommandResult result = collectResult(process);
         if (debug) {
             Log.d("FreezeYouDebug", "runRootCommand finished in " + (System.currentTimeMillis() - start)

@@ -14,17 +14,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.cacheApplicationsIcons
 import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
-import cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon
-import cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
-import cf.playhi.freezeyou.utils.FileUtils.clearIconCache
-import cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess
+import cf.playhi.freezeyou.utils.RootUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import java.io.DataOutputStream
 
 class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -54,34 +49,31 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 loadingProgress.postValue(15)
 
                 checkAccessibilityService()
-                loadingProgress.postValue(20)
-
-                checkNotificationListenerPermission()
-                loadingProgress.postValue(25)
-
-                checkNotifyPermission()
                 loadingProgress.postValue(30)
 
-                checkBlueToothPermission()
-                loadingProgress.postValue(35)
+                checkNotificationListenerPermission()
+                loadingProgress.postValue(45)
 
-                checkIsDeviceOwner()
-                loadingProgress.postValue(50)
-
-                checkRootPermission()
+                checkNotifyPermission()
                 loadingProgress.postValue(55)
 
-                doRegenerateSomeCache()
-                loadingProgress.postValue(90)
+                checkBlueToothPermission()
+                loadingProgress.postValue(65)
+
+                checkIsDeviceOwner()
+                loadingProgress.postValue(75)
+
+                checkRootPermission()
+                loadingProgress.postValue(85)
 
                 checkIsPowerSaveMode()
-                loadingProgress.postValue(95)
+                loadingProgress.postValue(92)
 
                 checkIsIgnoringBatteryOptimizations()
                 loadingProgress.postValue(97)
 
                 checkIfNoProblemFound()
-                loadingProgress.postValue(98)
+                loadingProgress.postValue(99)
 
                 problemsList.value!!.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
                     val i = (t0["level"] as Int).compareTo(
@@ -233,23 +225,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun checkRootPermission() {
-        var hasPermission = true
-        var value = -1
-        try {
-            val process = Runtime.getRuntime().exec("su")
-            val outputStream = DataOutputStream(process.outputStream)
-            outputStream.writeBytes("exit\n")
-            outputStream.flush()
-            value = process.waitFor()
-            destroyProcess(outputStream, process)
-        } catch (e: Exception) {
-            if (e.message!!.lowercase().contains("permission denied")
-                || e.message!!.lowercase().contains("not found")
-            ) {
-                hasPermission = false
-            }
-        }
-        if (!hasPermission || value != 0) {
+        if (!RootUtils.checkRootPermission(true)) {
             problemsList.value!!.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noRootPermission),
@@ -347,41 +323,6 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun doRegenerateSomeCache() {
-        getApplication<Application>().getSharedPreferences("NameOfPackages", MODE_PRIVATE)
-            .edit().clear().apply()
-        clearIconCache(getApplication())
-        val cacheApplicationsIcons = cacheApplicationsIcons.getValue(getApplication())
-        val pm = getApplication<Application>().packageManager
-        @Suppress("DEPRECATION")
-        val installedApplications =
-            pm.getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES)
-        val size = installedApplications.size
-        for (i in 0 until size) {
-            val applicationInfo = installedApplications[i]
-            getApplicationLabel(
-                getApplication(),
-                pm,
-                applicationInfo,
-                applicationInfo.packageName
-            )
-            if (cacheApplicationsIcons) {
-                getApplicationIcon(
-                    getApplication<Application>(), applicationInfo.packageName,
-                    applicationInfo, false, true
-                )
-            }
-            loadingProgress.postValue(40 + (i.toDouble() / size.toDouble() * 50).toInt())
-        }
-        problemsList.value!!.add(
-            generateHashMap(
-                getApplication<Application>().getString(R.string.regenerateSomeCache),
-                getApplication<Application>().getString(R.string.updateSomeData),
-                "10",
-                R.drawable.ic_done
-            )
-        )
-    }
 
     private fun checkIfNoProblemFound() {
         if (problemsList.value!!.isEmpty()) {

@@ -570,7 +570,7 @@ public final class TasksUtils {
             } catch (Exception ee) {
                 ee.printStackTrace();
                 try { // Root method
-                    Process process = Runtime.getRuntime().exec("su");
+                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
                     DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
                     outputStream.writeBytes("svc data " + (enable ? "enable" : "disable") + "\n");
                     outputStream.writeBytes("exit\n");

@@ -41,7 +41,7 @@ public final class DevicePolicyManagerUtils {
     public static void doLockScreen(Context context) {
         // Try ROOT first to avoid breaking Smart Lock
         try {
-            Process process = Runtime.getRuntime().exec("su");
+            Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
             DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
             outputStream.writeBytes("input keyevent KEYCODE_POWER" + "\n");
             outputStream.writeBytes("exit\n");

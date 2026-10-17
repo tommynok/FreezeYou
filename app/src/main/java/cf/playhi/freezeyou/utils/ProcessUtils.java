@@ -31,7 +31,7 @@ public final class ProcessUtils {
     }
 
     public static int fAURoot(String pkgName, Boolean enable, Boolean hideMode) throws Exception {
-        Process process = Runtime.getRuntime().exec("su");
+        Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
         DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
         if (enable) {
             outputStream.writeBytes("pm " + (hideMode ? "unhide " : "enable ") + pkgName + "\n");
@@ -114,7 +114,7 @@ public final class ProcessUtils {
         Process process = null;
         DataOutputStream outputStream = null;
         try {
-            process = Runtime.getRuntime().exec("su");
+            process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
             outputStream = new DataOutputStream(process.getOutputStream());
             for (String command : RUNNING_PACKAGES_COMMANDS) {
                 outputStream.writeBytes(command + "\n");

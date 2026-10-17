@@ -53,7 +53,7 @@ object ElevatedLaunchUtils {
         var process: Process? = null
         var outputStream: DataOutputStream? = null
         return try {
-            process = Runtime.getRuntime().exec("su")
+            process = Runtime.getRuntime().exec(RootUtils.getSuBinary())
             outputStream = DataOutputStream(process.outputStream)
             outputStream.writeBytes("${amStartCommand(pkgName, target).joinToString(" ")}\n")
             outputStream.writeBytes("exit\n")

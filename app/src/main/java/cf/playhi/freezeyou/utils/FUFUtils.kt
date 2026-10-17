@@ -367,7 +367,7 @@ object FUFUtils {
             var process: Process? = null
             var outputStream: DataOutputStream? = null
             try {
-                process = Runtime.getRuntime().exec("su")
+                process = Runtime.getRuntime().exec(RootUtils.getSuBinary())
                 outputStream = DataOutputStream(process.outputStream)
                 if (freeze) {
                     for (aPkgNameList in pkgNameList) {
@@ -946,31 +946,7 @@ object FUFUtils {
 
     @JvmStatic
     fun checkRootPermission(): Boolean {
-        var hasPermission = true
-        var value = -1
-        try {
-            val process = Runtime.getRuntime().exec("su")
-            val outputStream = DataOutputStream(process.outputStream)
-            outputStream.writeBytes("exit\n")
-            outputStream.flush()
-            value = process.waitFor()
-            try {
-                outputStream.close()
-                process.destroy()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        } catch (e: Exception) {
-            val msg = e.message?.lowercase(Locale.getDefault()) ?: ""
-                if (msg.lowercase(Locale.getDefault())
-                    .contains("permission denied") || msg.lowercase(
-                    Locale.getDefault()
-                ).contains("not found")
-            ) {
-                hasPermission = false
-            }
-        }
-        return hasPermission && value == 0
+        return RootUtils.checkRootPermission()
     }
 
     @JvmStatic
