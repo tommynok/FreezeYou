@@ -185,7 +185,7 @@ public class FUFLauncherShortcutCreator extends FreezeYouBaseActivity {
     }
 
     private Map<String, Object> processAppStatus(String name, String packageName, ApplicationInfo applicationInfo, PackageManager packageManager) {
-        if (!("android".equals(packageName) || "cf.playhi.freezeyou".equals(packageName))) {
+        if (!("android".equals(packageName) || getPackageName().equals(packageName))) {
             Map<String, Object> keyValuePair = new HashMap<>();
             keyValuePair.put("Img", getApplicationIcon(FUFLauncherShortcutCreator.this, packageName, applicationInfo, true));
             keyValuePair.put("Name", name);

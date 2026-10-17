@@ -104,7 +104,7 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
             activity?.startActivity(
                 Intent(
                     Intent.ACTION_DELETE,
-                    Uri.parse("package:cf.playhi.freezeyou")
+                    Uri.parse("package:${activity?.packageName}")
                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
 

@@ -307,7 +307,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     private fun checkIsIgnoringBatteryOptimizations() {
         if (Build.VERSION.SDK_INT >= 23
             && !(getApplication<Application>().getSystemService(POWER_SERVICE) as PowerManager)
-                .isIgnoringBatteryOptimizations("cf.playhi.freezeyou")
+                .isIgnoringBatteryOptimizations(getApplication<Application>().packageName)
         ) {
             problemsList.value!!.add(
                 generateHashMap(

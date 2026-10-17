@@ -47,7 +47,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
                 final SharedPreferences sharedPreferences =
                         context.getSharedPreferences("Ver", Context.MODE_PRIVATE);
                 if (sharedPreferences.getInt("Ver", 0) < VersionUtils.getVersionCode(context)) {
-                    clearCrashLogs();
+                    clearCrashLogs(context);
                 }
 
                 break;
@@ -114,7 +114,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         TasksUtils.checkTriggerTasks(context);
     }
 
-    private void clearCrashLogs() {
+    private void clearCrashLogs(Context context) {
         if (Environment.getExternalStorageState().equals(
                 Environment.MEDIA_MOUNTED)) {
             String logPath =
@@ -137,7 +137,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
                         + File.separator
                         + "data"
                         + File.separator
-                        + "cf.playhi.freezeyou"
+                        + context.getPackageName()
                         + File.separator
                         + "log";
         try {

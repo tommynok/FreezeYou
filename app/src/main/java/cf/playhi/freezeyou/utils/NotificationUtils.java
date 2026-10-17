@@ -14,6 +14,7 @@ import android.provider.Settings;
 
 import net.grandcentrix.tray.AppPreferences;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -96,8 +97,9 @@ public final class NotificationUtils {
                 mNotificationManager.notify(mId, mBuilder.build());
                 AppPreferences appPreferences = new AppPreferences(context);
                 String notifying = appPreferences.getString("notifying", "");
-                if (notifying != null && !notifying.contains(pkgName + ",")) {
-                    appPreferences.put("notifying", notifying + pkgName + ",");
+                String updated = addToNotifyingList(notifying, pkgName);
+                if (!updated.equals(notifying)) {
+                    appPreferences.put("notifying", updated);
                 }
             }
         }
@@ -138,25 +140,72 @@ public final class NotificationUtils {
     }
 
     /**
+     * Add one package to the list of applications currently showing a notification, and return the
+     * list rebuilt.
+     *
+     * This used to be {@code notifying + pkgName + ","} guarded by {@code notifying.contains(pkgName
+     * + ",")}, and the two halves were wrong in opposite directions: concatenating onto a list that
+     * does not end in a comma stored one glued name belonging to no app, while the substring test
+     * could find "com.foo," inside "xcom.foo," and then refuse to add a package that really is
+     * notifying - so it stayed freezable with a notification on screen. Comparing whole parsed
+     * entries fixes both, and an add that changes nothing no longer rewrites the preference.
+     *
+     * @return every name on the list, each followed by a comma, with {@code pkgName} appended last
+     *         unless it is already there or blank.
+     */
+    public static String addToNotifyingList(String notifying, String pkgName) {
+        String name = pkgName == null ? "" : pkgName.trim();
+        ArrayList<String> result = new ArrayList<>();
+        for (String candidate : PackageListUtils.parse(notifying)) {
+            result.add(candidate);
+        }
+        if (!name.isEmpty() && !result.contains(name)) {
+            result.add(name);
+        }
+        return joinWithCommas(result);
+    }
+
+    /**
      * The list is stored as one string, each package followed by a comma. Separated from the Tray
      * access above so it can be tested without a device: this is the part that a batch made
      * interesting, and getting it wrong would quietly leave packages marked as notifying, which is
      * what stops them being frozen.
      *
-     * @return the list without any of {@code pkgNames}, or the original string when none was there.
+     * Removal now compares whole parsed entries instead of cutting {@code pkgName + ","} out with
+     * String.replace, which also matched inside a longer name: dropping "com.foo" out of "xcom.foo,"
+     * used to leave "x," as a package that is still notifying.
+     *
+     * @return the list without any of {@code pkgNames}, each remaining name followed by a comma.
      */
     public static String removeFromNotifyingList(String notifying, List<String> pkgNames) {
-        if (notifying == null || notifying.isEmpty()) {
-            return notifying == null ? "" : notifying;
+        if (pkgNames.isEmpty()) {
+            // The same instance, on purpose: nothing was rebuilt, so the caller that compares
+            // before writing to Tray sees no change and skips the round trip.
+            return notifying;
         }
-        String updated = notifying;
+
+        ArrayList<String> leaving = new ArrayList<>(pkgNames.size());
         for (String pkgName : pkgNames) {
-            if (pkgName == null || pkgName.isEmpty()) {
-                continue;
+            if (pkgName != null && !pkgName.trim().isEmpty()) {
+                leaving.add(pkgName.trim());
             }
-            updated = updated.replace(pkgName + ",", "");
         }
-        return updated;
+
+        ArrayList<String> kept = new ArrayList<>();
+        for (String candidate : PackageListUtils.parse(notifying)) {
+            if (!leaving.contains(candidate)) {
+                kept.add(candidate);
+            }
+        }
+        return joinWithCommas(kept);
+    }
+
+    private static String joinWithCommas(Iterable<String> names) {
+        StringBuilder result = new StringBuilder();
+        for (String name : names) {
+            result.append(name).append(",");
+        }
+        return result.toString();
     }
 
     public static void startAppNotificationSettingsSystemActivity(Activity activity, String pkgName, int pkgUid) {

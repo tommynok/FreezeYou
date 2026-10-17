@@ -90,6 +90,11 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\device_smoke.ps1" -Mo
 - `check_layout_variants.py` — разметка, разложенная на `layout/` и `layout-vNN/`, где обновили
   только одну копию.
 - `check_settings_keys.py` — `app:key` каждой настройки против имён ключей в `storage/key`.
+- `check_strings_parity.py` — плейсхолдеры (`%1$s`, `%2$d`) каждого перевода против
+  `values/strings.xml`: тип, количество и номер аргумента. Плюс типографика русской локали (без
+  `ё`, без машинных кавычек) и покрытие ключей: мёртвые строки перевода и то, что не переведено.
 
-Все три — отчёты: печатают найденное и выходят с нулем. `check_theme_resolution.py` понимает
-`--strict`, если понадобится валить сборку.
+`check_theme_resolution.py`, `check_layout_variants.py` и `check_settings_keys.py` — отчёты:
+печатают найденное и выходят с нулем. `check_theme_resolution.py` понимает `--strict`, если
+понадобится валить сборку. `check_strings_parity.py` выходит с единицей сам: рассогласованный
+плейсхолдер — это падение `String.format` уже у пользователя, а не на сборке.
