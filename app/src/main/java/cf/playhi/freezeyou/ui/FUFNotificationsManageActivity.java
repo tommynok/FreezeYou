@@ -56,7 +56,9 @@ public class FUFNotificationsManageActivity extends FreezeYouBaseActivity {
                         getString(R.string.askIfDel))
                         .setNegativeButton(R.string.no, null)
                         .setPositiveButton(R.string.yes, (dialog, which) -> {
-                            defaultSharedPreferences.put("notifying", string.replace(pkgName + ",", ""));
+                            // deleteNotification cancels the notification and takes the package out
+                            // of the Tray "notifying" list itself; writing that string here too only
+                            // raced it, with the substring replace that could cut a longer name.
                             NotificationUtils.deleteNotification(FUFNotificationsManageActivity.this, pkgName);
                             init();
                         })
