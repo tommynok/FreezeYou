@@ -44,7 +44,7 @@
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="summary_manageMyCustomization">Create, rename, or delete your own app groups</string>
     <string name="clearUninstalledPkgsInAllLists">Remove uninstalled applications from all lists</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Clears uninstalled apps from OneKey lists, Freeze Once Quit and My customization</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Clears uninstalled apps from OneKey lists, Freeze Once Quit, My customization and statistics</string>
     <string name="summary_clearIconCache">Frees up storage used by cached app icons; they\'ll be reloaded as needed</string>
     <string name="summary_clearNameCache">Frees up storage used by cached app names; they\'ll be reloaded as needed</string>
     <string name="summary_clearAllCache">Clears both the icon cache and the name cache at once</string>

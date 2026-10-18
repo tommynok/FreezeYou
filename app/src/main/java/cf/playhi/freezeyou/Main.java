@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -3128,10 +3129,13 @@ public class Main extends FreezeYouBaseActivity {
                     if (alreadyExists) {
                         showToast(Main.this, R.string.alreadyExist);
                     } else {
-                        vmUserDefinedDb.execSQL(
-                                "replace into categories(_id,label,packages) VALUES ( "
-                                        + null + ",'"
-                                        + label + "','')"
+                        // Data, not SQL text: concatenating the value into a quoted literal let
+                        // anything that looked like a quote end the literal and throw.
+                        ContentValues values = new ContentValues();
+                        values.put("label", label);
+                        values.put("packages", "");
+                        vmUserDefinedDb.insertWithOnConflict(
+                                "categories", null, values, SQLiteDatabase.CONFLICT_REPLACE
                         );
                     }
                     vmUserDefinedDb.close();

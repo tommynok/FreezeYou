@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.ui;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -305,24 +306,21 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,hour integer(2),minutes integer(2),repeat varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
         ); // column1 and column2 reserved
+        // label and task are typed on this screen. Pasted between quotes they closed their own
+        // literal and the statement threw, so they go in as data.
+        ContentValues values = new ContentValues();
+        values.put("hour", hour);
+        values.put("minutes", minutes);
+        values.put("repeat", repeat);
+        values.put("enabled", enabled);
+        values.put("label", label);
+        values.put("task", task);
+        values.put("column1", "");
+        values.put("column2", "");
         if (id == -5) {
-            db.execSQL(
-                    "insert into tasks(_id,hour,minutes,repeat,enabled,label,task,column1,column2) values(null,"
-                            + hour + ","
-                            + minutes + ","
-                            + repeat + ","
-                            + enabled + ","
-                            + "'" + label + "'" + ","
-                            + "'" + task + "'" + ",'','')"
-            );
+            db.insert("tasks", null, values);
         } else {
-            db.execSQL("UPDATE tasks SET hour = "
-                    + hour + ", minutes = "
-                    + minutes + ", repeat = "
-                    + repeat + ", enabled = "
-                    + enabled + ", label = '"
-                    + label + "', task = '"
-                    + task + "' WHERE _id = " + id + ";");
+            db.update("tasks", values, "_id = ?", new String[]{String.valueOf(id)});
         }
         db.close();
         TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
@@ -347,9 +345,21 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         db.execSQL(
                 "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
         );
-        db.execSQL("replace into tasks(_id,tg,tgextra,enabled,label,task,column1,column2) VALUES ( "
-                + ((id == -5) ? null : id) + ",'"
-                + trigger + "','" + triggerExtraParameters + "'," + enabled + ",'" + label + "','" + task + "','','')");
+        // Same reason as the timed task: the label is typed here, and between quotes it could end
+        // its own literal and throw. Omitting the id leaves it to autoincrement, which is what the
+        // null this code used to paste in asked for.
+        ContentValues values = new ContentValues();
+        if (id != -5) {
+            values.put("_id", id);
+        }
+        values.put("tg", trigger);
+        values.put("tgextra", triggerExtraParameters);
+        values.put("enabled", enabled);
+        values.put("label", label);
+        values.put("task", task);
+        values.put("column1", "");
+        values.put("column2", "");
+        db.insertWithOnConflict("tasks", null, values, SQLiteDatabase.CONFLICT_REPLACE);
         db.close();
         if (enabled == 1 && trigger != null) {
             switch (trigger) {

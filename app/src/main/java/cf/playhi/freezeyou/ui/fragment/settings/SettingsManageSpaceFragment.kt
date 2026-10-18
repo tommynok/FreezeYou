@@ -8,6 +8,7 @@ import androidx.preference.Preference
 import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.AlertDialogUtils.buildAlertDialog
+import cf.playhi.freezeyou.utils.DataStatisticsUtils.purgeUninstalledPackageTimes
 import cf.playhi.freezeyou.utils.DataStatisticsUtils.resetTimes
 import cf.playhi.freezeyou.utils.FileUtils.clearIconCache
 import cf.playhi.freezeyou.utils.FileUtils.deleteAllFiles
@@ -76,9 +77,10 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
     }
 
     /**
-     * One press cleans every list that keeps package names: the three stored OneKEY lists and, in
-     * the database beside them, the custom categories. Each holds its own copy of the same names,
-     * so a per-list button left the uninstalled app in all the others.
+     * One press cleans every list that keeps package names: the three stored OneKEY lists, the
+     * custom categories in the database beside them, and the freeze and use counters. Each holds
+     * its own copy of the same names, so a per-list button left the uninstalled app in all the
+     * others.
      */
     private fun clearUninstalledPkgsInAllLists() {
         var success = removeUninstalledFromUserDefinedCategories(requireContext())
@@ -89,6 +91,7 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
         )) {
             success = removeUninstalledFromOneKeyList(requireContext(), listKeyName) && success
         }
+        success = purgeUninstalledPackageTimes(requireContext()) && success
         showToast(activity, if (success) R.string.success else R.string.failed)
     }
 

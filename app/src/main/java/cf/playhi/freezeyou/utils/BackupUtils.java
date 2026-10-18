@@ -82,15 +82,18 @@ public final class BackupUtils {
                 if (oneUserTimeScheduledTaskJSONObject.optBoolean("doNotImport", false)) {
                     continue;
                 }
-                db.execSQL(
-                        "insert into tasks(_id,hour,minutes,repeat,enabled,label,task,column1,column2) values(null,"
-                                + oneUserTimeScheduledTaskJSONObject.getInt("hour") + ","
-                                + oneUserTimeScheduledTaskJSONObject.getInt("minutes") + ","
-                                + oneUserTimeScheduledTaskJSONObject.getString("repeat") + ","
-                                + oneUserTimeScheduledTaskJSONObject.getInt("enabled") + ","
-                                + "'" + oneUserTimeScheduledTaskJSONObject.getString("label") + "'" + ","
-                                + "'" + oneUserTimeScheduledTaskJSONObject.getString("task") + "'" + ",'','')"
-                );
+                // Read back out of a file someone can edit, and here these were pasted between
+                // quotes into SQL: a stray apostrophe ended the literal and the restore threw.
+                ContentValues values = new ContentValues();
+                values.put("hour", oneUserTimeScheduledTaskJSONObject.getInt("hour"));
+                values.put("minutes", oneUserTimeScheduledTaskJSONObject.getInt("minutes"));
+                values.put("repeat", oneUserTimeScheduledTaskJSONObject.getString("repeat"));
+                values.put("enabled", oneUserTimeScheduledTaskJSONObject.getInt("enabled"));
+                values.put("label", oneUserTimeScheduledTaskJSONObject.getString("label"));
+                values.put("task", oneUserTimeScheduledTaskJSONObject.getString("task"));
+                values.put("column1", "");
+                values.put("column2", "");
+                db.insert("tasks", null, values);
             } catch (JSONException e) {
                 isCompletelySuccess = false;
             }
@@ -126,14 +129,15 @@ public final class BackupUtils {
                 if (oneUserTriggerScheduledTaskJSONObject.optBoolean("doNotImport", false)) {
                     continue;
                 }
-                db.execSQL(
-                        "insert into tasks(_id,tg,tgextra,enabled,label,task,column1,column2) VALUES (null,"
-                                + "'" + oneUserTriggerScheduledTaskJSONObject.getString("tg") + "'" + ","
-                                + "'" + oneUserTriggerScheduledTaskJSONObject.getString("tgextra") + "'" + ","
-                                + oneUserTriggerScheduledTaskJSONObject.getInt("enabled") + ","
-                                + "'" + oneUserTriggerScheduledTaskJSONObject.getString("label") + "'" + ","
-                                + "'" + oneUserTriggerScheduledTaskJSONObject.getString("task") + "'" + ",'','')"
-                );
+                ContentValues values = new ContentValues();
+                values.put("tg", oneUserTriggerScheduledTaskJSONObject.getString("tg"));
+                values.put("tgextra", oneUserTriggerScheduledTaskJSONObject.getString("tgextra"));
+                values.put("enabled", oneUserTriggerScheduledTaskJSONObject.getInt("enabled"));
+                values.put("label", oneUserTriggerScheduledTaskJSONObject.getString("label"));
+                values.put("task", oneUserTriggerScheduledTaskJSONObject.getString("task"));
+                values.put("column1", "");
+                values.put("column2", "");
+                db.insert("tasks", null, values);
             } catch (JSONException e) {
                 isCompletelySuccess = false;
             }

@@ -50,7 +50,7 @@
     <string name="summary_manageIpaAutoAllow">允许无需每次确认即请求安装的应用列表</string>
     <string name="summary_manageMyCustomization">创建、重命名或删除你的应用分组</string>
     <string name="clearUninstalledPkgsInAllLists">从所有列表中移除已卸载的应用</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">从一键列表、“离开冻结”及“我的自选”中清理已卸载的应用</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">从一键列表、“离开冻结”、“我的自选”及统计数据中清理已卸载的应用</string>
     <string name="summary_clearIconCache">释放已缓存应用图标占用的存储；需要时会重新加载</string>
     <string name="summary_clearNameCache">释放已缓存应用名称占用的存储；需要时会重新加载</string>
     <string name="summary_clearAllCache">一次清空图标缓存和名称缓存</string>

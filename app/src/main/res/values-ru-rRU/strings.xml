@@ -44,7 +44,7 @@
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
     <string name="clearUninstalledPkgsInAllLists">Убрать удаленные приложения из всех списков</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey, «Заморозка после выхода» и «Моя подборка» от удаленных с устройства приложений</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey, «Заморозка после выхода», «Моя подборка» и статистику от удаленных с устройства приложений</string>
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>

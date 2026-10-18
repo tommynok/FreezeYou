@@ -44,7 +44,7 @@
     <string name="summary_manageIpaAutoAllow">Список додатків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи додатків</string>
     <string name="clearUninstalledPkgsInAllLists">Прибрати видалені додатки з усіх списків</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey, «Заморожування після виходу» та «Моя підбірка» від видалених із пристрою додатків</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey, «Заморожування після виходу», «Моя підбірка» та статистику від видалених із пристрою додатків</string>
     <string name="summary_clearIconCache">Звільняє місце, зайняте кешем іконок додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearNameCache">Звільняє місце, зайняте кешем назв додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearAllCache">Очищає одразу обидва кеші — іконок і назв</string>

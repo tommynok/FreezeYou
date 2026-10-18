@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -169,5 +170,56 @@ public final class DataStatisticsUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Purges statistics rows for any packages that are no longer installed on the device.
+     *
+     * Deleting an application now takes its own counters out, but rows counted before that was so
+     * stay behind, so this sweeps what the per-package delete could not reach.
+     */
+    public static boolean purgeUninstalledPackageTimes(Context context) {
+        String[] dbNames = new String[]{
+                "ApplicationsFreezeTimes", "ApplicationsUFreezeTimes", "ApplicationsUseTimes"
+        };
+        boolean allSuccess = true;
+        for (String dbName : dbNames) {
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
+            try {
+                db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
+                if (db != null) {
+                    createTableIfNeeded(db);
+                    cursor = db.query("TimesList", new String[]{"pkg"}, null, null, null, null, null);
+                    List<String> pkgsToRemove = new ArrayList<>();
+                    if (cursor != null) {
+                        while (cursor.moveToNext()) {
+                            String encodedPkg = cursor.getString(cursor.getColumnIndexOrThrow("pkg"));
+                            try {
+                                String pkgName = new String(Base64.decode(encodedPkg, Base64.DEFAULT));
+                                if (ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context) == null) {
+                                    pkgsToRemove.add(encodedPkg);
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                    for (String encoded : pkgsToRemove) {
+                        db.delete("TimesList", "pkg = ?", new String[]{encoded});
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                allSuccess = false;
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
+                }
+            }
+        }
+        return allSuccess;
     }
 }
