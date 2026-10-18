@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.utils;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -179,19 +180,16 @@ public final class BackupUtils {
                     continue;
                 }
                 String label = oneUserDefinedCategoriesJSONObject.getString("label");
+                // The two values come from a file someone can edit, and here they were pasted
+                // between quotes into SQL: a stray apostrophe ended the literal and the restore
+                // threw. Bound, they stay the data they are.
+                ContentValues values = new ContentValues();
+                values.put("packages", oneUserDefinedCategoriesJSONObject.getString("packages"));
                 if (existedLabels.contains(label)) {
-                    db.execSQL(
-                            "update categories set packages = '"
-                                    + oneUserDefinedCategoriesJSONObject.getString("packages")
-                                    + "' where label = '" + label + "';"
-                    );
+                    db.update("categories", values, "label = ?", new String[]{label});
                 } else {
-                    db.execSQL(
-                            "insert into categories(_id,label,packages) VALUES ( "
-                                    + null + ",'"
-                                    + label + "','"
-                                    + oneUserDefinedCategoriesJSONObject.getString("packages") + "');"
-                    );
+                    values.put("label", label);
+                    db.insert("categories", null, values);
                 }
             } catch (JSONException e) {
                 isCompletelySuccess = false;

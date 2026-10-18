@@ -2,6 +2,7 @@ package cf.playhi.freezeyou.utils;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -189,10 +190,14 @@ public final class Support {
                                         if (alreadyExists) {
                                             showToast(activity, R.string.alreadyExist);
                                         } else {
-                                            vmUserDefinedDb1.execSQL(
-                                                    "replace into categories(_id,label,packages) VALUES ( "
-                                                            + null + ",'"
-                                                            + label + "','')"
+                                            // Data, not SQL text: concatenating the value into a
+                                            // quoted literal let anything that looked like a quote
+                                            // end the literal and the statement throw.
+                                            ContentValues values = new ContentValues();
+                                            values.put("label", label);
+                                            values.put("packages", "");
+                                            vmUserDefinedDb1.insertWithOnConflict(
+                                                    "categories", null, values, SQLiteDatabase.CONFLICT_REPLACE
                                             );
                                         }
                                         vmUserDefinedDb1.close();
@@ -219,12 +224,10 @@ public final class Support {
                                 } else {
                                     pkgs = OneKeyListUtils.addPkgToPkgNames(pkgs, pkgName);
                                 }
-                                vmUserDefinedDb1.execSQL(
-                                        "UPDATE categories SET packages = '"
-                                                + pkgs
-                                                + "' WHERE _id = "
-                                                + itemId
-                                                + ";"
+                                ContentValues values = new ContentValues();
+                                values.put("packages", pkgs);
+                                vmUserDefinedDb1.update(
+                                        "categories", values, "_id = ?", new String[]{String.valueOf(itemId)}
                                 );
                                 vmUserDefinedDb1.close();
                                 showToast(activity, existed ? R.string.removed : R.string.added);

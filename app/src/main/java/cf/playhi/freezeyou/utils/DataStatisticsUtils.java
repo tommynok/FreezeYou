@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.utils;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -90,26 +91,32 @@ public final class DataStatisticsUtils {
             return;
         }
 
+        // Once, and bound into every statement below: the name used to be re-encoded and pasted
+        // between quotes into the SQL each time it was needed.
+        String encodedPkg = Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT);
+        String[] pkgSelectionArgs = new String[]{encodedPkg};
+
         Cursor cursor =
-                db.query("TimesList", new String[]{"pkg", "times"}, "pkg = '"
-                        + Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT)
-                        + "'", null, null, null, null);
+                db.query("TimesList", new String[]{"pkg", "times"},
+                        "pkg = ?", pkgSelectionArgs, null, null, null);
 
         if (cursor == null) {
             return;
         }
 
         if (cursor.moveToFirst()) {
-            db.execSQL("UPDATE TimesList SET times = '"
-                    + (Integer.parseInt(cursor.getString(cursor.getColumnIndex("times"))) + 1)
-                    + "' WHERE pkg = '" + Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT) + "';");
+            ContentValues values = new ContentValues();
+            values.put("times",
+                    Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow("times"))) + 1);
+            db.update("TimesList", values, "pkg = ?", pkgSelectionArgs);
         } else {
             // The row is created because this application was just acted on, so the count starts
             // at one. It used to start at zero, which meant every application's first freeze went
             // uncounted and the statistics were short by one for ever after.
-            db.execSQL("insert into TimesList(pkg,times) values('"
-                    + Base64.encodeToString(pkgNameString.getBytes(), Base64.DEFAULT)
-                    + "','1');");
+            ContentValues values = new ContentValues();
+            values.put("pkg", encodedPkg);
+            values.put("times", 1);
+            db.insert("TimesList", null, values);
         }
         cursor.close();
 
@@ -127,6 +134,40 @@ public final class DataStatisticsUtils {
             db.execSQL("UPDATE TimesList SET times = '0';");
         } finally {
             db.close();
+        }
+    }
+
+    /**
+     * Delete statistics rows for an uninstalled package from all three statistics databases.
+     *
+     * A counter row was written when an app was frozen or opened and never taken back out, so the
+     * device kept counting applications it no longer had.
+     */
+    public static void deletePackageTimes(Context context, String pkgName) {
+
+        if (pkgName == null || pkgName.trim().isEmpty()) {
+            return;
+        }
+
+        String encodedPkg = Base64.encodeToString(pkgName.getBytes(), Base64.DEFAULT);
+        String[] dbNames = new String[]{
+                "ApplicationsFreezeTimes", "ApplicationsUFreezeTimes", "ApplicationsUseTimes"
+        };
+        for (String dbName : dbNames) {
+            SQLiteDatabase db = null;
+            try {
+                db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
+                if (db != null) {
+                    createTableIfNeeded(db);
+                    db.delete("TimesList", "pkg = ?", new String[]{encodedPkg});
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (db != null) {
+                    db.close();
+                }
+            }
         }
     }
 }

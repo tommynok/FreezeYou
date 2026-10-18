@@ -9,6 +9,7 @@ import java.io.File;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
 
+import static cf.playhi.freezeyou.utils.DataStatisticsUtils.deletePackageTimes;
 import static cf.playhi.freezeyou.utils.NotificationUtils.deleteNotification;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.removePackageFromUserDefinedCategories;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.removeFromOneKeyList;
@@ -32,6 +33,8 @@ public class UninstallReceiver extends BroadcastReceiver {
                     // The categories keep their own copy of the package names, so nothing above
                     // reaches them
                     removePackageFromUserDefinedCategories(context, pkgName);
+                    // So does the statistics: a counter row outlived the app it counted
+                    deletePackageTimes(context, pkgName);
                     // Clean up icon cache for uninstalled application
                     File file = new File(context.getFilesDir() + "/icon/" + pkgName + ".png");
                     if (file.exists() && file.isFile()) {
