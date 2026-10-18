@@ -62,24 +62,10 @@
 
         <Preference
             app:iconSpaceReserved="false"
-            app:key="clearUninstalledPkgsInOKFFList"
+            app:key="clearUninstalledPkgsInAllLists"
             app:singleLineTitle="false"
-            app:title="@string/clearUninstalledPkgsInOKFFListAsterisk" />
-        <Preference
-            app:iconSpaceReserved="false"
-            app:key="clearUninstalledPkgsInOKUFList"
-            app:singleLineTitle="false"
-            app:title="@string/clearUninstalledPkgsInOKUFListAsterisk" />
-        <Preference
-            app:iconSpaceReserved="false"
-            app:key="clearUninstalledPkgsInFOQList"
-            app:singleLineTitle="false"
-            app:title="@string/clearUninstalledPkgsInFOQListAsterisk" />
-        <Preference
-            android:selectable="false"
-            app:iconSpaceReserved="false"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_clearUninstalledPkgsInList" />
+            app:summary="@string/summary_clearUninstalledPkgsInAllLists"
+            app:title="@string/clearUninstalledPkgsInAllLists" />
 
     </PreferenceCategory>
 

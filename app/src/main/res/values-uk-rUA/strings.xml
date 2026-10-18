@@ -43,10 +43,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Відкладає оновлення додатку, поки ви ним користуєтесь, і встановлює його, коли ви виходите</string>
     <string name="summary_manageIpaAutoAllow">Список додатків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи додатків</string>
-    <string name="summary_clearUninstalledPkgsInList">* Видаляє зі списку лише ті додатки, які ви вже видалили з пристрою — решта пунктів списку не змінюється</string>
-    <string name="clearUninstalledPkgsInOKFFListAsterisk">Прибрати видалені додатки з OneKey-заморожування *</string>
-    <string name="clearUninstalledPkgsInOKUFListAsterisk">Прибрати видалені додатки з OneKey-розморожування *</string>
-    <string name="clearUninstalledPkgsInFOQListAsterisk">Прибрати видалені додатки з Заморожування після виходу *</string>
+    <string name="clearUninstalledPkgsInAllLists">Прибрати видалені додатки з усіх списків і категорій</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey-заморожування, OneKey-розморожування та «Заморожування після виходу», а також ваші власні категорії. Видаляє лише ті додатки, які ви вже видалили з пристрою; решта пунктів не змінюється</string>
     <string name="summary_clearIconCache">Звільняє місце, зайняте кешем іконок додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearNameCache">Звільняє місце, зайняте кешем назв додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearAllCache">Очищає одразу обидва кеші — іконок і назв</string>

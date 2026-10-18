@@ -49,10 +49,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">使用应用时延迟其更新，离开后再安装</string>
     <string name="summary_manageIpaAutoAllow">允许无需每次确认即请求安装的应用列表</string>
     <string name="summary_manageMyCustomization">创建、重命名或删除你的应用分组</string>
-    <string name="summary_clearUninstalledPkgsInList">* 仅移除已卸载应用的条目——列表其余部分不受影响</string>
-    <string name="clearUninstalledPkgsInOKFFListAsterisk">从“一键冻结”列表中移除已卸载的应用 *</string>
-    <string name="clearUninstalledPkgsInOKUFListAsterisk">从“一键解冻”列表中移除已卸载的应用 *</string>
-    <string name="clearUninstalledPkgsInFOQListAsterisk">从“离开冻结”列表中移除已卸载的应用 *</string>
+    <string name="clearUninstalledPkgsInAllLists">从所有列表和自定义分类中移除已卸载的应用</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">一次清空“一键冻结”“一键解冻”“离开冻结”列表以及你的自定义分类；仅移除已卸载应用的条目——其余内容不受影响</string>
     <string name="summary_clearIconCache">释放已缓存应用图标占用的存储；需要时会重新加载</string>
     <string name="summary_clearNameCache">释放已缓存应用名称占用的存储；需要时会重新加载</string>
     <string name="summary_clearAllCache">一次清空图标缓存和名称缓存</string>

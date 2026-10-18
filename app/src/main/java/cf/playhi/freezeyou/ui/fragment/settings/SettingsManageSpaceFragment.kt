@@ -22,16 +22,8 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.spr_manage_space, rootKey)
 
-        findPreference<Preference?>("clearUninstalledPkgsInOKFFList")?.setOnPreferenceClickListener {
-            clearUninstalledPkgsIn(getString(R.string.sAutoFreezeApplicationList))
-            true
-        }
-        findPreference<Preference?>("clearUninstalledPkgsInOKUFList")?.setOnPreferenceClickListener {
-            clearUninstalledPkgsIn(getString(R.string.sOneKeyUFApplicationList))
-            true
-        }
-        findPreference<Preference?>("clearUninstalledPkgsInFOQList")?.setOnPreferenceClickListener {
-            clearUninstalledPkgsIn(getString(R.string.sFreezeOnceQuit))
+        findPreference<Preference?>("clearUninstalledPkgsInAllLists")?.setOnPreferenceClickListener {
+            clearUninstalledPkgsInAllLists()
             true
         }
         findPreference<Preference?>("clearIconCache")?.setOnPreferenceClickListener {
@@ -84,16 +76,20 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
     }
 
     /**
-     * The custom categories hold their own copy of these package names in a database, so clearing
-     * only the stored list left the uninstalled apps in every category that named them.
+     * One press cleans every list that keeps package names: the three stored OneKEY lists and, in
+     * the database beside them, the custom categories. Each holds its own copy of the same names,
+     * so a per-list button left the uninstalled app in all the others.
      */
-    private fun clearUninstalledPkgsIn(listKeyName: String) {
-        val listCleared = removeUninstalledFromOneKeyList(requireContext(), listKeyName)
-        val categoriesCleared = removeUninstalledFromUserDefinedCategories(requireContext())
-        showToast(
-            activity,
-            if (listCleared && categoriesCleared) R.string.success else R.string.failed
-        )
+    private fun clearUninstalledPkgsInAllLists() {
+        var success = removeUninstalledFromUserDefinedCategories(requireContext())
+        for (listKeyName in listOf(
+            getString(R.string.sAutoFreezeApplicationList),
+            getString(R.string.sOneKeyUFApplicationList),
+            getString(R.string.sFreezeOnceQuit)
+        )) {
+            success = removeUninstalledFromOneKeyList(requireContext(), listKeyName) && success
+        }
+        showToast(activity, if (success) R.string.success else R.string.failed)
     }
 
     private fun askIfResetTimes(dbName: String) {
