@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.utils;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -10,6 +11,11 @@ import net.grandcentrix.tray.AppPreferences;
 import java.util.ArrayList;
 
 public final class OneKeyListUtils {
+
+    private static final String USER_DEFINED_DB = "userDefinedCategories";
+    private static final String CATEGORIES_TABLE = "categories";
+    private static final String CREATE_CATEGORIES_TABLE =
+            "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)";
 
     public static boolean addToOneKeyList(Context context, String key, String pkgName) {
         final AppPreferences sharedPreferences = new AppPreferences(context);
@@ -114,44 +120,66 @@ public final class OneKeyListUtils {
 
     public static String[] decodeUserListsInPackageNames(Context context, String[] pkgs) {
         StringBuilder result = new StringBuilder();
-        SQLiteDatabase userDefinedDb = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-        for (String pkg : pkgs) {
-            if ("".equals(pkg.trim())) {
-                continue;
-            }
-            if (pkg.startsWith("@")) {
-                try {
-                    String labelBase64 =
-                            Base64.encodeToString(
-                                    Base64.decode(pkg.substring(1), Base64.DEFAULT),
-                                    Base64.DEFAULT
-                            );
-
-                    userDefinedDb.execSQL(
-                            "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                    );
-                    Cursor cursor =
-                            userDefinedDb.query(
-                                    "categories",
-                                    new String[]{"packages"},
-                                    "label = '" + labelBase64 + "'",
-                                    null, null,
-                                    null, null
-                            );
-
-                    if (cursor.moveToFirst()) {
-                        result.append(cursor.getString(cursor.getColumnIndex("packages")));
-                    }
-                    cursor.close();
-                    userDefinedDb.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        // One connection for the whole list, closed after the loop. It used to be closed inside
+        // the loop, so a second "@Category" in the same command ran against a pool that was
+        // already shut down and the task threw "Cannot perform this operation because the
+        // connection pool has been closed" instead of freezing the apps of that category.
+        SQLiteDatabase userDefinedDb = null;
+        try {
+            userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+            for (String pkg : pkgs) {
+                if ("".equals(pkg.trim())) {
+                    continue;
                 }
-            } else {
-                result.append(pkg);
+                if (pkg.startsWith("@")) {
+                    try {
+                        String labelBase64 =
+                                Base64.encodeToString(
+                                        Base64.decode(pkg.substring(1), Base64.DEFAULT),
+                                        Base64.DEFAULT
+                                );
+
+                        Cursor cursor = null;
+                        try {
+                            cursor =
+                                    userDefinedDb.query(
+                                            CATEGORIES_TABLE,
+                                            new String[]{"packages"},
+                                            "label = ?",
+                                            new String[]{labelBase64},
+                                            null,
+                                            null, null
+                                    );
+
+                            if (cursor.moveToFirst()) {
+                                String packages =
+                                        cursor.getString(cursor.getColumnIndexOrThrow("packages"));
+                                // Null, not "null": a category with nothing written to the column
+                                // yet names no package, and appending the word would hand the
+                                // freeze command a package called "null".
+                                if (packages != null) {
+                                    result.append(packages);
+                                }
+                            }
+                        } finally {
+                            if (cursor != null) {
+                                cursor.close();
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    result.append(pkg);
+                }
+                if (result.length() != 0 && result.charAt(result.length() - 1) != ',') {
+                    result.append(",");
+                }
             }
-            if (result.length() != 0 && result.charAt(result.length() - 1) != ',') {
-                result.append(",");
+        } finally {
+            if (userDefinedDb != null) {
+                userDefinedDb.close();
             }
         }
         // "".split(",") is a one-element array holding an empty string, not an empty one, so an
@@ -168,5 +196,119 @@ public final class OneKeyListUtils {
             }
         }
         return nonBlank.toArray(new String[0]);
+    }
+
+    /**
+     * Take one app out of every custom category, what removeFromOneKeyList is for the stored lists.
+     *
+     * A category keeps its members as package names of its own, so an uninstall left the name
+     * behind: the category still listed an app the device no longer has, and every command built
+     * from it asked the package manager for a package that cannot be found.
+     */
+    public static void removePackageFromUserDefinedCategories(Context context, String pkgName) {
+        String name = pkgName == null ? "" : pkgName.trim();
+        if (name.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase userDefinedDb = null;
+        try {
+            userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+            for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
+                if (existsInOneKeyList(row.packages, name)) {
+                    writeUserDefinedCategory(
+                            userDefinedDb,
+                            row.id,
+                            removePkgFromPkgNames(row.packages, name)
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (userDefinedDb != null) {
+                userDefinedDb.close();
+            }
+        }
+    }
+
+    /**
+     * Drop from every custom category the apps that are no longer installed - the category twin of
+     * removeUninstalledFromOneKeyList, which only reaches one stored list.
+     *
+     * @return whether the pass ran to the end. A database that could not be opened is a failure
+     *         reported to the caller rather than an exception thrown at the settings row.
+     */
+    public static boolean removeUninstalledFromUserDefinedCategories(Context context) {
+        SQLiteDatabase userDefinedDb = null;
+        try {
+            userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+            for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
+                String packages = row.packages;
+                // Parsed once, up front: the rebuilt string is shorter than the names it was made
+                // from, so walking it while removing would skip entries.
+                for (String pkgName : PackageListUtils.parse(packages)) {
+                    if (ApplicationInfoUtils
+                            .getApplicationInfoFromPkgName(pkgName, context) == null) {
+                        packages = removePkgFromPkgNames(packages, pkgName);
+                    }
+                }
+                if (!packages.equals(row.packages)) {
+                    writeUserDefinedCategory(userDefinedDb, row.id, packages);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (userDefinedDb != null) {
+                userDefinedDb.close();
+            }
+        }
+    }
+
+    private static ArrayList<CategoryRow> readUserDefinedCategories(SQLiteDatabase userDefinedDb) {
+        ArrayList<CategoryRow> rows = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = userDefinedDb.query(
+                    CATEGORIES_TABLE, new String[]{"_id", "packages"},
+                    null, null, null, null, null
+            );
+            while (cursor.moveToNext()) {
+                rows.add(new CategoryRow(
+                        cursor.getInt(cursor.getColumnIndexOrThrow("_id")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("packages"))
+                ));
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return rows;
+    }
+
+    private static void writeUserDefinedCategory(SQLiteDatabase userDefinedDb, int id, String packages) {
+        ContentValues values = new ContentValues();
+        values.put("packages", packages);
+        userDefinedDb.update(CATEGORIES_TABLE, values, "_id = ?", new String[]{String.valueOf(id)});
+    }
+
+    /**
+     * A row read apart from the write that follows it. Android fills a cursor's window as it walks
+     * the table, so updating "categories" while its rows are still being read is a thing that only
+     * misbehaves on some devices.
+     */
+    private static final class CategoryRow {
+        final int id;
+        final String packages;
+
+        CategoryRow(int id, String packages) {
+            this.id = id;
+            this.packages = packages == null ? "" : packages;
+        }
     }
 }

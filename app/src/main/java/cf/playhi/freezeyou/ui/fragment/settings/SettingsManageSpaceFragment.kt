@@ -12,6 +12,7 @@ import cf.playhi.freezeyou.utils.DataStatisticsUtils.resetTimes
 import cf.playhi.freezeyou.utils.FileUtils.clearIconCache
 import cf.playhi.freezeyou.utils.FileUtils.deleteAllFiles
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromOneKeyList
+import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromUserDefinedCategories
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import java.io.File
 
@@ -22,39 +23,15 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
         setPreferencesFromResource(R.xml.spr_manage_space, rootKey)
 
         findPreference<Preference?>("clearUninstalledPkgsInOKFFList")?.setOnPreferenceClickListener {
-            if (removeUninstalledFromOneKeyList(
-                    activity,
-                    getString(R.string.sAutoFreezeApplicationList)
-                )
-            ) {
-                showToast(activity, R.string.success)
-            } else {
-                showToast(activity, R.string.failed)
-            }
+            clearUninstalledPkgsIn(getString(R.string.sAutoFreezeApplicationList))
             true
         }
         findPreference<Preference?>("clearUninstalledPkgsInOKUFList")?.setOnPreferenceClickListener {
-            if (removeUninstalledFromOneKeyList(
-                    activity,
-                    getString(R.string.sOneKeyUFApplicationList)
-                )
-            ) {
-                showToast(activity, R.string.success)
-            } else {
-                showToast(activity, R.string.failed)
-            }
+            clearUninstalledPkgsIn(getString(R.string.sOneKeyUFApplicationList))
             true
         }
         findPreference<Preference?>("clearUninstalledPkgsInFOQList")?.setOnPreferenceClickListener {
-            if (removeUninstalledFromOneKeyList(
-                    activity,
-                    getString(R.string.sFreezeOnceQuit)
-                )
-            ) {
-                showToast(activity, R.string.success)
-            } else {
-                showToast(activity, R.string.failed)
-            }
+            clearUninstalledPkgsIn(getString(R.string.sFreezeOnceQuit))
             true
         }
         findPreference<Preference?>("clearIconCache")?.setOnPreferenceClickListener {
@@ -104,6 +81,19 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
     override fun onResume() {
         super.onResume()
         activity?.setTitle(R.string.manageSpace)
+    }
+
+    /**
+     * The custom categories hold their own copy of these package names in a database, so clearing
+     * only the stored list left the uninstalled apps in every category that named them.
+     */
+    private fun clearUninstalledPkgsIn(listKeyName: String) {
+        val listCleared = removeUninstalledFromOneKeyList(requireContext(), listKeyName)
+        val categoriesCleared = removeUninstalledFromUserDefinedCategories(requireContext())
+        showToast(
+            activity,
+            if (listCleared && categoriesCleared) R.string.success else R.string.failed
+        )
     }
 
     private fun askIfResetTimes(dbName: String) {
