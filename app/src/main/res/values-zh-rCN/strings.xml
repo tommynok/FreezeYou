@@ -49,8 +49,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">使用应用时延迟其更新，离开后再安装</string>
     <string name="summary_manageIpaAutoAllow">允许无需每次确认即请求安装的应用列表</string>
     <string name="summary_manageMyCustomization">创建、重命名或删除你的应用分组</string>
-    <string name="clearUninstalledPkgsInAllLists">从所有列表和自定义分类中移除已卸载的应用</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">一次清空“一键冻结”“一键解冻”“离开冻结”列表以及你的自定义分类；仅移除已卸载应用的条目——其余内容不受影响</string>
+    <string name="clearUninstalledPkgsInAllLists">从所有列表中移除已卸载的应用</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">从一键列表、“离开冻结”及“我的自选”中清理已卸载的应用</string>
     <string name="summary_clearIconCache">释放已缓存应用图标占用的存储；需要时会重新加载</string>
     <string name="summary_clearNameCache">释放已缓存应用名称占用的存储；需要时会重新加载</string>
     <string name="summary_clearAllCache">一次清空图标缓存和名称缓存</string>
@@ -141,7 +141,7 @@
     <string name="freezeAfterScreenLock">锁屏后一键冻结</string>
     <string name="freezeAfterScreenLockSummary">每次屏幕熄灭时冻结“一键冻结”列表中的应用。</string>
     <string name="screenLockFreezeNotiTitle">锁屏后自动冻结</string>
-    <string name="screenLockFreezeNotiText">等待屏幕熄灭后冻结“一键冻结”列表中的应用</string>
+    <string name="screenLockFreezeNotiText">将自动冻结“一键冻结”列表中的应用</string>
     <string name="screenLockFreezeNotiTapHint">点按可关闭</string>
     <string name="backgroundService">后台服务</string>
     <string name="useForegroundService">使用前台服务(安卓8.0及以上强制开启)</string>

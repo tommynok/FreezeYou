@@ -43,8 +43,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Откладывает обновление приложения, пока вы им пользуетесь, и ставит его, когда вы выходите</string>
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
-    <string name="clearUninstalledPkgsInAllLists">Убрать удаленные приложения из всех списков и категорий</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey-заморозки, OneKey-разморозки и «Заморозка после выхода», а также ваши пользовательские категории. Удаляет только те приложения, которые вы уже удалили с устройства; остальные пункты не затрагиваются</string>
+    <string name="clearUninstalledPkgsInAllLists">Убрать удаленные приложения из всех списков</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey, «Заморозка после выхода» и «Моя подборка» от удаленных с устройства приложений</string>
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>
@@ -135,7 +135,7 @@
     <string name="freezeAfterScreenLock">Запускать OneKey-заморозку при выключении экрана</string>
     <string name="freezeAfterScreenLockSummary">Замораживает приложения из списка «OneKey-заморозка» каждый раз, когда гаснет экран.</string>
     <string name="screenLockFreezeNotiTitle">Заморозка при выключении экрана</string>
-    <string name="screenLockFreezeNotiText">Ожидание выключения экрана: будут заморожены приложения из списка «OneKey-заморозка»</string>
+    <string name="screenLockFreezeNotiText">Будет заморожен список OneKey</string>
     <string name="screenLockFreezeNotiTapHint">Нажмите, чтобы отключить</string>
     <string name="backgroundService">Фоновый сервис</string>
     <string name="useForegroundService">Использовать сервис переднего плана</string>

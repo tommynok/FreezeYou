@@ -91,6 +91,7 @@ public class ScreenLockOneKeyFreezeService extends FreezeYouBaseService {
         mBuilder.setSmallIcon(R.drawable.ic_notification);
         mBuilder.setContentTitle(getString(R.string.screenLockFreezeNotiTitle));
         mBuilder.setContentText(getString(R.string.screenLockFreezeNotiText));
+        mBuilder.setStyle(new Notification.BigTextStyle().bigText(getString(R.string.screenLockFreezeNotiText)));
         mBuilder.setSubText(getString(R.string.screenLockFreezeNotiTapHint));
         mBuilder.setContentIntent(openAutomationPendingIntent());
         mBuilder.setOngoing(true);

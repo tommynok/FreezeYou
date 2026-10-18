@@ -43,8 +43,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Відкладає оновлення додатку, поки ви ним користуєтесь, і встановлює його, коли ви виходите</string>
     <string name="summary_manageIpaAutoAllow">Список додатків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи додатків</string>
-    <string name="clearUninstalledPkgsInAllLists">Прибрати видалені додатки з усіх списків і категорій</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey-заморожування, OneKey-розморожування та «Заморожування після виходу», а також ваші власні категорії. Видаляє лише ті додатки, які ви вже видалили з пристрою; решта пунктів не змінюється</string>
+    <string name="clearUninstalledPkgsInAllLists">Прибрати видалені додатки з усіх списків</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey, «Заморожування після виходу» та «Моя підбірка» від видалених із пристрою додатків</string>
     <string name="summary_clearIconCache">Звільняє місце, зайняте кешем іконок додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearNameCache">Звільняє місце, зайняте кешем назв додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearAllCache">Очищає одразу обидва кеші — іконок і назв</string>
@@ -135,7 +135,7 @@
     <string name="freezeAfterScreenLock">Запускати OneKey-заморожування при вимкненні екрана</string>
     <string name="freezeAfterScreenLockSummary">Заморожує додатки зі списку «OneKey-заморожування» щоразу, коли гасне екран.</string>
     <string name="screenLockFreezeNotiTitle">Заморожування після вимкнення екрана</string>
-    <string name="screenLockFreezeNotiText">Очікування вимкнення екрана: буде заморожено додатки зі списку «OneKey-заморожування»</string>
+    <string name="screenLockFreezeNotiText">Буде заморожено список OneKey</string>
     <string name="screenLockFreezeNotiTapHint">Натисніть, щоб вимкнути</string>
     <string name="backgroundService">Фоновий сервіс</string>
     <string name="useForegroundService">Використовувати сервіс переднього плану</string>

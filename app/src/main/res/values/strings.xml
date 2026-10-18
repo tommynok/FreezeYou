@@ -43,8 +43,8 @@
     <string name="summary_tryToAvoidUpdateWhenUsing">Delays updating an app while you\'re currently using it, and installs it once you leave</string>
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="summary_manageMyCustomization">Create, rename, or delete your own app groups</string>
-    <string name="clearUninstalledPkgsInAllLists">Remove uninstalled applications from every list and category</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Clears the Onekey Freeze, Onekey Unfreeze and Freeze Once Quit lists together with your custom categories. Only removes entries for apps you\'ve since uninstalled — the rest of each list is untouched</string>
+    <string name="clearUninstalledPkgsInAllLists">Remove uninstalled applications from all lists</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Clears uninstalled apps from OneKey lists, Freeze Once Quit and My customization</string>
     <string name="summary_clearIconCache">Frees up storage used by cached app icons; they\'ll be reloaded as needed</string>
     <string name="summary_clearNameCache">Frees up storage used by cached app names; they\'ll be reloaded as needed</string>
     <string name="summary_clearAllCache">Clears both the icon cache and the name cache at once</string>
@@ -135,7 +135,7 @@
     <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
     <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
     <string name="screenLockFreezeNotiTitle">Freeze when the screen goes off</string>
-    <string name="screenLockFreezeNotiText">Waiting for the screen to go off to freeze the apps in your One-key freeze list</string>
+    <string name="screenLockFreezeNotiText">Will freeze apps in the One-key freeze list</string>
     <string name="screenLockFreezeNotiTapHint">Tap to turn this off</string>
     <string name="backgroundService">Background Services</string>
     <string name="useForegroundService">Use the foreground service</string>
