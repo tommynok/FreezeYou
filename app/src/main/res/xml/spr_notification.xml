@@ -51,6 +51,13 @@
 
     </PreferenceCategory>
 
+    <CheckBoxPreference
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="lesserToast"
+        app:singleLineTitle="false"
+        app:title="@string/lesserToast" />
+
     <Preference
         app:iconSpaceReserved="false"
         app:key="notificationBar_more"

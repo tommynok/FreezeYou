@@ -145,7 +145,6 @@ object LauncherShortcutUtils {
                         pinShortcutInfo,
                         successCallback.intentSender
                     )
-                    showToast(context, R.string.requested)
                 } else {
                     requestCreateShortCutOldApi(title, intent, icon, context, bm)
                 }
