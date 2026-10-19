@@ -26,6 +26,8 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys;
+import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -205,7 +207,8 @@ public final class BackupUtils {
         return isCompletelySuccess;
     }
 
-    private static boolean importOneKeyLists(Context context, JSONObject jsonObject, AppPreferences appPreferences) {
+    private static boolean importOneKeyLists(
+            Context context, JSONObject jsonObject, DefaultMultiProcessMMKVStorage storage) {
         JSONArray array = jsonObject.optJSONArray("oneKeyList");
         if (array == null) {
             return false;
@@ -216,36 +219,42 @@ public final class BackupUtils {
         }
 
         importOneKeyListsFromProcessedJSONObject(
-                context, oneKeyListJSONObject, appPreferences);
+                context, oneKeyListJSONObject, storage);
 
         return true;
     }
 
     private static void importOneKeyListsFromProcessedJSONObject(
-            Context context, JSONObject oneKeyListJSONObject, AppPreferences appPreferences) {
+            Context context, JSONObject oneKeyListJSONObject,
+            DefaultMultiProcessMMKVStorage storage) {
         Iterator<String> it = oneKeyListJSONObject.keys();
         String s;
         while (it.hasNext()) {
             s = it.next();
+            String listKey;
+            String list;
             switch (s) {
                 case "okff":
-                    appPreferences.put(
-                            context.getString(R.string.sAutoFreezeApplicationList),
-                            oneKeyListJSONObject.optString("okff"));
+                    listKey = context.getString(R.string.sAutoFreezeApplicationList);
+                    list = oneKeyListJSONObject.optString("okff");
                     break;
                 case "okuf":
-                    appPreferences.put(
-                            context.getString(R.string.sOneKeyUFApplicationList),
-                            oneKeyListJSONObject.optString("okuf"));
+                    listKey = context.getString(R.string.sOneKeyUFApplicationList);
+                    list = oneKeyListJSONObject.optString("okuf");
                     break;
                 case "foq":
-                    appPreferences.put(
-                            context.getString(R.string.sFreezeOnceQuit),
-                            oneKeyListJSONObject.optString("foq"));
+                    listKey = context.getString(R.string.sFreezeOnceQuit);
+                    list = oneKeyListJSONObject.optString("foq");
                     break;
                 default:
-                    break;
+                    continue;
             }
+            // Restoring a whole list is a replacement, not an append, so the pair of calls that
+            // used to write one Tray row now writes the store, flushes it and tells the other
+            // process - a restore that left :backgroundService freezing yesterday's list would
+            // be the worst possible surprise.
+            storage.putString(listKey, list).sync();
+            CrossProcessPreferenceObserver.notifyKeyChanged(context, listKey);
         }
     }
 
@@ -420,6 +429,7 @@ public final class BackupUtils {
     public static void importContents(Context context, Activity activity, JSONObject jsonObject) {
         final SharedPreferences defSP = PreferenceManager.getDefaultSharedPreferences(context);
         final AppPreferences appPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage listStorage = new DefaultMultiProcessMMKVStorage();
 
         Iterator<String> jsonKeysIterator = jsonObject.keys();
         while (jsonKeysIterator.hasNext()) {
@@ -437,7 +447,7 @@ public final class BackupUtils {
                 // General settings import end
                 // One-key freeze/unfreeze/leave lists start
                 case "oneKeyList":
-                    importOneKeyLists(context, jsonObject, appPreferences);
+                    importOneKeyLists(context, jsonObject, listStorage);
                     break;
                 // One-key freeze/unfreeze/leave lists end
                 // Scheduled tasks - Time start
@@ -473,7 +483,7 @@ public final class BackupUtils {
     }
 
     public static String getExportContent(@NonNull Context context) {
-        final AppPreferences appPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage listStorage = new DefaultMultiProcessMMKVStorage();
         final SharedPreferences defSP = PreferenceManager.getDefaultSharedPreferences(context);
 
         JSONObject finalOutputJsonObject = new JSONObject();
@@ -546,15 +556,15 @@ public final class BackupUtils {
             JSONObject oneKeyListJSONObject = new JSONObject();
             oneKeyListJSONObject.put(
                     "okff",
-                    appPreferences.getString(context.getString(R.string.sAutoFreezeApplicationList), "")
+                    listStorage.getString(context.getString(R.string.sAutoFreezeApplicationList), "")
             );
             oneKeyListJSONObject.put(
                     "okuf",
-                    appPreferences.getString(context.getString(R.string.sOneKeyUFApplicationList), "")
+                    listStorage.getString(context.getString(R.string.sOneKeyUFApplicationList), "")
             );
             oneKeyListJSONObject.put(
                     "foq",
-                    appPreferences.getString(context.getString(R.string.sFreezeOnceQuit), "")
+                    listStorage.getString(context.getString(R.string.sFreezeOnceQuit), "")
             );
             oneKeyListJSONArray.put(oneKeyListJSONObject);
             finalOutputJsonObject.put("oneKeyList", oneKeyListJSONArray);

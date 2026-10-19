@@ -9,9 +9,9 @@ import android.os.IBinder
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouBaseService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
-import net.grandcentrix.tray.AppPreferences
 
 class OneKeyUFService : FreezeYouBaseService() {
 
@@ -33,7 +33,7 @@ class OneKeyUFService : FreezeYouBaseService() {
         } else {
             startForeground(3, Notification())
         }
-        val pref = AppPreferences(applicationContext)
+        val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
         )

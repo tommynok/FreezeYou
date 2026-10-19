@@ -52,6 +52,9 @@
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Own permission, held by nothing else: it is what keeps the preference-sync broadcast
+         inside this app's two processes. -->
+    <uses-permission android:name="cf.playhi.freezeyou.permission.CROSS_PROCESS_PREF_SYNC" />
 
     <permission
         android:name="cf.playhi.freezeyou.permission.GET_DISABLED_APPLICATIONS"
@@ -82,6 +85,9 @@
         android:description="@string/getBackupData"
         android:icon="@drawable/ic_notification"
         android:label="@string/getBackupData"
+        android:protectionLevel="signature" />
+    <permission
+        android:name="cf.playhi.freezeyou.permission.CROSS_PROCESS_PREF_SYNC"
         android:protectionLevel="signature" />
 
     <application

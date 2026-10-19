@@ -6,7 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
-import net.grandcentrix.tray.AppPreferences;
+import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
 
@@ -18,17 +19,27 @@ public final class OneKeyListUtils {
             "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)";
 
     public static boolean addToOneKeyList(Context context, String key, String pkgName) {
-        final AppPreferences sharedPreferences = new AppPreferences(context);
-        final String pkgNames = sharedPreferences.getString(key, "");
-        return existsInOneKeyList(pkgNames, pkgName)
-                || sharedPreferences.put(key, addPkgToPkgNames(pkgNames, pkgName));
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        final String pkgNames = storage.getString(key, "");
+        if (existsInOneKeyList(pkgNames, pkgName)) {
+            return true;
+        }
+        // The write lands in an already-opened mmap, so there is no commit that can be refused
+        // the way the old Editor.commit() could: finishing without throwing is the success.
+        storage.putString(key, addPkgToPkgNames(pkgNames, pkgName)).sync();
+        CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+        return true;
     }
 
     public static boolean removeFromOneKeyList(Context context, String key, String pkgName) {
-        final AppPreferences sharedPreferences = new AppPreferences(context);
-        final String pkgNames = sharedPreferences.getString(key, "");
-        return !existsInOneKeyList(pkgNames, pkgName)
-                || sharedPreferences.put(key, removePkgFromPkgNames(pkgNames, pkgName));
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        final String pkgNames = storage.getString(key, "");
+        if (!existsInOneKeyList(pkgNames, pkgName)) {
+            return true;
+        }
+        storage.putString(key, removePkgFromPkgNames(pkgNames, pkgName)).sync();
+        CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+        return true;
     }
 
     /**
@@ -93,11 +104,12 @@ public final class OneKeyListUtils {
     }
 
     public static boolean existsInOneKeyList(Context context, String onekeyName, String pkgName) {
-        return existsInOneKeyList(new AppPreferences(context).getString(onekeyName, ""), pkgName);
+        return existsInOneKeyList(
+                new DefaultMultiProcessMMKVStorage().getString(onekeyName, ""), pkgName);
     }
 
     public static boolean removeUninstalledFromOneKeyList(Context context, String oneKeyName) {
-        String s = new AppPreferences(context).getString(oneKeyName, "");
+        String s = new DefaultMultiProcessMMKVStorage().getString(oneKeyName, "");
 
         if (s == null) {
             return false;

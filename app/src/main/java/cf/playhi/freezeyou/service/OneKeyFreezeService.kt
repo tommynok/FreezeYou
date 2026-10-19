@@ -11,11 +11,11 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouBaseService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortCutOneKeyFreezeAdditionalOptions
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.ui.AskLockScreenActivity
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
-import net.grandcentrix.tray.AppPreferences
 
 class OneKeyFreezeService : FreezeYouBaseService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -39,7 +39,7 @@ class OneKeyFreezeService : FreezeYouBaseService() {
             startForeground(2, Notification())
         }
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
-        val pref = AppPreferences(applicationContext)
+        val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
         )

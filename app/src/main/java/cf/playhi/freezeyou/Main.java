@@ -56,8 +56,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -80,6 +78,7 @@ import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.service.ForceStopService;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
 import cf.playhi.freezeyou.ui.FirstTimeSetupActivity;
@@ -616,19 +615,19 @@ public class Main extends FreezeYouBaseActivity {
                 break;
             case "OO":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sAutoFreezeApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sAutoFreezeApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "OOU":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sOneKeyUFApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sOneKeyUFApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "FOQ":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sFreezeOnceQuit), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sFreezeOnceQuit), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;

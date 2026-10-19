@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.OneKeyListUtils
@@ -91,6 +92,9 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 libName
             )
         }
+        // Every process of the app runs this onCreate, which is what makes it the place to
+        // listen: the UI process and :backgroundService each get their own receiver.
+        CrossProcessPreferenceObserver.register(this)
         try {
             checkAndMigrateOneKeyConfig()
             checkAndMigrateSharedPreferenceDataToTray()
@@ -98,6 +102,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             checkAndMigrateEnableAuthenticationPreferenceDataToMMKV()
             checkAndMigrateMultiProcessPreferenceDataToMMKV()
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
+            checkAndMigrateOneKeyListsToMMKV()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -159,6 +164,41 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 }
                 oldFile.delete()
             }
+        }
+    }
+
+    /**
+     * Copy the three OneKEY lists out of Tray and into the multi-process store.
+     *
+     * They are read while a freeze is running, which happens in `:backgroundService`, and Tray
+     * writes through a SQLite table one process at a time - the list the user had just edited was
+     * not necessarily the list that got frozen. An empty list is left alone: there is nothing to
+     * carry, and writing "" would make the next reader's default meaningless.
+     */
+    @Throws(IOException::class)
+    private fun checkAndMigrateOneKeyListsToMMKV() {
+        val migrateLock = File(
+            filesDir.absolutePath + File.separator
+                    + "migrateOneKeyListsToMMKV.lock"
+        )
+        if (!migrateLock.exists()) {
+            val appPreferences = AppPreferences(this)
+            // Resolved outside the store: DefaultMultiProcessMMKVStorage has its own getString(),
+            // and these three names are resource IDs, not keys.
+            val listKeys = listOf(
+                getString(R.string.sAutoFreezeApplicationList),
+                getString(R.string.sOneKeyUFApplicationList),
+                getString(R.string.sFreezeOnceQuit)
+            )
+            val storage = DefaultMultiProcessMMKVStorage()
+            listKeys.forEach { key ->
+                val pkgNames = appPreferences.getString(key, "")
+                if (!pkgNames.isNullOrEmpty()) {
+                    storage.putString(key, pkgNames)
+                }
+            }
+            storage.sync()
+            migrateLock.createNewFile()
         }
     }
 

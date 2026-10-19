@@ -25,6 +25,48 @@ class DefaultMultiProcessMMKVStorage : FreezeYouMMKVStorage {
         return this
     }
 
+    override fun getInt(key: String, defValue: Int): Int {
+        return mMMKV.decodeInt(key, defValue)
+    }
+
+    override fun putInt(key: String, value: Int): DefaultMultiProcessMMKVStorage {
+        mMMKV.encode(key, value)
+        return this
+    }
+
+    override fun getLong(key: String, defValue: Long): Long {
+        return mMMKV.decodeLong(key, defValue)
+    }
+
+    override fun putLong(key: String, value: Long): DefaultMultiProcessMMKVStorage {
+        mMMKV.encode(key, value)
+        return this
+    }
+
+    override fun getFloat(key: String, defValue: Float): Float {
+        return mMMKV.decodeFloat(key, defValue)
+    }
+
+    override fun putFloat(key: String, value: Float): DefaultMultiProcessMMKVStorage {
+        mMMKV.encode(key, value)
+        return this
+    }
+
+    // The one-argument reader plus a local fallback, rather than decodeStringSet(key, defValues):
+    // what a caller passes as its default is its own business, and MMKV has no say in it.
+    override fun getStringSet(key: String, defValues: Set<String>?): Set<String>? {
+        return mMMKV.decodeStringSet(key) ?: defValues
+    }
+
+    override fun putStringSet(key: String, values: Set<String>?): DefaultMultiProcessMMKVStorage {
+        if (values == null) {
+            mMMKV.removeValueForKey(key)
+        } else {
+            mMMKV.encode(key, values)
+        }
+        return this
+    }
+
     override fun <T : Parcelable> getParcelable(
         key: String,
         targetCls: Class<T>,
