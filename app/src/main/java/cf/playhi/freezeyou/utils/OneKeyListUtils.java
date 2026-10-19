@@ -10,36 +10,75 @@ import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public final class OneKeyListUtils {
 
+    private static final Object LIST_LOCK = new Object();
     private static final String USER_DEFINED_DB = "userDefinedCategories";
     private static final String CATEGORIES_TABLE = "categories";
     private static final String CREATE_CATEGORIES_TABLE =
             "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)";
 
     public static boolean addToOneKeyList(Context context, String key, String pkgName) {
-        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-        final String pkgNames = storage.getString(key, "");
-        if (existsInOneKeyList(pkgNames, pkgName)) {
+        if (pkgName == null || pkgName.trim().isEmpty()) {
             return true;
         }
-        // The write lands in an already-opened mmap, so there is no commit that can be refused
-        // the way the old Editor.commit() could: finishing without throwing is the success.
-        storage.putString(key, addPkgToPkgNames(pkgNames, pkgName)).sync();
-        CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
-        return true;
+        return addToOneKeyList(context, key, Collections.singletonList(pkgName));
+    }
+
+    public static boolean addToOneKeyList(Context context, String key, Collection<String> pkgNamesToAdd) {
+        if (pkgNamesToAdd == null || pkgNamesToAdd.isEmpty()) {
+            return true;
+        }
+        synchronized (LIST_LOCK) {
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            final String currentPkgNames = storage.getString(key, "");
+            String updatedPkgNames = currentPkgNames;
+            boolean changed = false;
+            for (String pkgName : pkgNamesToAdd) {
+                if (pkgName != null && !pkgName.trim().isEmpty() && !existsInOneKeyList(updatedPkgNames, pkgName)) {
+                    updatedPkgNames = addPkgToPkgNames(updatedPkgNames, pkgName);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                storage.putString(key, updatedPkgNames).sync();
+                CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+            }
+            return true;
+        }
     }
 
     public static boolean removeFromOneKeyList(Context context, String key, String pkgName) {
-        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-        final String pkgNames = storage.getString(key, "");
-        if (!existsInOneKeyList(pkgNames, pkgName)) {
+        if (pkgName == null || pkgName.trim().isEmpty()) {
             return true;
         }
-        storage.putString(key, removePkgFromPkgNames(pkgNames, pkgName)).sync();
-        CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
-        return true;
+        return removeFromOneKeyList(context, key, Collections.singletonList(pkgName));
+    }
+
+    public static boolean removeFromOneKeyList(Context context, String key, Collection<String> pkgNamesToRemove) {
+        if (pkgNamesToRemove == null || pkgNamesToRemove.isEmpty()) {
+            return true;
+        }
+        synchronized (LIST_LOCK) {
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            final String currentPkgNames = storage.getString(key, "");
+            String updatedPkgNames = currentPkgNames;
+            boolean changed = false;
+            for (String pkgName : pkgNamesToRemove) {
+                if (pkgName != null && existsInOneKeyList(updatedPkgNames, pkgName)) {
+                    updatedPkgNames = removePkgFromPkgNames(updatedPkgNames, pkgName);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                storage.putString(key, updatedPkgNames).sync();
+                CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+            }
+            return true;
+        }
     }
 
     /**

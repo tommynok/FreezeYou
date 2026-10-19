@@ -462,13 +462,16 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             final EditText lscaga_task_editText,
             final Button lscaga_simulate_button
     ) {
-        if (isBatchOrSystemShortcut(pkgName)) {
+        if (pkgName == null || pkgName.trim().isEmpty() || pkgName.equals(getString(R.string.plsSelect)) || isBatchOrSystemShortcut(pkgName)) {
             lscaga_simulate_button.setVisibility(View.GONE);
             return;
         }
         lscaga_simulate_button.setVisibility(View.VISIBLE);
         lscaga_simulate_button.setOnClickListener(v -> {
             String currentPkgName = lscaga_package_editText.getText().toString();
+            if (currentPkgName.isEmpty() || currentPkgName.equals(getString(R.string.plsSelect))) {
+                return;
+            }
             String target = lscaga_target_editText.getText().toString();
             String tasks = lscaga_task_editText.getText().toString();
             target = FUFUtils.normalizeSelectedTarget(this, target);

@@ -28,7 +28,9 @@ import android.app.Activity
 import android.os.Bundle
 import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
 import java.lang.ref.WeakReference
+import java.nio.channels.FileLock
 
 class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
 
@@ -96,13 +98,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         // listen: the UI process and :backgroundService each get their own receiver.
         CrossProcessPreferenceObserver.register(this)
         try {
-            checkAndMigrateOneKeyConfig()
-            checkAndMigrateSharedPreferenceDataToTray()
-            checkAndMigrateAppIconDataPreference()
-            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV()
-            checkAndMigrateMultiProcessPreferenceDataToMMKV()
-            checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
-            checkAndMigrateOneKeyListsToMMKV()
+            runMigrationsWithIpcLock()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -123,6 +119,31 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             checkAndStartScreenLockOneKeyFreezeService()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun runMigrationsWithIpcLock() {
+        val lockFile = File(filesDir, "migrations_ipc.lock")
+        val channel = RandomAccessFile(lockFile, "rw").channel
+        var lock: FileLock? = null
+        try {
+            lock = channel.lock()
+            checkAndMigrateSharedPreferenceDataToTray()
+            checkAndMigrateAppIconDataPreference()
+            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV()
+            checkAndMigrateMultiProcessPreferenceDataToMMKV()
+            checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
+            checkAndMigrateOneKeyListsToMMKV()
+            checkAndMigrateOneKeyConfig()
+        } finally {
+            try {
+                lock?.release()
+            } catch (ignored: Exception) {
+            }
+            try {
+                channel.close()
+            } catch (ignored: Exception) {
+            }
         }
     }
 

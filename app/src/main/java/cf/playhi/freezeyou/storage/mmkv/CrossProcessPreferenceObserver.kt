@@ -38,9 +38,6 @@ object CrossProcessPreferenceObserver {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val key = intent.getStringExtra(EXTRA_KEY) ?: return
-            // The broadcast only names the key, so the store is brought up to date before the
-            // collectors below re-read it.
-            DefaultMultiProcessMMKVStorage().sync()
             changedKeys.tryEmit(key)
         }
     }
@@ -56,11 +53,12 @@ object CrossProcessPreferenceObserver {
         if (registered) {
             return
         }
+        val appContext = context.applicationContext ?: context
         // The receiver permission is the other half of the pair with notifyKeyChanged(): a process
         // that does not hold PERMISSION_SYNC can neither send to this receiver nor get past it.
         // On API 33+, specify RECEIVER_NOT_EXPORTED for forward-compatibility when targetSdk is bumped.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(
+            appContext.registerReceiver(
                 receiver,
                 IntentFilter(ACTION_PREF_CHANGED),
                 PERMISSION_SYNC,
@@ -68,7 +66,7 @@ object CrossProcessPreferenceObserver {
                 Context.RECEIVER_NOT_EXPORTED
             )
         } else {
-            context.registerReceiver(
+            appContext.registerReceiver(
                 receiver,
                 IntentFilter(ACTION_PREF_CHANGED),
                 PERMISSION_SYNC,

@@ -4,8 +4,15 @@ import android.os.Parcelable
 import com.tencent.mmkv.MMKV
 
 class DefaultMultiProcessMMKVStorage : FreezeYouMMKVStorage {
-    override val mMMKV: MMKV =
-        MMKV.mmkvWithID("DefaultMultiProcessKV", MMKV.MULTI_PROCESS_MODE)
+    override val mMMKV: MMKV
+        get() = defaultMMKV
+
+    companion object {
+        const val MMKV_ID = "DefaultMultiProcessKV"
+        val defaultMMKV: MMKV by lazy {
+            MMKV.mmkvWithID(MMKV_ID, MMKV.MULTI_PROCESS_MODE)
+        }
+    }
 
     override fun getBoolean(key: String, defValue: Boolean): Boolean {
         return mMMKV.decodeBool(key, defValue)

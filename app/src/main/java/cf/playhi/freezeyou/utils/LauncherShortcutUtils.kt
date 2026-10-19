@@ -127,24 +127,7 @@ object LauncherShortcutUtils {
                         .setLongLabel(title.ifEmpty { " " })
 
                     val pinShortcutInfo = shortcutInfoBuilder.build()
-                    // Create the PendingIntent object only if your app needs to be notified
-                    // that the user allowed the shortcut to be pinned. Note that, if the
-                    // pinning operation fails, your app isn't notified. We assume here that the
-                    // app has implemented a method called createShortcutResultIntent() that
-                    // returns a broadcast intent.
-                    val pinnedShortcutCallbackIntent =
-                        mShortcutManager.createShortcutResultIntent(pinShortcutInfo)
-
-                    // Configure the intent so that your app's broadcast receiver gets
-                    // the callback successfully.
-                    val successCallback = PendingIntent.getBroadcast(
-                        context, id.hashCode(),
-                        pinnedShortcutCallbackIntent, PendingIntent.FLAG_IMMUTABLE
-                    )
-                    mShortcutManager.requestPinShortcut(
-                        pinShortcutInfo,
-                        successCallback.intentSender
-                    )
+                    mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
                 } else {
                     requestCreateShortCutOldApi(title, intent, icon, context, bm)
                 }

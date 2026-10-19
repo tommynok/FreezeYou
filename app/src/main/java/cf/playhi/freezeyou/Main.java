@@ -1731,23 +1731,19 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processAddToOneKeyList(String string) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!addToOneKeyList(getApplicationContext(), string, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
-            }
+        if (addToOneKeyList(getApplicationContext(), string, selectedPackages)) {
+            showToast(Main.this, R.string.success);
+        } else {
+            showToast(Main.this, R.string.failed);
         }
-        showToast(Main.this, R.string.success);
     }
 
     private void processRemoveFromOneKeyList(String s) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!removeFromOneKeyList(getApplicationContext(), s, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
-            }
+        if (removeFromOneKeyList(getApplicationContext(), s, selectedPackages)) {
+            showToast(Main.this, R.string.success);
+        } else {
+            showToast(Main.this, R.string.failed);
         }
-        showToast(Main.this, R.string.success);
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
