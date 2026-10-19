@@ -151,6 +151,7 @@
     <string name="freezeOnceQuit">Заморозка после выхода</string>
     <string name="freezeOnceQuitSummary">Приложения из списка «Заморозка после выхода» замораживаются, как только вы из них вышли.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
+    <string name="needActiveDeviceAdmin">Нужно включить права администратора устройства</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="plsConfirm">Пожалуйста, подтвердите</string>
     <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-root? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>

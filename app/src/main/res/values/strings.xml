@@ -151,6 +151,7 @@
     <string name="freezeOnceQuit">Leave Freeze</string>
     <string name="freezeOnceQuitSummary">Applications in the "Freeze after leaving" list are frozen as soon as you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
+    <string name="needActiveDeviceAdmin">Need to activate Device Administrator</string>
     <string name="invalidArguments">Invalid parameters</string>
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>

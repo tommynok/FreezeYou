@@ -157,6 +157,7 @@
     <string name="freezeOnceQuit">离开冻结</string>
     <string name="freezeOnceQuitSummary">“离开冻结”列表中的应用会在你离开后立即冻结。</string>
     <string name="needActiveAccessibilityService">需要启用无障碍服务</string>
+    <string name="needActiveDeviceAdmin">需要激活设备管理器权限</string>
     <string name="invalidArguments">参数错误</string>
     <string name="plsConfirm">请确认</string>
     <string name="removeNoRootCaution">真的要解除免ROOT吗？\n!为避免造成不必要的麻烦，解除前请先解冻所有已冻结的程序！</string>

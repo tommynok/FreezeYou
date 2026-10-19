@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.utils;
 
-import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,8 +8,6 @@ import android.os.Build;
 import android.os.PowerManager;
 
 import androidx.annotation.Nullable;
-
-import java.io.DataOutputStream;
 
 import cf.playhi.freezeyou.DeviceAdminReceiver;
 import cf.playhi.freezeyou.R;
@@ -24,37 +21,49 @@ public final class DevicePolicyManagerUtils {
     }
 
     public static void openDevicePolicyManager(Context context) {
-        showToast(context, R.string.needActiveAccessibilityService);
-        if (context instanceof Activity) {
-            ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
-            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName);
-            context.startActivity(intent);
-        }
+        showToast(context, R.string.needActiveDeviceAdmin);
+        ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
+        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
     }
 
     /**
-     * Lock screen using ROOT if available, otherwise fall back to non-ROOT (DPM)
+     * Lock screen using Shizuku or ROOT if available, otherwise fall back to non-ROOT (DPM)
      *
      * @param context Context
      */
     public static void doLockScreen(Context context) {
-        // Try ROOT first to avoid breaking Smart Lock
-        try {
-            Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-            DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-            outputStream.writeBytes("input keyevent KEYCODE_POWER" + "\n");
-            outputStream.writeBytes("exit\n");
-            outputStream.flush();
-            process.waitFor();
-            ProcessUtils.destroyProcess(outputStream, process);
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
+        if (PrivilegedShellUtils.isShizukuAvailable()) {
+            try {
+                PrivilegedShellUtils.CommandResult result =
+                        PrivilegedShellUtils.runShizukuCommand("input keyevent 26");
+                if (result.isSuccessful()) {
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Try ROOT next to avoid breaking Smart Lock / Biometric unlock
+        if (PrivilegedShellUtils.isRootAvailable()) {
+            try {
+                PrivilegedShellUtils.CommandResult result =
+                        PrivilegedShellUtils.runRootCommand("input keyevent 26");
+                if (result.isSuccessful()) {
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         if (pm == null || pm.isScreenOn()) {
-            DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
+            DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);
             ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
             if (devicePolicyManager != null) {
                 if (devicePolicyManager.isAdminActive(componentName)) {

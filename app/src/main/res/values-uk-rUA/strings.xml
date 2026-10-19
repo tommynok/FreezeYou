@@ -151,6 +151,7 @@
     <string name="freezeOnceQuit">Заморожування після виходу</string>
     <string name="freezeOnceQuitSummary">Додатки зі списку «Заморожування після виходу» заморожуються, щойно ви з них вийшли.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
+    <string name="needActiveDeviceAdmin">Потрібно активувати права адміністратора пристрою</string>
     <string name="invalidArguments">Неправильні параметри</string>
     <string name="plsConfirm">Будь ласка, підтвердіть</string>
     <string name="removeNoRootCaution">Ви дійсно хочете скасувати дозвіл для режиму без-root? Щоб уникнути непотрібних проблем, необхідно розморозити всі заморожені додатки перед відключенням цього режиму!</string>
