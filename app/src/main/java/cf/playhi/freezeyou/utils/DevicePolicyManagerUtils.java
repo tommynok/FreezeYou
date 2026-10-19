@@ -23,24 +23,8 @@ public final class DevicePolicyManagerUtils {
 
     public static void openDevicePolicyManager(Context context) {
         showToast(context, R.string.needActiveDeviceAdmin);
-        ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
 
-        // 1. Primary: Direct Device Admin activation screen
-        try {
-            Intent primaryIntent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            primaryIntent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName);
-            primaryIntent.putExtra(
-                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                    context.getString(R.string.oneKeyLockScreen)
-            );
-            primaryIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(primaryIntent);
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // 2. Fallback: Device Admin settings list (supported on AOSP and most OEM ROMs)
+        // 1. Primary: Device Admin settings list (standard Android settings screen)
         try {
             Intent adminListIntent = new Intent("android.settings.DEVICE_ADMIN_SETTINGS");
             adminListIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -50,11 +34,21 @@ public final class DevicePolicyManagerUtils {
             e.printStackTrace();
         }
 
-        // 3. Fallback: Security settings (universal fallback across all Android versions and skins)
+        // 2. Fallback: Security settings (universal fallback across all Android versions and skins)
         try {
             Intent securityIntent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
             securityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(securityIntent);
+            return;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 3. Fallback: General Settings
+        try {
+            Intent generalSettingsIntent = new Intent(Settings.ACTION_SETTINGS);
+            generalSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(generalSettingsIntent);
         } catch (Exception e) {
             e.printStackTrace();
         }
