@@ -68,7 +68,7 @@ public final class DevicePolicyManagerUtils {
      */
     public static boolean doLockScreen(Context context) {
         // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
-        if (PrivilegedShellUtils.isShizukuAvailable()) {
+        if (PrivilegedShellUtils.isShizukuAvailable(context)) {
             try {
                 PrivilegedShellUtils.CommandResult result =
                         PrivilegedShellUtils.runShizukuCommand("input keyevent 26");

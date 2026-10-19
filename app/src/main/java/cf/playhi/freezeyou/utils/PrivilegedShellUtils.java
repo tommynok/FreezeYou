@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.utils;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
@@ -28,7 +29,14 @@ public final class PrivilegedShellUtils {
     }
 
     public static boolean isShizukuAvailable() {
+        return isShizukuAvailable(null);
+    }
+
+    public static boolean isShizukuAvailable(Context context) {
         try {
+            if (!rikka.shizuku.Shizuku.pingBinder() && context != null) {
+                rikka.shizuku.ShizukuProvider.requestBinderForNonProviderProcess(context.getApplicationContext());
+            }
             return rikka.shizuku.Shizuku.pingBinder()
                     && rikka.shizuku.Shizuku.checkSelfPermission()
                     == PackageManager.PERMISSION_GRANTED;

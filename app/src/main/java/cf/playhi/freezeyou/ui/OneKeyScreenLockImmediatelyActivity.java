@@ -8,6 +8,9 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 
 public class OneKeyScreenLockImmediatelyActivity extends FreezeYouBaseActivity {
+
+    private boolean mLaunchedSettings = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,14 +25,16 @@ public class OneKeyScreenLockImmediatelyActivity extends FreezeYouBaseActivity {
             boolean locked = DevicePolicyManagerUtils.doLockScreen(this);
             if (locked) {
                 finish();
+            } else {
+                mLaunchedSettings = true;
             }
         }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (!isFinishing()) {
+    protected void onResume() {
+        super.onResume();
+        if (mLaunchedSettings) {
             finish();
         }
     }
