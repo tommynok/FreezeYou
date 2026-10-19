@@ -17,10 +17,21 @@ public class OneKeyScreenLockImmediatelyActivity extends FreezeYouBaseActivity {
             intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.oneKeyLockScreen));
             intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.drawable.screenlock));
             setResult(RESULT_OK, intent);
+            finish();
         } else {
-            DevicePolicyManagerUtils.doLockScreen(this);
+            boolean locked = DevicePolicyManagerUtils.doLockScreen(this);
+            if (locked) {
+                finish();
+            }
         }
-        finish();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (!isFinishing()) {
+            finish();
+        }
     }
 
     @Override
