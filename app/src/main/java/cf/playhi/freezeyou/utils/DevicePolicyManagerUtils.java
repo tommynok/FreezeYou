@@ -61,6 +61,11 @@ public final class DevicePolicyManagerUtils {
      * @return true if screen was locked or already off, false if user action is required
      */
     public static boolean doLockScreen(Context context) {
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (pm != null && !pm.isScreenOn()) {
+            return true;
+        }
+
         // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
         if (PrivilegedShellUtils.isShizukuAvailable(context)) {
             try {
@@ -87,7 +92,6 @@ public final class DevicePolicyManagerUtils {
             }
         }
 
-        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         if (pm == null || pm.isScreenOn()) {
             DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);
             ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
