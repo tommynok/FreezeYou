@@ -403,23 +403,39 @@ object FUFUtils {
      * A batch of two dozen root commands takes a second or two, and until now that wait happened on
      * the activity's own thread whenever the batch was started from a legacy entry point — the app
      * looked frozen to the user while the shell was still working through the list.
+     *
+     * Database updates, notifications, and task collection remain on the background thread to keep
+     * the UI fluid; only toasts, task execution, and [onComplete] are dispatched on the main thread.
      */
     @JvmStatic
     @JvmOverloads
     fun oneKeyActionRootAsync(
         context: Context, freeze: Boolean, pkgNameList: Array<String>?,
-        disableModeTrueOrHideModeFalse: Boolean = true
+        disableModeTrueOrHideModeFalse: Boolean = true,
+        onComplete: Runnable? = null
     ) {
         // Same reason as in oneKeyAction: an empty list must not end in the "executed" toast.
-        if (pkgNameList.isNullOrEmpty()) return
+        if (pkgNameList.isNullOrEmpty()) {
+            onComplete?.run()
+            return
+        }
         val appContext = context.applicationContext
         inProcessFUFScope.launch {
             val batch = runRootBatch(
                 appContext, pkgNameList, freeze, disableModeTrueOrHideModeFalse
             )
-            // The toast and the tasks a freeze triggers want a Looper, and the activity that asked
-            // for the batch may be gone by now: the application context carries the whole way.
-            withContext(Dispatchers.Main) { reportRootBatch(appContext, batch, freeze) }
+            val outcomes = resolveRootBatchOutcomes(batch)
+            val shell = batch.shell
+            val triggeredTasks = if (shell == null || shell.sessionStarted) {
+                executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
+            } else {
+                emptyList()
+            }
+            sendStatusChangedBroadcast(appContext)
+            withContext(Dispatchers.Main) {
+                showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                onComplete?.run()
+            }
         }
     }
 
@@ -500,40 +516,21 @@ object FUFUtils {
         )
     }
 
-    /**
-     * Tells the user, the list and the scheduled tasks what the batch did.
-     *
-     * The bookkeeping follows the applications that reached the state asked for rather than the list
-     * that was handed in: a freeze counted for an application the shell refused, or that a guard of
-     * the user's own held back, reported a freeze nobody had done.
-     *
-     * Shows toasts and runs triggered tasks, so it wants a thread with a Looper.
-     */
-    private fun reportRootBatch(
-        context: Context, batch: RootBatch, freeze: Boolean
-    ): RootBatchSummary {
-        batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
-        batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
+    private class RootBatchOutcomes(
+        val succeeded: List<String>,
+        val failed: List<String>,
+        val actuallyChanged: List<String>
+    )
 
+    private fun resolveRootBatchOutcomes(batch: RootBatch): RootBatchOutcomes {
         val shell = batch.shell
-        if (shell != null && !shell.sessionStarted) {
-            // No shell could be opened, so no application was touched. Report the privileges, not
-            // the packages: a list of every application on the device failing is not a summary.
-            ToastUtils.showToast(context, R.string.mayUnrootedOrOtherEx)
-            val message = shell.error?.lowercase(Locale.getDefault()) ?: ""
-            if (message.contains("permission denied") || message.contains("not found")) {
-                ToastUtils.showToast(context, R.string.mayUnrooted)
-            }
-            sendStatusChangedBroadcast(context)
-            return RootBatchSummary(emptyList(), batch.batched + batch.unreadable)
-        }
-
         val succeeded = ArrayList(batch.alreadyInDesiredState)
         val failed = ArrayList<String>(batch.unreadable)
         val actuallyChanged = ArrayList<String>()
-        if (shell != null) {
-            // Outcomes come back in the order the commands were given, which is the order of
-            // batched, so the two line up by position.
+
+        if (shell != null && !shell.sessionStarted) {
+            failed += batch.batched
+        } else if (shell != null) {
             batch.batched.forEachIndexed { index, pkgName ->
                 if (shell.outcomes[index].isSuccessful()) {
                     succeeded += pkgName
@@ -543,34 +540,87 @@ object FUFUtils {
                 }
             }
         }
+        return RootBatchOutcomes(succeeded, failed, actuallyChanged)
+    }
 
-        if (actuallyChanged.isNotEmpty()) {
-            if (freeze) {
-                DataStatisticsUtils.addFreezeTimes(context, actuallyChanged)
-                NotificationUtils.deleteNotifications(context, actuallyChanged)
-            } else {
-                DataStatisticsUtils.addUFreezeTimes(context, actuallyChanged)
-                // The quick notifications are deliberately not here — see after the toast.
-            }
-            val triggered = TasksUtils.collectTriggeredTasks(
-                context, actuallyChanged, if (freeze) "onFApplications" else "onUFApplications"
-            )
-            if (triggered.isNotEmpty()) {
-                TasksUtils.runCollectedTasks(context, triggered)
-            }
+    /**
+     * Performs database persistence, notification cancellation, and trigger collection on the background
+     * dispatcher to avoid stalling UI threads during large batches.
+     */
+    private fun executeBackgroundBookkeeping(
+        context: Context,
+        actuallyChanged: List<String>,
+        freeze: Boolean
+    ): List<String> {
+        if (actuallyChanged.isEmpty()) return emptyList()
+        if (freeze) {
+            DataStatisticsUtils.addFreezeTimes(context, actuallyChanged)
+            NotificationUtils.deleteNotifications(context, actuallyChanged)
+        } else {
+            DataStatisticsUtils.addUFreezeTimes(context, actuallyChanged)
         }
-        sendStatusChangedBroadcast(context)
+        val triggered = TasksUtils.collectTriggeredTasks(
+            context, actuallyChanged, if (freeze) "onFApplications" else "onUFApplications"
+        )
+        if (!freeze) {
+            actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
+        }
+        return triggered ?: emptyList()
+    }
+
+    /**
+     * Dispatches user-facing toasts and task execution on the main Looper thread.
+     */
+    private fun showRootBatchUI(
+        context: Context,
+        batch: RootBatch,
+        succeeded: List<String>,
+        failed: List<String>,
+        triggeredTasks: List<String>
+    ) {
+        batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
+        batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
+
+        val shell = batch.shell
+        if (shell != null && !shell.sessionStarted) {
+            ToastUtils.showToast(context, R.string.mayUnrootedOrOtherEx)
+            val message = shell.error?.lowercase(Locale.getDefault()) ?: ""
+            if (message.contains("permission denied") || message.contains("not found")) {
+                ToastUtils.showToast(context, R.string.mayUnrooted)
+            }
+            return
+        }
+
+        if (triggeredTasks.isNotEmpty()) {
+            TasksUtils.runCollectedTasks(context, triggeredTasks)
+        }
         if (failed.isNotEmpty()) {
             showFailedApplicationsToast(context, failed)
         } else if (!lesserToast.getValue()) {
             ToastUtils.showToast(context, R.string.executed)
         }
-        // Last, and after the list has been told to refresh and the toast has been shown, because an
-        // icon per application is the slowest part of an unfreeze and nothing waits on its result.
-        if (!freeze) {
-            actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
+    }
+
+    /**
+     * Tells the user, the list and the scheduled tasks what the batch did.
+     *
+     * The bookkeeping follows the applications that reached the state asked for rather than the list
+     * that was handed in: a freeze counted for an application the shell refused, or that a guard of
+     * the user's own held back, reported a freeze nobody had done.
+     */
+    private fun reportRootBatch(
+        context: Context, batch: RootBatch, freeze: Boolean
+    ): RootBatchSummary {
+        val outcomes = resolveRootBatchOutcomes(batch)
+        val shell = batch.shell
+        val triggeredTasks = if (shell == null || shell.sessionStarted) {
+            executeBackgroundBookkeeping(context, outcomes.actuallyChanged, freeze)
+        } else {
+            emptyList()
         }
-        return RootBatchSummary(succeeded, failed)
+        sendStatusChangedBroadcast(context)
+        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+        return RootBatchSummary(outcomes.succeeded, outcomes.failed)
     }
 
     /**

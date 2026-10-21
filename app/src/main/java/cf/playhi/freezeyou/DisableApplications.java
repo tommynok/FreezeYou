@@ -37,8 +37,7 @@ public class DisableApplications extends FreezeYouBaseActivity {
                     oneKeyActionMRoot(DisableApplications.this, true, packages);
                     finish();
                 } else {
-                    oneKeyActionRootAsync(DisableApplications.this, true, packages);
-                    finish();
+                    oneKeyActionRootAsync(DisableApplications.this, true, packages, this::finish);
                 }
             }
         } else {

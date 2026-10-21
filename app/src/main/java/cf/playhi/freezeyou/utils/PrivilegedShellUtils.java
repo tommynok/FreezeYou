@@ -221,10 +221,12 @@ public final class PrivilegedShellUtils {
         int sessions = 0;
         long startMs = System.currentTimeMillis();
         boolean debug = DebugModeUtils.isDebugModeEnabled();
+        java.util.concurrent.atomic.AtomicBoolean sessionStarted =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
         for (int from = 0; from < commands.size(); from += MAX_COMMANDS_PER_SESSION) {
             int to = Math.min(from + MAX_COMMANDS_PER_SESSION, commands.size());
             List<String> chunk = commands.subList(from, to);
-            Map<Integer, CommandResult> reported = null;
+            Map<Integer, CommandResult> reported = new java.util.concurrent.ConcurrentHashMap<>();
             try {
                 // Shizuku can be gone by the time a chunk runs, even when the caller asked for it
                 // because it was there a moment ago. Root is the shell left over, and the batch
@@ -232,12 +234,15 @@ public final class PrivilegedShellUtils {
                 if (used == Backend.SHIZUKU && !isShizukuAvailable(context)) {
                     used = Backend.ROOT;
                 }
-                reported = runBatchSession(chunk, from, used, context);
-                started = true;
+                sessionStarted.set(false);
+                runBatchSession(chunk, from, used, context, reported, sessionStarted);
                 sessions++;
             } catch (Exception e) {
                 e.printStackTrace();
                 failure = e.getMessage();
+            }
+            if (sessionStarted.get()) {
+                started = true;
             }
             outcomes.addAll(toOutcomes(chunk, from, reported));
         }
@@ -284,6 +289,17 @@ public final class PrivilegedShellUtils {
     public static Map<Integer, CommandResult> parseBatchResults(InputStream inputStream)
             throws IOException {
         Map<Integer, CommandResult> results = new LinkedHashMap<>();
+        parseBatchResults(inputStream, results);
+        return results;
+    }
+
+    /**
+     * Reads a session's output into a live results map as each result line arrives, ensuring that
+     * outcomes completed prior to a timeout or stream closure are preserved.
+     */
+    public static void parseBatchResults(InputStream inputStream,
+                                         Map<Integer, CommandResult> results)
+            throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuilder output = new StringBuilder();
         String line;
@@ -308,7 +324,6 @@ public final class PrivilegedShellUtils {
             }
             output.append(line);
         }
-        return results;
     }
 
     /**
@@ -316,20 +331,28 @@ public final class PrivilegedShellUtils {
      *
      * @param offset where this chunk starts in the batch, so the markers name the right commands
      */
-    private static Map<Integer, CommandResult> runBatchSession(List<String> commands, int offset,
-                                                              Backend backend, Context context)
+    private static void runBatchSession(List<String> commands, int offset,
+                                        Backend backend, Context context,
+                                        Map<Integer, CommandResult> liveResults,
+                                        java.util.concurrent.atomic.AtomicBoolean sessionStarted)
             throws Exception {
         Process process = null;
         DataOutputStream writer = null;
         try {
             final Process session = startSession(backend, context);
             process = session;
+            sessionStarted.set(true);
             writer = new DataOutputStream(session.getOutputStream());
             // Reading starts before a single command is written. A shell whose stdout nobody drains
             // stops writing once the pipe is full, and it would stop between two commands of the
             // batch — the writer then waiting on a shell that is waiting on the writer.
-            Future<Map<Integer, CommandResult>> reading = COMMAND_EXECUTOR.submit(
-                    () -> parseBatchResults(session.getInputStream()));
+            Future<?> reading = COMMAND_EXECUTOR.submit(
+                    () -> {
+                        try {
+                            parseBatchResults(session.getInputStream(), liveResults);
+                        } catch (IOException ignored) {
+                        }
+                    });
             StringBuilder batch = new StringBuilder();
             for (int i = 0; i < commands.size(); i++) {
                 batch.append(batchLine(commands.get(i), offset + i));
@@ -337,7 +360,7 @@ public final class PrivilegedShellUtils {
             batch.append("exit\n");
             writer.writeBytes(batch.toString());
             writer.flush();
-            return reading.get(BATCH_SESSION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            reading.get(BATCH_SESSION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } finally {
             ProcessUtils.destroyProcess(writer, process);
         }
