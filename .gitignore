@@ -12,6 +12,8 @@
 /.idea/caches
 /.idea
 /release-keystore.jks
+__pycache__/
+*.pyc
 
 # Internal notes and documentation (tracked in private tommynok/freezeyou-docs)
 CLAUDE.md
