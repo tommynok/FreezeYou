@@ -138,13 +138,17 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             // step that still has something to take out of the old stores looks at this snapshot.
             val legacy = LegacyPreferenceSource(this)
             checkAndMigrateAppIconDataPreference()
-            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
-            checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
+            if (!legacy.readFailed) {
+                checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
+                checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
+                checkAndMigrateOneKeyListsToMMKV(legacy)
+                migrateRemainingTrayDataToMMKV(legacy)
+                deleteTrayStorage(legacy)
+            } else {
+                android.util.Log.w("MainApplication", "Skipping Tray-dependent migrations: Tray read had errors")
+            }
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
-            checkAndMigrateOneKeyListsToMMKV(legacy)
             checkAndMigrateOneKeyConfig()
-            migrateRemainingTrayDataToMMKV(legacy)
-            deleteTrayStorage(legacy)
         } finally {
             try {
                 lock?.release()
@@ -213,6 +217,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     + "migrateOneKeyListsToMMKV.lock"
         )
         if (!migrateLock.exists()) {
+            if (legacy.readFailed) return
             // Resolved outside the store: DefaultMultiProcessMMKVStorage has its own getString(),
             // and these three names are resource IDs, not keys.
             val listKeys = listOf(
@@ -308,6 +313,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     + "migrateEnableAuthenticationPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
+            if (legacy.readFailed) return
             DefaultMultiProcessMMKVStorage()
                 .putBoolean(
                     enableAuthentication.name,
@@ -329,6 +335,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     + "migrateMultiProcessPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
+            if (legacy.readFailed) return
             // The settings screens write the default preferences file, so for the few settings that
             // were copied into Tray only to be copied out again the file holds the newer answer. It
             // used to be pushed into Tray first; with Tray gone it is read from here instead.
