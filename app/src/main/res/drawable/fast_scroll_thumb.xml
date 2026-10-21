@@ -2,44 +2,40 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <layer-list>
-            <!-- Invisible expanded touch target: 44dp wide by 64dp tall -->
+            <!-- Invisible expanded touch area: 24dp wide by 54dp tall -->
             <item>
                 <shape android:shape="rectangle">
-                    <size android:width="44dp" android:height="64dp" />
+                    <size android:width="24dp" android:height="54dp" />
                     <solid android:color="@color/realTranslucent" />
                 </shape>
             </item>
-            <!-- Visible accented pill when dragging: 10dp wide with 3dp inset from screen edge -->
+            <!-- Single unified pill when dragging: darker focused grey -->
             <item
-                android:bottom="2dp"
-                android:left="31dp"
-                android:right="3dp"
-                android:top="2dp">
+                android:left="14dp"
+                android:right="1.5dp">
                 <shape android:shape="rectangle">
-                    <corners android:radius="5dp" />
-                    <solid android:color="@color/appAccent" />
+                    <corners android:radius="4.5dp" />
+                    <solid android:color="#A8404040" />
                 </shape>
             </item>
         </layer-list>
     </item>
     <item>
         <layer-list>
-            <!-- Invisible expanded touch target: 44dp wide by 64dp tall -->
+            <!-- Invisible expanded touch area: 24dp wide by 54dp tall -->
             <item>
                 <shape android:shape="rectangle">
-                    <size android:width="44dp" android:height="64dp" />
+                    <size android:width="24dp" android:height="54dp" />
                     <solid android:color="@color/realTranslucent" />
                 </shape>
             </item>
-            <!-- Visible subtle pill when idle: 6dp wide with 3dp inset from screen edge -->
+            <!-- Single unified pill when scrolling: clean legible neutral grey -->
             <item
-                android:bottom="2dp"
-                android:left="35dp"
-                android:right="3dp"
-                android:top="2dp">
+                android:left="14dp"
+                android:right="1.5dp">
                 <shape android:shape="rectangle">
-                    <corners android:radius="3dp" />
-                    <solid android:color="@color/translucentGreyBackground" />
+                    <corners android:radius="4.5dp" />
+                    <solid android:color="#66757575" />
                 </shape>
             </item>
         </layer-list>
