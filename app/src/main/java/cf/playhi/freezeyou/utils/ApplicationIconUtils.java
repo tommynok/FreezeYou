@@ -87,23 +87,25 @@ public final class ApplicationIconUtils {
                 drawable = null;
             }
         }
-        if (drawable == null && applicationInfo != null) {
-            drawable = applicationInfo.loadIcon(context.getPackageManager());
-            if (saveIconCache) {
-                folderCheck(context.getCacheDir() + "/icon");
-                writeBitmapToFile(path, getBitmapFromDrawable(drawable));
-            }
-        } else if (!"".equals(pkgName)) {
-            try {
-                drawable = context.getPackageManager().getApplicationIcon(pkgName);
-                if (saveIconCache) {
+        if (drawable == null) {
+            if (applicationInfo != null) {
+                drawable = applicationInfo.loadIcon(context.getPackageManager());
+                if (saveIconCache && drawable != null) {
                     folderCheck(context.getCacheDir() + "/icon");
                     writeBitmapToFile(path, getBitmapFromDrawable(drawable));
                 }
-            } catch (PackageManager.NameNotFoundException e) {
-                drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
-            } catch (Exception e) {
-                drawable = context.getResources().getDrawable(android.R.drawable.sym_def_app_icon);
+            } else if (!"".equals(pkgName)) {
+                try {
+                    drawable = context.getPackageManager().getApplicationIcon(pkgName);
+                    if (saveIconCache && drawable != null) {
+                        folderCheck(context.getCacheDir() + "/icon");
+                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
+                } catch (Exception e) {
+                    drawable = context.getResources().getDrawable(android.R.drawable.sym_def_app_icon);
+                }
             }
         }
         if ((drawable == null) || (drawable.getIntrinsicWidth() <= 0) || (drawable.getIntrinsicHeight() <= 0)) {

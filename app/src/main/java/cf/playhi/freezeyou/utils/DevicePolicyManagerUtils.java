@@ -60,17 +60,20 @@ public final class DevicePolicyManagerUtils {
      * @param context Context
      * @return true if screen was locked or already off, false if user action is required
      */
-    public static boolean doLockScreen(Context context) {
+    private static boolean isScreenOn(Context context) {
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        boolean isScreenOn = true;
-        if (pm != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                isScreenOn = pm.isInteractive();
-            } else {
-                isScreenOn = pm.isScreenOn();
-            }
+        if (pm == null) {
+            return true;
         }
-        if (!isScreenOn) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            return pm.isInteractive();
+        } else {
+            return pm.isScreenOn();
+        }
+    }
+
+    public static boolean doLockScreen(Context context) {
+        if (!isScreenOn(context)) {
             return true;
         }
 
@@ -79,7 +82,7 @@ public final class DevicePolicyManagerUtils {
             try {
                 PrivilegedShellUtils.CommandResult result =
                         PrivilegedShellUtils.runShizukuCommand("input keyevent 26", 2000L);
-                if (result.isSuccessful()) {
+                if (result.isSuccessful() || !isScreenOn(context)) {
                     return true;
                 }
             } catch (Exception e) {
@@ -87,17 +90,26 @@ public final class DevicePolicyManagerUtils {
             }
         }
 
+        // Recheck before root fallback so we never wake an already sleeping screen
+        if (!isScreenOn(context)) {
+            return true;
+        }
+
         // Try ROOT next to avoid breaking Smart Lock / Biometric unlock
         if (PrivilegedShellUtils.isRootAvailable()) {
             try {
                 PrivilegedShellUtils.CommandResult result =
                         PrivilegedShellUtils.runRootCommand("input keyevent 26", 2000L);
-                if (result.isSuccessful()) {
+                if (result.isSuccessful() || !isScreenOn(context)) {
                     return true;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        if (!isScreenOn(context)) {
+            return true;
         }
 
         DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);

@@ -62,7 +62,7 @@ public final class PrivilegedShellUtils {
     }
 
     public static CommandResult runShizukuCommand(String command) throws Exception {
-        return runShizukuCommand(command, 5000L);
+        return runShizukuCommand(command, 0L);
     }
 
     public static CommandResult runShizukuCommand(String command, long timeoutMs) throws Exception {
@@ -86,7 +86,7 @@ public final class PrivilegedShellUtils {
     }
 
     public static CommandResult runRootCommand(String command) throws Exception {
-        return runRootCommand(command, 5000L);
+        return runRootCommand(command, 0L);
     }
 
     public static CommandResult runRootCommand(String command, long timeoutMs) throws Exception {
@@ -134,6 +134,22 @@ public final class PrivilegedShellUtils {
     }
 
     private static CommandResult collectResult(Process process, long timeoutMs) throws Exception {
+        if (timeoutMs <= 0) {
+            StringBuilder output = new StringBuilder();
+            try {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (output.length() > 0) output.append('\n');
+                        output.append(line);
+                    }
+                }
+                return new CommandResult(process.waitFor(), output.toString());
+            } finally {
+                process.destroy();
+            }
+        }
         java.util.concurrent.Future<CommandResult> future = COMMAND_EXECUTOR.submit(() -> {
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(
