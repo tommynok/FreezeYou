@@ -736,6 +736,14 @@ public class Main extends FreezeYouBaseActivity {
                     customThemeDisabledDot,
                     customThemeEnabledDot,
                     greyFrozenApplicationsIcons.getValue(Main.this));
+
+            EditText searchEditText = findViewById(R.id.search_editText);
+            if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
+                MainAppListAdapter adapter = mMainActivityAppListFragment.getAppListAdapter();
+                if (adapter != null) {
+                    adapter.applySearch(searchEditText.getText());
+                }
+            }
         });
     }
 
@@ -2017,15 +2025,18 @@ public class Main extends FreezeYouBaseActivity {
         final PackageManager pm = getPackageManager();
         final boolean single = onlyPkgName != null;
         if (single) {
-            ApplicationInfo target = getApplicationInfoFromPkgName(onlyPkgName, Main.this);
-            // A row that has just left or entered the uninstalled-system filter cannot be patched in
-            // place, because it belongs to a different list. The package is gone rather than merely
-            // uninstalled here, so it keeps its "uninstalled" row instead.
-            if (target != null && !mIsBatchUninstallRunning
-                    && RestoreUtils.isAppUninstalled(target)
-                    != RestoreUtils.isRestoreFilter(currentFilter)) {
-                new Thread(() -> generateList(currentFilter)).start();
-                return;
+            int position = adapter.positionOfPackage(onlyPkgName);
+            if (position != -1) {
+                ApplicationInfo target = getApplicationInfoFromPkgName(onlyPkgName, Main.this);
+                // A row that has just left or entered the uninstalled-system filter cannot be patched in
+                // place, because it belongs to a different list. The package is gone rather than merely
+                // uninstalled here, so it keeps its "uninstalled" row instead.
+                if (target != null && !mIsBatchUninstallRunning
+                        && RestoreUtils.isAppUninstalled(target)
+                        != RestoreUtils.isRestoreFilter(currentFilter)) {
+                    new Thread(() -> generateList(currentFilter)).start();
+                    return;
+                }
             }
         }
 
@@ -2049,6 +2060,9 @@ public class Main extends FreezeYouBaseActivity {
                     .withRestorableSystemApp(RestoreUtils.isRestorableSystemApp(applicationInfo))
                     .withFrozen(realGetFrozenStatus(Main.this, pkgName, pm));
         });
+        if (single) {
+            adapter.notifyRowChanged(adapter.positionOfPackage(onlyPkgName));
+        }
     }
 
     private void saveOnClickFunctionStatus(int status) {
@@ -2136,7 +2150,7 @@ public class Main extends FreezeYouBaseActivity {
      * apps that tie stay alphabetically ordered as they did under the previous two-pass code.
      */
     private void applySortRule(ArrayList<AppInfoItem> AppList, int sortRule) {
-        if (AppList.isEmpty()) {
+        if (AppList.isEmpty() || sortRule == SORT_BY_NO) {
             return;
         }
         setSortByDefault(AppList);

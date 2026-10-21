@@ -159,7 +159,7 @@ public final class AppIconLoader {
             return thread;
         };
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                2, 4, 15L, TimeUnit.SECONDS,
+                4, 4, 15L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(), factory
         );
         executor.allowCoreThreadTimeOut(true);

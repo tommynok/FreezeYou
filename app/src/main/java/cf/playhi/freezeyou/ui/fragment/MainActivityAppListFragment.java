@@ -112,6 +112,21 @@ public class MainActivityAppListFragment extends Fragment {
                 container, false);
         mAppListRecyclerView = view.findViewById(R.id.main_appList_recyclerView);
         mAppListRecyclerView.setLayoutManager(buildLayoutManager(mAppListRecyclerView.getContext()));
+        if (mUseGridMode) {
+            mAppListRecyclerView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                int oldWidth = oldRight - oldLeft;
+                int newWidth = right - left;
+                if (newWidth > 0 && newWidth != oldWidth) {
+                    RecyclerView.LayoutManager lm = mAppListRecyclerView != null ? mAppListRecyclerView.getLayoutManager() : null;
+                    if (lm instanceof GridLayoutManager) {
+                        int count = gridColumnCount(v.getContext());
+                        if (((GridLayoutManager) lm).getSpanCount() != count) {
+                            ((GridLayoutManager) lm).setSpanCount(count);
+                        }
+                    }
+                }
+            });
+        }
         mAppListRecyclerView.setAdapter(mAppListAdapter);
         if (mAppListAdapter != null) {
             mAppListAdapter.setOnRowClickListener(mRowClickListener);
@@ -226,6 +241,7 @@ public class MainActivityAppListFragment extends Fragment {
         }
         if (mActionMode != null) {
             mActionMode.setTitle(Integer.toString(mSelectedPackages.size()));
+            mActionMode.invalidate();
         }
     }
 
