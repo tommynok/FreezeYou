@@ -22,6 +22,12 @@ import time
 import urllib.request
 import urllib.error
 
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 REPO_OWNER = 'tommynok'
 REPO_NAME = 'FreezeYou'
 
@@ -242,10 +248,25 @@ def check_qodo_status(opener, token, pr_num):
             violations_count = int(v_match.group(1))
 
         if bugs_count is None and violations_count is None:
-            body = review_comment['body']
-            active_part = body.split('<h3>Resolved findings</h3>')[0] if '<h3>Resolved findings</h3>' in body else body
-            bugs_count = len(re.findall(r'<summary>[^<]*?\bBug\b', active_part))
-            violations_count = len(re.findall(r'<summary>[^<]*?\bRule violation\b', active_part))
+            body = review_comment.get('body', '')
+            has_resolved_section = '<h3>Resolved findings</h3>' in body
+            has_trimmed_warning = 'Comment size exceeded' in body
+            has_clean_marker = bool(re.search(r'\b(no findings|no bugs|no rule violations|all checks passed)\b', body, re.IGNORECASE))
+            is_recognized_format = ('Code Review by Qodo' in body) and (has_resolved_section or has_trimmed_warning or has_clean_marker)
+
+            if is_recognized_format:
+                active_part = body.split('<h3>Resolved findings</h3>')[0] if has_resolved_section else body
+                # Match numbered finding headers, e.g. <summary> 1. Title <code>Bug</code></summary>
+                headers = re.findall(r'<summary>\s*\d+\.\s*(.*?)</summary>', active_part, re.DOTALL)
+                b_cnt = 0
+                v_cnt = 0
+                for h in headers:
+                    if re.search(r'\bRule violation\b', h, re.IGNORECASE):
+                        v_cnt += 1
+                    else:
+                        b_cnt += 1
+                bugs_count = b_cnt
+                violations_count = v_cnt
 
     return {
         'head_sha': head_sha,
@@ -284,7 +305,9 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None):
         if not status['review_comment_found']:
             print("  -> No Qodo Code Review comment found yet.")
         else:
-            print(f"  -> Bugs: {status['bugs_count']}, Rule violations: {status['violations_count']}, Unresolved threads: {len(status['unresolved_threads'])}")
+            bugs_str = str(status['bugs_count']) if status['bugs_count'] is not None else 'unknown'
+            violations_str = str(status['violations_count']) if status['violations_count'] is not None else 'unknown'
+            print(f"  -> Bugs: {bugs_str}, Rule violations: {violations_str}, Unresolved threads: {len(status['unresolved_threads'])}")
 
         is_done = False
         if status['sha_aligned']:
@@ -314,7 +337,13 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None):
                 return 1
 
         if not wait:
-            print("\n[WAIT] Qodo has not completed reviewing the latest commit yet. Run with --wait to wait automatically.")
+            if not status['sha_aligned']:
+                print(f"\n[WAIT] Qodo review has not covered commit {head_short} yet (currently at {rev_sha}). Run with --wait to wait automatically.")
+            elif status['bugs_count'] is None or status['violations_count'] is None:
+                print(f"\n[FAIL] Qodo review comment format was not recognized or findings counts could not be validated for commit {head_short}.")
+                return 1
+            else:
+                print("\n[WAIT] Qodo has not completed reviewing the latest commit yet. Run with --wait to wait automatically.")
             return 2
 
         if time.time() - start_time > timeout:

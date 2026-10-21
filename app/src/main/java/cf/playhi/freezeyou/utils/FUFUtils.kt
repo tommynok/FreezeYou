@@ -427,14 +427,24 @@ object FUFUtils {
                 )
                 val outcomes = resolveRootBatchOutcomes(batch)
                 val shell = batch.shell
-                val triggeredTasks = if (shell == null || shell.sessionStarted) {
-                    executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
-                } else {
+                var bookkeepingException: Exception? = null
+                val triggeredTasks = try {
+                    if (shell == null || shell.sessionStarted) {
+                        executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
+                    } else {
+                        ArrayList()
+                    }
+                } catch (e: Exception) {
+                    bookkeepingException = e
                     ArrayList()
+                } finally {
+                    sendStatusChangedBroadcast(appContext)
                 }
-                sendStatusChangedBroadcast(appContext)
                 withContext(Dispatchers.Main) {
                     showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                }
+                if (bookkeepingException != null) {
+                    throw bookkeepingException
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -634,13 +644,23 @@ object FUFUtils {
     ): RootBatchSummary {
         val outcomes = resolveRootBatchOutcomes(batch)
         val shell = batch.shell
-        val triggeredTasks = if (shell == null || shell.sessionStarted) {
-            executeBackgroundBookkeeping(context, outcomes.actuallyChanged, freeze)
-        } else {
+        var bookkeepingException: Exception? = null
+        val triggeredTasks = try {
+            if (shell == null || shell.sessionStarted) {
+                executeBackgroundBookkeeping(context, outcomes.actuallyChanged, freeze)
+            } else {
+                ArrayList()
+            }
+        } catch (e: Exception) {
+            bookkeepingException = e
             ArrayList()
+        } finally {
+            sendStatusChangedBroadcast(context)
         }
-        sendStatusChangedBroadcast(context)
         showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+        if (bookkeepingException != null) {
+            throw bookkeepingException
+        }
         return RootBatchSummary(outcomes.succeeded, outcomes.failed)
     }
 
