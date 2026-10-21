@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.AsyncDifferConfig;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
@@ -81,8 +80,8 @@ public class MainAppListAdapter
         void onItemLongClick(@NonNull View view, int position, @NonNull AppInfoItem item);
     }
 
-    private final AsyncListDiffer<AppInfoItem> mDiffer = new AsyncListDiffer<AppInfoItem>(
-            this, new AsyncDifferConfig.Builder<AppInfoItem>(DIFF_CALLBACK).build());
+    private final AsyncListDiffer<AppInfoItem> mDiffer =
+            new AsyncListDiffer<AppInfoItem>(this, DIFF_CALLBACK);
 
     private final LayoutInflater mInflater;
     private final Context mContext;
