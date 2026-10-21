@@ -126,7 +126,8 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
         recyclerView = null
     }
 
-    private fun getThumbColor(context: Context, dragging: Boolean): Int {
+    @androidx.annotation.VisibleForTesting
+    internal fun getThumbColor(context: Context, dragging: Boolean): Int {
         val isLight = ThemeUtils.isLightUiTheme(context)
         return if (isLight) {
             if (dragging) {
@@ -393,6 +394,12 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
     private fun cancelHide() {
         recyclerView?.removeCallbacks(hideRunnable)
     }
+
+    @androidx.annotation.VisibleForTesting
+    internal fun getThumbHeight(): Int = thumbHeight
+
+    @androidx.annotation.VisibleForTesting
+    internal fun getMinThumbHeight(): Int = minThumbHeight
 
     companion object {
         private const val HIDE_DELAY_MS = 1500L

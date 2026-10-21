@@ -36,24 +36,46 @@ class AppListFastScrollerTest {
     fun testMinThumbHeightPreserved() {
         val context = RuntimeEnvironment.getApplication()
         val density = context.resources.displayMetrics.density
-        val minHeightPx = (54f * density).roundToInt()
+        val expectedMinPx = (54f * density).roundToInt()
 
-        val recyclerView = RecyclerView(context)
+        val recyclerView = object : RecyclerView(context) {
+            override fun computeVerticalScrollRange(): Int = 50000 // Very long list
+            override fun computeVerticalScrollExtent(): Int = 600
+            override fun computeVerticalScrollOffset(): Int = 100
+        }
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.measure(
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY)
+        )
+        recyclerView.layout(0, 0, 400, 600)
+
         val scroller = AppListFastScroller(recyclerView)
 
-        // Verify minimum thumb height threshold is at least 54dp
-        assertTrue("Min thumb height should be at least 54dp in pixels", minHeightPx >= 54)
+        // Verify scroller's internal minimum matches 54dp
+        assertEquals("Configured minThumbHeight should match 54dp in pixels", expectedMinPx, scroller.getMinThumbHeight())
+        // Verify that on a long list, calculated thumb height never drops below minThumbHeight
+        assertTrue("Rendered thumbHeight should be at least minThumbHeight", scroller.getThumbHeight() >= scroller.getMinThumbHeight())
+        assertEquals("Rendered thumbHeight on long list should clamp to minThumbHeight", expectedMinPx, scroller.getThumbHeight())
+
+        scroller.detach()
     }
 
     @Test
     fun testThumbColorContrasts() {
-        val darkGray = Color.argb(0xB8, 0x50, 0x50, 0x50)
-        val nearBlack = Color.argb(0xDE, 0x30, 0x30, 0x30)
+        val context = RuntimeEnvironment.getApplication()
+        val recyclerView = RecyclerView(context)
+        val scroller = AppListFastScroller(recyclerView)
 
-        // High contrast neutral grey when scrolling: alpha should be ~80%
-        assertEquals(0xB8, Color.alpha(darkGray))
-        // Dragging state should be higher opacity
-        assertTrue(Color.alpha(nearBlack) > Color.alpha(darkGray))
+        val scrollingColor = scroller.getThumbColor(context, dragging = false)
+        val draggingColor = scroller.getThumbColor(context, dragging = true)
+
+        // Verify scroller returns soft legible neutral grey when scrolling (~72% alpha)
+        assertEquals(0xB8, Color.alpha(scrollingColor))
+        // Verify dragging state increases opacity and focus
+        assertTrue(Color.alpha(draggingColor) > Color.alpha(scrollingColor))
+
+        scroller.detach()
     }
 
     @Test
