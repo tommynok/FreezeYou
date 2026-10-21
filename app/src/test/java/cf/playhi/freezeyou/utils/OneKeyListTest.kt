@@ -15,9 +15,9 @@ import org.junit.Test
  * Removal used `String.replace(pkgName + ",")`, which left the last entry of a comma-less list in
  * place and matched substrings, so removing `com.a` from `"xcom.a,"` stored `x` as a package name.
  *
- * Only the string functions are covered here. The `Context` overloads read and write tray
- * preferences, and a unit test that needs a database or SharedPreferences proves less than the same
- * rules checked on a string.
+ * Only the string functions are covered here. The `Context` overloads read and write the
+ * multi-process store, and a unit test that needs a database or SharedPreferences proves less than
+ * the same rules checked on a string.
  */
 class OneKeyListTest {
 

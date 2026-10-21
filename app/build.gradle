@@ -174,7 +174,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.aar'], dir: 'libs') // Contains MMKV & Tray
+    implementation fileTree(include: ['*.aar'], dir: 'libs') // Contains MMKV
     implementation 'com.getkeepsafe.relinker:relinker:1.4.5'
 
     implementation "androidx.activity:activity:1.4.0"

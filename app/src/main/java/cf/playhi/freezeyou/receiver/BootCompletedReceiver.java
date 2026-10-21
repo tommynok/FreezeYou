@@ -8,13 +8,15 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService;
 import cf.playhi.freezeyou.utils.FileUtils;
+import cf.playhi.freezeyou.utils.NotificationUtils;
+import cf.playhi.freezeyou.utils.PackageListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.VersionUtils;
@@ -72,28 +74,25 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     }
 
     private void checkAndReNotifyNotifications(Context context) {
-        AppPreferences defaultSharedPreferences = new AppPreferences(context);
-        String string = defaultSharedPreferences.getString("notifying", "");
-        if (string != null && !"".equals(string)) {
-            String[] strings = string.split(",");
-            PackageManager pm = context.getPackageManager();
-            for (String aPkgName : strings) {
-                if (!checkFrozenStatus(context, aPkgName, pm)) {
-                    checkAndCreateFUFQuickNotification(context, aPkgName);
-                }
-            }
-        }
+        reNotifyUnfrozen(context, NotificationUtils.getNotifyingPackages());
+
+        // The list sat in the default SharedPreferences before it sat in Tray. An install that has
+        // not run a build since the move still holds it there, so it is re-notified once and dropped.
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String oldNotifying = sharedPreferences.getString("notifying", "");
-        if (oldNotifying != null && !"".equals(oldNotifying)) {
-            String[] oldNotifyings = oldNotifying.split(",");
-            PackageManager pm = context.getPackageManager();
-            for (String aPkgName : oldNotifyings) {
-                if (!checkFrozenStatus(context, aPkgName, pm)) {
-                    checkAndCreateFUFQuickNotification(context, aPkgName);
-                }
+        List<String> legacy = Arrays.asList(
+                PackageListUtils.parse(sharedPreferences.getString("notifying", "")));
+        if (!legacy.isEmpty()) {
+            reNotifyUnfrozen(context, legacy);
+            sharedPreferences.edit().remove("notifying").apply();
+        }
+    }
+
+    private void reNotifyUnfrozen(Context context, List<String> pkgNames) {
+        PackageManager pm = context.getPackageManager();
+        for (String aPkgName : pkgNames) {
+            if (!checkFrozenStatus(context, aPkgName, pm)) {
+                checkAndCreateFUFQuickNotification(context, aPkgName);
             }
-            sharedPreferences.edit().putString("notifying", "").apply();
         }
     }
 

@@ -11,15 +11,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
-
-import net.grandcentrix.tray.AppPreferences;
 
 import java.io.File;
 import java.io.InputStream;
@@ -31,12 +28,12 @@ import cf.playhi.freezeyou.app.ObsdAlertDialog;
 import cf.playhi.freezeyou.service.InstallPackagesService;
 import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.AlertDialogUtils;
+import cf.playhi.freezeyou.utils.AutoAllowListUtils;
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
-import cf.playhi.freezeyou.utils.MoreUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.UninstallPolicyUtils;
 
@@ -187,12 +184,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     packageInfo.applicationInfo.publicSourceDir = apkFilePath;
 
                     //Check AutoAllow
-                    AppPreferences sp = new AppPreferences(InstallPackagesActivity.this);
-                    String originData = sp.getString("installPkgs_autoAllowPkgs_allows", "");
-                    if (originData != null
-                            && !ILLEGALPKGNAME.equals(fromPkgLabel)
-                            && MoreUtils.convertToList(originData, ",").contains(
-                            Base64.encodeToString(fromPkgName.getBytes(), Base64.DEFAULT))) {
+                    if (!ILLEGALPKGNAME.equals(fromPkgLabel)
+                            && AutoAllowListUtils.allows(
+                            AutoAllowListUtils.INSTALL_ALLOW, fromPkgName)) {
                         //Allow
                         ServiceUtils.startService(
                                 InstallPackagesActivity.this,

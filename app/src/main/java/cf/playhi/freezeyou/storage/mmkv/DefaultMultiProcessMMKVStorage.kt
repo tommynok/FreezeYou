@@ -82,6 +82,17 @@ class DefaultMultiProcessMMKVStorage : FreezeYouMMKVStorage {
         throw UnsupportedOperationException()
     }
 
+    override fun remove(key: String): DefaultMultiProcessMMKVStorage {
+        mMMKV.removeValueForKey(key)
+        return this
+    }
+
+    // Null on an MMKV instance that has never had a key, so an empty set is the honest answer
+    // rather than a null the caller has to remember.
+    override fun allKeys(): Set<String> {
+        return mMMKV.allKeys()?.toSet() ?: emptySet()
+    }
+
     override fun putParcelable(key: String?, value: Parcelable?): FreezeYouMMKVStorage {
         throw UnsupportedOperationException()
     }

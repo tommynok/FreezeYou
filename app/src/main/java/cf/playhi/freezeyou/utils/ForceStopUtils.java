@@ -69,9 +69,6 @@ public final class ForceStopUtils {
                                 outputStream.writeBytes("am force-stop " + aPkgNameList + "\n");
                             } catch (Exception e) {
                                 e.printStackTrace();
-//                                    if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                        showToast(context, R.string.plsRemoveUninstalledApplications);
-//                                    }
                             }
                         }
                     }

@@ -12,9 +12,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,6 +21,8 @@ import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.receiver.NotificationDeletedReceiver;
 import cf.playhi.freezeyou.service.FUFService;
+import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableClickDisappear;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableSlideOut;
@@ -30,6 +31,19 @@ import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabe
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public final class NotificationUtils {
+
+    /**
+     * The packages the app currently has a quick freeze notification out for. The boot receiver
+     * re-posts the notifications for the apps still unfrozen and the manage screen lists them, both
+     * after a process that created them is long gone, so the list lives in the multi-process store
+     * rather than in memory.
+     *
+     * It is not what {@code avoidFreezeNotifyingApplications} consults; that asks the notification
+     * listener what it is seeing right now.
+     *
+     * Public because the one-time Tray migration copies this exact key and must not guess its name.
+     */
+    public static final String NOTIFYING = "notifying";
 
     public static void createFUFQuickNotification(Context context, String pkgName, int iconResId, Bitmap bitmap) {
 
@@ -95,11 +109,12 @@ public final class NotificationUtils {
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (mNotificationManager != null) {
                 mNotificationManager.notify(mId, mBuilder.build());
-                AppPreferences appPreferences = new AppPreferences(context);
-                String notifying = appPreferences.getString("notifying", "");
+                DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+                String notifying = storage.getString(NOTIFYING, "");
                 String updated = addToNotifyingList(notifying, pkgName);
                 if (!updated.equals(notifying)) {
-                    appPreferences.put("notifying", updated);
+                    storage.putString(NOTIFYING, updated).sync();
+                    CrossProcessPreferenceObserver.notifyKeyChanged(context, NOTIFYING);
                 }
             }
         }
@@ -110,10 +125,21 @@ public final class NotificationUtils {
     }
 
     /**
-     * Cancelling a notification is a cheap binder call, but the list of notifying packages lives in
-     * Tray, which is a ContentProvider: reading and writing it costs a round trip and a database
-     * write each. Doing that per application made a batch of 25 spend a few hundred milliseconds
-     * on one string, so the whole batch is now taken out of that string in a single pass.
+     * The packages the app has a quick freeze notification out for, in the order they were added.
+     *
+     * Read by the boot receiver and the manage screen, both of which want the names rather than the
+     * stored string, so the splitting lives here once.
+     */
+    public static List<String> getNotifyingPackages() {
+        return Arrays.asList(PackageListUtils.parse(
+                new DefaultMultiProcessMMKVStorage().getString(NOTIFYING, "")));
+    }
+
+    /**
+     * Cancelling a notification is a cheap binder call, but the list of notifying packages is one
+     * string in the multi-process store, and rewriting it costs a sync and a broadcast each. Doing
+     * that per application made a batch of 25 spend a few hundred milliseconds on one string, so the
+     * whole batch is taken out of that string in a single pass.
      */
     public static void deleteNotifications(Context context, List<String> pkgNames) {
         if (pkgNames.isEmpty()) {
@@ -130,12 +156,21 @@ public final class NotificationUtils {
         deleteNotifying(context, pkgNames);
     }
 
+    /**
+     * Take the packages out of the stored list without touching their notifications, for the case
+     * where the notification is already gone: the user dismissed it, and the system told us.
+     */
+    public static void clearNotifyingRecord(Context context, String pkgName) {
+        deleteNotifying(context, Collections.singletonList(pkgName));
+    }
+
     private static void deleteNotifying(Context context, List<String> pkgNames) {
-        AppPreferences defaultSharedPreferences = new AppPreferences(context);
-        String notifying = defaultSharedPreferences.getString("notifying", "");
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        String notifying = storage.getString(NOTIFYING, "");
         String updated = removeFromNotifyingList(notifying, pkgNames);
         if (!updated.equals(notifying)) {
-            defaultSharedPreferences.put("notifying", updated);
+            storage.putString(NOTIFYING, updated).sync();
+            CrossProcessPreferenceObserver.notifyKeyChanged(context, NOTIFYING);
         }
     }
 
@@ -166,7 +201,7 @@ public final class NotificationUtils {
     }
 
     /**
-     * The list is stored as one string, each package followed by a comma. Separated from the Tray
+     * The list is stored as one string, each package followed by a comma. Separated from the store
      * access above so it can be tested without a device: this is the part that a batch made
      * interesting, and getting it wrong would quietly leave packages marked as notifying, which is
      * what stops them being frozen.
@@ -180,7 +215,7 @@ public final class NotificationUtils {
     public static String removeFromNotifyingList(String notifying, List<String> pkgNames) {
         if (pkgNames.isEmpty()) {
             // The same instance, on purpose: nothing was rebuilt, so the caller that compares
-            // before writing to Tray sees no change and skips the round trip.
+            // before writing to the store sees no change and skips the sync and the broadcast.
             return notifying;
         }
 

@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +30,10 @@ public class FUFNotificationsManageActivity extends FreezeYouBaseActivity {
 
     private void init() {
         ListView fufnmListView = findViewById(R.id.fufnm_listView);
-        final AppPreferences defaultSharedPreferences = new AppPreferences(this);
-        final String string = defaultSharedPreferences.getString("notifying", "");
-        if (string != null && !"".equals(string)) {
+        List<String> notifying = NotificationUtils.getNotifyingPackages();
+        if (!notifying.isEmpty()) {
             List<HashMap<String, String>> pkgList = new ArrayList<>();
-            String[] strings = string.split(",");
-            for (String aString : strings) {
+            for (String aString : notifying) {
                 HashMap<String, String> hashMap = new HashMap<>();
                 hashMap.put("Name", ApplicationLabelUtils.getApplicationLabel(this, null, null, aString));
                 hashMap.put("PkgName", aString);
@@ -57,7 +53,7 @@ public class FUFNotificationsManageActivity extends FreezeYouBaseActivity {
                         .setNegativeButton(R.string.no, null)
                         .setPositiveButton(R.string.yes, (dialog, which) -> {
                             // deleteNotification cancels the notification and takes the package out
-                            // of the Tray "notifying" list itself; writing that string here too only
+                            // of the stored "notifying" list itself; writing that string here too only
                             // raced it, with the substring replace that could cut a longer name.
                             NotificationUtils.deleteNotification(FUFNotificationsManageActivity.this, pkgName);
                             init();

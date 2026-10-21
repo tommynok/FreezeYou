@@ -5,14 +5,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.widget.CheckBox;
-
-import net.grandcentrix.tray.AppPreferences;
-
-import java.util.List;
 
 import cf.playhi.freezeyou.app.ObsdAlertDialog;
 import cf.playhi.freezeyou.R;
@@ -20,8 +15,8 @@ import cf.playhi.freezeyou.utils.ThemeUtils;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.utils.AlertDialogUtils;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
+import cf.playhi.freezeyou.utils.AutoAllowListUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
-import cf.playhi.freezeyou.utils.MoreUtils;
 
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
 
@@ -132,15 +127,8 @@ public class UriFreezeActivity extends FreezeYouBaseActivity {
 
         if (suitableForAutoAllow) {
             //Check AutoAllow
-            AppPreferences sp = new AppPreferences(this);
-            String originData = sp.getString("uriAutoAllowPkgs_allows", "");
-            if (originData != null &&
-                    !ILLEGALPKGNAME.equals(refererPackage) &&
-                    MoreUtils.convertToList(originData, ",")
-                            .contains(
-                                    Base64.encodeToString(
-                                            refererPackage.getBytes(),
-                                            Base64.DEFAULT))) {
+            if (!ILLEGALPKGNAME.equals(refererPackage)
+                    && AutoAllowListUtils.allows(AutoAllowListUtils.URI_ALLOW, refererPackage)) {
                 doSuitableForAutoAllowAllow(mode, pkgName, isFrozen);
             }
             //Init CheckBox
@@ -211,23 +199,13 @@ public class UriFreezeActivity extends FreezeYouBaseActivity {
                                 .create().show();
                     } else {
                         CheckBox checkBox = ((ObsdAlertDialog) dialog).findViewById(R.id.ufa_dialog_checkBox);
-                        if (checkBox != null && checkBox.isChecked()) {
-                            AppPreferences sp = new AppPreferences(UriFreezeActivity.this);
-                            String originData = sp.getString("uriAutoAllowPkgs_allows", "");
-                            List<String> originData_list = MoreUtils.convertToList(originData, ",");
-                            if (!ILLEGALPKGNAME.equals(refererPackage)
-                                    &&
-                                    (originData == null ||
-                                            !originData_list.contains(
-                                                    Base64.encodeToString(
-                                                            refererPackage.getBytes(), Base64.DEFAULT)))) {
-                                originData_list.add(
-                                        Base64.encodeToString(refererPackage.getBytes(), Base64.DEFAULT));
-                                sp.put(
-                                        "uriAutoAllowPkgs_allows",
-                                        MoreUtils.listToString(originData_list, ",")
-                                );
-                            }
+                        if (checkBox != null && checkBox.isChecked()
+                                && !ILLEGALPKGNAME.equals(refererPackage)) {
+                            AutoAllowListUtils.add(
+                                    UriFreezeActivity.this,
+                                    AutoAllowListUtils.URI_ALLOW,
+                                    refererPackage
+                            );
                         }
                         if (suitableForAutoAllow) {
                             doSuitableForAutoAllowAllow(mode, pkgName, isFrozen);
