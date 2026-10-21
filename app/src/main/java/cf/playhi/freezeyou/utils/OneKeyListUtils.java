@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
@@ -45,11 +44,12 @@ public final class OneKeyListUtils {
                         changed = true;
                     }
                 }
+                boolean success = true;
                 if (changed) {
-                    storage.putString(key, updatedPkgNames).sync();
-                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+                    success = storage.encode(key, updatedPkgNames);
+                    storage.sync();
                 }
-                return true;
+                return success;
             } finally {
                 storage.unlock();
             }
@@ -80,11 +80,12 @@ public final class OneKeyListUtils {
                         changed = true;
                     }
                 }
+                boolean success = true;
                 if (changed) {
-                    storage.putString(key, updatedPkgNames).sync();
-                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+                    success = storage.encode(key, updatedPkgNames);
+                    storage.sync();
                 }
-                return true;
+                return success;
             } finally {
                 storage.unlock();
             }

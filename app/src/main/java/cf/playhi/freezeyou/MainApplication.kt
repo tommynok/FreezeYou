@@ -15,7 +15,6 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.storage.legacy.LegacyPreferenceSource
 import cf.playhi.freezeyou.storage.legacy.TrayStorage
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.AutoAllowListUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
@@ -101,9 +100,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 libName
             )
         }
-        // Every process of the app runs this onCreate, which is what makes it the place to
-        // listen: the UI process and :backgroundService each get their own receiver.
-        CrossProcessPreferenceObserver.register(this)
         try {
             runMigrationsWithIpcLock()
         } catch (e: Exception) {

@@ -89,10 +89,15 @@ public final class ApplicationIconUtils {
         }
         if (drawable == null) {
             if (applicationInfo != null) {
-                drawable = applicationInfo.loadIcon(context.getPackageManager());
-                if (saveIconCache && drawable != null) {
-                    folderCheck(context.getCacheDir() + "/icon");
-                    writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                try {
+                    drawable = applicationInfo.loadIcon(context.getPackageManager());
+                    if (saveIconCache && drawable != null) {
+                        folderCheck(context.getCacheDir() + "/icon");
+                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    }
+                } catch (Throwable t) {
+                    android.util.Log.w("ApplicationIconUtils", "Failed to load icon from applicationInfo for " + pkgName, t);
+                    drawable = null;
                 }
             } else if (!"".equals(pkgName)) {
                 try {
@@ -103,7 +108,8 @@ public final class ApplicationIconUtils {
                     }
                 } catch (PackageManager.NameNotFoundException e) {
                     drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
-                } catch (Exception e) {
+                } catch (Throwable t) {
+                    android.util.Log.w("ApplicationIconUtils", "Failed to load icon for " + pkgName, t);
                     drawable = context.getResources().getDrawable(android.R.drawable.sym_def_app_icon);
                 }
             }

@@ -9,6 +9,14 @@ interface FreezeYouMMKVStorage {
     fun putBoolean(key: String, value: Boolean): FreezeYouMMKVStorage
     fun getString(key: String, defValue: String?): String?
     fun putString(key: String, value: String?): FreezeYouMMKVStorage
+    fun encode(key: String, value: String?): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Boolean): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Int): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Long): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Float): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, values: Set<String>?): Boolean =
+        if (values == null) { mMMKV.removeValueForKey(key); true } else mMMKV.encode(key, values)
+
     fun getInt(key: String, defValue: Int): Int
     fun putInt(key: String, value: Int): FreezeYouMMKVStorage
     fun getLong(key: String, defValue: Long): Long

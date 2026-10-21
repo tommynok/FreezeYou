@@ -28,7 +28,6 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.enableInstallPkgFunc
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.organizationName
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import rikka.shizuku.Shizuku
@@ -186,14 +185,12 @@ object SettingsUtils {
                 key.run {
                     setValue(context, sharedPreferences.getBoolean(key.name, key.defaultValue()))
                     sync()
-                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key.name)
                 }
             }
             is DefaultMultiProcessMMKVStorageStringKeys -> {
                 key.run {
                     setValue(context, sharedPreferences.getString(key.name, key.defaultValue()))
                     sync()
-                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key.name)
                 }
             }
         }

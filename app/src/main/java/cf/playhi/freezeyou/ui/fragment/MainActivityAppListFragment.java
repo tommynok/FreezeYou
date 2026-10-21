@@ -241,6 +241,11 @@ public class MainActivityAppListFragment extends Fragment {
         }
         if (mActionMode != null) {
             mActionMode.setTitle(Integer.toString(mSelectedPackages.size()));
+        }
+    }
+
+    public void invalidateSelectionMenu() {
+        if (mActionMode != null) {
             mActionMode.invalidate();
         }
     }

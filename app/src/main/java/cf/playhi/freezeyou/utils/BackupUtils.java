@@ -24,7 +24,6 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys;
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -247,7 +246,6 @@ public final class BackupUtils {
             // process - a restore that left :backgroundService freezing yesterday's list would
             // be the worst possible surprise.
             storage.putString(listKey, list).sync();
-            CrossProcessPreferenceObserver.notifyKeyChanged(context, listKey);
         }
     }
 

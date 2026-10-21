@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,6 +41,7 @@ public final class AppIconLoader {
         void onIcon(@Nullable Drawable icon);
     }
 
+    private static final String TAG = "AppIconLoader";
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
     private static final java.util.concurrent.ConcurrentHashMap<String, Future<Drawable>> IN_FLIGHT =
             new java.util.concurrent.ConcurrentHashMap<>();
@@ -102,12 +104,14 @@ public final class AppIconLoader {
             return EXECUTOR.submit(() -> {
                 try {
                     Drawable icon = existing.get();
-                    if (icon != null) {
-                        MAIN_HANDLER.post(() -> receiver.onIcon(icon));
-                    }
-                    return icon;
-                } catch (Exception e) {
-                    return null;
+                    Drawable result = icon != null ? icon : defaultIcon(applicationContext);
+                    MAIN_HANDLER.post(() -> receiver.onIcon(result));
+                    return result;
+                } catch (Throwable t) {
+                    Log.w(TAG, "Failed to get in-flight icon for " + iconCacheKey, t);
+                    Drawable def = defaultIcon(applicationContext);
+                    MAIN_HANDLER.post(() -> receiver.onIcon(def));
+                    return def;
                 }
             });
         }
@@ -119,8 +123,14 @@ public final class AppIconLoader {
                     if (icon != null && !isFallbackIcon(applicationContext, icon)) {
                         ICON_CACHE.put(iconCacheKey, icon);
                     }
-                    MAIN_HANDLER.post(() -> receiver.onIcon(icon));
-                    return icon;
+                    Drawable result = icon != null ? icon : defaultIcon(applicationContext);
+                    MAIN_HANDLER.post(() -> receiver.onIcon(result));
+                    return result;
+                } catch (Throwable t) {
+                    Log.w(TAG, "Failed to load icon for " + iconCacheKey, t);
+                    Drawable def = defaultIcon(applicationContext);
+                    MAIN_HANDLER.post(() -> receiver.onIcon(def));
+                    return def;
                 } finally {
                     IN_FLIGHT.remove(iconCacheKey);
                 }

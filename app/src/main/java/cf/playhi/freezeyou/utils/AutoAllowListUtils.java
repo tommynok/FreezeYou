@@ -6,7 +6,6 @@ import android.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
 
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 /**
@@ -96,7 +95,6 @@ public final class AutoAllowListUtils {
         new DefaultMultiProcessMMKVStorage()
                 .putString(key, entries == null ? "" : entries)
                 .sync();
-        CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
     }
 
     private static String encode(String pkgName) {

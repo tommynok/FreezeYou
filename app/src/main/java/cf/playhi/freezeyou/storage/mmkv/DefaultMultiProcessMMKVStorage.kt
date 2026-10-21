@@ -35,6 +35,13 @@ class DefaultMultiProcessMMKVStorage : FreezeYouMMKVStorage {
         return mMMKV.decodeString(key, defValue)
     }
 
+    fun encode(key: String, value: String?): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Boolean): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Int): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Long): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, value: Float): Boolean = mMMKV.encode(key, value)
+    fun encode(key: String, values: Set<String>?): Boolean =
+        if (values == null) { mMMKV.removeValueForKey(key); true } else mMMKV.encode(key, values)
     override fun putString(key: String, value: String?): DefaultMultiProcessMMKVStorage {
         mMMKV.encode(key, value)
         return this

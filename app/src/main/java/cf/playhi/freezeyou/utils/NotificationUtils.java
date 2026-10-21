@@ -21,7 +21,6 @@ import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.receiver.NotificationDeletedReceiver;
 import cf.playhi.freezeyou.service.FUFService;
-import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableClickDisappear;
@@ -114,7 +113,6 @@ public final class NotificationUtils {
                 String updated = addToNotifyingList(notifying, pkgName);
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
-                    CrossProcessPreferenceObserver.notifyKeyChanged(context, NOTIFYING);
                 }
             }
         }
@@ -170,7 +168,6 @@ public final class NotificationUtils {
         String updated = removeFromNotifyingList(notifying, pkgNames);
         if (!updated.equals(notifying)) {
             storage.putString(NOTIFYING, updated).sync();
-            CrossProcessPreferenceObserver.notifyKeyChanged(context, NOTIFYING);
         }
     }
 
