@@ -50,7 +50,7 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
     private val pillWidth: Float = 8.5f * density
     private val pillCornerRadius: Float = pillWidth / 2f
     private val pillRightMargin: Float = 2.0f * density
-    private val minThumbHeight: Int = (68f * density).roundToInt()
+    private val minThumbHeight: Int = (54f * density).roundToInt()
     private val topMargin: Int = (4f * density).roundToInt()
     private val bottomMargin: Int = (4f * density).roundToInt()
 
@@ -130,17 +130,17 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
         val isLight = ThemeUtils.isLightUiTheme(context)
         return if (isLight) {
             if (dragging) {
-                // Dragging: solid dark slate
-                Color.argb(0xEB, 0x21, 0x21, 0x21)
+                // Dragging: focused charcoal slate
+                Color.argb(0xDE, 0x30, 0x30, 0x30)
             } else {
-                // Active scroll highlight: high-contrast neutral grey
-                Color.argb(0xCC, 0x38, 0x38, 0x38)
+                // Active scroll highlight: soft legible neutral grey
+                Color.argb(0xB8, 0x50, 0x50, 0x50)
             }
         } else {
             if (dragging) {
-                Color.argb(0xF2, 0xFF, 0xFF, 0xFF)
+                Color.argb(0xEB, 0xF0, 0xF0, 0xF0)
             } else {
-                Color.argb(0xCC, 0xD6, 0xD6, 0xD6)
+                Color.argb(0xB8, 0xC4, 0xC4, 0xC4)
             }
         }
     }

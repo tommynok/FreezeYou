@@ -36,22 +36,22 @@ class AppListFastScrollerTest {
     fun testMinThumbHeightPreserved() {
         val context = RuntimeEnvironment.getApplication()
         val density = context.resources.displayMetrics.density
-        val minHeightPx = (68f * density).roundToInt()
+        val minHeightPx = (54f * density).roundToInt()
 
         val recyclerView = RecyclerView(context)
         val scroller = AppListFastScroller(recyclerView)
 
-        // Verify minimum thumb height threshold is at least 68dp
-        assertTrue("Min thumb height should be at least 68dp in pixels", minHeightPx >= 68)
+        // Verify minimum thumb height threshold is at least 54dp
+        assertTrue("Min thumb height should be at least 54dp in pixels", minHeightPx >= 54)
     }
 
     @Test
     fun testThumbColorContrasts() {
-        val darkGray = Color.argb(0xCC, 0x38, 0x38, 0x38)
-        val nearBlack = Color.argb(0xEB, 0x21, 0x21, 0x21)
+        val darkGray = Color.argb(0xB8, 0x50, 0x50, 0x50)
+        val nearBlack = Color.argb(0xDE, 0x30, 0x30, 0x30)
 
         // High contrast neutral grey when scrolling: alpha should be ~80%
-        assertEquals(0xCC, Color.alpha(darkGray))
+        assertEquals(0xB8, Color.alpha(darkGray))
         // Dragging state should be higher opacity
         assertTrue(Color.alpha(nearBlack) > Color.alpha(darkGray))
     }
