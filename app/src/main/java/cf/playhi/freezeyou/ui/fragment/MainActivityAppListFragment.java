@@ -24,7 +24,6 @@ import java.util.List;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.adapter.MainAppListAdapter;
 import cf.playhi.freezeyou.model.AppInfoItem;
-import cf.playhi.freezeyou.view.AppListFastScroller;
 
 /**
  * The application list on the main screen, in either a single column or a grid.
@@ -59,9 +58,6 @@ public class MainActivityAppListFragment extends Fragment {
 
     @Nullable
     private RecyclerView mAppListRecyclerView;
-
-    @Nullable
-    private AppListFastScroller mFastScroller;
 
     @Nullable
     private MainAppListAdapter mAppListAdapter;
@@ -135,17 +131,12 @@ public class MainActivityAppListFragment extends Fragment {
         if (mAppListAdapter != null) {
             mAppListAdapter.setOnRowClickListener(mRowClickListener);
         }
-        mFastScroller = new AppListFastScroller(mAppListRecyclerView);
         return view;
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (mFastScroller != null) {
-            mFastScroller.detach();
-            mFastScroller = null;
-        }
         mAppListRecyclerView = null;
         if (mActionMode != null) {
             // Leaving without this would hand a dead window token back on the next toggle.

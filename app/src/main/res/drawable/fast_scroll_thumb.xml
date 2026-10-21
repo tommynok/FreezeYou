@@ -1,43 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
-        <layer-list>
-            <!-- Invisible expanded touch area: 24dp wide by 54dp tall -->
-            <item>
-                <shape android:shape="rectangle">
-                    <size android:width="24dp" android:height="54dp" />
-                    <solid android:color="@color/realTranslucent" />
-                </shape>
-            </item>
-            <!-- Single unified pill when dragging: darker focused grey -->
-            <item
-                android:left="14dp"
-                android:right="1.5dp">
-                <shape android:shape="rectangle">
-                    <corners android:radius="4.5dp" />
-                    <solid android:color="#A8404040" />
-                </shape>
-            </item>
-        </layer-list>
+        <shape android:shape="rectangle">
+            <size android:width="6dp" android:height="40dp" />
+            <corners android:radius="3dp" />
+            <solid android:color="@color/appAccent" />
+        </shape>
     </item>
     <item>
-        <layer-list>
-            <!-- Invisible expanded touch area: 24dp wide by 54dp tall -->
-            <item>
-                <shape android:shape="rectangle">
-                    <size android:width="24dp" android:height="54dp" />
-                    <solid android:color="@color/realTranslucent" />
-                </shape>
-            </item>
-            <!-- Single unified pill when scrolling: clean legible neutral grey -->
-            <item
-                android:left="14dp"
-                android:right="1.5dp">
-                <shape android:shape="rectangle">
-                    <corners android:radius="4.5dp" />
-                    <solid android:color="#66757575" />
-                </shape>
-            </item>
-        </layer-list>
+        <shape android:shape="rectangle">
+            <size android:width="6dp" android:height="40dp" />
+            <corners android:radius="3dp" />
+            <solid android:color="@color/translucentGreyBackground" />
+        </shape>
     </item>
 </selector>
