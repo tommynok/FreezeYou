@@ -394,9 +394,6 @@ object FUFUtils {
                                     }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
-                                    //                                    if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                        showToast(context, R.string.plsRemoveUninstalledApplications);
-//                                    }
                                 }
                             }
                         }
@@ -415,9 +412,6 @@ object FUFUtils {
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            //                            if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                showToast(context, R.string.plsRemoveUninstalledApplications);
-//                            }
                         }
                     }
                 }

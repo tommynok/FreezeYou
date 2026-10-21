@@ -11,19 +11,22 @@ import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.legacy.LegacyPreferenceSource
+import cf.playhi.freezeyou.storage.legacy.TrayStorage
 import cf.playhi.freezeyou.storage.mmkv.CrossProcessPreferenceObserver
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
+import cf.playhi.freezeyou.utils.AutoAllowListUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
+import cf.playhi.freezeyou.utils.NotificationUtils
 import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
 import cf.playhi.freezeyou.utils.ServiceUtils
+import cf.playhi.freezeyou.utils.TasksUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
 import com.tencent.mmkv.MMKV
-import net.grandcentrix.tray.AppPreferences
 import android.app.Activity
 import android.os.Bundle
 import java.io.File
@@ -31,6 +34,9 @@ import java.io.IOException
 import java.io.RandomAccessFile
 import java.lang.ref.WeakReference
 import java.nio.channels.FileLock
+
+/** Written once every key Tray still held has been copied into the multi-process store. */
+private const val TRAY_DATA_COPIED_LOCK = "migrateRemainingTrayToMMKV.lock"
 
 class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
 
@@ -128,12 +134,20 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         var lock: FileLock? = null
         try {
             lock = channel.lock()
-            checkAndMigrateSharedPreferenceDataToTray()
+            // Read once for the whole chain. Tray's database is deleted at the end of it, so every
+            // step that still has something to take out of the old stores looks at this snapshot.
+            val legacy = LegacyPreferenceSource(this)
             checkAndMigrateAppIconDataPreference()
-            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV()
-            checkAndMigrateMultiProcessPreferenceDataToMMKV()
+            if (!legacy.readFailed) {
+                checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
+                checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
+                checkAndMigrateOneKeyListsToMMKV(legacy)
+                migrateRemainingTrayDataToMMKV(legacy)
+                deleteTrayStorage(legacy)
+            } else {
+                android.util.Log.w("MainApplication", "Skipping Tray-dependent migrations: Tray read had errors")
+            }
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
-            checkAndMigrateOneKeyListsToMMKV()
             checkAndMigrateOneKeyConfig()
         } finally {
             try {
@@ -197,13 +211,13 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
      * carry, and writing "" would make the next reader's default meaningless.
      */
     @Throws(IOException::class)
-    private fun checkAndMigrateOneKeyListsToMMKV() {
+    private fun checkAndMigrateOneKeyListsToMMKV(legacy: LegacyPreferenceSource) {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
                     + "migrateOneKeyListsToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            val appPreferences = AppPreferences(this)
+            if (legacy.readFailed) return
             // Resolved outside the store: DefaultMultiProcessMMKVStorage has its own getString(),
             // and these three names are resource IDs, not keys.
             val listKeys = listOf(
@@ -213,7 +227,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             )
             val storage = DefaultMultiProcessMMKVStorage()
             listKeys.forEach { key ->
-                val pkgNames = appPreferences.getString(key, "")
+                val pkgNames = legacy.trayValue(key) ?: legacyOneKeyListFromPreferences(key)
                 if (!pkgNames.isNullOrEmpty()) {
                     storage.putString(key, pkgNames)
                 }
@@ -222,6 +236,17 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             migrateLock.createNewFile()
         }
     }
+
+    /**
+     * A OneKEY list as it was kept before Tray: a preferences file named after the key, holding the
+     * whole list under `pkgName`.
+     *
+     * Importing those three files was all ImportTrayPreferences ever did, and an install that never
+     * ran a build with that import still keeps its lists there. The key name and the file name are
+     * the same string, which is why the lookup needs nothing else.
+     */
+    private fun legacyOneKeyListFromPreferences(key: String): String? =
+        getSharedPreferences(key, MODE_PRIVATE).getString("pkgName", "")
 
     @Throws(IOException::class)
     private fun checkAndMigrateOneKeyConfig() {
@@ -280,71 +305,21 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     @Throws(IOException::class)
-    private fun checkAndMigrateSharedPreferenceDataToTray() {
-        val importTrayLock = File(filesDir.absolutePath + File.separator + "p2d.lock")
-        if (!importTrayLock.exists()) {
-            ImportTrayPreferences(this)
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val appPreferences = AppPreferences(this)
-            appPreferences.put(
-                "freezeOnceQuit",
-                sharedPreferences.getBoolean("freezeOnceQuit", false)
-            )
-            appPreferences.put(
-                "shortCutOneKeyFreezeAdditionalOptions",
-                sharedPreferences.getString("shortCutOneKeyFreezeAdditionalOptions", "nothing")
-            )
-            appPreferences.put(
-                "useForegroundService",
-                sharedPreferences.getBoolean("useForegroundService", false)
-            )
-            appPreferences.put(
-                "onekeyFreezeWhenLockScreen",
-                sharedPreferences.getBoolean("onekeyFreezeWhenLockScreen", false)
-            )
-            importTrayLock.createNewFile()
-        }
-        val dataTransfer20180816Lock =
-            File(filesDir.absolutePath + File.separator + "20180816.lock")
-        if (!dataTransfer20180816Lock.exists()) {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val appPreferences = AppPreferences(this)
-            appPreferences.put(
-                "notificationBarFreezeImmediately",
-                sharedPreferences.getBoolean("notificationBarFreezeImmediately", true)
-            )
-            appPreferences.put(
-                "openImmediately",
-                sharedPreferences.getBoolean("openImmediately", false)
-            )
-            appPreferences.put(
-                "openAndUFImmediately",
-                sharedPreferences.getBoolean("openAndUFImmediately", false)
-            )
-            appPreferences.put(
-                "notificationBarDisableSlideOut",
-                sharedPreferences.getBoolean("notificationBarDisableSlideOut", false)
-            )
-            appPreferences.put(
-                "notificationBarDisableClickDisappear",
-                sharedPreferences.getBoolean("notificationBarDisableClickDisappear", true)
-            )
-            dataTransfer20180816Lock.createNewFile()
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun checkAndMigrateEnableAuthenticationPreferenceDataToMMKV() {
+    private fun checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(
+        legacy: LegacyPreferenceSource
+    ) {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
                     + "migrateEnableAuthenticationPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
+            if (legacy.readFailed) return
             DefaultMultiProcessMMKVStorage()
                 .putBoolean(
                     enableAuthentication.name,
-                    AppPreferences(this)
-                        .getBoolean(enableAuthentication.name, enableAuthentication.defaultValue())
+                    legacy.getBoolean(
+                        enableAuthentication.name, enableAuthentication.defaultValue()
+                    )
                 )
                 .sync()
             migrateLock.createNewFile()
@@ -352,29 +327,41 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     @Throws(IOException::class)
-    private fun checkAndMigrateMultiProcessPreferenceDataToMMKV() {
-        checkAndMigratePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV()
+    private fun checkAndMigrateMultiProcessPreferenceDataToMMKV(
+        legacy: LegacyPreferenceSource
+    ) {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
                     + "migrateMultiProcessPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            val appPreference = AppPreferences(this)
+            if (legacy.readFailed) return
+            // The settings screens write the default preferences file, so for the few settings that
+            // were copied into Tray only to be copied out again the file holds the newer answer. It
+            // used to be pushed into Tray first; with Tray gone it is read from here instead.
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
             DefaultMultiProcessMMKVStorage().run {
                 DefaultMultiProcessMMKVStorageBooleanKeys.values().forEach { key ->
                     if (key.name != enableAuthentication.name) {
                         putBoolean(
                             key.name,
-                            appPreference
-                                .getBoolean(key.name, key.defaultValue())
+                            if (key == tryDelApkAfterInstalled) {
+                                sharedPreferences.getBoolean(key.name, key.defaultValue())
+                            } else {
+                                legacy.getBoolean(key.name, key.defaultValue())
+                            }
                         )
                     }
                 }
                 DefaultMultiProcessMMKVStorageStringKeys.values().forEach { key ->
                     putString(
                         key.name,
-                        appPreference
-                            .getString(key.name, key.defaultValue())
+                        if (key == languagePref || key == selectFUFMode) {
+                            sharedPreferences.getString(key.name, key.defaultValue())
+                                ?: key.defaultValue()
+                        } else {
+                            legacy.getString(key.name, key.defaultValue())
+                        }
                     )
                 }
                 sync()
@@ -383,33 +370,53 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         }
     }
 
+    /**
+     * Carry over the last keys that were still read out of Tray's database.
+     *
+     * Only lists kept as text are copied, and only where the store has nothing for the key yet: Tray
+     * wrote every value, boolean included, as a string, so a blind copy of the whole table would put
+     * "true" where a typed reader expects a real boolean and make that reader answer its default
+     * forever. The booleans each had a migration of their own above, which is what this one is left
+     * to finish - the notification record, the two auto-allow whitelists, and the delayed and timed
+     * task triggers that a cancel-all pass finds by walking the keys.
+     */
     @Throws(IOException::class)
-    private fun checkAndMigratePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV() {
-        val migrateLock = File(
-            filesDir.absolutePath + File.separator
-                    + "migrateSomePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV.lock"
-        )
+    private fun migrateRemainingTrayDataToMMKV(legacy: LegacyPreferenceSource) {
+        val migrateLock = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
         if (!migrateLock.exists()) {
-            val sp = PreferenceManager.getDefaultSharedPreferences(this@MainApplication)
-            AppPreferences(this).run {
-                put(
-                    languagePref.name,
-                    sp.getString(languagePref.name, languagePref.defaultValue())
-                )
-                remove(selectFUFMode.name)
-                put(
-                    selectFUFMode.name,
-                    sp.getString(selectFUFMode.name, selectFUFMode.defaultValue())
-                )
-                put(
-                    tryDelApkAfterInstalled.name,
-                    sp.getBoolean(
-                        tryDelApkAfterInstalled.name,
-                        tryDelApkAfterInstalled.defaultValue()
-                    )
-                )
+            if (legacy.readFailed) {
+                android.util.Log.w("MainApplication", "Skipping Tray migration lock: read had errors")
+                return
             }
+            val storage = DefaultMultiProcessMMKVStorage()
+            val keys = ArrayList(listOf(
+                NotificationUtils.NOTIFYING,
+                AutoAllowListUtils.URI_ALLOW,
+                AutoAllowListUtils.INSTALL_ALLOW,
+                TasksUtils.PUBLISHED_TIME_TASK_IDS
+            ))
+            keys.addAll(TasksUtils.delayTaskTriggerKeys(legacy.trayKeys()))
+            keys.forEach { legacy.copyTrayStringTo(storage, it) }
+            storage.sync()
             migrateLock.createNewFile()
+        }
+    }
+
+    /**
+     * Remove Tray's database now that nothing reads it.
+     *
+     * The delete waits for the copy above to have finished, and its own lock is written after it:
+     * an install that dies part way through either step still has the data on disk, and the next
+     * start finishes the job. Keeping an orphan database would cost a few kilobytes; deleting the
+     * one that was not copied out yet would cost the migration itself.
+     */
+    @Throws(IOException::class)
+    private fun deleteTrayStorage(legacy: LegacyPreferenceSource) {
+        val copied = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
+        val removed = File(filesDir.absolutePath + File.separator + "trayStorageRemoved.lock")
+        if (copied.exists() && !removed.exists() && !legacy.readFailed) {
+            TrayStorage.delete(this)
+            removed.createNewFile()
         }
     }
 
