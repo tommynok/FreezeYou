@@ -421,20 +421,35 @@ object FUFUtils {
         }
         val appContext = context.applicationContext
         inProcessFUFScope.launch {
-            val batch = runRootBatch(
-                appContext, pkgNameList, freeze, disableModeTrueOrHideModeFalse
-            )
-            val outcomes = resolveRootBatchOutcomes(batch)
-            val shell = batch.shell
-            val triggeredTasks = if (shell == null || shell.sessionStarted) {
-                executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
-            } else {
-                ArrayList()
-            }
-            sendStatusChangedBroadcast(appContext)
-            withContext(Dispatchers.Main) {
-                showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
-                onComplete?.run()
+            try {
+                val batch = runRootBatch(
+                    appContext, pkgNameList, freeze, disableModeTrueOrHideModeFalse
+                )
+                val outcomes = resolveRootBatchOutcomes(batch)
+                val shell = batch.shell
+                val triggeredTasks = if (shell == null || shell.sessionStarted) {
+                    try {
+                        executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        ArrayList()
+                    }
+                } else {
+                    ArrayList()
+                }
+                sendStatusChangedBroadcast(appContext)
+                withContext(Dispatchers.Main) {
+                    showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    ToastUtils.showToast(appContext, appContext.getString(R.string.exception) + e.message)
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    onComplete?.run()
+                }
             }
         }
     }
