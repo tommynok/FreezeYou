@@ -54,4 +54,40 @@ class AppListFastScrollerTest {
         // Dragging state should be higher opacity
         assertTrue(Color.alpha(nearBlack) > Color.alpha(darkGray))
     }
+
+    @Test
+    fun testShortWindowDoesNotCrash() {
+        val context = RuntimeEnvironment.getApplication()
+        val recyclerView = object : RecyclerView(context) {
+            override fun getHeight(): Int = 120 // Short split-screen window (< 204dp)
+            override fun getWidth(): Int = 400
+            override fun computeVerticalScrollRange(): Int = 2000
+            override fun computeVerticalScrollExtent(): Int = 120
+            override fun computeVerticalScrollOffset(): Int = 100
+        }
+        recyclerView.layoutManager = LinearLayoutManager(context)
+
+        // Must not throw IllegalArgumentException when window height is less than 3 * minThumbHeight
+        val scroller = AppListFastScroller(recyclerView)
+        assertNotNull(scroller)
+        scroller.detach()
+    }
+
+    @Test
+    fun testNonScrollableListDoesNotInterceptTouch() {
+        val context = RuntimeEnvironment.getApplication()
+        val recyclerView = object : RecyclerView(context) {
+            override fun getHeight(): Int = 800
+            override fun getWidth(): Int = 400
+            // Non-scrollable: range equals extent
+            override fun computeVerticalScrollRange(): Int = 800
+            override fun computeVerticalScrollExtent(): Int = 800
+            override fun computeVerticalScrollOffset(): Int = 0
+        }
+        recyclerView.layoutManager = LinearLayoutManager(context)
+
+        val scroller = AppListFastScroller(recyclerView)
+        assertNotNull(scroller)
+        scroller.detach()
+    }
 }

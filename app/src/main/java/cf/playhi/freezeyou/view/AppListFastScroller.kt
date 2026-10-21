@@ -33,6 +33,7 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
     private var thumbHeight: Int = 0
 
     private var isDragging: Boolean = false
+    private var activePointerId: Int = MotionEvent.INVALID_POINTER_ID
     private var dragStartY: Float = 0f
     private var dragStartThumbTop: Int = 0
 
@@ -146,14 +147,19 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
 
     private fun recomputeThumbGeometry(parent: RecyclerView, range: Int, extent: Int) {
         val rvHeight = parent.height
-        if (rvHeight <= 0) return
-        val maxThumbHeight = rvHeight / 3
+        val availableHeight = rvHeight - topMargin - bottomMargin
+        if (availableHeight <= 0) {
+            thumbHeight = 0
+            return
+        }
+        val maxThumbHeight = maxOf(minThumbHeight, rvHeight / 3).coerceAtMost(availableHeight)
+        val minThumb = minOf(minThumbHeight, maxThumbHeight)
         val calculatedHeight = if (range > 0) {
             (extent.toLong() * extent / range).toInt()
         } else {
-            minThumbHeight
+            minThumb
         }
-        thumbHeight = calculatedHeight.coerceIn(minThumbHeight, maxThumbHeight)
+        thumbHeight = calculatedHeight.coerceIn(minThumb, maxThumbHeight)
     }
 
     private fun updatePositionFromScroll(rv: RecyclerView) {
@@ -162,6 +168,12 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
         val offset = rv.computeVerticalScrollOffset()
         val maxScroll = range - extent
         if (maxScroll <= 0 || rv.height <= 0) {
+            if (isDragging) {
+                endDrag(rv)
+            }
+            if (animAlpha > 0f) {
+                fadeOut()
+            }
             return
         }
         recomputeThumbGeometry(rv, range, extent)
@@ -223,6 +235,11 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
         if (animAlpha <= 0.05f || thumbHeight <= 0) {
             return false
         }
+        val range = rv.computeVerticalScrollRange()
+        val extent = rv.computeVerticalScrollExtent()
+        if (range <= extent) {
+            return false
+        }
         val isRtl = rv.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val rvWidth = rv.width.toFloat()
 
@@ -239,6 +256,7 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
             MotionEvent.ACTION_DOWN -> {
                 if (isPointInsideThumb(rv, e.x, e.y)) {
                     isDragging = true
+                    activePointerId = e.getPointerId(0)
                     dragStartY = e.y
                     dragStartThumbTop = thumbTop
                     rv.parent?.requestDisallowInterceptTouchEvent(true)
@@ -265,6 +283,7 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
             MotionEvent.ACTION_DOWN -> {
                 if (isPointInsideThumb(rv, e.x, e.y)) {
                     isDragging = true
+                    activePointerId = e.getPointerId(0)
                     dragStartY = e.y
                     dragStartThumbTop = thumbTop
                     rv.parent?.requestDisallowInterceptTouchEvent(true)
@@ -274,7 +293,10 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
             }
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
-                    val deltaY = e.y - dragStartY
+                    val pointerIndex = e.findPointerIndex(activePointerId)
+                    if (pointerIndex < 0) return
+                    val currentY = e.getY(pointerIndex)
+                    val deltaY = currentY - dragStartY
                     val minTop = topMargin
                     val maxTop = rv.height - bottomMargin - thumbHeight
                     val travel = maxTop - minTop
@@ -295,14 +317,32 @@ class AppListFastScroller(@NonNull recyclerView: RecyclerView) {
                     }
                 }
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (isDragging) {
-                    isDragging = false
-                    rv.parent?.requestDisallowInterceptTouchEvent(false)
-                    scheduleHide(HIDE_DELAY_MS)
-                    rv.invalidate()
+            MotionEvent.ACTION_POINTER_UP -> {
+                val actionIndex = e.actionIndex
+                if (e.getPointerId(actionIndex) == activePointerId) {
+                    val newPointerIndex = if (actionIndex == 0) 1 else 0
+                    if (newPointerIndex < e.pointerCount) {
+                        activePointerId = e.getPointerId(newPointerIndex)
+                        dragStartY = e.getY(newPointerIndex)
+                        dragStartThumbTop = thumbTop
+                    } else {
+                        endDrag(rv)
+                    }
                 }
             }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                endDrag(rv)
+            }
+        }
+    }
+
+    private fun endDrag(rv: RecyclerView) {
+        if (isDragging) {
+            isDragging = false
+            activePointerId = MotionEvent.INVALID_POINTER_ID
+            rv.parent?.requestDisallowInterceptTouchEvent(false)
+            scheduleHide(HIDE_DELAY_MS)
+            rv.invalidate()
         }
     }
 
