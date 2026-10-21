@@ -139,6 +139,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             // step that still has something to take out of the old stores looks at this snapshot.
             val legacy = LegacyPreferenceSource(this)
             checkAndMigrateAppIconDataPreference()
+            checkAndMigrateSharedPreferencesSettingsToMMKV()
             if (!legacy.readFailed) {
                 checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
                 checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
@@ -328,6 +329,48 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         }
     }
 
+    /**
+     * Copy settings that are written to default SharedPreferences directly into multi-process MMKV.
+     *
+     * These settings never depended on Tray database contents, so they are migrated independently
+     * of whether Tray can be read.
+     */
+    @Throws(IOException::class)
+    private fun checkAndMigrateSharedPreferencesSettingsToMMKV() {
+        val migrateLock = File(
+            filesDir.absolutePath + File.separator
+                    + "migrateSharedPreferencesSettingsToMMKV.lock"
+        )
+        if (!migrateLock.exists()) {
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+            DefaultMultiProcessMMKVStorage().run {
+                putBoolean(
+                    tryDelApkAfterInstalled.name,
+                    sharedPreferences.getBoolean(
+                        tryDelApkAfterInstalled.name,
+                        tryDelApkAfterInstalled.defaultValue()
+                    )
+                )
+                putString(
+                    languagePref.name,
+                    sharedPreferences.getString(
+                        languagePref.name,
+                        languagePref.defaultValue()
+                    ) ?: languagePref.defaultValue()
+                )
+                putString(
+                    selectFUFMode.name,
+                    sharedPreferences.getString(
+                        selectFUFMode.name,
+                        selectFUFMode.defaultValue()
+                    ) ?: selectFUFMode.defaultValue()
+                )
+                sync()
+            }
+            migrateLock.createNewFile()
+        }
+    }
+
     @Throws(IOException::class)
     private fun checkAndMigrateMultiProcessPreferenceDataToMMKV(
         legacy: LegacyPreferenceSource
@@ -338,33 +381,16 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         )
         if (!migrateLock.exists()) {
             if (legacy.readFailed) return
-            // The settings screens write the default preferences file, so for the few settings that
-            // were copied into Tray only to be copied out again the file holds the newer answer. It
-            // used to be pushed into Tray first; with Tray gone it is read from here instead.
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
             DefaultMultiProcessMMKVStorage().run {
                 DefaultMultiProcessMMKVStorageBooleanKeys.values().forEach { key ->
-                    if (key.name != enableAuthentication.name) {
-                        putBoolean(
-                            key.name,
-                            if (key == tryDelApkAfterInstalled) {
-                                sharedPreferences.getBoolean(key.name, key.defaultValue())
-                            } else {
-                                legacy.getBoolean(key.name, key.defaultValue())
-                            }
-                        )
+                    if (key.name != enableAuthentication.name && key != tryDelApkAfterInstalled) {
+                        putBoolean(key.name, legacy.getBoolean(key.name, key.defaultValue()))
                     }
                 }
                 DefaultMultiProcessMMKVStorageStringKeys.values().forEach { key ->
-                    putString(
-                        key.name,
-                        if (key == languagePref || key == selectFUFMode) {
-                            sharedPreferences.getString(key.name, key.defaultValue())
-                                ?: key.defaultValue()
-                        } else {
-                            legacy.getString(key.name, key.defaultValue())
-                        }
-                    )
+                    if (key != languagePref && key != selectFUFMode) {
+                        putString(key.name, legacy.getString(key.name, key.defaultValue()))
+                    }
                 }
                 sync()
             }
