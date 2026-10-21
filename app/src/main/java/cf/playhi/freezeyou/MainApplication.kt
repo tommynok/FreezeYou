@@ -144,7 +144,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             checkAndMigrateOneKeyListsToMMKV(legacy)
             checkAndMigrateOneKeyConfig()
             migrateRemainingTrayDataToMMKV(legacy)
-            deleteTrayStorage()
+            deleteTrayStorage(legacy)
         } finally {
             try {
                 lock?.release()
@@ -377,6 +377,10 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     private fun migrateRemainingTrayDataToMMKV(legacy: LegacyPreferenceSource) {
         val migrateLock = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
         if (!migrateLock.exists()) {
+            if (legacy.readFailed) {
+                android.util.Log.w("MainApplication", "Skipping Tray migration lock: read had errors")
+                return
+            }
             val storage = DefaultMultiProcessMMKVStorage()
             val keys = ArrayList(listOf(
                 NotificationUtils.NOTIFYING,
@@ -400,10 +404,10 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
      * one that was not copied out yet would cost the migration itself.
      */
     @Throws(IOException::class)
-    private fun deleteTrayStorage() {
+    private fun deleteTrayStorage(legacy: LegacyPreferenceSource) {
         val copied = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
         val removed = File(filesDir.absolutePath + File.separator + "trayStorageRemoved.lock")
-        if (copied.exists() && !removed.exists()) {
+        if (copied.exists() && !removed.exists() && !legacy.readFailed) {
             TrayStorage.delete(this)
             removed.createNewFile()
         }

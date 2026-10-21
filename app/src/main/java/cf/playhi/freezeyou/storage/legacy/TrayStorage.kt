@@ -3,9 +3,15 @@ package cf.playhi.freezeyou.storage.legacy
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import java.io.File
+
+data class TrayReadResult(
+    val data: Map<String, String>,
+    val readFailed: Boolean
+)
 
 /**
  * The last reader for the data the `net.grandcentrix.tray` library used to own.
@@ -23,6 +29,7 @@ import java.io.File
  */
 object TrayStorage {
 
+    private const val TAG = "TrayStorage"
     private const val TABLE_NAME = "TrayPreferences"
     private const val COLUMN_KEY = "KEY"
     private const val COLUMN_VALUE = "VALUE"
@@ -43,10 +50,11 @@ object TrayStorage {
      * along the way migrates its old rows instead of dropping them.
      */
     @JvmStatic
-    fun readAll(context: Context): Map<String, String> {
+    fun readAll(context: Context): TrayReadResult {
         val ownModule = context.packageName
         val own = HashMap<String, String>()
         val other = HashMap<String, String>()
+        var readFailed = false
         for (name in DATABASE_NAMES) {
             val file = context.getDatabasePath(name)
             if (!file.exists() || !file.isFile) {
@@ -62,8 +70,9 @@ object TrayStorage {
                     SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS
                 )
                 readTable(db, ownModule, own, other)
-            } catch (ignored: Exception) {
-                // A database that cannot be opened is a database with nothing to migrate.
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to read legacy Tray database: $name", e)
+                readFailed = true
             } finally {
                 try {
                     db?.close()
@@ -74,7 +83,7 @@ object TrayStorage {
         // putIfAbsent is a Java 8 Map method and this app runs down to API 16, where it does not
         // exist; the check is written out instead.
         other.forEach { (key, value) -> if (!own.containsKey(key)) own[key] = value }
-        return own
+        return TrayReadResult(own, readFailed)
     }
 
     private fun readTable(
@@ -112,9 +121,9 @@ object TrayStorage {
     }
 
     /**
-     * Remove the database and its side files. Called once, after every key has been copied out,
-     * and never again: the lock file that guards the call is written before the delete, so an
-     * install that dies between the two simply leaves an orphan file behind.
+     * Remove the database and its side files. Called once, after every key has been copied out.
+     * The caller writes its completion lock after the delete, so an interrupted run will retry
+     * the delete on the next start.
      */
     @JvmStatic
     fun delete(context: Context) {
@@ -140,14 +149,22 @@ object TrayStorage {
  * app was reading until now. Tray stored everything as text and parsed booleans with
  * `Boolean.parseBoolean`, so a value it held is converted the same way here.
  */
-class LegacyPreferenceSource(context: Context) {
+class LegacyPreferenceSource(private val context: Context) {
 
-    private val tray: Map<String, String> = TrayStorage.readAll(context)
+    private val trayResult: TrayReadResult by lazy {
+        TrayStorage.readAll(context)
+    }
+
+    private val tray: Map<String, String> get() = trayResult.data
+
+    /** Whether any existing Tray database failed to open or read. */
+    val readFailed: Boolean get() = trayResult.readFailed
 
     // Read once: getAll() copies the whole preference file, and a migration asks it for dozens of
-    // keys.
-    private val stored: Map<String, *> =
+    // keys. Lazy so a process starting after all migrations are done does not pay for this copy.
+    private val stored: Map<String, *> by lazy {
         PreferenceManager.getDefaultSharedPreferences(context).all
+    }
 
     /** Names Tray holds anything under. */
     fun trayKeys(): Set<String> = tray.keys
