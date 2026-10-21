@@ -241,6 +241,12 @@ def check_qodo_status(opener, token, pr_num):
         if v_match:
             violations_count = int(v_match.group(1))
 
+        if bugs_count is None and violations_count is None:
+            body = review_comment['body']
+            active_part = body.split('<h3>Resolved findings</h3>')[0] if '<h3>Resolved findings</h3>' in body else body
+            bugs_count = len(re.findall(r'<summary>[^<]*?\bBug\b', active_part))
+            violations_count = len(re.findall(r'<summary>[^<]*?\bRule violation\b', active_part))
+
     return {
         'head_sha': head_sha,
         'head_short': head_short,

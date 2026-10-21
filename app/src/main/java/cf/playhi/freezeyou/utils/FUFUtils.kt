@@ -428,12 +428,7 @@ object FUFUtils {
                 val outcomes = resolveRootBatchOutcomes(batch)
                 val shell = batch.shell
                 val triggeredTasks = if (shell == null || shell.sessionStarted) {
-                    try {
-                        executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        ArrayList()
-                    }
+                    executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
                 } else {
                     ArrayList()
                 }
