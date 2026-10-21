@@ -201,9 +201,6 @@ dependencies {
 
     implementation "androidx.preference:preference:1.2.0"
 
-    // Declared rather than inherited from material, because the app list adapter uses
-    // getBindingAdapterPosition(), which only exists from 1.2.0.
-    implementation "androidx.recyclerview:recyclerview:1.2.1"
 
     implementation 'com.google.android.material:material:1.10.0'
 

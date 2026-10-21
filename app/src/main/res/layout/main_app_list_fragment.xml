@@ -4,10 +4,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/main_appList_recyclerView"
+    <ListView
+        android:id="@+id/main_appList_listView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="vertical" />
+        android:choiceMode="multipleChoiceModal"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:fastScrollEnabled="true" />
 
 </LinearLayout>

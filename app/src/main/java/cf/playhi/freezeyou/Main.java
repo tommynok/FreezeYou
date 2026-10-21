@@ -22,6 +22,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -30,6 +31,8 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AbsListView;
+import android.widget.Adapter;
 import android.widget.EditText;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
@@ -47,9 +50,7 @@ import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
@@ -63,18 +64,18 @@ import java.io.FileReader;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import cf.playhi.freezeyou.adapter.AppIconLoader;
-import cf.playhi.freezeyou.adapter.MainAppListAdapter;
+import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
-import cf.playhi.freezeyou.model.AppInfoItem;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
@@ -106,6 +107,7 @@ import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAle
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.hideUninstallSuccessDialog;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents;
+import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.cacheApplicationsIcons;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.greyFrozenApplicationsIcons;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.noCaution;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.saveOnClickFunctionStatus;
@@ -122,6 +124,7 @@ import static cf.playhi.freezeyou.utils.FUFUtils.processSingleActionInProcess;
 import static cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus;
 import static cf.playhi.freezeyou.utils.LauncherShortcutUtils.checkSettingsAndRequestCreateShortcut;
 import static cf.playhi.freezeyou.utils.LauncherShortcutUtils.createShortCut;
+import static cf.playhi.freezeyou.utils.MoreUtils.processListFilter;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.addToOneKeyList;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.removeFromOneKeyList;
@@ -170,7 +173,7 @@ public class Main extends FreezeYouBaseActivity {
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private ActionMode currentSelectionActionMode;
-    private MainActivityAppListFragment.SelectionActions currentSelectionActions;
+    private AbsListView.MultiChoiceModeListener currentMultiChoiceModeListener;
     private int appListViewOnClickMode = APPListViewOnClickMode_chooseAction;
     // Both are replaced in onCreate by the theme's own dots; these are only what the row uses if
     // that call fails, so they no longer name a coloured palette that the themes no longer have.
@@ -179,6 +182,7 @@ public class Main extends FreezeYouBaseActivity {
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
     private String currentFilter = "all";
     private int currentSortRule = SORT_BY_DEFAULT;
+    private boolean needProcessOnItemCheckedStateChanged = true;
 
     private boolean shortcutsCompleted = true;
     private int shortcutsCount;
@@ -455,7 +459,8 @@ public class Main extends FreezeYouBaseActivity {
         final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
         final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
         final FrameLayout linearLayout = findViewById(R.id.layout2);
-        final ArrayList<AppInfoItem> AppList = new ArrayList<>();
+        final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
+        final EditText search_editText = findViewById(R.id.search_editText);
         final ImageButton moreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
         final ImageButton selectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
 
@@ -535,6 +540,7 @@ public class Main extends FreezeYouBaseActivity {
         PackageManager packageManager = applicationContext.getPackageManager();
         List<PackageInfo> packageInfo = packageManager.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
         int size = packageInfo == null ? 0 : packageInfo.size();
+        boolean saveIconCache = cacheApplicationsIcons.getValue(applicationContext);
         switch (filter) {
             case "OUS":
                 for (int i = 0; i < size; i++) {
@@ -542,11 +548,12 @@ public class Main extends FreezeYouBaseActivity {
                     boolean isUninstalled = RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo);
                     boolean isSystemApp = (packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM;
                     if (isUninstalled && isSystemApp) {
-                        AppInfoItem keyValuePair = processAppStatus(
+                        Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,
                                 packageInfo1,
-                                packageManager
+                                packageManager,
+                                saveIconCache
                         );
                         if (keyValuePair != null) {
                             AppList.add(keyValuePair);
@@ -559,11 +566,12 @@ public class Main extends FreezeYouBaseActivity {
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
-                    AppInfoItem keyValuePair = processAppStatus(
+                    Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
                             packageInfo1,
-                            packageManager
+                            packageManager,
+                            saveIconCache
                     );
                     if (keyValuePair != null) {
                         AppList.add(keyValuePair);
@@ -575,13 +583,14 @@ public class Main extends FreezeYouBaseActivity {
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
-                    AppInfoItem keyValuePair = processAppStatus(
+                    Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
                             packageInfo1,
-                            packageManager
+                            packageManager,
+                            saveIconCache
                     );
-                    if (keyValuePair != null && keyValuePair.isFrozenForDisplay()) {
+                    if ((keyValuePair != null) && (customThemeDisabledDot == (int) keyValuePair.get("isFrozen"))) {
                         AppList.add(keyValuePair);
                     }
                 }
@@ -591,13 +600,14 @@ public class Main extends FreezeYouBaseActivity {
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
-                    AppInfoItem keyValuePair = processAppStatus(
+                    Map<String, Object> keyValuePair = processAppStatus(
                             getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                             packageInfo1.packageName,
                             packageInfo1,
-                            packageManager
+                            packageManager,
+                            saveIconCache
                     );
-                    if (keyValuePair != null && !keyValuePair.isFrozenForDisplay()) {
+                    if (keyValuePair != null && customThemeEnabledDot == (int) keyValuePair.get("isFrozen")) {
                         AppList.add(keyValuePair);
                     }
                 }
@@ -626,11 +636,12 @@ public class Main extends FreezeYouBaseActivity {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM) {
-                        AppInfoItem keyValuePair = processAppStatus(
+                        Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,
                                 packageInfo1,
-                                packageManager
+                                packageManager,
+                                saveIconCache
                         );
                         if (keyValuePair != null) {
                             AppList.add(keyValuePair);
@@ -644,11 +655,12 @@ public class Main extends FreezeYouBaseActivity {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != ApplicationInfo.FLAG_SYSTEM) {
-                        AppInfoItem keyValuePair = processAppStatus(
+                        Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,
                                 packageInfo1,
-                                packageManager
+                                packageManager,
+                                saveIconCache
                         );
                         if (keyValuePair != null) {
                             AppList.add(keyValuePair);
@@ -662,13 +674,14 @@ public class Main extends FreezeYouBaseActivity {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
                     if ((packageInfo1.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != ApplicationInfo.FLAG_SYSTEM) {
-                        AppInfoItem keyValuePair = processAppStatus(
+                        Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,
                                 packageInfo1,
-                                packageManager
+                                packageManager,
+                                saveIconCache
                         );
-                        if (keyValuePair != null && !keyValuePair.isFrozenForDisplay()) {
+                        if (keyValuePair != null && customThemeEnabledDot == (int) keyValuePair.get("isFrozen")) {
                             AppList.add(keyValuePair);
                         }
                     }
@@ -687,11 +700,12 @@ public class Main extends FreezeYouBaseActivity {
                         continue;
                     }
                     if (runningPackages.contains(packageInfo1.packageName)) {
-                        AppInfoItem keyValuePair = processAppStatus(
+                        Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,
                                 packageInfo1,
-                                packageManager
+                                packageManager,
+                                saveIconCache
                         );
                         if (keyValuePair != null) {
                             AppList.add(keyValuePair);
@@ -715,495 +729,689 @@ public class Main extends FreezeYouBaseActivity {
             }
         });
 
-        applySortRule(AppList, sortRule);
+        if (!AppList.isEmpty()) {
+            switch (sortRule) {
+                case SORT_BY_DEFAULT:
+                    setSortByDefault(AppList);
+                    break;
+                case SORT_BY_UF_ASCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> ufTimesMap = getUFreezeTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
 
+                            if (ufTimesMap.containsKey(s0) || ufTimesMap.containsKey(s1)) {
+                                if (ufTimesMap.containsKey(s0) && ufTimesMap.containsKey(s1)) {
+                                    return ufTimesMap.get(s0).compareTo(ufTimesMap.get(s1));
+                                } else if (ufTimesMap.containsKey(s0) && ufTimesMap.get(s0) > 0) {
+                                    return 1;
+                                } else if (ufTimesMap.containsKey(s1) && ufTimesMap.get(s1) > 0) {
+                                    return -1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_UF_DESCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> uFreezeTimesMapTimesMap = getUFreezeTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+
+                            if (uFreezeTimesMapTimesMap.containsKey(s0) || uFreezeTimesMapTimesMap.containsKey(s1)) {
+                                if (uFreezeTimesMapTimesMap.containsKey(s0) && uFreezeTimesMapTimesMap.containsKey(s1)) {
+                                    return uFreezeTimesMapTimesMap.get(s1).compareTo(uFreezeTimesMapTimesMap.get(s0));
+                                } else if (uFreezeTimesMapTimesMap.containsKey(s0) && uFreezeTimesMapTimesMap.get(s0) > 0) {
+                                    return -1;
+                                } else if (uFreezeTimesMapTimesMap.containsKey(s1) && uFreezeTimesMapTimesMap.get(s1) > 0) {
+                                    return 1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_FF_ASCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> freezeTimesMap = getFreezeTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+
+                            if (freezeTimesMap.containsKey(s0) || freezeTimesMap.containsKey(s1)) {
+                                if (freezeTimesMap.containsKey(s0) && freezeTimesMap.containsKey(s1)) {
+                                    return freezeTimesMap.get(s0).compareTo(freezeTimesMap.get(s1));
+                                } else if (freezeTimesMap.containsKey(s0) && freezeTimesMap.get(s0) > 0) {
+                                    return 1;
+                                } else if (freezeTimesMap.containsKey(s1) && freezeTimesMap.get(s1) > 0) {
+                                    return -1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_FF_DESCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> freezeTimesMap1 = getFreezeTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+
+                            if (freezeTimesMap1.containsKey(s0) || freezeTimesMap1.containsKey(s1)) {
+                                if (freezeTimesMap1.containsKey(s0) && freezeTimesMap1.containsKey(s1)) {
+                                    return freezeTimesMap1.get(s1).compareTo(freezeTimesMap1.get(s0));
+                                } else if (freezeTimesMap1.containsKey(s0) && freezeTimesMap1.get(s0) > 0) {
+                                    return -1;
+                                } else if (freezeTimesMap1.containsKey(s1) && freezeTimesMap1.get(s1) > 0) {
+                                    return 1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_US_ASCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> useTimesMap1 = getUseTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+
+                            if (useTimesMap1.containsKey(s0) || useTimesMap1.containsKey(s1)) {
+                                if (useTimesMap1.containsKey(s0) && useTimesMap1.containsKey(s1)) {
+                                    return useTimesMap1.get(s0).compareTo(useTimesMap1.get(s1));
+                                } else if (useTimesMap1.containsKey(s0) && useTimesMap1.get(s0) > 0) {
+                                    return 1;
+                                } else if (useTimesMap1.containsKey(s1) && useTimesMap1.get(s1) > 0) {
+                                    return -1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_US_DESCENDING:
+                    setSortByDefault(AppList);
+                    final HashMap<String, Integer> useTimesMap = getUseTimesMap();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            String s0 =
+                                    Base64.encodeToString(
+                                            ((String) m0.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+                            String s1 =
+                                    Base64.encodeToString(
+                                            ((String) m1.get("PackageName")).getBytes(),
+                                            Base64.DEFAULT);
+
+                            if (useTimesMap.containsKey(s0) || useTimesMap.containsKey(s1)) {
+                                if (useTimesMap.containsKey(s0) && useTimesMap.containsKey(s1)) {
+                                    return useTimesMap.get(s1).compareTo(useTimesMap.get(s0));
+                                } else if (useTimesMap.containsKey(s0) && useTimesMap.get(s0) > 0) {
+                                    return -1;
+                                } else if (useTimesMap.containsKey(s1) && useTimesMap.get(s1) > 0) {
+                                    return 1;
+                                } else {
+                                    return 0;
+                                }
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                    break;
+                case SORT_BY_ALPHABETICAL:
+                    setSortByDefault(AppList);
+                    Collator collator = Collator.getInstance();
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            return collator.compare((String) m0.get("Name"), (String) m1.get("Name"));
+                        }
+                    });
+                    break;
+                case SORT_BY_LAST_INSTALLED:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            return -Long.compare((Long) m0.get("InstallTime"), (Long) m1.get("InstallTime"));
+                        }
+                    });
+                    break;
+                case SORT_BY_LAST_UPDATED:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+                        @Override
+                        public int compare(Map<String, Object> m0, Map<String, Object> m1) {
+                            return -Long.compare((Long) m0.get("UpdateTime"), (Long) m1.get("UpdateTime"));
+                        }
+                    });
+                    break;
+                case SORT_BY_NO:
+                default:
+                    break;
+
+            }
+        }
         if (isFinishing()) return;
 
-        runOnUiThread(() -> {
-            main_loading_progress_textView.setText(R.string.finish);
-            progressBar.setVisibility(View.GONE);
-            mainCautionTextView.setVisibility(View.GONE);
-            main_loading_progress_textView.setVisibility(View.GONE);
-            linearLayout.setVisibility(View.GONE);
-            appListFragmentContainer.setVisibility(View.VISIBLE);
-
-            // The adapter is not thrown away and rebuilt here: it keeps the list it showed before,
-            // so diffing the new one against it is one changed row rather than every row.
-            mMainActivityAppListFragment.bindAdapter(
-                    Main.this,
-                    selectedPackages,
-                    AppList,
-                    customThemeDisabledDot,
-                    customThemeEnabledDot,
-                    greyFrozenApplicationsIcons.getValue(Main.this));
-
-            EditText searchEditText = findViewById(R.id.search_editText);
-            if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
-                MainAppListAdapter adapter = mMainActivityAppListFragment.getAppListAdapter();
-                if (adapter != null) {
-                    adapter.applySearch(searchEditText.getText());
-                }
-            }
-        });
-    }
-
-    /**
-     * Installs the listeners the list needs, once, from the point where the fragment exists.
-     *
-     * <p>They used to sit at the end of every {@code generateList()} call. For the search box that
-     * meant {@code addTextChangedListener} stacked a further watcher on the same {@code EditText}
-     * each time the list was rebuilt, so after a few filter switches a single keystroke ran the
-     * whole replace-everything body once per watcher.
-     */
-    private void setupAppListUiOnce() {
-        final EditText searchEditText = findViewById(R.id.search_editText);
-        final ImageButton selectionActionsImageButton =
-                findViewById(R.id.main_selectionActions_button);
-
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        runOnUiThread(new Runnable() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void run() {
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int count, int after) {
-                MainAppListAdapter adapter = mMainActivityAppListFragment.getAppListAdapter();
-                if (adapter != null) {
-                    adapter.applySearch(s);
-                }
-            }
+                final MainAppListSimpleAdapter adapter =
+                        mMainActivityAppListFragment.setAppListAdapter(
+                                Main.this,
+                                (ArrayList<Map<String, Object>>) AppList.clone(),
+                                selectedPackages
+                        );
 
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
 
-        mMainActivityAppListFragment.setOnRowClickListener(
-                new MainAppListAdapter.OnRowClickListener() {
+                search_editText.addTextChangedListener(new TextWatcher() {
                     @Override
-                    public void onItemClick(@NonNull View view, int position,
-                                            @NonNull AppInfoItem item) {
-                        // A tap while selecting chooses the row instead of acting on it, which is
-                        // what the widget's own modal choice mode used to do.
-                        if (mMainActivityAppListFragment.isSelecting()) {
-                            mMainActivityAppListFragment.toggleSelection(item);
+                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                    }
+
+                    @Override
+                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                        if (TextUtils.isEmpty(charSequence)) {
+                            adapter.replaceAllInFormerArrayList(AppList);
                         } else {
-                            onAppListItemClick(view, item);
+                            adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
                         }
                     }
 
                     @Override
-                    public void onItemLongClick(@NonNull View view, int position,
-                                                @NonNull AppInfoItem item) {
-                        mMainActivityAppListFragment.toggleSelection(item);
+                    public void afterTextChanged(Editable editable) {
+
                     }
                 });
 
-        currentSelectionActions = new MainActivityAppListFragment.SelectionActions() {
-            @Override
-            public boolean onCreateActionMode(@NonNull ActionMode actionMode, @NonNull Menu menu) {
-                currentSelectionActionMode = actionMode;
-                selectionActionsImageButton.setVisibility(View.VISIBLE);
-                Main.this.getMenuInflater().inflate(R.menu.multichoicemenu, menu);
-                MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
-                if (restoreItem != null) restoreItem.setVisible(false);
-                return true;
-            }
+                main_loading_progress_textView.setText(R.string.finish);
+                progressBar.setVisibility(View.GONE);
+                mainCautionTextView.setVisibility(View.GONE);
+                main_loading_progress_textView.setVisibility(View.GONE);
+                linearLayout.setVisibility(View.GONE);
+                appListFragmentContainer.setVisibility(View.VISIBLE);
 
-            @Override
-            public boolean onPrepareActionMode(@NonNull ActionMode actionMode, @NonNull Menu menu) {
-                updateRestoreMenuVisibility(menu);
-                try {
-                    SubMenu addToUserDefinedSubMenu =
-                            menu.findItem(R.id.list_menu_groupItem_addToUserDefined).getSubMenu();
-                    SubMenu removeFromUserDefinedSubMenu =
-                            menu.findItem(R.id.list_menu_groupItem_removeFromUserDefined).getSubMenu();
-                    addToUserDefinedSubMenu.clear();
-                    removeFromUserDefinedSubMenu.clear();
+                currentMultiChoiceModeListener = new AbsListView.MultiChoiceModeListener() {
+                    @Override
+                    public void onItemCheckedStateChanged(ActionMode actionMode, int i, long l, boolean b) {
+                        final String pkgName =
+                                (String) ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter())
+                                        .getStoredArrayList().get(i).get("PackageName");
 
-                    addToUserDefinedSubMenu.add(
-                            R.id.list_menu_groupItem_addToUserDefined_menuGroup,
-                            R.id.list_menu_groupItem_addToUserDefined_newClassification,
-                            0,
-                            R.string.newClassification
-                    );
-                    removeFromUserDefinedSubMenu.add(
-                            R.id.list_menu_groupItem_removeFromUserDefined_menuGroup,
-                            R.id.list_menu_groupItem_removeFromUserDefined_newClassification,
-                            0,
-                            R.string.newClassification
-                    );
-
-                    // Add user-defined categories
-                    SQLiteDatabase userDefinedDb =
-                            openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
-                    userDefinedDb.execSQL(
-                            "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                    );
-                    Cursor cursor = userDefinedDb.query(
-                            "categories", new String[]{"label", "_id"}, null, null, null, null, null);
-                    if (cursor.moveToFirst()) {
-                        for (int i = 0; i < cursor.getCount(); i++) {
-                            int id = cursor.getInt(cursor.getColumnIndex("_id"));
-                            String title = cursor.getString(cursor.getColumnIndex("label"));
-                            addToUserDefinedSubMenu.add(
-                                    R.id.list_menu_groupItem_addToUserDefined_menuGroup,
-                                    id, id, new String(Base64.decode(title, Base64.DEFAULT)));
-                            removeFromUserDefinedSubMenu.add(
-                                    R.id.list_menu_groupItem_removeFromUserDefined_menuGroup,
-                                    id, id, new String(Base64.decode(title, Base64.DEFAULT)));
-                            cursor.moveToNext();
+                        if (needProcessOnItemCheckedStateChanged) {
+                            if (selectedPackages.contains(pkgName)) {
+                                selectedPackages.remove(pkgName);
+                            } else {
+                                selectedPackages.add(pkgName);
+                            }
+                            needProcessOnItemCheckedStateChanged = false;
+                            mMainActivityAppListFragment.setItemChecked(i, true);
+                            actionMode.setTitle(Integer.toString(selectedPackages.size()));
+                            adapter.notifyDataSetChanged();
+                            updateRestoreMenuVisibility(actionMode.getMenu());
+                        } else {
+                            needProcessOnItemCheckedStateChanged = true;
                         }
                     }
-                    cursor.close();
-                    userDefinedDb.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return true;
-            }
 
-            @Override
-            public boolean onActionItemClicked(
-                    @NonNull ActionMode actionMode, @NonNull MenuItem menuItem
-            ) {
-                switch (menuItem.getGroupId()) {
-                    case R.id.list_menu_groupItem_addToUserDefined_menuGroup:
-                    case R.id.list_menu_groupItem_removeFromUserDefined_menuGroup:
-                        switch (menuItem.getItemId()) {
-                            case R.id.list_menu_groupItem_addToUserDefined_newClassification:
-                            case R.id.list_menu_groupItem_removeFromUserDefined_newClassification:
-                                showAddNewUserDefinedClassificationDialog();
-                                return true;
-                            default:
-                                boolean isInRemoveMode =
-                                        menuItem.getGroupId()
-                                                == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
-                                String title = menuItem.getTitle().toString();
-                                String existsPkgs = "";
-                                SQLiteDatabase userDefinedDb =
-                                        openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                userDefinedDb.execSQL(
-                                        "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                );
-                                Cursor cursor =
-                                        userDefinedDb.query(
-                                                "categories",
-                                                new String[]{"packages"},
-                                                "label = '" + Base64.encodeToString(title.getBytes(), Base64.DEFAULT) + "'",
-                                                null, null, null, null
-                                        );
+                    @Override
+                    public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+                        currentSelectionActionMode = actionMode;
+                        selectionActionsImageButton.setVisibility(View.VISIBLE);
+                        Main.this.getMenuInflater().inflate(R.menu.multichoicemenu, menu);
+                        MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
+                        if (restoreItem != null) restoreItem.setVisible(false);
+                        return true;
+                    }
 
-                                if (cursor.moveToFirst()) {
-                                    existsPkgs =
-                                            cursor.getString(
-                                                    cursor.getColumnIndex("packages")
-                                            );
+                    @Override
+                    public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+                        updateRestoreMenuVisibility(menu);
+                        try {
+                            SubMenu addToUserDefinedSubMenu = menu.findItem(R.id.list_menu_groupItem_addToUserDefined).getSubMenu();
+                            SubMenu removeFromUserDefinedSubMenu = menu.findItem(R.id.list_menu_groupItem_removeFromUserDefined).getSubMenu();
+                            addToUserDefinedSubMenu.clear();
+                            removeFromUserDefinedSubMenu.clear();
+
+                            addToUserDefinedSubMenu.add(
+                                    R.id.list_menu_groupItem_addToUserDefined_menuGroup,
+                                    R.id.list_menu_groupItem_addToUserDefined_newClassification,
+                                    0,
+                                    R.string.newClassification
+                            );
+                            removeFromUserDefinedSubMenu.add(
+                                    R.id.list_menu_groupItem_removeFromUserDefined_menuGroup,
+                                    R.id.list_menu_groupItem_removeFromUserDefined_newClassification,
+                                    0,
+                                    R.string.newClassification
+                            );
+
+                            // Add user-defined categories
+                            SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
+                            userDefinedDb.execSQL(
+                                    "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                            );
+                            Cursor cursor = userDefinedDb.query("categories", new String[]{"label", "_id"}, null, null, null, null, null);
+                            if (cursor.moveToFirst()) {
+                                for (int i = 0; i < cursor.getCount(); i++) {
+                                    int id = cursor.getInt(cursor.getColumnIndex("_id"));
+                                    String title = cursor.getString(cursor.getColumnIndex("label"));
+                                    addToUserDefinedSubMenu.add(R.id.list_menu_groupItem_addToUserDefined_menuGroup, id, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                                    removeFromUserDefinedSubMenu.add(R.id.list_menu_groupItem_removeFromUserDefined_menuGroup, id, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                                    cursor.moveToNext();
                                 }
-
-                                int size = selectedPackages.size();
-                                for (int i = 0; i < size; i++) {
-                                    if (isInRemoveMode) {
-                                        existsPkgs = OneKeyListUtils.removePkgFromPkgNames(
-                                                existsPkgs, selectedPackages.get(i)
-                                        );
-                                    } else {
-                                        existsPkgs = OneKeyListUtils.addPkgToPkgNames(
-                                                existsPkgs, selectedPackages.get(i)
-                                        );
-                                    }
-                                }
-                                userDefinedDb.execSQL(
-                                        "UPDATE categories SET packages = '"
-                                                + existsPkgs
-                                                + "' WHERE label = '"
-                                                + Base64.encodeToString(title.getBytes(), Base64.DEFAULT)
-                                                + "';"
-                                );
-                                cursor.close();
-                                userDefinedDb.close();
-                                showToast(Main.this, isInRemoveMode ? R.string.removed : R.string.added);
-                                return true;
+                            }
+                            cursor.close();
+                            userDefinedDb.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    default:
-                        switch (menuItem.getItemId()) {
-                            case R.id.list_menu_selectAll: {
-                                MainAppListAdapter adapter =
-                                        mMainActivityAppListFragment.getAppListAdapter();
-                                if (adapter != null) {
-                                    for (int i = 0; i < adapter.getItemCount(); i++) {
-                                        AppInfoItem item = adapter.getItemAt(i);
-                                        if (!item.isPackageRow()) {
-                                            continue;
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+                        switch (menuItem.getGroupId()) {
+                            case R.id.list_menu_groupItem_addToUserDefined_menuGroup:
+                            case R.id.list_menu_groupItem_removeFromUserDefined_menuGroup:
+                                switch (menuItem.getItemId()) {
+                                    case R.id.list_menu_groupItem_addToUserDefined_newClassification:
+                                    case R.id.list_menu_groupItem_removeFromUserDefined_newClassification:
+                                        showAddNewUserDefinedClassificationDialog();
+                                        return true;
+                                    default:
+                                        boolean isInRemoveMode =
+                                                menuItem.getGroupId()
+                                                        == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
+                                        String title = menuItem.getTitle().toString();
+                                        String existsPkgs = "";
+                                        SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
+                                        userDefinedDb.execSQL(
+                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                                        );
+                                        Cursor cursor =
+                                                userDefinedDb.query(
+                                                        "categories",
+                                                        new String[]{"packages"},
+                                                        "label = '" + Base64.encodeToString(title.getBytes(), Base64.DEFAULT) + "'",
+                                                        null, null, null, null
+                                                );
+
+                                        if (cursor.moveToFirst()) {
+                                            existsPkgs =
+                                                    cursor.getString(
+                                                            cursor.getColumnIndex("packages")
+                                                    );
                                         }
-                                        String pkg = item.getPackageName();
-                                        if (!selectedPackages.contains(pkg)) {
-                                            selectedPackages.add(pkg);
+
+                                        int size = selectedPackages.size();
+                                        for (int i = 0; i < size; i++) {
+                                            if (isInRemoveMode) {
+                                                existsPkgs = OneKeyListUtils.removePkgFromPkgNames(
+                                                        existsPkgs, selectedPackages.get(i)
+                                                );
+                                            } else {
+                                                existsPkgs = OneKeyListUtils.addPkgToPkgNames(
+                                                        existsPkgs, selectedPackages.get(i)
+                                                );
+                                            }
                                         }
+                                        userDefinedDb.execSQL(
+                                                "UPDATE categories SET packages = '"
+                                                        + existsPkgs
+                                                        + "' WHERE label = '"
+                                                        + Base64.encodeToString(title.getBytes(), Base64.DEFAULT)
+                                                        + "';"
+                                        );
+                                        cursor.close();
+                                        userDefinedDb.close();
+                                        showToast(Main.this, isInRemoveMode ? R.string.removed : R.string.added);
+                                        return true;
+                                }
+                            default:
+                                switch (menuItem.getItemId()) {
+                                    case R.id.list_menu_selectAll:
+                                        Adapter adpt = mMainActivityAppListFragment.getAppListAdapter();
+                                        if (adpt instanceof MainAppListSimpleAdapter) {
+                                            for (int i = 0; i < adpt.getCount(); i++) {
+                                                String pkg = (String) ((MainAppListSimpleAdapter) adpt).getStoredArrayList().get(i).get("PackageName");
+                                                if (!selectedPackages.contains(pkg)) {
+                                                    selectedPackages.add(pkg);
+                                                }
+                                            }
+                                            actionMode.setTitle(Integer.toString(selectedPackages.size()));
+                                            ((MainAppListSimpleAdapter) adpt).notifyDataSetChanged();
+                                            updateRestoreMenuVisibility(actionMode.getMenu());
+                                        }
+                                        return true;
+                                    case R.id.list_menu_selectUnselected:
+                                        Adapter adapt = mMainActivityAppListFragment.getAppListAdapter();
+                                        if (adapt instanceof MainAppListSimpleAdapter) {
+                                            for (int i = 0; i < adapt.getCount(); i++) {
+                                                String pkg = (String) ((MainAppListSimpleAdapter) adapt).getStoredArrayList().get(i).get("PackageName");
+                                                if (selectedPackages.contains(pkg)) {
+                                                    selectedPackages.remove(pkg);
+                                                } else {
+                                                    selectedPackages.add(pkg);
+                                                }
+                                            }
+                                            actionMode.setTitle(Integer.toString(selectedPackages.size()));
+                                            ((MainAppListSimpleAdapter) adapt).notifyDataSetChanged();
+                                            updateRestoreMenuVisibility(actionMode.getMenu());
+                                        }
+                                        return true;
+                                    case R.id.list_menu_addToOneKeyFreezeList:
+                                        processAddToOneKeyList(getString(R.string.sAutoFreezeApplicationList));
+                                        return true;
+                                    case R.id.list_menu_addToOneKeyUFList:
+                                        processAddToOneKeyList(getString(R.string.sOneKeyUFApplicationList));
+                                        return true;
+                                    case R.id.list_menu_addToFreezeOnceQuit:
+                                        processAddToOneKeyList(getString(R.string.sFreezeOnceQuit));
+                                        return true;
+                                    case R.id.list_menu_removeFromOneKeyFreezeList:
+                                        processRemoveFromOneKeyList(getString(R.string.sAutoFreezeApplicationList));
+                                        return true;
+                                    case R.id.list_menu_removeFromOneKeyUFList:
+                                        processRemoveFromOneKeyList(getString(R.string.sOneKeyUFApplicationList));
+                                        return true;
+                                    case R.id.list_menu_removeFromFreezeOnceQuit:
+                                        processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
+                                        return true;
+                                    case R.id.list_menu_freezeImmediately:
+                                        confirmIfCriticalSelectedThenRun(false, () -> {
+                                            processDisableAndEnableImmediately(true);
+                                            actionMode.finish();
+                                        });
+                                        return true;
+                                    case R.id.list_menu_UFImmediately:
+                                        processDisableAndEnableImmediately(false);
+                                        actionMode.finish();
+                                        return true;
+                                    case R.id.list_menu_ForceStopImmediately:
+                                        processForceStopImmediately();
+                                        actionMode.finish();
+                                        return true;
+                                    case R.id.list_menu_uninstallImmediately:
+                                        processBatchUninstall();
+                                        return true;
+                                    case R.id.list_menu_restoreImmediately: {
+                                        List<String> packagesToRestore = new ArrayList<>(selectedPackages);
+                                        if (!RestoreUtils.isRestoreFilter(currentFilter)
+                                                || !RestoreUtils.canRestorePackages(Main.this, packagesToRestore)) {
+                                            showToast(Main.this, R.string.restore_failed);
+                                            actionMode.invalidate();
+                                            return true;
+                                        }
+                                        RestoreUtils.restorePackages(Main.this, packagesToRestore, () -> {
+                                            new Thread(() -> generateList(currentFilter)).start();
+                                        });
+                                        actionMode.finish();
+                                        return true;
                                     }
-                                    mMainActivityAppListFragment.refreshSelection();
-                                }
-                                return true;
-                            }
-                            case R.id.list_menu_selectUnselected: {
-                                MainAppListAdapter adapter =
-                                        mMainActivityAppListFragment.getAppListAdapter();
-                                if (adapter != null) {
-                                    for (int i = 0; i < adapter.getItemCount(); i++) {
-                                        AppInfoItem item = adapter.getItemAt(i);
-                                        if (!item.isPackageRow()) {
-                                            continue;
-                                        }
-                                        String pkg = item.getPackageName();
-                                        if (selectedPackages.contains(pkg)) {
-                                            selectedPackages.remove(pkg);
-                                        } else {
-                                            selectedPackages.add(pkg);
-                                        }
-                                    }
-                                    mMainActivityAppListFragment.refreshSelection();
-                                }
-                                return true;
-                            }
-                            case R.id.list_menu_addToOneKeyFreezeList:
-                                processAddToOneKeyList(getString(R.string.sAutoFreezeApplicationList));
-                                return true;
-                            case R.id.list_menu_addToOneKeyUFList:
-                                processAddToOneKeyList(getString(R.string.sOneKeyUFApplicationList));
-                                return true;
-                            case R.id.list_menu_addToFreezeOnceQuit:
-                                processAddToOneKeyList(getString(R.string.sFreezeOnceQuit));
-                                return true;
-                            case R.id.list_menu_removeFromOneKeyFreezeList:
-                                processRemoveFromOneKeyList(getString(R.string.sAutoFreezeApplicationList));
-                                return true;
-                            case R.id.list_menu_removeFromOneKeyUFList:
-                                processRemoveFromOneKeyList(getString(R.string.sOneKeyUFApplicationList));
-                                return true;
-                            case R.id.list_menu_removeFromFreezeOnceQuit:
-                                processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
-                                return true;
-                            case R.id.list_menu_freezeImmediately:
-                                confirmIfCriticalSelectedThenRun(false, () -> {
-                                    processDisableAndEnableImmediately(true);
-                                    actionMode.finish();
-                                });
-                                return true;
-                            case R.id.list_menu_UFImmediately:
-                                processDisableAndEnableImmediately(false);
-                                actionMode.finish();
-                                return true;
-                            case R.id.list_menu_ForceStopImmediately:
-                                processForceStopImmediately();
-                                actionMode.finish();
-                                return true;
-                            case R.id.list_menu_uninstallImmediately:
-                                processBatchUninstall();
-                                return true;
-                            case R.id.list_menu_restoreImmediately: {
-                                List<String> packagesToRestore = new ArrayList<>(selectedPackages);
-                                if (!RestoreUtils.isRestoreFilter(currentFilter)
-                                        || !RestoreUtils.canRestorePackages(Main.this, packagesToRestore)) {
-                                    showToast(Main.this, R.string.restore_failed);
-                                    actionMode.invalidate();
-                                    return true;
-                                }
-                                RestoreUtils.restorePackages(Main.this, packagesToRestore, () -> {
-                                    new Thread(() -> generateList(currentFilter)).start();
-                                });
-                                actionMode.finish();
-                                return true;
-                            }
-                            case R.id.list_menu_createDisEnableShortCut:
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    ShortcutManager mShortcutManager =
-                                            Main.this.getSystemService(ShortcutManager.class);
-                                    if (mShortcutManager != null && mShortcutManager.isRequestPinShortcutSupported()) {
-                                        shortcutsCount = selectedPackages.size() - 1;
-                                        if (shortcutsCount >= 0) {
-                                            String pkgName = selectedPackages.get(shortcutsCount);
-                                            createShortCut(
-                                                    getApplicationLabel(Main.this, null, null, pkgName),
-                                                    pkgName,
-                                                    getApplicationIcon(
-                                                            Main.this,
+                                    case R.id.list_menu_createDisEnableShortCut:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            ShortcutManager mShortcutManager =
+                                                    Main.this.getSystemService(ShortcutManager.class);
+                                            if (mShortcutManager != null && mShortcutManager.isRequestPinShortcutSupported()) {
+                                                shortcutsCount = selectedPackages.size() - 1;
+                                                if (shortcutsCount >= 0) {
+                                                    String pkgName = selectedPackages.get(shortcutsCount);
+                                                    createShortCut(
+                                                            getApplicationLabel(Main.this, null, null, pkgName),
                                                             pkgName,
-                                                            getApplicationInfoFromPkgName(pkgName, Main.this),
-                                                            false),
-                                                    Freeze.class,
-                                                    "FreezeYou! " + pkgName,
-                                                    Main.this
-                                            );
+                                                            getApplicationIcon(
+                                                                    Main.this,
+                                                                    pkgName,
+                                                                    getApplicationInfoFromPkgName(pkgName, Main.this),
+                                                                    false),
+                                                            Freeze.class,
+                                                            "FreezeYou! " + pkgName,
+                                                            Main.this
+                                                    );
+                                                }
+                                                shortcutsCompleted = (shortcutsCount <= 0);
+                                            } else {
+                                                createFUFShortcutsBatch();
+                                            }
+                                        } else {
+                                            createFUFShortcutsBatch();
                                         }
-                                        shortcutsCompleted = (shortcutsCount <= 0);
-                                    } else {
-                                        createFUFShortcutsBatch();
-                                    }
-                                } else {
-                                    createFUFShortcutsBatch();
+                                        return true;
+                                    case R.id.list_menu_copyAfterBeingFormatted:
+                                        StringBuilder formattedPackages = new StringBuilder();
+                                        int size = selectedPackages.size();
+                                        for (int i = 0; i < size; i++) {
+                                            formattedPackages.append(selectedPackages.get(i)).append(",");
+                                        }
+                                        if (copyToClipboard(Main.this, formattedPackages.toString())) {
+                                            showToast(Main.this, R.string.success);
+                                        } else {
+                                            showToast(Main.this, R.string.failed);
+                                        }
+                                        return true;
+                                    default:
+                                        return false;
                                 }
-                                return true;
-                            case R.id.list_menu_copyAfterBeingFormatted:
-                                StringBuilder formattedPackages = new StringBuilder();
-                                int size = selectedPackages.size();
-                                for (int i = 0; i < size; i++) {
-                                    formattedPackages.append(selectedPackages.get(i)).append(",");
-                                }
-                                if (copyToClipboard(Main.this, formattedPackages.toString())) {
-                                    showToast(Main.this, R.string.success);
-                                } else {
-                                    showToast(Main.this, R.string.failed);
-                                }
-                                return true;
-                            default:
-                                return false;
                         }
+                    }
+
+                    @Override
+                    public void onDestroyActionMode(ActionMode actionMode) {
+                        selectedPackages.clear();
+                        currentSelectionActionMode = null;
+                        selectionActionsImageButton.setVisibility(View.GONE);
+                    }
+                };
+                mMainActivityAppListFragment.setMultiChoiceModeListener(currentMultiChoiceModeListener);
+
+                selectionActionsImageButton.setOnClickListener(v -> {
+                    if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
+                        return;
+                    }
+                    PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
+                    popupMenu.inflate(R.menu.multichoicemenu);
+                    currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
+                    popupMenu.setOnMenuItemClickListener(item ->
+                            currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
+                    popupMenu.show();
+                });
+
+            }
+        });
+
+        mMainActivityAppListFragment.setOnAppListItemClickListener((adapterView, view, i, l) -> {
+            Map<String, Object> map =
+                    ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter())
+                            .getStoredArrayList().get(i);
+            final String name = (String) map.get("Name");
+            final String pkgName = (String) map.get("PackageName");
+            if (!getString(R.string.notAvailable).equals(name)) {
+                boolean isRestorableSystemApp = RestoreUtils.isRestorableSystemPackage(Main.this, pkgName);
+                if (isRestorableSystemApp && RestoreUtils.isRestoreFilter(currentFilter)) {
+                    RestoreUtils.showRestoreConfirmDialog(Main.this, java.util.Collections.singletonList(pkgName), name, () -> {
+                        new Thread(() -> generateList(currentFilter)).start();
+                    });
+                    return;
+                }
+                if (isRestorableSystemApp && appListViewOnClickMode != APPListViewOnClickMode_chooseAction) {
+                    showToast(Main.this, R.string.restore_only_in_uninstalled_system_filter);
+                    return;
+                }
+                switch (appListViewOnClickMode) {
+                    case APPListViewOnClickMode_chooseAction:
+                        showChooseActionPopupMenu(
+                                getLightPopupContext(Main.this), Main.this, view, pkgName, name,
+                                RestoreUtils.isRestoreFilter(currentFilter));
+                        break;
+                    case APPListViewOnClickMode_autoUFOrFreeze:
+                        if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    false, false, false);
+                        } else {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    true, false, false);
+                        }
+                        break;
+                    case APPListViewOnClickMode_freezeImmediately:
+                        if (!realGetFrozenStatus(Main.this, pkgName, null)) {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    true, false, false);
+                        } else {
+                            if (!lesserToast.getValue(null)) {
+                                showToast(Main.this, R.string.freezeCompleted);
+                            }
+                        }
+                        break;
+                    case APPListViewOnClickMode_UFImmediately:
+                        if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    false, false, false);
+                        } else {
+                            if (!lesserToast.getValue(null)) {
+                                showToast(Main.this, R.string.UFCompleted);
+                            }
+                        }
+                        break;
+                    case APPListViewOnClickMode_UFAndRun:
+                        if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    false, true, false);
+                        } else {
+                            if (!lesserToast.getValue(null)) {
+                                showToast(Main.this, R.string.UFCompleted);
+                            }
+                            askRun(Main.this, pkgName, null,
+                                    null, false, null, false);
+                        }
+                        break;
+                    case APPListViewOnClickMode_autoUFOrFreezeAndRun:
+                        if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    false, true, false);
+                        } else {
+                            processSingleActionInProcess(
+                                    Main.this, pkgName, null, null,
+                                    true, false, false);
+                        }
+                        break;
+                    case APPListViewOnClickMode_addToOFList:
+                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_removeFromOFList:
+                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_addToOUFList:
+                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_removeFromOUFList:
+                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_addToFOQList:
+                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_removeFromFOQList:
+                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed);
+                        break;
+                    case APPListViewOnClickMode_createFUFShortcut:
+                        checkSettingsAndRequestCreateShortcut(
+                                name,
+                                pkgName,
+                                getApplicationIcon(
+                                        Main.this,
+                                        pkgName,
+                                        getApplicationInfoFromPkgName(pkgName, Main.this),
+                                        false),
+                                Freeze.class,
+                                "FreezeYou! " + pkgName,
+                                Main.this);
+                        break;
+                    default:
+                        break;
                 }
             }
-
-            @Override
-            public void onDestroyActionMode(@NonNull ActionMode actionMode) {
-                selectedPackages.clear();
-                currentSelectionActionMode = null;
-                selectionActionsImageButton.setVisibility(View.GONE);
-            }
-        };
-        mMainActivityAppListFragment.setSelectionActions(currentSelectionActions);
-
-        selectionActionsImageButton.setOnClickListener(v -> {
-            if (currentSelectionActionMode == null || currentSelectionActions == null) {
-                return;
-            }
-            PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
-            popupMenu.inflate(R.menu.multichoicemenu);
-            currentSelectionActions.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
-            popupMenu.setOnMenuItemClickListener(item ->
-                    currentSelectionActions.onActionItemClicked(currentSelectionActionMode, item));
-            popupMenu.show();
         });
     }
 
-    /**
-     * What a tap on a row does, which is entirely up to the "on click" setting.
-     */
-    private void onAppListItemClick(View view, AppInfoItem item) {
-        final String name = item.getLabel();
-        final String pkgName = item.getPackageName();
-        if (getString(R.string.notAvailable).equals(name)) {
-            return;
-        }
-        boolean isRestorableSystemApp = RestoreUtils.isRestorableSystemPackage(Main.this, pkgName);
-        if (isRestorableSystemApp && RestoreUtils.isRestoreFilter(currentFilter)) {
-            RestoreUtils.showRestoreConfirmDialog(Main.this, java.util.Collections.singletonList(pkgName), name, () -> {
-                new Thread(() -> generateList(currentFilter)).start();
-            });
-            return;
-        }
-        if (isRestorableSystemApp && appListViewOnClickMode != APPListViewOnClickMode_chooseAction) {
-            showToast(Main.this, R.string.restore_only_in_uninstalled_system_filter);
-            return;
-        }
-        switch (appListViewOnClickMode) {
-            case APPListViewOnClickMode_chooseAction:
-                showChooseActionPopupMenu(
-                        getLightPopupContext(Main.this), Main.this, view, pkgName, name,
-                        RestoreUtils.isRestoreFilter(currentFilter));
-                break;
-            case APPListViewOnClickMode_autoUFOrFreeze:
-                if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            false, false, false);
-                } else {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            true, false, false);
-                }
-                break;
-            case APPListViewOnClickMode_freezeImmediately:
-                if (!realGetFrozenStatus(Main.this, pkgName, null)) {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            true, false, false);
-                } else {
-                    if (!lesserToast.getValue(null)) {
-                        showToast(Main.this, R.string.freezeCompleted);
-                    }
-                }
-                break;
-            case APPListViewOnClickMode_UFImmediately:
-                if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            false, false, false);
-                } else {
-                    if (!lesserToast.getValue(null)) {
-                        showToast(Main.this, R.string.UFCompleted);
-                    }
-                }
-                break;
-            case APPListViewOnClickMode_UFAndRun:
-                if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            false, true, false);
-                } else {
-                    if (!lesserToast.getValue(null)) {
-                        showToast(Main.this, R.string.UFCompleted);
-                    }
-                    askRun(Main.this, pkgName, null,
-                            null, false, null, false);
-                }
-                break;
-            case APPListViewOnClickMode_autoUFOrFreezeAndRun:
-                if (realGetFrozenStatus(Main.this, pkgName, null)) {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            false, true, false);
-                } else {
-                    processSingleActionInProcess(
-                            Main.this, pkgName, null, null,
-                            true, false, false);
-                }
-                break;
-            case APPListViewOnClickMode_addToOFList:
-                showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
-                break;
-            case APPListViewOnClickMode_removeFromOFList:
-                showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed);
-                break;
-            case APPListViewOnClickMode_addToOUFList:
-                showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed);
-                break;
-            case APPListViewOnClickMode_removeFromOUFList:
-                showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed);
-                break;
-            case APPListViewOnClickMode_addToFOQList:
-                showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed);
-                break;
-            case APPListViewOnClickMode_removeFromFOQList:
-                showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed);
-                break;
-            case APPListViewOnClickMode_createFUFShortcut:
-                checkSettingsAndRequestCreateShortcut(
-                        name,
-                        pkgName,
-                        getApplicationIcon(
-                                Main.this,
-                                pkgName,
-                                getApplicationInfoFromPkgName(pkgName, Main.this),
-                                false),
-                        Freeze.class,
-                        "FreezeYou! " + pkgName,
-                        Main.this);
-                break;
-            default:
-                break;
-        }
-    }
-
-    private static void addNotAvailablePair(Context context, List<AppInfoItem> AppList) {
-        AppList.add(AppInfoItem.placeholder(context.getString(R.string.notAvailable)));
+    private static void addNotAvailablePair(Context context, List<Map<String, Object>> AppList) {
+        Map<String, Object> keyValuePair = new HashMap<>();
+        keyValuePair.put("Img", android.R.drawable.sym_def_app_icon);
+        keyValuePair.put("Name", context.getString(R.string.notAvailable));
+        keyValuePair.put("PackageName", context.getString(R.string.notAvailable));
+        keyValuePair.put("InstallTime", 0L);
+        keyValuePair.put("UpdateTime", 0L);
+        AppList.add(keyValuePair);
     }
 
     /**
@@ -1332,9 +1540,6 @@ public class Main extends FreezeYouBaseActivity {
         if (mMainActivityAppListFragment == null) {
             mMainActivityAppListFragment = new MainActivityAppListFragment();
             mMainActivityAppListFragment.setUseGridMode(isGridMode);
-            // Once, because the fragment is created once: the listeners used to be re-installed on
-            // every list rebuild and the search box collected one text watcher per rebuild.
-            setupAppListUiOnce();
         }
 
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -1393,76 +1598,92 @@ public class Main extends FreezeYouBaseActivity {
         checkLongTimeNotUpdated();
     }
 
-    private AppInfoItem processAppStatus(String name, String packageName, PackageInfo packageInfo, PackageManager packageManager) {
-        if ("android".equals(packageName) || getPackageName().equals(packageName)) {
-            return null;
-        }
+    private void processFrozenStatus(Map<String, Object> keyValuePair, String packageName, PackageManager packageManager) {
         boolean frozen = realGetFrozenStatus(Main.this, packageName, packageManager);
-        boolean isRestorable = RestoreUtils.isRestorableSystemApp(packageInfo.applicationInfo);
-        // The icon used to be decoded here and stored in the row, which kept one bitmap per app
-        // alive for as long as the activity lived. The adapter asks for it when it binds a row.
-        return new AppInfoItem(
-                packageName,
-                name,
-                frozen,
-                isRestorable,
-                packageInfo.firstInstallTime,
-                packageInfo.lastUpdateTime,
-                packageInfo.applicationInfo == null ? 0 : packageInfo.applicationInfo.flags
-        );
+        // The dot at the end of the row, and the plain flag the adapter greys the icon by.
+        keyValuePair.put("isFrozen", frozen ? customThemeDisabledDot : customThemeEnabledDot);
+        keyValuePair.put("Frozen", frozen);
     }
 
-    private void oneKeyListGenerate(String[] source, List<AppInfoItem> AppList) {
+    private Map<String, Object> processAppStatus(String name, String packageName, PackageInfo packageInfo, PackageManager packageManager, boolean saveIconCache) {
+        if (!("android".equals(packageName) || getPackageName().equals(packageName))) {
+            Map<String, Object> keyValuePair = new HashMap<>();
+            keyValuePair.put(
+                    "Img",
+                    getApplicationIcon(
+                            Main.this,
+                            packageName,
+                            packageInfo.applicationInfo,
+                            false,
+                            saveIconCache
+                    )
+            );
+            keyValuePair.put("Name", name);
+            processFrozenStatus(keyValuePair, packageName, packageManager);
+            keyValuePair.put("PackageName", packageName);
+            boolean isRestorable = RestoreUtils.isRestorableSystemApp(packageInfo.applicationInfo);
+            keyValuePair.put("RestorableSystemApp", isRestorable);
+            if (isRestorable) {
+                keyValuePair.put("isFrozen", customThemeDisabledDot);
+                keyValuePair.put("Frozen", true);
+            }
+            keyValuePair.put("InstallTime", packageInfo.firstInstallTime);
+            keyValuePair.put("UpdateTime", packageInfo.lastUpdateTime);
+            return keyValuePair;
+        }
+        return null;
+    }
+
+    private void oneKeyListGenerate(String[] source, List<Map<String, Object>> AppList) {
         String name;
+        Drawable icon;
         for (String aPkg : source) {
             name = getApplicationLabel(getApplicationContext(), null, null, aPkg);
             long installTime = 0L;
             long updateTime = 0L;
-            int flags = 0;
             boolean restorableSystemApp = false;
             try {
                 PackageInfo pi = getPackageManager().getPackageInfo(aPkg, PackageManager.GET_UNINSTALLED_PACKAGES);
                 installTime = pi.firstInstallTime;
                 updateTime = pi.lastUpdateTime;
                 restorableSystemApp = RestoreUtils.isRestorableSystemApp(pi.applicationInfo);
-                if (pi.applicationInfo != null) {
-                    flags = pi.applicationInfo.flags;
-                }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
             if (!("android".equals(aPkg) || getPackageName().equals(aPkg) || "".equals(aPkg))) {
-                AppList.add(new AppInfoItem(
+                Map<String, Object> keyValuePair = new HashMap<>();
+                icon = getApplicationIcon(
+                        Main.this,
                         aPkg,
-                        name,
-                        realGetFrozenStatus(Main.this, aPkg, null),
-                        restorableSystemApp,
-                        installTime,
-                        updateTime,
-                        flags
-                ));
+                        getApplicationInfoFromPkgName(aPkg, Main.this),
+                        true
+                );
+                keyValuePair.put("Img", icon);
+                keyValuePair.put("Name", name);
+                processFrozenStatus(keyValuePair, aPkg, null);
+                keyValuePair.put("PackageName", aPkg);
+                keyValuePair.put("RestorableSystemApp", restorableSystemApp);
+                if (restorableSystemApp) {
+                    keyValuePair.put("isFrozen", customThemeDisabledDot);
+                    keyValuePair.put("Frozen", true);
+                }
+                keyValuePair.put("InstallTime", installTime);
+                keyValuePair.put("UpdateTime", updateTime);
+                AppList.add(keyValuePair);
             }
         }
     }
 
-    private void oneKeyListCheckAndGenerate(String pkgNames, List<AppInfoItem> AppList) {
+    private void oneKeyListCheckAndGenerate(String pkgNames, List<Map<String, Object>> AppList) {
         if (pkgNames != null) {
             oneKeyListGenerate(pkgNames.split(","), AppList);
         }
     }
 
-    private void checkAndAddNotAvailablePair(List<AppInfoItem> AppList) {
+    private void checkAndAddNotAvailablePair(List<Map<String, Object>> AppList) {
         if (AppList.size() == 0) {
             addNotAvailablePair(getApplicationContext(), AppList);
         }
-    }
-
-    /** The list adapter, or null while the fragment has none. Batch actions ask it about rows. */
-    @Nullable
-    private MainAppListAdapter appListAdapter() {
-        return mMainActivityAppListFragment == null
-                ? null
-                : mMainActivityAppListFragment.getAppListAdapter();
     }
 
     private void updateRestoreMenuVisibility(Menu menu) {
@@ -1479,14 +1700,16 @@ public class Main extends FreezeYouBaseActivity {
         Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
         boolean hasUninstalledSystemSelection = false;
         boolean hasUnfrozenSelection = false;
-        MainAppListAdapter adapter = appListAdapter();
-        if (adapter != null) {
-            for (AppInfoItem row : adapter.getRows()) {
-                if (selectedPackageSet.contains(row.getPackageName())) {
-                    if (row.isRestorableSystemApp()) {
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (selectedPackageSet.contains(packageName)) {
+                    if (Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
                         hasUninstalledSystemSelection = true;
                     }
-                    if (!row.isFrozen()) {
+                    if (!Boolean.TRUE.equals(row.get("Frozen"))) {
                         hasUnfrozenSelection = true;
                     }
                 }
@@ -1524,9 +1747,18 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
-        MainAppListAdapter adapter = appListAdapter();
-        if (adapter != null) {
-            adapter.updateRows(selectedPackages, row -> row.withFrozen(freeze));
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            Set<String> selectedSet = new HashSet<>(selectedPackages);
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (selectedSet.contains(packageName)) {
+                    row.put("Frozen", freeze);
+                    row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
+                }
+            }
+            ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter()).notifyDataSetChanged();
         }
         int size = selectedPackages.size();
         String[] pkgNameList = selectedPackages.toArray(new String[size]);
@@ -1535,11 +1767,13 @@ public class Main extends FreezeYouBaseActivity {
 
     private void processForceStopImmediately() {
         Set<String> frozenPackageSet = new HashSet<>();
-        MainAppListAdapter adapter = appListAdapter();
-        if (adapter != null) {
-            for (AppInfoItem row : adapter.getRows()) {
-                if (row.isFrozen()) {
-                    frozenPackageSet.add(row.getPackageName());
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
+                String packageName = (String) row.get("PackageName");
+                if (Boolean.TRUE.equals(row.get("Frozen"))) {
+                    frozenPackageSet.add(packageName);
                 }
             }
         }
@@ -1998,77 +2232,80 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * Refreshes freeze indicators in place instead of rebuilding the list.
+     * Updates application freeze status indicators in-place across the visible list adapter.
      *
-     * <p><b>Scroll position preservation rationale</b><br>
-     * Rebuilding the whole list through {@link #generateList} resets the widget's scroll offset to
-     * the top, so a jump would follow every freeze and unfreeze. Here the rows are replaced by
-     * copies carrying the status just read from the system, and the diff re-binds only the rows
-     * whose dot or greyscale actually changed.
+     * <p><b>Scroll Position Preservation Rationale:</b><br>
+     * Rebuilding the entire application list via {@link #generateList} causes the ListView to reset
+     * its scroll position to the top, causing annoying visual jumps whenever an app is frozen or
+     * unfrozen. Instead, this method mutates the existing data maps within
+     * {@link MainAppListSimpleAdapter#getStoredArrayList} and calls {@link android.widget.BaseAdapter#notifyDataSetChanged},
+     * preserving scroll offsets perfectly.
      *
-     * <p><b>Granular row targeting</b><br>
-     * Called with a package name — as {@link #updateFrozenStatusBroadcastReceiver} does when it
-     * receives {@code cf.playhi.freezeyou.action.packageStatusChanged} — only that row is re-read.
-     * Called with null, every row is, which is what {@code onResume} does to catch up with whatever
-     * changed while the screen was away.
+     * <p><b>Granular Row Targeting:</b><br>
+     * When invoked with a specific {@code onlyPkgName} (such as from {@link #updateFrozenStatusBroadcastReceiver}
+     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), the loop terminates immediately
+     * after updating the matching package in memory, minimizing CPU overhead and preventing UI stutter.
      *
      * @param onlyPkgName target package name to refresh individually, or null to re-evaluate all rows (e.g. onResume)
      */
     private void updateFrozenStatus(String onlyPkgName) {
-        MainAppListAdapter adapter = appListAdapter();
-        if (adapter == null) {
+
+        if (mMainActivityAppListFragment == null) {
             return;
         }
-        // Runs on every onResume, so coming back from the settings applies the switch at once.
-        adapter.setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
 
-        final PackageManager pm = getPackageManager();
-        final boolean single = onlyPkgName != null;
-        if (single) {
-            int position = adapter.positionOfPackage(onlyPkgName);
-            if (position != -1) {
-                ApplicationInfo target = getApplicationInfoFromPkgName(onlyPkgName, Main.this);
-                // A row that has just left or entered the uninstalled-system filter cannot be patched in
-                // place, because it belongs to a different list. The package is gone rather than merely
-                // uninstalled here, so it keeps its "uninstalled" row instead.
-                if (target != null && !mIsBatchUninstallRunning
-                        && RestoreUtils.isAppUninstalled(target)
-                        != RestoreUtils.isRestoreFilter(currentFilter)) {
-                    new Thread(() -> generateList(currentFilter)).start();
-                    return;
+        Adapter adapter = mMainActivityAppListFragment.getAppListAdapter();
+        if (adapter instanceof MainAppListSimpleAdapter) {
+            // Runs on every onResume, so coming back from the settings applies the switch at once.
+            ((MainAppListSimpleAdapter) adapter)
+                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
+            PackageManager pm = getPackageManager();
+            int count = adapter.getCount();
+            for (int i = 0; i < count; i++) {
+                Map<String, Object> hm = ((MainAppListSimpleAdapter) adapter).getStoredArrayList().get(i);
+                String pkgName = (String) hm.get("PackageName");
+                if (onlyPkgName != null && !onlyPkgName.equals(pkgName)) {
+                    continue;
+                }
+                ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
+
+                // Check if uninstalled
+                if (applicationInfo == null) {
+                    hm.put("Name", getString(R.string.uninstalled));
+                    continue;
+                }
+
+                boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
+                boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
+                if (onlyPkgName != null && !mIsBatchUninstallRunning) {
+                    if (isUninstalled && !isRestoreFilter) {
+                        new Thread(() -> generateList(currentFilter)).start();
+                        return;
+                    }
+                    if (isRestoreFilter && !isUninstalled) {
+                        new Thread(() -> generateList(currentFilter)).start();
+                        return;
+                    }
+                }
+
+                if (onlyPkgName != null) {
+                    hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
+                    hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
+                }
+
+                boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+                hm.put("RestorableSystemApp", restorable);
+                // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
+                processFrozenStatus(hm, pkgName, pm);
+                if (restorable) {
+                    hm.put("isFrozen", customThemeDisabledDot);
+                    hm.put("Frozen", true);
+                }
+                if (onlyPkgName != null) {
+                    break;
                 }
             }
-        }
-
-        adapter.updateRows(single ? Collections.singletonList(onlyPkgName) : null, row -> {
-            String pkgName = row.getPackageName();
-            ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, Main.this);
-            if (applicationInfo == null) {
-                return row.withLabel(getString(R.string.uninstalled));
-            }
-            AppInfoItem updated = row;
-            if (single) {
-                // Reinstalling changes the label and the icon. The icon no longer lives in the row,
-                // so dropping its cached copy is what makes the next bind ask again.
-                updated = updated.withLabel(
-                        getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
-                long newUpdateTime = row.getUpdateTime();
-                try {
-                    PackageInfo pi = pm.getPackageInfo(pkgName, 0);
-                    newUpdateTime = pi.lastUpdateTime;
-                } catch (Exception ignored) {
-                }
-                updated = updated.withUpdateTime(newUpdateTime);
-                AppIconLoader.evict(pkgName);
-            }
-            // A restorable system app is drawn as frozen whatever the reported status says, which is
-            // what the second map entry used to encode by hand.
-            return updated
-                    .withRestorableSystemApp(RestoreUtils.isRestorableSystemApp(applicationInfo))
-                    .withFrozen(realGetFrozenStatus(Main.this, pkgName, pm));
-        });
-        if (single) {
-            adapter.notifyRowChanged(adapter.positionOfPackage(onlyPkgName));
+            ((MainAppListSimpleAdapter) adapter).notifyDataSetChanged();
         }
     }
 
@@ -2142,102 +2379,13 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
-    /**
-     * Orders the rows the way the sort menu has always offered them.
-     *
-     * <p>The freeze, unfreeze and use counters live in their own databases and only cover apps
-     * somebody actually acted on, so a package missing from one is not a zero: it is unranked. The
-     * comparators this replaces called such a package equal to every neighbour, which is not a
-     * transitive relation as soon as a third, ranked app joins the list, and the sort rejects an
-     * inconsistent comparator with {@code IllegalArgumentException} on a list long enough to use
-     * TimSort's merge path. Unranked rows are now ordered against ranked ones instead of being left
-     * equal, which is what the visible result already was and what makes the rule hold.
-     *
-     * <p>Every rule below is a refinement of the package-name order, applied by a stable sort, so
-     * apps that tie stay alphabetically ordered as they did under the previous two-pass code.
-     */
-    private void applySortRule(ArrayList<AppInfoItem> AppList, int sortRule) {
-        if (AppList.isEmpty() || sortRule == SORT_BY_NO) {
-            return;
-        }
-        setSortByDefault(AppList);
-        switch (sortRule) {
-            case SORT_BY_UF_ASCENDING:
-                sortByTimesMap(AppList, getUFreezeTimesMap(), true);
-                break;
-            case SORT_BY_UF_DESCENDING:
-                sortByTimesMap(AppList, getUFreezeTimesMap(), false);
-                break;
-            case SORT_BY_FF_ASCENDING:
-                sortByTimesMap(AppList, getFreezeTimesMap(), true);
-                break;
-            case SORT_BY_FF_DESCENDING:
-                sortByTimesMap(AppList, getFreezeTimesMap(), false);
-                break;
-            case SORT_BY_US_ASCENDING:
-                sortByTimesMap(AppList, getUseTimesMap(), true);
-                break;
-            case SORT_BY_US_DESCENDING:
-                sortByTimesMap(AppList, getUseTimesMap(), false);
-                break;
-            case SORT_BY_ALPHABETICAL:
-                final Collator collator = Collator.getInstance();
-                Collections.sort(AppList, (left, right) -> collator.compare(
-                        left.getLabel() == null ? "" : left.getLabel(),
-                        right.getLabel() == null ? "" : right.getLabel()));
-                break;
-            case SORT_BY_LAST_INSTALLED:
-                Collections.sort(AppList,
-                        (left, right) -> -Long.compare(left.getInstallTime(), right.getInstallTime()));
-                break;
-            case SORT_BY_LAST_UPDATED:
-                Collections.sort(AppList,
-                        (left, right) -> -Long.compare(left.getUpdateTime(), right.getUpdateTime()));
-                break;
-            case SORT_BY_DEFAULT:
-            case SORT_BY_NO:
-            default:
-                break;
-        }
-    }
-
-    private void sortByTimesMap(
-            ArrayList<AppInfoItem> AppList,
-            final HashMap<String, Integer> timesMap,
-            final boolean ascending
-    ) {
-        Collections.sort(AppList, (left, right) -> {
-            Integer leftTimes = rankedTimes(timesMap, left.getPackageName());
-            Integer rightTimes = rankedTimes(timesMap, right.getPackageName());
-            if (leftTimes == null && rightTimes == null) {
-                return 0;
+    private void setSortByDefault(ArrayList<Map<String, Object>> AppList) {
+        Collections.sort(AppList, new Comparator<Map<String, Object>>() {
+            @Override
+            public int compare(Map<String, Object> stringObjectMap, Map<String, Object> t1) {
+                return ((String) stringObjectMap.get("PackageName")).compareTo((String) t1.get("PackageName"));
             }
-            if (leftTimes == null) {
-                return ascending ? -1 : 1;
-            }
-            if (rightTimes == null) {
-                return ascending ? 1 : -1;
-            }
-            return ascending
-                    ? leftTimes.compareTo(rightTimes)
-                    : rightTimes.compareTo(leftTimes);
         });
-    }
-
-    /**
-     * The counter stored for a package, or null when there is nothing to rank it by. Counters are
-     * keyed by the Base64 of the package name, which is how the history tables have always written
-     * them.
-     */
-    private static Integer rankedTimes(HashMap<String, Integer> timesMap, String packageName) {
-        Integer times = timesMap.get(
-                Base64.encodeToString(packageName.getBytes(), Base64.DEFAULT));
-        return times == null || times <= 0 ? null : times;
-    }
-
-    private void setSortByDefault(ArrayList<AppInfoItem> AppList) {
-        Collections.sort(AppList,
-                (left, right) -> left.getPackageName().compareTo(right.getPackageName()));
     }
 
     private void checkIfNeedAskFirstTimeSetupAndShowDialog() {
