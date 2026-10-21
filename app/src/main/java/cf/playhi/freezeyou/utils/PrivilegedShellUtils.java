@@ -173,17 +173,25 @@ public final class PrivilegedShellUtils {
      * Prefix of the line written after every command of a batch, carrying that command's position
      * and its exit code: {@code __FREEZEYOU_RC__17:0}.
      */
+    /**
+     * Prefix of the line written after every command of a batch, carrying that command's position
+     * and its exit code: {@code __FREEZEYOU_RC__17:0}.
+     */
     private static final String RESULT_MARKER = "__FREEZEYOU_RC__";
 
     /**
-     * Commands handed to one shell session before a fresh process is taken. The session is what
-     * costs — a process, and under root the escalation with it — so a batch is one session per this
-     * many commands rather than one per command, and a chunk stays small enough that its output
-     * cannot fill the pipe before the reader has taken it.
+     * Handshake marker written immediately upon opening a privileged shell session to confirm that
+     * root permission has been granted by the user before starting the batch execution timer.
      */
+    private static final String READY_MARKER = "__FREEZEYOU_READY__";
+
+    /** Commands handed to one shell session before a fresh process is taken. */
     private static final int MAX_COMMANDS_PER_SESSION = 40;
 
-    /** A session that has not finished reporting in this long is taken as lost. */
+    /** Timeout for the user to respond to root authorization prompts (Magisk/KernelSU/SuperSU). */
+    private static final long ROOT_APPROVAL_TIMEOUT_MS = 120_000L;
+
+    /** A session that has not finished executing commands in this long is taken as lost. */
     private static final long BATCH_SESSION_TIMEOUT_MS = 60_000L;
 
     /**
@@ -278,12 +286,6 @@ public final class PrivilegedShellUtils {
     /**
      * Reads a session's output and splits it back into one result per command.
      *
-     * <p>Text up to a marker belongs to the command that wrote it, so a {@code Failure} printed by
-     * the nineteenth package is read as the nineteenth package's, and the shell's own noise — a motd,
-     * a prompt — lands on whichever command precedes it and is reported with it. A command with no
-     * marker in the output is absent from the result: the session died before it answered, and that
-     * is not a success.
-     *
      * @return exit code and output by the position of the command in the batch
      */
     public static Map<Integer, CommandResult> parseBatchResults(InputStream inputStream)
@@ -300,7 +302,12 @@ public final class PrivilegedShellUtils {
     public static void parseBatchResults(InputStream inputStream,
                                          Map<Integer, CommandResult> results)
             throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        parseBatchResultsFromReader(new BufferedReader(new InputStreamReader(inputStream)), results);
+    }
+
+    private static void parseBatchResultsFromReader(BufferedReader reader,
+                                                   Map<Integer, CommandResult> results)
+            throws IOException {
         StringBuilder output = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -327,7 +334,8 @@ public final class PrivilegedShellUtils {
     }
 
     /**
-     * Opens one shell, feeds it a chunk of the batch and reads back what each command said.
+     * Opens one shell, confirms readiness via handshake, feeds it a chunk of the batch and reads
+     * back what each command said.
      *
      * @param offset where this chunk starts in the batch, so the markers name the right commands
      */
@@ -343,16 +351,40 @@ public final class PrivilegedShellUtils {
             process = session;
             sessionStarted.set(true);
             writer = new DataOutputStream(session.getOutputStream());
-            // Reading starts before a single command is written. A shell whose stdout nobody drains
-            // stops writing once the pipe is full, and it would stop between two commands of the
-            // batch — the writer then waiting on a shell that is waiting on the writer.
-            Future<?> reading = COMMAND_EXECUTOR.submit(
-                    () -> {
-                        try {
-                            parseBatchResults(session.getInputStream(), liveResults);
-                        } catch (IOException ignored) {
-                        }
-                    });
+            final BufferedReader readyReader =
+                    new BufferedReader(new InputStreamReader(session.getInputStream()));
+
+            // Handshake: write ready marker and wait for confirmation so that user approval time
+            // (e.g. root prompts) does not consume the batch execution deadline.
+            writer.writeBytes("echo " + READY_MARKER + "\n");
+            writer.flush();
+            Future<Boolean> handshake = COMMAND_EXECUTOR.submit(() -> {
+                String line;
+                while ((line = readyReader.readLine()) != null) {
+                    if (READY_MARKER.equals(line.trim())) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+            boolean ready;
+            try {
+                ready = handshake.get(ROOT_APPROVAL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                handshake.cancel(true);
+                throw new IOException("Shell handshake timed out or was refused: " + e.getMessage(), e);
+            }
+            if (!ready) {
+                throw new IOException("Shell closed without handshake confirmation");
+            }
+
+            // Shell confirmed ready; now start background stream reader for batch outcomes
+            Future<?> reading = COMMAND_EXECUTOR.submit(() -> {
+                try {
+                    parseBatchResultsFromReader(readyReader, liveResults);
+                } catch (IOException ignored) {
+                }
+            });
             StringBuilder batch = new StringBuilder();
             for (int i = 0; i < commands.size(); i++) {
                 batch.append(batchLine(commands.get(i), offset + i));
@@ -365,7 +397,6 @@ public final class PrivilegedShellUtils {
             ProcessUtils.destroyProcess(writer, process);
         }
     }
-
     private static Process startSession(Backend backend, Context context) throws Exception {
         if (backend == Backend.SHIZUKU) {
             // "-s" reads the commands from this stream. Without an argument sh would take the first

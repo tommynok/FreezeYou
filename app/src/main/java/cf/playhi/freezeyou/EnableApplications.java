@@ -38,7 +38,7 @@ public class EnableApplications extends FreezeYouBaseActivity {
                     oneKeyActionMRoot(EnableApplications.this, false, packages);
                     finish();
                 } else {
-                    oneKeyActionRootAsync(EnableApplications.this, false, packages, this::finish);
+                    oneKeyActionRootAsync(EnableApplications.this, false, packages, true, this::finish);
                 }
             }
         } else {

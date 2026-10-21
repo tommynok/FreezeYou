@@ -429,7 +429,7 @@ object FUFUtils {
             val triggeredTasks = if (shell == null || shell.sessionStarted) {
                 executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
             } else {
-                emptyList()
+                ArrayList()
             }
             sendStatusChangedBroadcast(appContext)
             withContext(Dispatchers.Main) {
@@ -437,6 +437,17 @@ object FUFUtils {
                 onComplete?.run()
             }
         }
+    }
+
+    /**
+     * Java convenience overload to provide a completion callback with default disable/enable mode.
+     */
+    @JvmStatic
+    fun oneKeyActionRootAsync(
+        context: Context, freeze: Boolean, pkgNameList: Array<String>?,
+        onComplete: Runnable?
+    ) {
+        oneKeyActionRootAsync(context, freeze, pkgNameList, true, onComplete)
     }
 
     /**
@@ -551,8 +562,8 @@ object FUFUtils {
         context: Context,
         actuallyChanged: List<String>,
         freeze: Boolean
-    ): List<String> {
-        if (actuallyChanged.isEmpty()) return emptyList()
+    ): ArrayList<String> {
+        if (actuallyChanged.isEmpty()) return ArrayList()
         if (freeze) {
             DataStatisticsUtils.addFreezeTimes(context, actuallyChanged)
             NotificationUtils.deleteNotifications(context, actuallyChanged)
@@ -565,7 +576,7 @@ object FUFUtils {
         if (!freeze) {
             actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
         }
-        return triggered ?: emptyList()
+        return triggered ?: ArrayList()
     }
 
     /**
@@ -576,7 +587,7 @@ object FUFUtils {
         batch: RootBatch,
         succeeded: List<String>,
         failed: List<String>,
-        triggeredTasks: List<String>
+        triggeredTasks: ArrayList<String>
     ) {
         batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
         batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
@@ -616,7 +627,7 @@ object FUFUtils {
         val triggeredTasks = if (shell == null || shell.sessionStarted) {
             executeBackgroundBookkeeping(context, outcomes.actuallyChanged, freeze)
         } else {
-            emptyList()
+            ArrayList()
         }
         sendStatusChangedBroadcast(context)
         showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
