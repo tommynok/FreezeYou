@@ -2,6 +2,7 @@ package cf.playhi.freezeyou.view
 
 import android.app.Application
 import android.graphics.Color
+import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.junit.Assert.assertEquals
@@ -59,13 +60,16 @@ class AppListFastScrollerTest {
     fun testShortWindowDoesNotCrash() {
         val context = RuntimeEnvironment.getApplication()
         val recyclerView = object : RecyclerView(context) {
-            override fun getHeight(): Int = 120 // Short split-screen window (< 204dp)
-            override fun getWidth(): Int = 400
             override fun computeVerticalScrollRange(): Int = 2000
             override fun computeVerticalScrollExtent(): Int = 120
             override fun computeVerticalScrollOffset(): Int = 100
         }
         recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.measure(
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(120, View.MeasureSpec.EXACTLY)
+        )
+        recyclerView.layout(0, 0, 400, 120)
 
         // Must not throw IllegalArgumentException when window height is less than 3 * minThumbHeight
         val scroller = AppListFastScroller(recyclerView)
@@ -77,14 +81,17 @@ class AppListFastScrollerTest {
     fun testNonScrollableListDoesNotInterceptTouch() {
         val context = RuntimeEnvironment.getApplication()
         val recyclerView = object : RecyclerView(context) {
-            override fun getHeight(): Int = 800
-            override fun getWidth(): Int = 400
             // Non-scrollable: range equals extent
             override fun computeVerticalScrollRange(): Int = 800
             override fun computeVerticalScrollExtent(): Int = 800
             override fun computeVerticalScrollOffset(): Int = 0
         }
         recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.measure(
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY)
+        )
+        recyclerView.layout(0, 0, 400, 800)
 
         val scroller = AppListFastScroller(recyclerView)
         assertNotNull(scroller)
