@@ -43,14 +43,19 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
         )
-        if (pkgNames.isNotEmpty()) {
-            oneKeyAction(
-                this, true,
-                pkgNames,
-                selectFUFMode.getValue()!!.toInt()
-            )
+        try {
+            if (pkgNames.isNotEmpty()) {
+                oneKeyAction(
+                    this, true,
+                    pkgNames,
+                    selectFUFMode.getValue()!!.toInt()
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            checkAuto(auto, this)
         }
-        checkAuto(auto, this)
         return super.onStartCommand(intent, flags, startId)
     }
 

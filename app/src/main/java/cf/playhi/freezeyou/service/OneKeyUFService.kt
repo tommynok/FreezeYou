@@ -37,14 +37,19 @@ class OneKeyUFService : FreezeYouBaseService() {
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
         )
-        if (pkgNames.isNotEmpty()) {
-            oneKeyAction(
-                this, false,
-                pkgNames,
-                selectFUFMode.getValue()!!.toInt()
-            )
+        try {
+            if (pkgNames.isNotEmpty()) {
+                oneKeyAction(
+                    this, false,
+                    pkgNames,
+                    selectFUFMode.getValue()!!.toInt()
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            doFinish()
         }
-        doFinish()
         return super.onStartCommand(intent, flags, startId)
     }
 

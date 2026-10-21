@@ -442,9 +442,13 @@ object FUFUtils {
                 }
                 withContext(Dispatchers.Main) {
                     showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
-                }
-                if (bookkeepingException != null) {
-                    throw bookkeepingException
+                    if (bookkeepingException != null) {
+                        bookkeepingException.printStackTrace()
+                        ToastUtils.showToast(
+                            appContext,
+                            appContext.getString(R.string.exception) + bookkeepingException.message
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -659,7 +663,11 @@ object FUFUtils {
         }
         showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
         if (bookkeepingException != null) {
-            throw bookkeepingException
+            bookkeepingException.printStackTrace()
+            ToastUtils.showToast(
+                context,
+                context.getString(R.string.exception) + bookkeepingException.message
+            )
         }
         return RootBatchSummary(outcomes.succeeded, outcomes.failed)
     }
