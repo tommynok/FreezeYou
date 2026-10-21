@@ -96,7 +96,7 @@ public final class DevicePolicyManagerUtils {
         }
 
         // Try ROOT next to avoid breaking Smart Lock / Biometric unlock
-        if (PrivilegedShellUtils.isRootAvailable()) {
+        if (PrivilegedShellUtils.isRootAvailableFast()) {
             try {
                 PrivilegedShellUtils.CommandResult result =
                         PrivilegedShellUtils.runRootCommand("input keyevent 26", 2000L);

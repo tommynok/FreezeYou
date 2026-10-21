@@ -36,6 +36,13 @@ public final class RootUtils {
     }
 
     /**
+     * Checks whether Root permission is already tested and cached, avoiding synchronous su probes.
+     */
+    public static boolean isRootAvailableFast() {
+        return sCachedSuBinary != null;
+    }
+
+    /**
      * Checks whether Root permission is available and functional.
      */
     public static boolean checkRootPermission() {
