@@ -21,6 +21,7 @@ import cf.playhi.freezeyou.utils.AutoAllowListUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.NotificationUtils
 import cf.playhi.freezeyou.utils.OneKeyListUtils
+import cf.playhi.freezeyou.utils.PackageListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
 import cf.playhi.freezeyou.utils.ServiceUtils
 import cf.playhi.freezeyou.utils.TasksUtils
@@ -142,13 +143,13 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
                 checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
                 checkAndMigrateOneKeyListsToMMKV(legacy)
+                checkAndMigrateOneKeyConfig()
                 migrateRemainingTrayDataToMMKV(legacy)
                 deleteTrayStorage(legacy)
             } else {
                 android.util.Log.w("MainApplication", "Skipping Tray-dependent migrations: Tray read had errors")
             }
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
-            checkAndMigrateOneKeyConfig()
         } finally {
             try {
                 lock?.release()
@@ -225,14 +226,15 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 getString(R.string.sOneKeyUFApplicationList),
                 getString(R.string.sFreezeOnceQuit)
             )
-            val storage = DefaultMultiProcessMMKVStorage()
             listKeys.forEach { key ->
                 val pkgNames = legacy.trayValue(key) ?: legacyOneKeyListFromPreferences(key)
                 if (!pkgNames.isNullOrEmpty()) {
-                    storage.putString(key, pkgNames)
+                    val packages = PackageListUtils.parse(pkgNames)
+                    if (packages.isNotEmpty()) {
+                        OneKeyListUtils.addToOneKeyList(this, key, packages.toList())
+                    }
                 }
             }
-            storage.sync()
             migrateLock.createNewFile()
         }
     }
