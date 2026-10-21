@@ -141,11 +141,19 @@ def get_pr_threads(opener, token, pr_num):
             'pr': pr_num,
             'cursor': cursor
         })
-        connection = res['data']['repository']['pullRequest']['reviewThreads']
-        all_threads.extend(connection['nodes'])
-        page_info = connection['pageInfo']
-        if page_info['hasNextPage']:
-            cursor = page_info['endCursor']
+        if not res or not res.get('data'):
+            if res and 'errors' in res:
+                raise RuntimeError(f"GraphQL error: {res['errors']}")
+            raise RuntimeError(f"Empty GraphQL response: {res}")
+        repo = res['data'].get('repository') or {}
+        pr = repo.get('pullRequest') or {}
+        connection = pr.get('reviewThreads')
+        if not connection:
+            raise RuntimeError(f"Failed to retrieve review threads for PR #{pr_num}")
+        all_threads.extend(connection.get('nodes', []))
+        page_info = connection.get('pageInfo') or {}
+        if page_info.get('hasNextPage'):
+            cursor = page_info.get('endCursor')
         else:
             break
     return all_threads
@@ -254,7 +262,14 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None):
     print(f"=== Checking Qodo Review Status for PR #{pr_num} ===")
 
     while True:
-        status = check_qodo_status(opener, token, pr_num)
+        try:
+            status = check_qodo_status(opener, token, pr_num)
+        except Exception as e:
+            if wait and (time.time() - start_time < timeout):
+                print(f"[{time.strftime('%X')}] Warning: transient error during poll ({e}). Retrying in {poll_interval}s...")
+                time.sleep(poll_interval)
+                continue
+            raise
         head_short = status['head_short']
         rev_sha = (status['reviewed_sha'] or 'unknown')[:7]
 
