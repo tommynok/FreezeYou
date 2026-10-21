@@ -42,7 +42,7 @@ public final class AppInfoItem {
             int flags
     ) {
         this(packageName, label, frozen, restorableSystemApp, installTime, updateTime, flags,
-                packageName == null ? "" : packageName);
+                packageName == null || packageName.isEmpty() ? "" : packageName + "@" + updateTime);
     }
 
     private AppInfoItem(
@@ -144,6 +144,11 @@ public final class AppInfoItem {
         return new AppInfoItem(this, label, frozen, newRestorable);
     }
 
+    public AppInfoItem withUpdateTime(long newUpdateTime) {
+        return new AppInfoItem(packageName, label, frozen, restorableSystemApp, installTime, newUpdateTime, flags,
+                packageName.isEmpty() ? "" : packageName + "@" + newUpdateTime);
+    }
+
     /**
      * Content comparison for {@code DiffUtil}. The package name is identity, so it is not looked at
      * here; the icon is deliberately absent, because it is loaded per binding and is not data the
@@ -158,6 +163,7 @@ public final class AppInfoItem {
                 && installTime == other.installTime
                 && updateTime == other.updateTime
                 && flags == other.flags
+                && iconCacheKey.equals(other.iconCacheKey)
                 && (label == null ? other.label == null : label.equals(other.label));
     }
 

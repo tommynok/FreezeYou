@@ -2052,6 +2052,13 @@ public class Main extends FreezeYouBaseActivity {
                 // so dropping its cached copy is what makes the next bind ask again.
                 updated = updated.withLabel(
                         getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
+                long newUpdateTime = row.getUpdateTime();
+                try {
+                    PackageInfo pi = pm.getPackageInfo(pkgName, 0);
+                    newUpdateTime = pi.lastUpdateTime;
+                } catch (Exception ignored) {
+                }
+                updated = updated.withUpdateTime(newUpdateTime);
                 AppIconLoader.evict(pkgName);
             }
             // A restorable system app is drawn as frozen whatever the reported status says, which is

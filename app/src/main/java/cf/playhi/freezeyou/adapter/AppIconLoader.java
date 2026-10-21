@@ -110,8 +110,13 @@ public final class AppIconLoader {
      * Drops one icon. An app that was updated or reinstalled keeps its package name, so the cache
      * key alone cannot tell the old icon from the new one.
      */
-    public static void evict(@NonNull String iconCacheKey) {
-        ICON_CACHE.remove(iconCacheKey);
+    public static void evict(@NonNull String pkgName) {
+        ICON_CACHE.remove(pkgName);
+        for (String key : ICON_CACHE.snapshot().keySet()) {
+            if (key.startsWith(pkgName + "@")) {
+                ICON_CACHE.remove(key);
+            }
+        }
     }
 
     public static void evictAll() {
@@ -119,7 +124,10 @@ public final class AppIconLoader {
     }
 
     @NonNull
-    private static Drawable decode(@NonNull Context context, @NonNull String pkgName) {
+    private static Drawable decode(@NonNull Context context, @NonNull String iconCacheKey) {
+        String pkgName = iconCacheKey.contains("@")
+                ? iconCacheKey.substring(0, iconCacheKey.indexOf('@'))
+                : iconCacheKey;
         Drawable icon = ApplicationIconUtils.getApplicationIcon(
                 context,
                 pkgName,
