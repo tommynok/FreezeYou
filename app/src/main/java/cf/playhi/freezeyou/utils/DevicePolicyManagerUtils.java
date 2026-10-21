@@ -81,7 +81,7 @@ public final class DevicePolicyManagerUtils {
         if (PrivilegedShellUtils.isShizukuAvailable(context)) {
             try {
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runShizukuCommand("input keyevent 26", 2000L);
+                        PrivilegedShellUtils.runShizukuCommand("input keyevent 223", 2000L);
                 if (result.isSuccessful() || !isScreenOn(context)) {
                     return true;
                 }
@@ -99,7 +99,7 @@ public final class DevicePolicyManagerUtils {
         if (PrivilegedShellUtils.isRootAvailableFast()) {
             try {
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runRootCommand("input keyevent 26", 2000L);
+                        PrivilegedShellUtils.runRootCommand("input keyevent 223", 2000L);
                 if (result.isSuccessful() || !isScreenOn(context)) {
                     return true;
                 }
