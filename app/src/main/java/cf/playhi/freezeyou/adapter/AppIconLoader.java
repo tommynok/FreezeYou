@@ -41,6 +41,8 @@ public final class AppIconLoader {
     }
 
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+    private static final java.util.concurrent.ConcurrentHashMap<String, Future<Drawable>> IN_FLIGHT =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     private static final int CACHE_BYTES =
             (int) Math.min(Integer.MAX_VALUE, Runtime.getRuntime().maxMemory() / 8L);
@@ -95,15 +97,37 @@ public final class AppIconLoader {
             return DONE;
         }
         final Context applicationContext = context.getApplicationContext();
-        return EXECUTOR.submit(new Callable<Drawable>() {
+        Future<Drawable> existing = IN_FLIGHT.get(iconCacheKey);
+        if (existing != null && !existing.isDone()) {
+            return EXECUTOR.submit(() -> {
+                try {
+                    Drawable icon = existing.get();
+                    if (icon != null) {
+                        MAIN_HANDLER.post(() -> receiver.onIcon(icon));
+                    }
+                    return icon;
+                } catch (Exception e) {
+                    return null;
+                }
+            });
+        }
+        Future<Drawable> future = EXECUTOR.submit(new Callable<Drawable>() {
             @Override
             public Drawable call() {
-                Drawable icon = decode(applicationContext, iconCacheKey);
-                ICON_CACHE.put(iconCacheKey, icon);
-                MAIN_HANDLER.post(() -> receiver.onIcon(icon));
-                return icon;
+                try {
+                    Drawable icon = decode(applicationContext, iconCacheKey);
+                    if (icon != null && !isFallbackIcon(applicationContext, icon)) {
+                        ICON_CACHE.put(iconCacheKey, icon);
+                    }
+                    MAIN_HANDLER.post(() -> receiver.onIcon(icon));
+                    return icon;
+                } finally {
+                    IN_FLIGHT.remove(iconCacheKey);
+                }
             }
         });
+        IN_FLIGHT.put(iconCacheKey, future);
+        return future;
     }
 
     /**
@@ -141,6 +165,11 @@ public final class AppIconLoader {
     @NonNull
     private static Drawable defaultIcon(@NonNull Context context) {
         return context.getResources().getDrawable(R.mipmap.ic_launcher_round);
+    }
+
+    private static boolean isFallbackIcon(@NonNull Context context, @NonNull Drawable icon) {
+        Drawable def = defaultIcon(context);
+        return icon == def || (icon.getConstantState() != null && icon.getConstantState().equals(def.getConstantState()));
     }
 
     private static int drawableBytes(@NonNull Drawable drawable) {

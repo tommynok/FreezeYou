@@ -61,11 +61,24 @@ public final class DevicePolicyManagerUtils {
      * @return true if screen was locked or already off, false if user action is required
      */
     public static boolean doLockScreen(Context context) {
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        boolean isScreenOn = true;
+        if (pm != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                isScreenOn = pm.isInteractive();
+            } else {
+                isScreenOn = pm.isScreenOn();
+            }
+        }
+        if (!isScreenOn) {
+            return true;
+        }
+
         // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
         if (PrivilegedShellUtils.isShizukuAvailable(context)) {
             try {
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runShizukuCommand("input keyevent 26");
+                        PrivilegedShellUtils.runShizukuCommand("input keyevent 26", 2000L);
                 if (result.isSuccessful()) {
                     return true;
                 }
@@ -78,7 +91,7 @@ public final class DevicePolicyManagerUtils {
         if (PrivilegedShellUtils.isRootAvailable()) {
             try {
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runRootCommand("input keyevent 26");
+                        PrivilegedShellUtils.runRootCommand("input keyevent 26", 2000L);
                 if (result.isSuccessful()) {
                     return true;
                 }
@@ -87,24 +100,20 @@ public final class DevicePolicyManagerUtils {
             }
         }
 
-        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        if (pm == null || pm.isScreenOn()) {
-            DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);
-            ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
-            if (devicePolicyManager != null) {
-                if (devicePolicyManager.isAdminActive(componentName)) {
-                    devicePolicyManager.lockNow();
-                    return true;
-                } else {
-                    openDevicePolicyManager(context);
-                    return false;
-                }
+        DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);
+        ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
+        if (devicePolicyManager != null) {
+            if (devicePolicyManager.isAdminActive(componentName)) {
+                devicePolicyManager.lockNow();
+                return true;
             } else {
-                showToast(context, R.string.devicePolicyManagerNotFound);
+                openDevicePolicyManager(context);
                 return false;
             }
+        } else {
+            showToast(context, R.string.devicePolicyManagerNotFound);
+            return false;
         }
-        return true;
     }
 
     public static boolean isDeviceOwner(Context context) {

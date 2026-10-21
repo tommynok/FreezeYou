@@ -82,7 +82,12 @@ public final class ApplicationIconUtils {
         String path = context.getCacheDir() + "/icon/" + pkgName + ".png";
         if (saveIconCache && new File(path).exists()) {
             drawable = BitmapDrawable.createFromPath(path);
-        } else if (applicationInfo != null) {
+            if (drawable == null || drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+                new File(path).delete();
+                drawable = null;
+            }
+        }
+        if (drawable == null && applicationInfo != null) {
             drawable = applicationInfo.loadIcon(context.getPackageManager());
             if (saveIconCache) {
                 folderCheck(context.getCacheDir() + "/icon");
@@ -119,14 +124,25 @@ public final class ApplicationIconUtils {
     }
 
     private static void writeBitmapToFile(String filePath, Bitmap b) {
+        if (b == null) return;
+        File targetFile = new File(filePath);
+        File tempFile = new File(filePath + ".tmp." + System.nanoTime());
         try {
-            File file = new File(filePath);
-            FileOutputStream fos = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            b.compress(Bitmap.CompressFormat.PNG, 100, bos);
-            bos.flush();
-            bos.close();
+            try (FileOutputStream fos = new FileOutputStream(tempFile);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                b.compress(Bitmap.CompressFormat.PNG, 100, bos);
+                bos.flush();
+            }
+            if (tempFile.exists()) {
+                if (targetFile.exists()) {
+                    targetFile.delete();
+                }
+                tempFile.renameTo(targetFile);
+            }
         } catch (Exception e) {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
             e.printStackTrace();
         }
     }

@@ -12,6 +12,22 @@ import java.util.Locale;
 /** Runs one privileged shell command and retains its real result for the caller. */
 public final class PrivilegedShellUtils {
 
+    private static final java.util.concurrent.atomic.AtomicBoolean sBinderRequested =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    private static final java.util.concurrent.ExecutorService COMMAND_EXECUTOR =
+            java.util.concurrent.Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "privileged-shell");
+                t.setDaemon(true);
+                return t;
+            });
+
+    static {
+        try {
+            rikka.shizuku.Shizuku.addBinderDeadListener(() -> sBinderRequested.set(false));
+        } catch (Throwable ignored) {}
+    }
+
     private PrivilegedShellUtils() {}
 
     public static final class CommandResult {
@@ -34,7 +50,7 @@ public final class PrivilegedShellUtils {
 
     public static boolean isShizukuAvailable(Context context) {
         try {
-            if (!rikka.shizuku.Shizuku.pingBinder() && context != null) {
+            if (!rikka.shizuku.Shizuku.pingBinder() && context != null && sBinderRequested.compareAndSet(false, true)) {
                 rikka.shizuku.ShizukuProvider.requestBinderForNonProviderProcess(context.getApplicationContext());
             }
             return rikka.shizuku.Shizuku.pingBinder()
@@ -46,6 +62,10 @@ public final class PrivilegedShellUtils {
     }
 
     public static CommandResult runShizukuCommand(String command) throws Exception {
+        return runShizukuCommand(command, 5000L);
+    }
+
+    public static CommandResult runShizukuCommand(String command, long timeoutMs) throws Exception {
         long start = System.currentTimeMillis();
         boolean debug = DebugModeUtils.isDebugModeEnabled();
         if (debug) {
@@ -53,7 +73,7 @@ public final class PrivilegedShellUtils {
         }
         Process process = rikka.shizuku.Shizuku.newProcess(
                 new String[]{"sh", "-c", redirectOutput(command)}, null, null);
-        CommandResult result = collectResult(process);
+        CommandResult result = collectResult(process, timeoutMs);
         if (debug) {
             Log.d("FreezeYouDebug", "runShizukuCommand finished in " + (System.currentTimeMillis() - start)
                     + " ms, exitCode=" + result.exitCode + ", output=" + result.output);
@@ -65,8 +85,11 @@ public final class PrivilegedShellUtils {
         return RootUtils.checkRootPermission();
     }
 
-    public static CommandResult runRootCommand(String command)
-            throws IOException, InterruptedException {
+    public static CommandResult runRootCommand(String command) throws Exception {
+        return runRootCommand(command, 5000L);
+    }
+
+    public static CommandResult runRootCommand(String command, long timeoutMs) throws Exception {
         long start = System.currentTimeMillis();
         boolean debug = DebugModeUtils.isDebugModeEnabled();
         if (debug) {
@@ -74,7 +97,7 @@ public final class PrivilegedShellUtils {
         }
         Process process = Runtime.getRuntime().exec(
                 new String[]{RootUtils.getSuBinary(), "-c", redirectOutput(command)});
-        CommandResult result = collectResult(process);
+        CommandResult result = collectResult(process, timeoutMs);
         if (debug) {
             Log.d("FreezeYouDebug", "runRootCommand finished in " + (System.currentTimeMillis() - start)
                     + " ms, exitCode=" + result.exitCode + ", output=" + result.output);
@@ -110,10 +133,9 @@ public final class PrivilegedShellUtils {
         return "(" + command + ") 2>&1";
     }
 
-    private static CommandResult collectResult(Process process)
-            throws IOException, InterruptedException {
-        StringBuilder output = new StringBuilder();
-        try {
+    private static CommandResult collectResult(Process process, long timeoutMs) throws Exception {
+        java.util.concurrent.Future<CommandResult> future = COMMAND_EXECUTOR.submit(() -> {
+            StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()))) {
                 String line;
@@ -123,6 +145,13 @@ public final class PrivilegedShellUtils {
                 }
             }
             return new CommandResult(process.waitFor(), output.toString());
+        });
+        try {
+            return future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            future.cancel(true);
+            process.destroy();
+            throw e;
         } finally {
             process.destroy();
         }

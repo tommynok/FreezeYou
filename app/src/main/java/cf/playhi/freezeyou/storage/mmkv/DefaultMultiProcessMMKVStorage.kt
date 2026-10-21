@@ -7,6 +7,14 @@ class DefaultMultiProcessMMKVStorage : FreezeYouMMKVStorage {
     override val mMMKV: MMKV
         get() = defaultMMKV
 
+    fun lock() {
+        mMMKV.lock()
+    }
+
+    fun unlock() {
+        mMMKV.unlock()
+    }
+
     companion object {
         const val MMKV_ID = "DefaultMultiProcessKV"
         val defaultMMKV: MMKV by lazy {

@@ -34,20 +34,25 @@ public final class OneKeyListUtils {
         }
         synchronized (LIST_LOCK) {
             final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            final String currentPkgNames = storage.getString(key, "");
-            String updatedPkgNames = currentPkgNames;
-            boolean changed = false;
-            for (String pkgName : pkgNamesToAdd) {
-                if (pkgName != null && !pkgName.trim().isEmpty() && !existsInOneKeyList(updatedPkgNames, pkgName)) {
-                    updatedPkgNames = addPkgToPkgNames(updatedPkgNames, pkgName);
-                    changed = true;
+            storage.lock();
+            try {
+                final String currentPkgNames = storage.getString(key, "");
+                String updatedPkgNames = currentPkgNames;
+                boolean changed = false;
+                for (String pkgName : pkgNamesToAdd) {
+                    if (pkgName != null && !pkgName.trim().isEmpty() && !existsInOneKeyList(updatedPkgNames, pkgName)) {
+                        updatedPkgNames = addPkgToPkgNames(updatedPkgNames, pkgName);
+                        changed = true;
+                    }
                 }
+                if (changed) {
+                    storage.putString(key, updatedPkgNames).sync();
+                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+                }
+                return true;
+            } finally {
+                storage.unlock();
             }
-            if (changed) {
-                storage.putString(key, updatedPkgNames).sync();
-                CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
-            }
-            return true;
         }
     }
 
@@ -64,20 +69,25 @@ public final class OneKeyListUtils {
         }
         synchronized (LIST_LOCK) {
             final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            final String currentPkgNames = storage.getString(key, "");
-            String updatedPkgNames = currentPkgNames;
-            boolean changed = false;
-            for (String pkgName : pkgNamesToRemove) {
-                if (pkgName != null && existsInOneKeyList(updatedPkgNames, pkgName)) {
-                    updatedPkgNames = removePkgFromPkgNames(updatedPkgNames, pkgName);
-                    changed = true;
+            storage.lock();
+            try {
+                final String currentPkgNames = storage.getString(key, "");
+                String updatedPkgNames = currentPkgNames;
+                boolean changed = false;
+                for (String pkgName : pkgNamesToRemove) {
+                    if (pkgName != null && existsInOneKeyList(updatedPkgNames, pkgName)) {
+                        updatedPkgNames = removePkgFromPkgNames(updatedPkgNames, pkgName);
+                        changed = true;
+                    }
                 }
+                if (changed) {
+                    storage.putString(key, updatedPkgNames).sync();
+                    CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
+                }
+                return true;
+            } finally {
+                storage.unlock();
             }
-            if (changed) {
-                storage.putString(key, updatedPkgNames).sync();
-                CrossProcessPreferenceObserver.notifyKeyChanged(context, key);
-            }
-            return true;
         }
     }
 
