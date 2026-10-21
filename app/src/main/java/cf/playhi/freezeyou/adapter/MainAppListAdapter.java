@@ -81,8 +81,8 @@ public class MainAppListAdapter
         void onItemLongClick(@NonNull View view, int position, @NonNull AppInfoItem item);
     }
 
-    private final AsyncListDiffer mDiffer = new AsyncListDiffer<>(
-            this, new AsyncDifferConfig.Builder<AppInfoItem>(DIFF_CALLBACK).build());
+    private final AsyncListDiffer<AppInfoItem> mDiffer = new AsyncListDiffer<>(
+            this, new AsyncDifferConfig.Builder<>(DIFF_CALLBACK).build());
 
     private final LayoutInflater mInflater;
     private final Context mContext;
