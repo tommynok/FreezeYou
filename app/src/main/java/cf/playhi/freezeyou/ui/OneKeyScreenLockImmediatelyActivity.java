@@ -20,8 +20,10 @@ public class OneKeyScreenLockImmediatelyActivity extends FreezeYouBaseActivity {
             setResult(RESULT_OK, intent);
             finish();
         } else {
-            DevicePolicyManagerUtils.doLockScreen(this);
-            finish();
+            new Thread(() -> {
+                DevicePolicyManagerUtils.doLockScreen(OneKeyScreenLockImmediatelyActivity.this);
+                runOnUiThread(OneKeyScreenLockImmediatelyActivity.this::finish);
+            }, "LockShortcutThread").start();
         }
     }
 

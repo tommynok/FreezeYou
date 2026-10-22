@@ -21,37 +21,40 @@ public final class DevicePolicyManagerUtils {
         return (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
     }
 
-    public static void openDevicePolicyManager(Context context) {
-        showToast(context, R.string.needActiveDeviceAdmin);
+    public static void openDevicePolicyManager(final Context context) {
+        if (context == null) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            showToast(context, R.string.needActiveDeviceAdmin);
 
-        // 1. Primary: Device Admin settings list (standard Android settings screen)
-        try {
-            Intent adminListIntent = new Intent("android.settings.DEVICE_ADMIN_SETTINGS");
-            adminListIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(adminListIntent);
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            // 1. Primary: Device Admin settings list (standard Android settings screen)
+            try {
+                Intent adminListIntent = new Intent("android.settings.DEVICE_ADMIN_SETTINGS");
+                adminListIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(adminListIntent);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        // 2. Fallback: Security settings (universal fallback across all Android versions and skins)
-        try {
-            Intent securityIntent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
-            securityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(securityIntent);
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            // 2. Fallback: Security settings (universal fallback across all Android versions and skins)
+            try {
+                Intent securityIntent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+                securityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(securityIntent);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        // 3. Fallback: General Settings
-        try {
-            Intent generalSettingsIntent = new Intent(Settings.ACTION_SETTINGS);
-            generalSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(generalSettingsIntent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            // 3. Fallback: General Settings
+            try {
+                Intent generalSettingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                generalSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(generalSettingsIntent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -80,9 +83,10 @@ public final class DevicePolicyManagerUtils {
         // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
         if (PrivilegedShellUtils.isShizukuAvailable(context)) {
             try {
+                String cmd = Build.VERSION.SDK_INT >= 20 ? "input keyevent 223" : "input keyevent 26";
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runShizukuCommand("input keyevent 223", 2000L);
-                if (result.isSuccessful() || !isScreenOn(context)) {
+                        PrivilegedShellUtils.runShizukuCommand(cmd, 2000L);
+                if (!isScreenOn(context) || (result.isSuccessful() && Build.VERSION.SDK_INT >= 20)) {
                     return true;
                 }
             } catch (Exception e) {
@@ -96,11 +100,12 @@ public final class DevicePolicyManagerUtils {
         }
 
         // Try ROOT next to avoid breaking Smart Lock / Biometric unlock
-        if (PrivilegedShellUtils.isRootAvailableFast()) {
+        if (PrivilegedShellUtils.isRootAvailable()) {
             try {
+                String cmd = Build.VERSION.SDK_INT >= 20 ? "input keyevent 223" : "input keyevent 26";
                 PrivilegedShellUtils.CommandResult result =
-                        PrivilegedShellUtils.runRootCommand("input keyevent 223", 2000L);
-                if (result.isSuccessful() || !isScreenOn(context)) {
+                        PrivilegedShellUtils.runRootCommand(cmd, 2000L);
+                if (!isScreenOn(context) || (result.isSuccessful() && Build.VERSION.SDK_INT >= 20)) {
                     return true;
                 }
             } catch (Exception e) {

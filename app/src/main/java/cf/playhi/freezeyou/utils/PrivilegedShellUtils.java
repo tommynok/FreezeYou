@@ -149,10 +149,6 @@ public final class PrivilegedShellUtils {
         return RootUtils.checkRootPermission();
     }
 
-    public static boolean isRootAvailableFast() {
-        return RootUtils.isRootAvailableFast();
-    }
-
     public static CommandResult runRootCommand(String command) throws Exception {
         return runRootCommand(command, 0L);
     }
