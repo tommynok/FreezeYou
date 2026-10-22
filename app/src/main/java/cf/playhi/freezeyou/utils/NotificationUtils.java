@@ -72,6 +72,12 @@ public final class NotificationUtils {
      */
     private static final Object SUMMARY_LOCK = new Object();
 
+    /**
+     * Posting the summary re-posts a child, and re-posting a child asks for the summary, so one of
+     * the two has to stop. This says which one is already on its way round.
+     */
+    private static volatile boolean sIsUpdatingSummary = false;
+
     public static void createFUFQuickNotification(Context context, String pkgName, int iconResId, Bitmap bitmap) {
         createFUFQuickNotification(context, pkgName, iconResId, bitmap, true);
     }
@@ -252,62 +258,86 @@ public final class NotificationUtils {
             return;
         }
         // Reading the list and posting what was read from it are one step: a second thread freezing
-        // its own applications in between would leave a card counting work that is already done.
-        // Nothing is held across processes here, because a stale card is cheaper than a mutex.
+        // its own applications in between would leave a card counting work that is already done. A
+        // lock in this process cannot reach the other process this app runs in, so that one is
+        // checked against the stored list at the end instead of waited on.
         synchronized (SUMMARY_LOCK) {
-            List<String> notifying = getNotifyingPackages();
-            if (notifying.size() < SUMMARY_MIN_CHILDREN) {
-                notificationManager.cancel(SUMMARY_NOTIFICATION_ID);
-                if (notifying.size() == 1) {
-                    // The header it hung from is gone, so the survivor goes back without the group.
-                    FUFUtils.checkAndCreateFUFQuickNotification(context, notifying.get(0), false);
-                }
+            if (sIsUpdatingSummary) {
                 return;
             }
+            sIsUpdatingSummary = true;
+            try {
+                DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+                String snapshot = storage.getString(NOTIFYING, "");
+                List<String> notifying = Arrays.asList(PackageListUtils.parse(snapshot));
+                if (notifying.size() < SUMMARY_MIN_CHILDREN) {
+                    notificationManager.cancel(SUMMARY_NOTIFICATION_ID);
+                    if (notifying.size() == 1) {
+                        // The header it hung from is gone, so the survivor goes back without the group.
+                        FUFUtils.checkAndCreateFUFQuickNotification(context, notifying.get(0), false);
+                    }
+                    return;
+                }
 
-            Notification.Builder summaryBuilder;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ensureQuickFufChannel(context, notificationManager);
-                summaryBuilder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
-            } else {
-                summaryBuilder = new Notification.Builder(context);
+                Notification.Builder summaryBuilder;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ensureQuickFufChannel(context, notificationManager);
+                    summaryBuilder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
+                } else {
+                    summaryBuilder = new Notification.Builder(context);
+                }
+                summaryBuilder.setSmallIcon(R.drawable.ic_notification);
+                summaryBuilder.setContentTitle(context.getString(R.string.app_name));
+                summaryBuilder.setContentText(
+                        context.getString(R.string.quickFUFGroupSummaryContent, notifying.size()));
+                // A tap opens the list of what is unfrozen, and the card has to survive it: with auto
+                // cancel the header disappears and SystemUI splits the remaining stack on its own again.
+                summaryBuilder.setAutoCancel(false);
+                summaryBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
+                summaryBuilder.setGroup(GROUP_KEY_QUICK_FUF);
+                summaryBuilder.setGroupSummary(true);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // The children are silenced as the group alerts on the summary, so the summary has to
+                    // claim that alert itself or a batch makes no sound at all.
+                    summaryBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
+                }
+
+                Intent manageIntent = new Intent(context, FUFNotificationsManageActivity.class);
+                PendingIntent managePendingIntent = PendingIntent.getActivity(
+                        context, SUMMARY_NOTIFICATION_ID, manageIntent,
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                                : PendingIntent.FLAG_UPDATE_CURRENT);
+                summaryBuilder.setContentIntent(managePendingIntent);
+
+                Intent freezeAllIntent = new Intent(context, FUFService.class)
+                        .putExtra("freeze", true)
+                        .putExtra("packages", notifying.toArray(new String[0]));
+                PendingIntent freezeAllPendingIntent = PendingIntent.getService(
+                        context, SUMMARY_NOTIFICATION_ID, freezeAllIntent,
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                                : PendingIntent.FLAG_UPDATE_CURRENT);
+                summaryBuilder.addAction(R.drawable.ic_notification,
+                        context.getString(R.string.freezeAll), freezeAllPendingIntent);
+
+                // The other process this app runs in writes the same list, and no lock in this process
+                // reaches it. Whoever moved the list posts the card that describes it, so a rebuild
+                // working from what is now the past is dropped rather than reviving an old count.
+                if (!snapshot.equals(storage.getString(NOTIFYING, ""))) {
+                    return;
+                }
+                notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryBuilder.build());
+
+                if (notifying.size() == SUMMARY_MIN_CHILDREN) {
+                    // Growing back from a lone card: that card was posted without the group, and a
+                    // header only collects the notifications that ask for it. After the summary, so
+                    // that its own re-write of the stored list cannot abort the post above.
+                    FUFUtils.checkAndCreateFUFQuickNotification(context, notifying.get(0), true);
+                }
+            } finally {
+                sIsUpdatingSummary = false;
             }
-            summaryBuilder.setSmallIcon(R.drawable.ic_notification);
-            summaryBuilder.setContentTitle(context.getString(R.string.app_name));
-            summaryBuilder.setContentText(
-                    context.getString(R.string.quickFUFGroupSummaryContent, notifying.size()));
-            // A tap opens the list of what is unfrozen, and the card has to survive it: with auto
-            // cancel the header disappears and SystemUI splits the remaining stack on its own again.
-            summaryBuilder.setAutoCancel(false);
-            summaryBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
-            summaryBuilder.setGroup(GROUP_KEY_QUICK_FUF);
-            summaryBuilder.setGroupSummary(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // The children are silenced as the group alerts on the summary, so the summary has to
-                // claim that alert itself or a batch makes no sound at all.
-                summaryBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
-            }
-
-            Intent manageIntent = new Intent(context, FUFNotificationsManageActivity.class);
-            PendingIntent managePendingIntent = PendingIntent.getActivity(
-                    context, SUMMARY_NOTIFICATION_ID, manageIntent,
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                            : PendingIntent.FLAG_UPDATE_CURRENT);
-            summaryBuilder.setContentIntent(managePendingIntent);
-
-            Intent freezeAllIntent = new Intent(context, FUFService.class)
-                    .putExtra("freeze", true)
-                    .putExtra("packages", notifying.toArray(new String[0]));
-            PendingIntent freezeAllPendingIntent = PendingIntent.getService(
-                    context, SUMMARY_NOTIFICATION_ID, freezeAllIntent,
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                            : PendingIntent.FLAG_UPDATE_CURRENT);
-            summaryBuilder.addAction(R.drawable.ic_notification,
-                    context.getString(R.string.freezeAll), freezeAllPendingIntent);
-
-            notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryBuilder.build());
         }
     }
 
