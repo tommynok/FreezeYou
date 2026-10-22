@@ -1173,7 +1173,10 @@ object FUFUtils {
     }
 
     @JvmStatic
-    fun checkAndCreateFUFQuickNotification(context: Context?, pkgName: String?) {
+    @JvmOverloads
+    fun checkAndCreateFUFQuickNotification(
+        context: Context?, pkgName: String?, isGrouped: Boolean = true
+    ) {
         if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
             NotificationUtils.createFUFQuickNotification(
                 context, pkgName, R.drawable.ic_notification,
@@ -1184,7 +1187,8 @@ object FUFUtils {
                         ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context),
                         false
                     )
-                )
+                ),
+                isGrouped
             )
         }
     }

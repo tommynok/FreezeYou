@@ -10,6 +10,7 @@ import android.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -89,10 +90,19 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
     private void reNotifyUnfrozen(Context context, List<String> pkgNames) {
         PackageManager pm = context.getPackageManager();
+        List<String> alreadyFrozen = new ArrayList<>();
         for (String aPkgName : pkgNames) {
             if (!checkFrozenStatus(context, aPkgName, pm)) {
                 checkAndCreateFUFQuickNotification(context, aPkgName);
+            } else {
+                alreadyFrozen.add(aPkgName);
             }
+        }
+        // Something froze the app while the phone was off, so its name is still on a list of
+        // notifications that no longer exist. Leaving it there keeps the count on the summary card
+        // wrong from the first screen after boot, and one pass takes the whole lot out at once.
+        if (!alreadyFrozen.isEmpty()) {
+            NotificationUtils.deleteNotifying(context, alreadyFrozen);
         }
     }
 
