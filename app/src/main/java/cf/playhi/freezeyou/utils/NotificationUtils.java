@@ -60,9 +60,6 @@ public final class NotificationUtils {
      * safe across processes, but "read the list, decide, write the list back" is not: two unfreezes
      * that finish together can both read the same list, and the write that lands last describes only
      * its own application - the other keeps a card on screen that nothing records any more.
-     *
-     * Deliberately an in-process monitor - no file or IPC locking. A cross-process mutex would need a
-     * shared memory region of its own to be correct, and the window it protects is a few lines.
      */
     private static final Object NOTIFYING_LOCK = new Object();
 
@@ -99,25 +96,23 @@ public final class NotificationUtils {
             // Create an Intent for the activity you want to start
             Intent resultIntent;
             PendingIntent resultPendingIntent;
+            int pendingIntentFlags =
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                            : PendingIntent.FLAG_UPDATE_CURRENT;
             if (freezeImmediately) {
                 resultIntent = new Intent(context, FUFService.class)
                         .putExtra("pkgName", pkgName)
                         .putExtra("single", true)
                         .putExtra("freeze", true);
-                resultPendingIntent =
-                        PendingIntent.getService(
-                                context, mId, resultIntent,
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                        : PendingIntent.FLAG_UPDATE_CURRENT);
+                resultPendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        ? PendingIntent.getForegroundService(context, mId, resultIntent, pendingIntentFlags)
+                        : PendingIntent.getService(context, mId, resultIntent, pendingIntentFlags);
             } else {
                 resultIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
                 resultPendingIntent =
                         PendingIntent.getActivity(
-                                context, mId, resultIntent,
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                        : PendingIntent.FLAG_UPDATE_CURRENT);
+                                context, mId, resultIntent, pendingIntentFlags);
             }
             mBuilder.setContentIntent(resultPendingIntent);
             NotificationManager mNotificationManager =
@@ -126,10 +121,15 @@ public final class NotificationUtils {
                 mNotificationManager.notify(mId, mBuilder.build());
                 synchronized (NOTIFYING_LOCK) {
                     DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-                    String notifying = storage.getString(NOTIFYING, "");
-                    String updated = addToNotifyingList(notifying, pkgName);
-                    if (!updated.equals(notifying)) {
-                        storage.putString(NOTIFYING, updated).sync();
+                    storage.lock();
+                    try {
+                        String notifying = storage.getString(NOTIFYING, "");
+                        String updated = addToNotifyingList(notifying, pkgName);
+                        if (!updated.equals(notifying)) {
+                            storage.putString(NOTIFYING, updated).sync();
+                        }
+                    } finally {
+                        storage.unlock();
                     }
                 }
             }
@@ -169,10 +169,6 @@ public final class NotificationUtils {
         for (String pkgName : pkgNames) {
             mNotificationManager.cancel(pkgName.hashCode());
         }
-        // These applications were counted by the batch card as much as carried on their own, so the
-        // card comes down here and, with the batch card switched on, deleteNotifying puts back the
-        // one that fits what is left.
-        mNotificationManager.cancel(BATCH_NOTIFICATION_ID);
         deleteNotifying(context, pkgNames);
     }
 
@@ -198,39 +194,47 @@ public final class NotificationUtils {
      * hold a notification of their own, so the list simply gets shorter.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
-        // Held down to the last cancel, not just over the store write: a card rebuilt from the list
-        // before the write is finished describes applications that are no longer on it.
+        String singleSurvivor = null;
+        List<String> batchSurvivors = null;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            String notifying = storage.getString(NOTIFYING, "");
-            String updated = removeFromNotifyingList(notifying, pkgNames);
-            if (!updated.equals(notifying)) {
-                storage.putString(NOTIFYING, updated).sync();
+            String updated;
+            storage.lock();
+            try {
+                String notifying = storage.getString(NOTIFYING, "");
+                updated = removeFromNotifyingList(notifying, pkgNames);
+                if (!updated.equals(notifying)) {
+                    storage.putString(NOTIFYING, updated).sync();
+                }
+            } finally {
+                storage.unlock();
             }
             List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
             NotificationManager notificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager == null) {
-                return;
+            if (notificationManager != null) {
+                if (!combineBatchQuickNotification.getValue(null)) {
+                    // By default every application keeps a notification of its own, so the ones left on
+                    // the list are already on screen and nothing has to be rebuilt as the list shrinks.
+                    // The card id is cancelled anyway: one posted while the setting was on can still be
+                    // standing, and it would go on counting applications that have since frozen.
+                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                } else if (remaining.isEmpty()) {
+                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                } else if (remaining.size() == 1) {
+                    // A card counting a batch says nothing useful about one application, so it goes and the
+                    // ordinary notification takes over: it names and shows the icon of that application.
+                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                    singleSurvivor = remaining.get(0);
+                } else {
+                    batchSurvivors = remaining;
+                }
             }
-            if (!combineBatchQuickNotification.getValue(null)) {
-                // By default every application keeps a notification of its own, so the ones left on
-                // the list are already on screen and nothing has to be rebuilt as the list shrinks.
-                // The card id is cancelled anyway: one posted while the setting was on can still be
-                // standing, and it would go on counting applications that have since frozen.
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                return;
-            }
-            if (remaining.isEmpty()) {
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-            } else if (remaining.size() == 1) {
-                // A card counting a batch says nothing useful about one application, so it goes and the
-                // ordinary notification takes over: it names and shows the icon of that application.
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                FUFUtils.checkAndCreateFUFQuickNotification(context, remaining.get(0));
-            } else {
-                createBatchQuickNotification(context, remaining);
-            }
+        }
+        if (singleSurvivor != null) {
+            FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
+        } else if (batchSurvivors != null) {
+            createBatchQuickNotification(context, batchSurvivors);
         }
     }
 
@@ -268,10 +272,16 @@ public final class NotificationUtils {
         }
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            String notifying = storage.getString(NOTIFYING, "");
-            String updated = addBatchToNotifyingList(notifying, pkgNames);
-            if (!updated.equals(notifying)) {
-                storage.putString(NOTIFYING, updated).sync();
+            String updated;
+            storage.lock();
+            try {
+                String notifying = storage.getString(NOTIFYING, "");
+                updated = addBatchToNotifyingList(notifying, pkgNames);
+                if (!updated.equals(notifying)) {
+                    storage.putString(NOTIFYING, updated).sync();
+                }
+            } finally {
+                storage.unlock();
             }
 
             // The card is built from the whole stored list rather than from the batch that asked for
@@ -327,8 +337,9 @@ public final class NotificationUtils {
             Intent freezeAllIntent = new Intent(context, FUFService.class)
                     .putExtra("freeze", true)
                     .putExtra("packages", packages);
-            PendingIntent freezeAllPendingIntent = PendingIntent.getService(
-                    context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
+            PendingIntent freezeAllPendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? PendingIntent.getForegroundService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags)
+                    : PendingIntent.getService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
             builder.addAction(R.drawable.ic_notification,
                     context.getString(R.string.freezeAll), freezeAllPendingIntent);
 
