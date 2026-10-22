@@ -598,10 +598,15 @@ object FUFUtils {
             context, actuallyChanged, if (freeze) "onFApplications" else "onUFApplications"
         )
         if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
-            if (actuallyChanged.size == 1) {
-                checkAndCreateFUFQuickNotification(context, actuallyChanged[0])
-            } else if (actuallyChanged.size > 1) {
+            // One notification per application, the way the system stacks them into a bundle of its
+            // own accord. The single card for the lot is opt-in, and worth having only when there is
+            // more than one application to put on it.
+            if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                && actuallyChanged.size > 1
+            ) {
                 NotificationUtils.createBatchQuickNotification(context, actuallyChanged)
+            } else {
+                actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
             }
         }
         return triggered ?: ArrayList()
@@ -737,6 +742,7 @@ object FUFUtils {
             )
             else -> if (pkgNameList != null) {
                 val failedPkgNames = mutableListOf<String>()
+                val unfrozenPkgNames = mutableListOf<String>()
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
@@ -747,6 +753,8 @@ object FUFUtils {
                         ) {
                             if (!processAction(context, aPkgName, apiMode, !freeze, false)) {
                                 failedPkgNames.add(aPkgName)
+                            } else if (!freeze) {
+                                unfrozenPkgNames.add(aPkgName)
                             }
                         }
                     } catch (e: Exception) {
@@ -759,6 +767,16 @@ object FUFUtils {
                     showFailedApplicationsToast(context, failedPkgNames)
                 } else if (!lesserToast.getValue()) {
                     ToastUtils.showToast(context, R.string.executed)
+                }
+                // processAction has already put a notification out for each of these, one per
+                // application, which is what this loop used to leave standing however many the batch
+                // was. With the batch card switched on it is asked for once, at the end, and takes
+                // the individual cards down as it goes up.
+                if (!freeze
+                    && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                    && unfrozenPkgNames.size > 1
+                ) {
+                    NotificationUtils.createBatchQuickNotification(context, unfrozenPkgNames)
                 }
             }
         }
@@ -948,14 +966,17 @@ object FUFUtils {
 
             // Last, and after the list has been told to refresh and the toast has been shown,
             // because this is the slowest part of an unfreeze and nothing waits on its result.
-            // A batch is one card naming the applications rather than one per application, so the
-            // per-application cost left is the package manager lookup for the name: no icon
-            // decoded, no bitmap drawn, one binder transaction instead of one each.
+            // Each application gets a notification of its own, with its own icon: that is what the
+            // system stacks into a bundle, and the cost of it — a package manager lookup and an
+            // icon decoded — is the price of the stock behaviour. The single card for the batch is
+            // opt-in and cheaper, because it names the applications without decoding their icons.
             if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
-                if (succeeded.size == 1) {
-                    checkAndCreateFUFQuickNotification(appContext, succeeded[0])
-                } else if (succeeded.size > 1) {
+                if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                    && succeeded.size > 1
+                ) {
                     NotificationUtils.createBatchQuickNotification(appContext, succeeded)
+                } else {
+                    succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
                 }
             }
 

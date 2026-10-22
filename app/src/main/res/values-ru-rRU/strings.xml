@@ -34,8 +34,10 @@
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и еще %1$d</string>
+    <string name="andMoreApplications">… и еще %1$d</string>
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
+    <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
@@ -379,6 +381,7 @@
     <string name="jumpToSysInstaller">Перейти к системному установщику</string>
     <string name="appearance">Внешний вид</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Создать уведомление о быстрой заморозке после разморозки</string>
+    <string name="combineBatchQuickNotification">Объединять пакетные уведомления</string>
     <string name="executionResult_colon_message">Результат выполнения: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат неизвестен (вероятно успех)</string>
     <string name="unknownError">Неизвестная ошибка</string>

@@ -22,6 +22,7 @@ import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.VersionUtils;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.onekeyFreezeWhenLockScreen;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkAndCreateFUFQuickNotification;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen;
@@ -105,12 +106,15 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         if (!alreadyFrozen.isEmpty()) {
             NotificationUtils.deleteNotifying(context, alreadyFrozen);
         }
-        // What is still unfrozen gets one card for the batch rather than one per application, so the
-        // boot does not put twenty notifications on a screen nobody is looking at.
-        if (stillUnfrozen.size() == 1) {
-            checkAndCreateFUFQuickNotification(context, stillUnfrozen.get(0));
-        } else if (stillUnfrozen.size() > 1) {
+        // One notification per application, as they were put out in the first place. The single card
+        // for the whole lot is the user's own choice; it is also what keeps a boot that unfroze
+        // twenty applications from leaving twenty rows on a screen nobody is looking at.
+        if (combineBatchQuickNotification.getValue(null) && stillUnfrozen.size() > 1) {
             NotificationUtils.createBatchQuickNotification(context, stillUnfrozen);
+        } else {
+            for (String aPkgName : stillUnfrozen) {
+                checkAndCreateFUFQuickNotification(context, aPkgName);
+            }
         }
     }
 

@@ -145,6 +145,13 @@ enum class DefaultMultiProcessMMKVStorageBooleanKeys : AbstractMMKVKey<Boolean> 
             CATEGORY_SETTINGS or CATEGORY_SETTINGS_NOTIFICATION or CATEGORY_SETTINGS_NOTIFICATION_FUF
     },
 
+    combineBatchQuickNotification {
+        override fun defaultValue(): Boolean = false
+        override fun titleTextStringId(): Int = R.string.combineBatchQuickNotification
+        override fun category(): Int =
+            CATEGORY_SETTINGS or CATEGORY_SETTINGS_NOTIFICATION or CATEGORY_SETTINGS_NOTIFICATION_FUF
+    },
+
     notificationBarFreezeImmediately {
         override fun defaultValue(): Boolean = true
         override fun titleTextStringId(): Int = R.string.notificationBarFreezeImmediately

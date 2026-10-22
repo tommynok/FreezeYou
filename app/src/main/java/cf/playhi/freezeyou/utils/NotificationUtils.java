@@ -24,6 +24,7 @@ import cf.playhi.freezeyou.receiver.NotificationDeletedReceiver;
 import cf.playhi.freezeyou.service.FUFService;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableClickDisappear;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableSlideOut;
@@ -169,7 +170,8 @@ public final class NotificationUtils {
             mNotificationManager.cancel(pkgName.hashCode());
         }
         // These applications were counted by the batch card as much as carried on their own, so the
-        // card comes down here and deleteNotifying puts back the one that fits what is left.
+        // card comes down here and, with the batch card switched on, deleteNotifying puts back the
+        // one that fits what is left.
         mNotificationManager.cancel(BATCH_NOTIFICATION_ID);
         deleteNotifying(context, pkgNames);
     }
@@ -191,7 +193,9 @@ public final class NotificationUtils {
      * clearNotifyingRecord} one at a time would rewrite the stored string once per application.
      *
      * The card still standing is rebuilt from what is left rather than from what was just taken out,
-     * because one application freezing out of a batch of ten leaves nine to describe.
+     * because one application freezing out of a batch of ten leaves nine to describe. That only
+     * happens with the batch card switched on: by default the applications left behind each still
+     * hold a notification of their own, so the list simply gets shorter.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
         // Held down to the last cancel, not just over the store write: a card rebuilt from the list
@@ -207,6 +211,14 @@ public final class NotificationUtils {
             NotificationManager notificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (notificationManager == null) {
+                return;
+            }
+            if (!combineBatchQuickNotification.getValue(null)) {
+                // By default every application keeps a notification of its own, so the ones left on
+                // the list are already on screen and nothing has to be rebuilt as the list shrinks.
+                // The card id is cancelled anyway: one posted while the setting was on can still be
+                // standing, and it would go on counting applications that have since frozen.
+                notificationManager.cancel(BATCH_NOTIFICATION_ID);
                 return;
             }
             if (remaining.isEmpty()) {
@@ -226,9 +238,14 @@ public final class NotificationUtils {
      * One standalone card for the applications currently notified about: the count on the collapsed
      * line, the names when it is expanded, and one action that freezes the lot.
      *
+     * Only posted when {@code combineBatchQuickNotification} is on. The default is the stock
+     * behaviour — one notification per application, each with its own icon, which SystemUI stacks by
+     * itself — and this card replaces that with a single row for the user who would rather have one
+     * "freeze all" than a dozen.
+     *
      * This is what a group was tried for and is simpler than it. A group is subject to SystemUI's own
      * arithmetic - a header's action buttons get dropped and the children it shows are capped - while
-     * one ordinary notification of our own keeps its buttons and lists every application in its text.
+     * one ordinary notification of our own keeps its buttons and lists the applications in its text.
      *
      * @param pkgNames the applications to put on the stored list. The card itself is built from
      *                 whatever the list holds afterwards, so a second batch adds to the card instead
@@ -239,9 +256,9 @@ public final class NotificationUtils {
             return;
         }
         // Checked here and not only where an unfreeze asks for the card, because a removal from the
-        // notifying list rebuilds this card too: with the setting off it has to stay off whichever
+        // notifying list rebuilds this card too: with either setting off it has to stay off whichever
         // way the list moved.
-        if (!createQuickFUFNotiAfterUnfrozen.getValue(null)) {
+        if (!createQuickFUFNotiAfterUnfrozen.getValue(null) || !combineBatchQuickNotification.getValue(null)) {
             return;
         }
         NotificationManager notificationManager =
@@ -282,12 +299,20 @@ public final class NotificationUtils {
             builder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
             builder.setOngoing(notificationBarDisableSlideOut.getValue(null));
 
+            // A batch of thirty names is a wall of text nobody reads on a lock screen, so the card
+            // lists the first few and says how many more there are. The count is the whole list
+            // either way, and freeze-all still takes the whole list.
+            final int maxNamesShown = 6;
             StringBuilder names = new StringBuilder();
-            for (String pkgName : allPackages) {
+            for (int i = 0; i < allPackages.size() && i < maxNamesShown; i++) {
                 if (names.length() > 0) {
                     names.append(", ");
                 }
-                names.append(getApplicationLabel(context, null, null, pkgName));
+                names.append(getApplicationLabel(context, null, null, allPackages.get(i)));
+            }
+            if (allPackages.size() > maxNamesShown) {
+                names.append(" ").append(context.getString(
+                        R.string.andMoreApplications, allPackages.size() - maxNamesShown));
             }
             Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle()
                     .setBigContentTitle(content)
@@ -307,13 +332,13 @@ public final class NotificationUtils {
             builder.addAction(R.drawable.ic_notification,
                     context.getString(R.string.freezeAll), freezeAllPendingIntent);
 
-            if (notificationBarFreezeImmediately.getValue(null)) {
-                builder.setContentIntent(freezeAllPendingIntent);
-            } else {
-                PendingIntent mainPendingIntent = PendingIntent.getActivity(
-                        context, BATCH_NOTIFICATION_ID, new Intent(context, Main.class), pendingIntentFlags);
-                builder.setContentIntent(mainPendingIntent);
-            }
+            // Tapping the card opens FreezeYou, whichever way the single-application notifications
+            // behave. Freezing the lot belongs to the action button alone: the body of a card
+            // naming two dozen applications is far too easy to brush against, and what it would do
+            // is freeze all of them.
+            PendingIntent mainPendingIntent = PendingIntent.getActivity(
+                    context, BATCH_NOTIFICATION_ID, new Intent(context, Main.class), pendingIntentFlags);
+            builder.setContentIntent(mainPendingIntent);
 
             Intent deletedIntent = new Intent(context, NotificationDeletedReceiver.class)
                     .putExtra("packages", packages);

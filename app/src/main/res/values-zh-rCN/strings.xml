@@ -40,8 +40,10 @@
     <string name="mayUnrootedOrOtherEx">可能没有授予权限、目标已卸载或发生了其它异常</string>
     <string name="nApplicationsFailedColonList">%1$d 个应用失败：%2$s</string>
     <string name="andNMoreApplications">，以及另外 %1$d 个</string>
+    <string name="andMoreApplications">……等另 %1$d 个应用</string>
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
+    <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
     <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
@@ -385,6 +387,7 @@
     <string name="jumpToSysInstaller">转至系统安装器</string>
     <string name="appearance">外观</string>
     <string name="createQuickFUFNotiAfterUnfrozen">解冻后创建相应的快捷通知</string>
+    <string name="combineBatchQuickNotification">合并批量快捷通知</string>
     <string name="executionResult_colon_message">执行结果：%1$s</string>
     <string name="unknownResult_probablySuccess">结果未知（可能成功）</string>
     <string name="unknownError">未知错误</string>
