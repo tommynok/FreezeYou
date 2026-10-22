@@ -597,8 +597,12 @@ object FUFUtils {
         val triggered = TasksUtils.collectTriggeredTasks(
             context, actuallyChanged, if (freeze) "onFApplications" else "onUFApplications"
         )
-        if (!freeze) {
-            actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
+        if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+            if (actuallyChanged.size == 1) {
+                checkAndCreateFUFQuickNotification(context, actuallyChanged[0])
+            } else if (actuallyChanged.size > 1) {
+                NotificationUtils.createBatchQuickNotification(context, actuallyChanged)
+            }
         }
         return triggered ?: ArrayList()
     }
@@ -944,13 +948,15 @@ object FUFUtils {
 
             // Last, and after the list has been told to refresh and the toast has been shown,
             // because this is the slowest part of an unfreeze and nothing waits on its result.
-            // Each notification carries the application's icon, which means a package manager
-            // lookup, an icon loaded or decoded from the cache, a bitmap drawn from it and a
-            // binder transaction to post it — measured at 1.4 s for 24 applications, against
-            // 237 ms for the unfreezing itself. Held before the toast, that was the whole
-            // perceived cost of a batch.
-            if (!freeze) {
-                succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+            // A batch is one card naming the applications rather than one per application, so the
+            // per-application cost left is the package manager lookup for the name: no icon
+            // decoded, no bitmap drawn, one binder transaction instead of one each.
+            if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+                if (succeeded.size == 1) {
+                    checkAndCreateFUFQuickNotification(appContext, succeeded[0])
+                } else if (succeeded.size > 1) {
+                    NotificationUtils.createBatchQuickNotification(appContext, succeeded)
+                }
             }
 
             if (DebugModeUtils.isDebugModeEnabled()) {
@@ -1173,10 +1179,7 @@ object FUFUtils {
     }
 
     @JvmStatic
-    @JvmOverloads
-    fun checkAndCreateFUFQuickNotification(
-        context: Context?, pkgName: String?, isGrouped: Boolean = true
-    ) {
+    fun checkAndCreateFUFQuickNotification(context: Context?, pkgName: String?) {
         if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
             NotificationUtils.createFUFQuickNotification(
                 context, pkgName, R.drawable.ic_notification,
@@ -1187,8 +1190,7 @@ object FUFUtils {
                         ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context),
                         false
                     )
-                ),
-                isGrouped
+                )
             )
         }
     }

@@ -90,19 +90,27 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
     private void reNotifyUnfrozen(Context context, List<String> pkgNames) {
         PackageManager pm = context.getPackageManager();
+        List<String> stillUnfrozen = new ArrayList<>();
         List<String> alreadyFrozen = new ArrayList<>();
         for (String aPkgName : pkgNames) {
-            if (!checkFrozenStatus(context, aPkgName, pm)) {
-                checkAndCreateFUFQuickNotification(context, aPkgName);
-            } else {
+            if (checkFrozenStatus(context, aPkgName, pm)) {
                 alreadyFrozen.add(aPkgName);
+            } else {
+                stillUnfrozen.add(aPkgName);
             }
         }
         // Something froze the app while the phone was off, so its name is still on a list of
-        // notifications that no longer exist. Leaving it there keeps the count on the summary card
-        // wrong from the first screen after boot, and one pass takes the whole lot out at once.
+        // notifications that no longer exist. Leaving it there keeps the count on the card wrong from
+        // the first screen after boot, and one pass takes the whole lot out at once.
         if (!alreadyFrozen.isEmpty()) {
             NotificationUtils.deleteNotifying(context, alreadyFrozen);
+        }
+        // What is still unfrozen gets one card for the batch rather than one per application, so the
+        // boot does not put twenty notifications on a screen nobody is looking at.
+        if (stillUnfrozen.size() == 1) {
+            checkAndCreateFUFQuickNotification(context, stillUnfrozen.get(0));
+        } else if (stillUnfrozen.size() > 1) {
+            NotificationUtils.createBatchQuickNotification(context, stillUnfrozen);
         }
     }
 

@@ -18,12 +18,13 @@ import java.util.Collections;
 import java.util.List;
 
 import cf.playhi.freezeyou.Freeze;
+import cf.playhi.freezeyou.Main;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.receiver.NotificationDeletedReceiver;
 import cf.playhi.freezeyou.service.FUFService;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
-import cf.playhi.freezeyou.ui.FUFNotificationsManageActivity;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableClickDisappear;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableSlideOut;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarFreezeImmediately;
@@ -46,50 +47,14 @@ public final class NotificationUtils {
     public static final String NOTIFYING = "notifying";
 
     /**
-     * Without an explicit group, SystemUI decides on its own how to bundle same-channel
-     * notifications, and a batch of 25 splits into two or four stacks that drift apart. Naming the
-     * group, and posting a summary for it, takes that decision away from the heuristics.
+     * Fixed, because it belongs to no package: one card describes a whole batch, and it has to be
+     * replaced and cancelled by the id alone rather than by a hash of anything in the list.
      */
-    public static final String GROUP_KEY_QUICK_FUF = "cf.playhi.freezeyou.QUICK_FUF_GROUP";
-
-    /**
-     * Fixed, because it belongs to no package: the summary has to be replaced and cancelled by the
-     * id alone, and a hash of anything would change with the list it describes.
-     */
-    public static final int SUMMARY_NOTIFICATION_ID = 210101;
+    public static final int BATCH_NOTIFICATION_ID = 210101;
 
     private static final String QUICK_FUF_CHANNEL_ID = "FAUf";
 
-    /**
-     * A group of one needs no summary: with fewer than two children the stack is not a stack, and a
-     * lone card on top of it is just an extra notification to swipe away.
-     */
-    private static final int SUMMARY_MIN_CHILDREN = 2;
-
-    /**
-     * Everything that moves the notifying list and everything that posts the card describing it is
-     * done under this lock, so a rebuild never reads a list that a concurrent add or removal is in
-     * the middle of changing.
-     */
-    private static final Object SUMMARY_LOCK = new Object();
-
-    /**
-     * Posting the summary re-posts a child, and re-posting a child asks for the summary, so one of
-     * the two has to stop. This says which one is already on its way round.
-     */
-    private static volatile boolean sIsUpdatingSummary = false;
-
     public static void createFUFQuickNotification(Context context, String pkgName, int iconResId, Bitmap bitmap) {
-        createFUFQuickNotification(context, pkgName, iconResId, bitmap, true);
-    }
-
-    /**
-     * @param isGrouped false for the application that outlived the rest of the group, which has to be
-     *                  posted without the group key or it stays attached to a header that is gone.
-     */
-    public static void createFUFQuickNotification(
-            Context context, String pkgName, int iconResId, Bitmap bitmap, boolean isGrouped) {
-
         boolean freezeImmediately = notificationBarFreezeImmediately.getValue(null);
         String description = freezeImmediately ?
                 context.getString(R.string.freezeImmediately) : context.getString(R.string.disableAEnable);
@@ -103,16 +68,6 @@ public final class NotificationUtils {
             mBuilder.setContentText(description);
             mBuilder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
             mBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
-            if (isGrouped) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                    mBuilder.setGroup(GROUP_KEY_QUICK_FUF);
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // Only the summary alerts, so a batch of 25 unfreezes sounds once instead of 25
-                    // times. A card that belongs to no group has no summary to hand its alert to.
-                    mBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
-                }
-            }
 
             Intent intent = new Intent(context, NotificationDeletedReceiver.class).putExtra("pkgName", pkgName);
             PendingIntent pendingIntent =
@@ -157,21 +112,11 @@ public final class NotificationUtils {
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (mNotificationManager != null) {
                 mNotificationManager.notify(mId, mBuilder.build());
-                // The name goes on the list and the card is rebuilt from it as one step, so a second
-                // thread cannot slip its own application in between and have the summary count it
-                // before its notification exists, or miss it after.
-                synchronized (SUMMARY_LOCK) {
-                    DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-                    String notifying = storage.getString(NOTIFYING, "");
-                    String updated = addToNotifyingList(notifying, pkgName);
-                    if (!updated.equals(notifying)) {
-                        storage.putString(NOTIFYING, updated).sync();
-                    }
-                    // An ungrouped card is the summary being stood down, so it must not ask for that
-                    // stand-down again; the call would come straight back here.
-                    if (isGrouped) {
-                        updateGroupSummaryNotification(context);
-                    }
+                DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+                String notifying = storage.getString(NOTIFYING, "");
+                String updated = addToNotifyingList(notifying, pkgName);
+                if (!updated.equals(notifying)) {
+                    storage.putString(NOTIFYING, updated).sync();
                 }
             }
         }
@@ -210,6 +155,9 @@ public final class NotificationUtils {
         for (String pkgName : pkgNames) {
             mNotificationManager.cancel(pkgName.hashCode());
         }
+        // These applications were counted by the batch card as much as carried on their own, so the
+        // card comes down here and deleteNotifying puts back the one that fits what is left.
+        mNotificationManager.cancel(BATCH_NOTIFICATION_ID);
         deleteNotifying(context, pkgNames);
     }
 
@@ -228,36 +176,51 @@ public final class NotificationUtils {
      *
      * Public because the boot receiver clears a whole batch of them at once, and {@code
      * clearNotifyingRecord} one at a time would rewrite the stored string once per application.
+     *
+     * The card still standing is rebuilt from what is left rather than from what was just taken out,
+     * because one application freezing out of a batch of ten leaves nine to describe.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
-        synchronized (SUMMARY_LOCK) {
-            DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            String notifying = storage.getString(NOTIFYING, "");
-            String updated = removeFromNotifyingList(notifying, pkgNames);
-            if (!updated.equals(notifying)) {
-                storage.putString(NOTIFYING, updated).sync();
-            }
-            // Both directions end here: a dismissed or frozen application takes its count off the
-            // summary, and the last two taking their notifications with them leave no group to summarise.
-            updateGroupSummaryNotification(context);
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        String notifying = storage.getString(NOTIFYING, "");
+        String updated = removeFromNotifyingList(notifying, pkgNames);
+        if (!updated.equals(notifying)) {
+            storage.putString(NOTIFYING, updated).sync();
+        }
+        List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null) {
+            return;
+        }
+        if (remaining.isEmpty()) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+        } else if (remaining.size() == 1) {
+            // A card counting a batch says nothing useful about one application, so it goes and the
+            // ordinary notification takes over: it names and shows the icon of that application.
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            FUFUtils.checkAndCreateFUFQuickNotification(context, remaining.get(0));
+        } else {
+            createBatchQuickNotification(context, remaining);
         }
     }
 
     /**
-     * The summary card that holds the quick freeze notifications together, with the number of
-     * applications currently unfrozen and one action that freezes the whole lot.
+     * One standalone card for a whole batch of unfrozen applications: the count on the collapsed
+     * line, the names when it is expanded, and one action that freezes the lot.
      *
-     * It is rebuilt from the stored list rather than from what the caller just changed, because it is
-     * called both one application at a time and after a batch, and the list is the same in both
-     * cases. With fewer than two children it is cancelled instead: a single notification needs no
-     * group header, and leaving one behind would put a card on screen that describes nothing. The
-     * child that outlived the rest is then re-posted on its own, so the group dissolving does not
-     * take its notification with it.
+     * This is what a group was tried for and is simpler than it. A group is subject to SystemUI's own
+     * arithmetic - a header's action buttons get dropped and the children it shows are capped - while
+     * one ordinary notification of our own keeps its buttons and lists every application in its text.
      */
-    public static void updateGroupSummaryNotification(Context context) {
-        // Before API 20 there is no such thing as a notification group, so a card posted here would
-        // be an extra notification over a stack that does not exist.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
+    public static void createBatchQuickNotification(Context context, List<String> pkgNames) {
+        if (pkgNames == null || pkgNames.isEmpty()) {
+            return;
+        }
+        // Checked here and not only where an unfreeze asks for the card, because a removal from the
+        // notifying list rebuilds this card too: with the setting off it has to stay off whichever
+        // way the list moved.
+        if (!createQuickFUFNotiAfterUnfrozen.getValue(null)) {
             return;
         }
         NotificationManager notificationManager =
@@ -265,93 +228,76 @@ public final class NotificationUtils {
         if (notificationManager == null) {
             return;
         }
-        // Reading the list and posting what was read from it are one step: a second thread freezing
-        // its own applications in between would leave a card counting work that is already done. A
-        // lock in this process cannot reach the other process this app runs in, so that one is
-        // checked against the stored list at the end instead of waited on.
-        synchronized (SUMMARY_LOCK) {
-            if (sIsUpdatingSummary) {
-                return;
-            }
-            sIsUpdatingSummary = true;
-            try {
-                DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-                String snapshot = storage.getString(NOTIFYING, "");
-                List<String> notifying = Arrays.asList(PackageListUtils.parse(snapshot));
-                if (notifying.size() < SUMMARY_MIN_CHILDREN) {
-                    notificationManager.cancel(SUMMARY_NOTIFICATION_ID);
-                    if (notifying.size() == 1) {
-                        // The header it hung from is gone, so the survivor goes back without the group.
-                        FUFUtils.checkAndCreateFUFQuickNotification(context, notifying.get(0), false);
-                    }
-                    return;
-                }
-
-                Notification.Builder summaryBuilder;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ensureQuickFufChannel(context, notificationManager);
-                    summaryBuilder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
-                } else {
-                    summaryBuilder = new Notification.Builder(context);
-                }
-                summaryBuilder.setSmallIcon(R.drawable.ic_notification);
-                summaryBuilder.setContentTitle(context.getString(R.string.app_name));
-                summaryBuilder.setContentText(
-                        context.getString(R.string.quickFUFGroupSummaryContent, notifying.size()));
-                // A tap opens the list of what is unfrozen, and the card has to survive it: with auto
-                // cancel the header disappears and SystemUI splits the remaining stack on its own again.
-                summaryBuilder.setAutoCancel(false);
-                summaryBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
-                summaryBuilder.setGroup(GROUP_KEY_QUICK_FUF);
-                summaryBuilder.setGroupSummary(true);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // The children are silenced as the group alerts on the summary, so the summary has to
-                    // claim that alert itself or a batch makes no sound at all.
-                    summaryBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
-                }
-
-                Intent manageIntent = new Intent(context, FUFNotificationsManageActivity.class);
-                PendingIntent managePendingIntent = PendingIntent.getActivity(
-                        context, SUMMARY_NOTIFICATION_ID, manageIntent,
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                : PendingIntent.FLAG_UPDATE_CURRENT);
-                summaryBuilder.setContentIntent(managePendingIntent);
-
-                Intent freezeAllIntent = new Intent(context, FUFService.class)
-                        .putExtra("freeze", true)
-                        .putExtra("packages", notifying.toArray(new String[0]));
-                PendingIntent freezeAllPendingIntent = PendingIntent.getService(
-                        context, SUMMARY_NOTIFICATION_ID, freezeAllIntent,
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                                : PendingIntent.FLAG_UPDATE_CURRENT);
-                summaryBuilder.addAction(R.drawable.ic_notification,
-                        context.getString(R.string.freezeAll), freezeAllPendingIntent);
-
-                // The other process this app runs in writes the same list, and no lock in this process
-                // reaches it. Whoever moved the list posts the card that describes it, so a rebuild
-                // working from what is now the past is dropped rather than reviving an old count.
-                if (!snapshot.equals(storage.getString(NOTIFYING, ""))) {
-                    return;
-                }
-                notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryBuilder.build());
-
-                if (notifying.size() == SUMMARY_MIN_CHILDREN) {
-                    // Growing back from a lone card: that card was posted without the group, and a
-                    // header only collects the notifications that ask for it. After the summary, so
-                    // that its own re-write of the stored list cannot abort the post above.
-                    FUFUtils.checkAndCreateFUFQuickNotification(context, notifying.get(0), true);
-                }
-            } finally {
-                sIsUpdatingSummary = false;
-            }
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        String notifying = storage.getString(NOTIFYING, "");
+        String updated = addBatchToNotifyingList(notifying, pkgNames);
+        if (!updated.equals(notifying)) {
+            storage.putString(NOTIFYING, updated).sync();
         }
+
+        String content = context.getString(R.string.quickFUFGroupSummaryContent, pkgNames.size());
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ensureQuickFufChannel(context, notificationManager);
+            builder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
+        } else {
+            builder = new Notification.Builder(context);
+        }
+        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setContentTitle(context.getString(R.string.app_name));
+        builder.setContentText(content);
+        builder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
+        builder.setOngoing(notificationBarDisableSlideOut.getValue(null));
+
+        StringBuilder names = new StringBuilder();
+        for (String pkgName : pkgNames) {
+            if (names.length() > 0) {
+                names.append(", ");
+            }
+            names.append(getApplicationLabel(context, null, null, pkgName));
+        }
+        Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle()
+                .setBigContentTitle(content)
+                .bigText(names);
+        builder.setStyle(bigTextStyle);
+
+        int pendingIntentFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+        String[] packages = pkgNames.toArray(new String[0]);
+
+        Intent freezeAllIntent = new Intent(context, FUFService.class)
+                .putExtra("freeze", true)
+                .putExtra("packages", packages);
+        PendingIntent freezeAllPendingIntent = PendingIntent.getService(
+                context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
+        builder.addAction(R.drawable.ic_notification,
+                context.getString(R.string.freezeAll), freezeAllPendingIntent);
+
+        if (notificationBarFreezeImmediately.getValue(null)) {
+            builder.setContentIntent(freezeAllPendingIntent);
+        } else {
+            PendingIntent mainPendingIntent = PendingIntent.getActivity(
+                    context, BATCH_NOTIFICATION_ID, new Intent(context, Main.class), pendingIntentFlags);
+            builder.setContentIntent(mainPendingIntent);
+        }
+
+        Intent deletedIntent = new Intent(context, NotificationDeletedReceiver.class)
+                .putExtra("packages", packages);
+        PendingIntent deletedPendingIntent = PendingIntent.getBroadcast(
+                context, BATCH_NOTIFICATION_ID, deletedIntent, pendingIntentFlags);
+        builder.setDeleteIntent(deletedPendingIntent);
+
+        for (String pkgName : pkgNames) {
+            notificationManager.cancel(pkgName.hashCode());
+        }
+        notificationManager.notify(BATCH_NOTIFICATION_ID, builder.build());
     }
 
     /**
-     * The channel the quick freeze notifications and their summary share. Creation is idempotent, so
-     * either side can ask for it without caring which one runs first.
+     * The channel the quick freeze notifications share, whether one is posted for a single
+     * application or one for a batch. Creation is idempotent, so either side can ask for it without
+     * caring which one runs first.
      */
     private static void ensureQuickFufChannel(Context context, NotificationManager notificationManager) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -369,8 +315,16 @@ public final class NotificationUtils {
     }
 
     /**
-     * Add one package to the list of applications currently showing a notification, and return the
-     * list rebuilt.
+     * @return every name on the list, each followed by a comma, with {@code pkgName} appended last
+     *         unless it is already there or blank.
+     */
+    public static String addToNotifyingList(String notifying, String pkgName) {
+        return addBatchToNotifyingList(notifying, Collections.singletonList(pkgName));
+    }
+
+    /**
+     * Put every one of these packages on the list of applications currently showing a notification,
+     * and return the list rebuilt.
      *
      * This used to be {@code notifying + pkgName + ","} guarded by {@code notifying.contains(pkgName
      * + ",")}, and the two halves were wrong in opposite directions: concatenating onto a list that
@@ -379,17 +333,22 @@ public final class NotificationUtils {
      * notifying - so it stayed freezable with a notification on screen. Comparing whole parsed
      * entries fixes both, and an add that changes nothing no longer rewrites the preference.
      *
-     * @return every name on the list, each followed by a comma, with {@code pkgName} appended last
-     *         unless it is already there or blank.
+     * One pass over the batch rather than one rewrite per application, because a batch card names
+     * them all at once and each rewrite of the stored string costs a sync and a broadcast.
+     *
+     * @return every name on the list, each followed by a comma, with the new ones appended last in
+     *         the order they were given.
      */
-    public static String addToNotifyingList(String notifying, String pkgName) {
-        String name = pkgName == null ? "" : pkgName.trim();
+    public static String addBatchToNotifyingList(String notifying, List<String> pkgNames) {
         ArrayList<String> result = new ArrayList<>();
         for (String candidate : PackageListUtils.parse(notifying)) {
             result.add(candidate);
         }
-        if (!name.isEmpty() && !result.contains(name)) {
-            result.add(name);
+        for (String pkgName : pkgNames) {
+            String name = pkgName == null ? "" : pkgName.trim();
+            if (!name.isEmpty() && !result.contains(name)) {
+                result.add(name);
+            }
         }
         return joinWithCommas(result);
     }
