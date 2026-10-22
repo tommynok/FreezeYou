@@ -128,6 +128,8 @@
     <string name="notificationBar">Notification</string>
     <string name="disableSlideOut">Do not disappear when slide out</string>
     <string name="disableClickDisappear">Do not disappear after clicked</string>
+    <string name="freezeAll">Freeze all</string>
+    <string name="quickFUFGroupSummaryContent">Unfrozen applications: %1$d</string>
     <string name="effectNextCreate">Take effects the next time created</string>
     <string name="helpTranslate">Help Translate</string>
     <string name="thanksList">Project contributors</string>

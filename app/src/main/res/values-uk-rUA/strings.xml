@@ -128,6 +128,8 @@
     <string name="notificationBar">Сповіщення</string>
     <string name="disableSlideOut">Не зникати при змахуванні</string>
     <string name="disableClickDisappear">Не зникати після натискання</string>
+    <string name="freezeAll">Заморозити все</string>
+    <string name="quickFUFGroupSummaryContent">Розморожено додатків: %1$d</string>
     <string name="effectNextCreate">Вступить в силу в наступний раз</string>
     <string name="helpTranslate">Допоможіть перекласти цей додаток</string>
     <string name="thanksList">Подяки учасникам проєкту</string>

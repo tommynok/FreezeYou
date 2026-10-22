@@ -22,6 +22,7 @@ import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.receiver.NotificationDeletedReceiver;
 import cf.playhi.freezeyou.service.FUFService;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
+import cf.playhi.freezeyou.ui.FUFNotificationsManageActivity;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableClickDisappear;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.notificationBarDisableSlideOut;
@@ -44,6 +45,27 @@ public final class NotificationUtils {
      */
     public static final String NOTIFYING = "notifying";
 
+    /**
+     * Without an explicit group, SystemUI decides on its own how to bundle same-channel
+     * notifications, and a batch of 25 splits into two or four stacks that drift apart. Naming the
+     * group, and posting a summary for it, takes that decision away from the heuristics.
+     */
+    public static final String GROUP_KEY_QUICK_FUF = "cf.playhi.freezeyou.QUICK_FUF_GROUP";
+
+    /**
+     * Fixed, because it belongs to no package: the summary has to be replaced and cancelled by the
+     * id alone, and a hash of anything would change with the list it describes.
+     */
+    public static final int SUMMARY_NOTIFICATION_ID = 210101;
+
+    private static final String QUICK_FUF_CHANNEL_ID = "FAUf";
+
+    /**
+     * A group of one needs no summary: with fewer than two children the stack is not a stack, and a
+     * lone card on top of it is just an extra notification to swipe away.
+     */
+    private static final int SUMMARY_MIN_CHILDREN = 2;
+
     public static void createFUFQuickNotification(Context context, String pkgName, int iconResId, Bitmap bitmap) {
 
         boolean freezeImmediately = notificationBarFreezeImmediately.getValue(null);
@@ -59,6 +81,13 @@ public final class NotificationUtils {
             mBuilder.setContentText(description);
             mBuilder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
             mBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                mBuilder.setGroup(GROUP_KEY_QUICK_FUF);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Only the summary alerts, so a batch of 25 unfreezes sounds once instead of 25 times.
+                mBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
+            }
 
             Intent intent = new Intent(context, NotificationDeletedReceiver.class).putExtra("pkgName", pkgName);
             PendingIntent pendingIntent =
@@ -69,16 +98,11 @@ public final class NotificationUtils {
             mBuilder.setDeleteIntent(pendingIntent);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                String CHANNEL_ID = "FAUf";
-                int importance = NotificationManager.IMPORTANCE_LOW;
-                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, description, importance);
-                channel.setDescription(description);
-                // Register the channel with the system; you can't change the importance
-                // or other notification behaviors after this
                 NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-                if (notificationManager != null)
-                    notificationManager.createNotificationChannel(channel);
-                mBuilder.setChannelId(CHANNEL_ID);
+                if (notificationManager != null) {
+                    ensureQuickFufChannel(context, notificationManager);
+                }
+                mBuilder.setChannelId(QUICK_FUF_CHANNEL_ID);
             }
             // Create an Intent for the activity you want to start
             Intent resultIntent;
@@ -114,6 +138,7 @@ public final class NotificationUtils {
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
                 }
+                updateGroupSummaryNotification(context);
             }
         }
     }
@@ -169,6 +194,94 @@ public final class NotificationUtils {
         if (!updated.equals(notifying)) {
             storage.putString(NOTIFYING, updated).sync();
         }
+        // Both directions end here: a dismissed or frozen application takes its count off the
+        // summary, and the last two taking their notifications with them leave no group to summarise.
+        updateGroupSummaryNotification(context);
+    }
+
+    /**
+     * The summary card that holds the quick freeze notifications together, with the number of
+     * applications currently unfrozen and one action that freezes the whole lot.
+     *
+     * It is rebuilt from the stored list rather than from what the caller just changed, because it is
+     * called both one application at a time and after a batch, and the list is the same in both
+     * cases. With fewer than two children it is cancelled instead: a single notification needs no
+     * group header, and leaving one behind would put a card on screen that describes nothing.
+     */
+    public static void updateGroupSummaryNotification(Context context) {
+        List<String> notifying = getNotifyingPackages();
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null) {
+            return;
+        }
+        if (notifying.size() < SUMMARY_MIN_CHILDREN) {
+            notificationManager.cancel(SUMMARY_NOTIFICATION_ID);
+            return;
+        }
+
+        Notification.Builder summaryBuilder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ensureQuickFufChannel(context, notificationManager);
+            summaryBuilder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
+        } else {
+            summaryBuilder = new Notification.Builder(context);
+        }
+        summaryBuilder.setSmallIcon(R.drawable.ic_notification);
+        summaryBuilder.setContentTitle(context.getString(R.string.app_name));
+        summaryBuilder.setContentText(
+                context.getString(R.string.quickFUFGroupSummaryContent, notifying.size()));
+        summaryBuilder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
+        summaryBuilder.setOngoing(notificationBarDisableSlideOut.getValue(null));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            summaryBuilder.setGroup(GROUP_KEY_QUICK_FUF);
+            summaryBuilder.setGroupSummary(true);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // The children are silenced as the group alerts on the summary, so the summary has to
+            // claim that alert itself or a batch makes no sound at all.
+            summaryBuilder.setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY);
+        }
+
+        Intent manageIntent = new Intent(context, FUFNotificationsManageActivity.class);
+        PendingIntent managePendingIntent = PendingIntent.getActivity(
+                context, SUMMARY_NOTIFICATION_ID, manageIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                        : PendingIntent.FLAG_UPDATE_CURRENT);
+        summaryBuilder.setContentIntent(managePendingIntent);
+
+        Intent freezeAllIntent = new Intent(context, FUFService.class)
+                .putExtra("freeze", true)
+                .putExtra("packages", notifying.toArray(new String[0]));
+        PendingIntent freezeAllPendingIntent = PendingIntent.getService(
+                context, SUMMARY_NOTIFICATION_ID, freezeAllIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                        : PendingIntent.FLAG_UPDATE_CURRENT);
+        summaryBuilder.addAction(R.drawable.ic_notification,
+                context.getString(R.string.freezeAll), freezeAllPendingIntent);
+
+        notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryBuilder.build());
+    }
+
+    /**
+     * The channel the quick freeze notifications and their summary share. Creation is idempotent, so
+     * either side can ask for it without caring which one runs first.
+     */
+    private static void ensureQuickFufChannel(Context context, NotificationManager notificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+        String description = notificationBarFreezeImmediately.getValue(null)
+                ? context.getString(R.string.freezeImmediately)
+                : context.getString(R.string.disableAEnable);
+        NotificationChannel channel = new NotificationChannel(
+                QUICK_FUF_CHANNEL_ID, description, NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        notificationManager.createNotificationChannel(channel);
     }
 
     /**
