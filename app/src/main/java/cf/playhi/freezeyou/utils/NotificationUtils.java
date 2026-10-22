@@ -67,8 +67,9 @@ public final class NotificationUtils {
     private static final int SUMMARY_MIN_CHILDREN = 2;
 
     /**
-     * Guards the read-and-post of the summary against another thread in this process freezing
-     * applications at the same time, which would otherwise leave a card counting work already done.
+     * Everything that moves the notifying list and everything that posts the card describing it is
+     * done under this lock, so a rebuild never reads a list that a concurrent add or removal is in
+     * the middle of changing.
      */
     private static final Object SUMMARY_LOCK = new Object();
 
@@ -156,16 +157,21 @@ public final class NotificationUtils {
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (mNotificationManager != null) {
                 mNotificationManager.notify(mId, mBuilder.build());
-                DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-                String notifying = storage.getString(NOTIFYING, "");
-                String updated = addToNotifyingList(notifying, pkgName);
-                if (!updated.equals(notifying)) {
-                    storage.putString(NOTIFYING, updated).sync();
-                }
-                // An ungrouped card is the summary being stood down, so it must not ask for that
-                // stand-down again; the call would come straight back here.
-                if (isGrouped) {
-                    updateGroupSummaryNotification(context);
+                // The name goes on the list and the card is rebuilt from it as one step, so a second
+                // thread cannot slip its own application in between and have the summary count it
+                // before its notification exists, or miss it after.
+                synchronized (SUMMARY_LOCK) {
+                    DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+                    String notifying = storage.getString(NOTIFYING, "");
+                    String updated = addToNotifyingList(notifying, pkgName);
+                    if (!updated.equals(notifying)) {
+                        storage.putString(NOTIFYING, updated).sync();
+                    }
+                    // An ungrouped card is the summary being stood down, so it must not ask for that
+                    // stand-down again; the call would come straight back here.
+                    if (isGrouped) {
+                        updateGroupSummaryNotification(context);
+                    }
                 }
             }
         }
@@ -224,15 +230,17 @@ public final class NotificationUtils {
      * clearNotifyingRecord} one at a time would rewrite the stored string once per application.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
-        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-        String notifying = storage.getString(NOTIFYING, "");
-        String updated = removeFromNotifyingList(notifying, pkgNames);
-        if (!updated.equals(notifying)) {
-            storage.putString(NOTIFYING, updated).sync();
+        synchronized (SUMMARY_LOCK) {
+            DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            String notifying = storage.getString(NOTIFYING, "");
+            String updated = removeFromNotifyingList(notifying, pkgNames);
+            if (!updated.equals(notifying)) {
+                storage.putString(NOTIFYING, updated).sync();
+            }
+            // Both directions end here: a dismissed or frozen application takes its count off the
+            // summary, and the last two taking their notifications with them leave no group to summarise.
+            updateGroupSummaryNotification(context);
         }
-        // Both directions end here: a dismissed or frozen application takes its count off the
-        // summary, and the last two taking their notifications with them leave no group to summarise.
-        updateGroupSummaryNotification(context);
     }
 
     /**
