@@ -36,28 +36,38 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             return;
         }
 
-        switch (intent.getAction()) {
-            case Intent.ACTION_BOOT_COMPLETED:
-                runBackgroundService(context);
-                checkAndReNotifyNotifications(context);
-                checkTasks(context);
-                break;
-            case Intent.ACTION_MY_PACKAGE_REPLACED:
-                runBackgroundService(context);
-                checkAndReNotifyNotifications(context);
-                checkTasks(context);
-                cleanExternalCache(context);
+        final PendingResult pendingResult = goAsync();
+        final String action = intent.getAction();
+        new Thread(() -> {
+            try {
+                switch (action) {
+                    case Intent.ACTION_BOOT_COMPLETED:
+                        runBackgroundService(context);
+                        checkAndReNotifyNotifications(context);
+                        checkTasks(context);
+                        break;
+                    case Intent.ACTION_MY_PACKAGE_REPLACED:
+                        runBackgroundService(context);
+                        checkAndReNotifyNotifications(context);
+                        checkTasks(context);
+                        cleanExternalCache(context);
 
-                final SharedPreferences sharedPreferences =
-                        context.getSharedPreferences("Ver", Context.MODE_PRIVATE);
-                if (sharedPreferences.getInt("Ver", 0) < VersionUtils.getVersionCode(context)) {
-                    clearCrashLogs(context);
+                        final SharedPreferences sharedPreferences =
+                                context.getSharedPreferences("Ver", Context.MODE_PRIVATE);
+                        if (sharedPreferences.getInt("Ver", 0) < VersionUtils.getVersionCode(context)) {
+                            clearCrashLogs(context);
+                        }
+
+                        break;
+                    default:
+                        break;
                 }
-
-                break;
-            default:
-                break;
-        }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                pendingResult.finish();
+            }
+        }, "BootCompletedWorker").start();
     }
 
     private void cleanExternalCache(Context context) {
