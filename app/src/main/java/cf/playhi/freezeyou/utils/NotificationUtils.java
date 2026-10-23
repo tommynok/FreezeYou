@@ -46,6 +46,7 @@ public final class NotificationUtils {
      * Public because the one-time Tray migration copies this exact key and must not guess its name.
      */
     public static final String NOTIFYING = "notifying";
+    private static final String NOTIFYING_VERSION = "notifying_version";
 
     /**
      * Fixed, because it belongs to no package: one card describes a whole batch, and it has to be
@@ -197,6 +198,8 @@ public final class NotificationUtils {
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         String singleSurvivor = null;
+        List<String> survivors = null;
+        long targetVersion = 0;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
             storage.lock();
@@ -204,7 +207,12 @@ public final class NotificationUtils {
                 String notifying = storage.getString(NOTIFYING, "");
                 String updated = removeFromNotifyingList(notifying, pkgNames);
                 if (!updated.equals(notifying)) {
-                    storage.putString(NOTIFYING, updated).sync();
+                    targetVersion = storage.getLong(NOTIFYING_VERSION, 0L) + 1;
+                    storage.putString(NOTIFYING, updated)
+                            .putLong(NOTIFYING_VERSION, targetVersion)
+                            .sync();
+                } else {
+                    targetVersion = storage.getLong(NOTIFYING_VERSION, 0L);
                 }
                 List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
                 if (notificationManager != null) {
@@ -220,7 +228,7 @@ public final class NotificationUtils {
                         notificationManager.cancel(BATCH_NOTIFICATION_ID);
                         singleSurvivor = remaining.get(0);
                     } else {
-                        postBatchQuickNotification(context, notificationManager, remaining);
+                        survivors = remaining;
                     }
                 }
             } finally {
@@ -228,7 +236,11 @@ public final class NotificationUtils {
             }
         }
         if (singleSurvivor != null) {
-            FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
+            if (new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) == targetVersion) {
+                FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
+            }
+        } else if (survivors != null && notificationManager != null) {
+            postBatchQuickNotification(context, notificationManager, survivors, targetVersion);
         }
     }
 
@@ -264,25 +276,29 @@ public final class NotificationUtils {
         if (notificationManager == null) {
             return;
         }
+        List<String> allPackages;
+        long targetVersion;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
                 String updated = addBatchToNotifyingList(notifying, pkgNames);
+                targetVersion = storage.getLong(NOTIFYING_VERSION, 0L) + 1;
                 if (!updated.equals(notifying)) {
-                    storage.putString(NOTIFYING, updated).sync();
+                    storage.putString(NOTIFYING, updated);
                 }
-                List<String> allPackages = Arrays.asList(PackageListUtils.parse(updated));
-                postBatchQuickNotification(context, notificationManager, allPackages);
+                storage.putLong(NOTIFYING_VERSION, targetVersion).sync();
+                allPackages = Arrays.asList(PackageListUtils.parse(updated));
             } finally {
                 storage.unlock();
             }
         }
+        postBatchQuickNotification(context, notificationManager, allPackages, targetVersion);
     }
 
     private static void postBatchQuickNotification(
-            Context context, NotificationManager notificationManager, List<String> allPackages) {
+            Context context, NotificationManager notificationManager, List<String> allPackages, long expectedVersion) {
         if (allPackages == null || allPackages.isEmpty()) {
             notificationManager.cancel(BATCH_NOTIFICATION_ID);
             return;
@@ -349,6 +365,10 @@ public final class NotificationUtils {
         PendingIntent deletedPendingIntent = PendingIntent.getBroadcast(
                 context, BATCH_NOTIFICATION_ID, deletedIntent, pendingIntentFlags);
         builder.setDeleteIntent(deletedPendingIntent);
+
+        if (expectedVersion > 0 && new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) != expectedVersion) {
+            return;
+        }
 
         // Once one card names the whole list, the per-application cards for those same
         // applications say the same thing twice - and the batch card is the one that keeps the
