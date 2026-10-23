@@ -251,7 +251,7 @@
     <string name="regenerateSomeCache">Кэш приложений обновлен</string>
     <string name="updateSomeData">Названия и значки приложений актуализированы</string>
     <string name="backupAndRestore">Бекап и восстановление</string>
-    <string name="summary_backupAndRestore">Экспорт настроек, списков, ярлыков и заданий в файл и импорт обратно</string>
+    <string name="summary_backupAndRestore">Экспорт настроек, списков и заданий в файл и импорт обратно</string>
     <string name="status">Состояние</string>
     <string name="debugMode">Режим отладки</string>
     <string name="debugModeSummary">Записывает в журнал внутренние действия приложения (попытки заморозки/разморозки, вызовы Shizuku/root) для диагностики проблем. Может немного снизить производительность.</string>

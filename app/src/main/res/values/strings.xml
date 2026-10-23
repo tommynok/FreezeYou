@@ -251,7 +251,7 @@
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
-    <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
+    <string name="summary_backupAndRestore">Export your settings, lists and scheduled tasks to a file, and import it back</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>

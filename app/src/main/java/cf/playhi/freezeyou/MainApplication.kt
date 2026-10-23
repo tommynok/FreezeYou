@@ -14,16 +14,12 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.storage.legacy.LegacyPreferenceSource
-import cf.playhi.freezeyou.storage.legacy.TrayStorage
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
-import cf.playhi.freezeyou.utils.AutoAllowListUtils
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
-import cf.playhi.freezeyou.utils.NotificationUtils
 import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.PackageListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
 import cf.playhi.freezeyou.utils.ServiceUtils
-import cf.playhi.freezeyou.utils.TasksUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
 import com.tencent.mmkv.MMKV
@@ -35,8 +31,6 @@ import java.io.RandomAccessFile
 import java.lang.ref.WeakReference
 import java.nio.channels.FileLock
 
-/** Written once every key Tray still held has been copied into the multi-process store. */
-private const val TRAY_DATA_COPIED_LOCK = "migrateRemainingTrayToMMKV.lock"
 
 class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
 
@@ -131,21 +125,14 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         var lock: FileLock? = null
         try {
             lock = channel.lock()
-            // Read once for the whole chain. Tray's database is deleted at the end of it, so every
-            // step that still has something to take out of the old stores looks at this snapshot.
+            // Read once for the whole chain. Legacy SharedPreferences fallback is migrated to MMKV.
             val legacy = LegacyPreferenceSource(this)
             checkAndMigrateAppIconDataPreference()
             checkAndMigrateSharedPreferencesSettingsToMMKV()
-            if (!legacy.readFailed) {
-                checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
-                checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
-                checkAndMigrateOneKeyListsToMMKV(legacy)
-                checkAndMigrateOneKeyConfig()
-                migrateRemainingTrayDataToMMKV(legacy)
-                deleteTrayStorage(legacy)
-            } else {
-                android.util.Log.w("MainApplication", "Skipping Tray-dependent migrations: Tray read had errors")
-            }
+            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
+            checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
+            checkAndMigrateOneKeyListsToMMKV()
+            checkAndMigrateOneKeyConfig()
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
         } finally {
             try {
@@ -201,21 +188,18 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     /**
-     * Copy the three OneKEY lists out of Tray and into the multi-process store.
+     * Copy the three OneKEY lists into the multi-process store.
      *
-     * They are read while a freeze is running, which happens in `:backgroundService`, and Tray
-     * writes through a SQLite table one process at a time - the list the user had just edited was
-     * not necessarily the list that got frozen. An empty list is left alone: there is nothing to
-     * carry, and writing "" would make the next reader's default meaningless.
+     * An empty list is left alone: there is nothing to carry, and writing "" would make the next
+     * reader's default meaningless.
      */
     @Throws(IOException::class)
-    private fun checkAndMigrateOneKeyListsToMMKV(legacy: LegacyPreferenceSource) {
+    private fun checkAndMigrateOneKeyListsToMMKV() {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
                     + "migrateOneKeyListsToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            if (legacy.readFailed) return
             // Resolved outside the store: DefaultMultiProcessMMKVStorage has its own getString(),
             // and these three names are resource IDs, not keys.
             val listKeys = listOf(
@@ -224,7 +208,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 getString(R.string.sFreezeOnceQuit)
             )
             listKeys.forEach { key ->
-                val pkgNames = legacy.trayValue(key) ?: legacyOneKeyListFromPreferences(key)
+                val pkgNames = legacyOneKeyListFromPreferences(key)
                 if (!pkgNames.isNullOrEmpty()) {
                     val packages = PackageListUtils.parse(pkgNames)
                     if (packages.isNotEmpty()) {
@@ -312,7 +296,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     + "migrateEnableAuthenticationPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            if (legacy.readFailed) return
             DefaultMultiProcessMMKVStorage()
                 .putBoolean(
                     enableAuthentication.name,
@@ -376,7 +359,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     + "migrateMultiProcessPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            if (legacy.readFailed) return
             DefaultMultiProcessMMKVStorage().run {
                 DefaultMultiProcessMMKVStorageBooleanKeys.values().forEach { key ->
                     if (key.name != enableAuthentication.name && key != tryDelApkAfterInstalled) {
@@ -391,56 +373,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 sync()
             }
             migrateLock.createNewFile()
-        }
-    }
-
-    /**
-     * Carry over the last keys that were still read out of Tray's database.
-     *
-     * Only lists kept as text are copied, and only where the store has nothing for the key yet: Tray
-     * wrote every value, boolean included, as a string, so a blind copy of the whole table would put
-     * "true" where a typed reader expects a real boolean and make that reader answer its default
-     * forever. The booleans each had a migration of their own above, which is what this one is left
-     * to finish - the notification record, the two auto-allow whitelists, and the delayed and timed
-     * task triggers that a cancel-all pass finds by walking the keys.
-     */
-    @Throws(IOException::class)
-    private fun migrateRemainingTrayDataToMMKV(legacy: LegacyPreferenceSource) {
-        val migrateLock = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
-        if (!migrateLock.exists()) {
-            if (legacy.readFailed) {
-                android.util.Log.w("MainApplication", "Skipping Tray migration lock: read had errors")
-                return
-            }
-            val storage = DefaultMultiProcessMMKVStorage()
-            val keys = ArrayList(listOf(
-                NotificationUtils.NOTIFYING,
-                AutoAllowListUtils.URI_ALLOW,
-                AutoAllowListUtils.INSTALL_ALLOW,
-                TasksUtils.PUBLISHED_TIME_TASK_IDS
-            ))
-            keys.addAll(TasksUtils.delayTaskTriggerKeys(legacy.trayKeys()))
-            keys.forEach { legacy.copyTrayStringTo(storage, it) }
-            storage.sync()
-            migrateLock.createNewFile()
-        }
-    }
-
-    /**
-     * Remove Tray's database now that nothing reads it.
-     *
-     * The delete waits for the copy above to have finished, and its own lock is written after it:
-     * an install that dies part way through either step still has the data on disk, and the next
-     * start finishes the job. Keeping an orphan database would cost a few kilobytes; deleting the
-     * one that was not copied out yet would cost the migration itself.
-     */
-    @Throws(IOException::class)
-    private fun deleteTrayStorage(legacy: LegacyPreferenceSource) {
-        val copied = File(filesDir.absolutePath + File.separator + TRAY_DATA_COPIED_LOCK)
-        val removed = File(filesDir.absolutePath + File.separator + "trayStorageRemoved.lock")
-        if (copied.exists() && !removed.exists() && !legacy.readFailed) {
-            TrayStorage.delete(this)
-            removed.createNewFile()
         }
     }
 

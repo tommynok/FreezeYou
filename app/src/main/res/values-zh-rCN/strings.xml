@@ -257,7 +257,7 @@
     <string name="regenerateSomeCache">重建一些缓存</string>
     <string name="updateSomeData">更新一些数据</string>
     <string name="backupAndRestore">备份与恢复</string>
-    <string name="summary_backupAndRestore">将设置、列表、快捷方式和计划任务导出到文件，并可重新导入</string>
+    <string name="summary_backupAndRestore">将设置、列表和计划任务导出到文件，并可重新导入</string>
     <string name="status">状态</string>
     <string name="debugMode">调试模式</string>
     <string name="debugModeSummary">记录应用内部操作（冻结/解冻尝试、Shizuku/root 调用）以便诊断问题。可能会略微降低性能。</string>

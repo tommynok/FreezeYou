@@ -78,13 +78,48 @@ public final class BackupUtils {
                 }
                 // Read back out of a file someone can edit, and here these were pasted between
                 // quotes into SQL: a stray apostrophe ended the literal and the restore threw.
+                int hour = oneUserTimeScheduledTaskJSONObject.getInt("hour");
+                int minutes = oneUserTimeScheduledTaskJSONObject.getInt("minutes");
+                String repeat = oneUserTimeScheduledTaskJSONObject.getString("repeat");
+                int enabled = oneUserTimeScheduledTaskJSONObject.getInt("enabled");
+                String label = oneUserTimeScheduledTaskJSONObject.getString("label");
+                String task = oneUserTimeScheduledTaskJSONObject.getString("task");
+
+                Cursor cursor = null;
+                boolean exists = false;
+                try {
+                    cursor = db.query(
+                            "tasks",
+                            new String[]{"_id"},
+                            "hour = ? AND minutes = ? AND repeat = ? AND enabled = ? AND label = ? AND task = ?",
+                            new String[]{
+                                    String.valueOf(hour),
+                                    String.valueOf(minutes),
+                                    repeat,
+                                    String.valueOf(enabled),
+                                    label,
+                                    task
+                            },
+                            null, null, null, "1"
+                    );
+                    exists = (cursor != null && cursor.moveToFirst());
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+
+                if (exists) {
+                    continue;
+                }
+
                 ContentValues values = new ContentValues();
-                values.put("hour", oneUserTimeScheduledTaskJSONObject.getInt("hour"));
-                values.put("minutes", oneUserTimeScheduledTaskJSONObject.getInt("minutes"));
-                values.put("repeat", oneUserTimeScheduledTaskJSONObject.getString("repeat"));
-                values.put("enabled", oneUserTimeScheduledTaskJSONObject.getInt("enabled"));
-                values.put("label", oneUserTimeScheduledTaskJSONObject.getString("label"));
-                values.put("task", oneUserTimeScheduledTaskJSONObject.getString("task"));
+                values.put("hour", hour);
+                values.put("minutes", minutes);
+                values.put("repeat", repeat);
+                values.put("enabled", enabled);
+                values.put("label", label);
+                values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
                 db.insert("tasks", null, values);
@@ -123,12 +158,45 @@ public final class BackupUtils {
                 if (oneUserTriggerScheduledTaskJSONObject.optBoolean("doNotImport", false)) {
                     continue;
                 }
+                String tg = oneUserTriggerScheduledTaskJSONObject.getString("tg");
+                String tgextra = oneUserTriggerScheduledTaskJSONObject.getString("tgextra");
+                int enabled = oneUserTriggerScheduledTaskJSONObject.getInt("enabled");
+                String label = oneUserTriggerScheduledTaskJSONObject.getString("label");
+                String task = oneUserTriggerScheduledTaskJSONObject.getString("task");
+
+                Cursor cursor = null;
+                boolean exists = false;
+                try {
+                    cursor = db.query(
+                            "tasks",
+                            new String[]{"_id"},
+                            "tg = ? AND tgextra = ? AND enabled = ? AND label = ? AND task = ?",
+                            new String[]{
+                                    tg,
+                                    tgextra,
+                                    String.valueOf(enabled),
+                                    label,
+                                    task
+                            },
+                            null, null, null, "1"
+                    );
+                    exists = (cursor != null && cursor.moveToFirst());
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+
+                if (exists) {
+                    continue;
+                }
+
                 ContentValues values = new ContentValues();
-                values.put("tg", oneUserTriggerScheduledTaskJSONObject.getString("tg"));
-                values.put("tgextra", oneUserTriggerScheduledTaskJSONObject.getString("tgextra"));
-                values.put("enabled", oneUserTriggerScheduledTaskJSONObject.getInt("enabled"));
-                values.put("label", oneUserTriggerScheduledTaskJSONObject.getString("label"));
-                values.put("task", oneUserTriggerScheduledTaskJSONObject.getString("task"));
+                values.put("tg", tg);
+                values.put("tgextra", tgextra);
+                values.put("enabled", enabled);
+                values.put("label", label);
+                values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
                 db.insert("tasks", null, values);

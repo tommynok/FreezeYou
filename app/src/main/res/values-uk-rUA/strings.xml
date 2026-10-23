@@ -251,7 +251,7 @@
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
     <string name="backupAndRestore">Бекап і відновлення</string>
-    <string name="summary_backupAndRestore">Експорт налаштувань, списків, ярликів і завдань у файл та імпорт назад</string>
+    <string name="summary_backupAndRestore">Експорт налаштувань, списків і завдань у файл та імпорт назад</string>
     <string name="status">Стан</string>
     <string name="debugMode">Режим налагодження</string>
     <string name="debugModeSummary">Записує в журнал внутрішні дії додатку (спроби заморожування/розморожування, виклики Shizuku/root) для діагностики проблем. Може дещо знизити продуктивність.</string>

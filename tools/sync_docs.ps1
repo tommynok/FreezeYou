@@ -30,6 +30,14 @@ foreach ($file in $files) {
     }
 }
 
+$auditSource = Join-Path $sourceDir ".agents\audit"
+$auditTarget = Join-Path $targetDir "audit"
+if (Test-Path $auditSource) {
+    New-Item -ItemType Directory -Force -Path $auditTarget | Out-Null
+    Copy-Item -Path (Join-Path $auditSource "*") -Destination $auditTarget -Recurse -Force
+    Write-Host "Copied .agents/audit"
+}
+
 Push-Location $targetDir
 try {
     $status = git status --porcelain
