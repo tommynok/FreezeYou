@@ -25,9 +25,7 @@ class SettingsNotificationFragment : CardPreferenceFragment() {
         findPreference<Preference?>("combineBatchQuickNotification")?.setOnPreferenceChangeListener { _, _ ->
             val appContext = activity?.applicationContext
             if (appContext != null) {
-                view?.post {
-                    NotificationUtils.reconcileQuickNotifications(appContext)
-                }
+                NotificationUtils.reconcileQuickNotifications(appContext)
             }
             true
         }
@@ -35,9 +33,7 @@ class SettingsNotificationFragment : CardPreferenceFragment() {
         findPreference<Preference?>("createQuickFUFNotiAfterUnfrozen")?.setOnPreferenceChangeListener { _, _ ->
             val appContext = activity?.applicationContext
             if (appContext != null) {
-                view?.post {
-                    NotificationUtils.reconcileQuickNotifications(appContext)
-                }
+                NotificationUtils.reconcileQuickNotifications(appContext)
             }
             true
         }
