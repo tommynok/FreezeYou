@@ -190,7 +190,9 @@ object FUFUtils {
                 }
             } else {
                 TasksUtils.onFApplications(context, pkgName)
-                NotificationUtils.deleteNotification(context, pkgName)
+                if (!skipQuickNotification) {
+                    NotificationUtils.deleteNotification(context, pkgName)
+                }
             }
             return true
         }
@@ -644,7 +646,11 @@ object FUFUtils {
         if (failed.isNotEmpty()) {
             showFailedApplicationsToast(context, failed)
         } else if (!lesserToast.getValue()) {
-            ToastUtils.showToast(context, R.string.executed)
+            if (batch.freeze && succeeded.size > 1) {
+                ToastUtils.showToast(context, "${context.getString(R.string.freezeCompleted)}: ${succeeded.size}")
+            } else {
+                ToastUtils.showToast(context, R.string.executed)
+            }
         }
     }
 
@@ -745,8 +751,10 @@ object FUFUtils {
             )
             else -> if (pkgNameList != null) {
                 val failedPkgNames = mutableListOf<String>()
-                val unfrozenPkgNames = mutableListOf<String>()
+                val succeededPkgNames = mutableListOf<String>()
+                val isBatch = pkgNameList.size > 1
                 val combineBatchNoti = !freeze && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                val skipNoti = isBatch || combineBatchNoti
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
@@ -757,12 +765,12 @@ object FUFUtils {
                         ) {
                             if (!processAction(
                                     context, aPkgName, apiMode, !freeze, false,
-                                    skipQuickNotification = combineBatchNoti
+                                    skipQuickNotification = skipNoti
                                 )
                             ) {
                                 failedPkgNames.add(aPkgName)
-                            } else if (!freeze) {
-                                unfrozenPkgNames.add(aPkgName)
+                            } else {
+                                succeededPkgNames.add(aPkgName)
                             }
                         }
                     } catch (e: Exception) {
@@ -774,13 +782,23 @@ object FUFUtils {
                 if (failedPkgNames.isNotEmpty()) {
                     showFailedApplicationsToast(context, failedPkgNames)
                 } else if (!lesserToast.getValue()) {
-                    ToastUtils.showToast(context, R.string.executed)
+                    if (freeze && isBatch) {
+                        ToastUtils.showToast(context, "${context.getString(R.string.freezeCompleted)}: ${succeededPkgNames.size}")
+                    } else {
+                        ToastUtils.showToast(context, R.string.executed)
+                    }
                 }
-                if (!freeze && combineBatchNoti) {
-                    if (unfrozenPkgNames.size > 1) {
-                        NotificationUtils.createBatchQuickNotification(context, unfrozenPkgNames)
-                    } else if (unfrozenPkgNames.size == 1) {
-                        checkAndCreateFUFQuickNotification(context, unfrozenPkgNames[0])
+                if (freeze) {
+                    if (isBatch && succeededPkgNames.isNotEmpty()) {
+                        NotificationUtils.deleteNotifications(context, succeededPkgNames)
+                    }
+                } else if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+                    if (combineBatchNoti && succeededPkgNames.size > 1) {
+                        NotificationUtils.createBatchQuickNotification(context, succeededPkgNames)
+                    } else if (combineBatchNoti && succeededPkgNames.size == 1) {
+                        checkAndCreateFUFQuickNotification(context, succeededPkgNames[0])
+                    } else if (isBatch) {
+                        succeededPkgNames.forEach { checkAndCreateFUFQuickNotification(context, it) }
                     }
                 }
             }
@@ -965,7 +983,11 @@ object FUFUtils {
                 if (failed.isNotEmpty()) {
                     showFailedApplicationsToast(appContext, failed)
                 } else if (!lesserToast.getValue()) {
-                    ToastUtils.showToast(appContext, R.string.executed)
+                    if (freeze && succeeded.size > 1) {
+                        ToastUtils.showToast(appContext, "${appContext.getString(R.string.freezeCompleted)}: ${succeeded.size}")
+                    } else {
+                        ToastUtils.showToast(appContext, R.string.executed)
+                    }
                 }
             }
 
