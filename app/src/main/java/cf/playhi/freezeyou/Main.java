@@ -1265,6 +1265,7 @@ public class Main extends FreezeYouBaseActivity {
                     public void onDestroyActionMode(ActionMode actionMode) {
                         selectedPackages.clear();
                         currentSelectionActionMode = null;
+                        mIsBatchUninstallChecking = false;
                         selectionActionsImageButton.setVisibility(View.GONE);
                     }
                 };
@@ -1795,7 +1796,7 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processBatchUninstall() {
-        if (selectedPackages.isEmpty()) {
+        if (selectedPackages.isEmpty() || mIsBatchUninstallRunning || mIsBatchUninstallChecking) {
             return;
         }
 
@@ -1838,9 +1839,11 @@ public class Main extends FreezeYouBaseActivity {
         if (shizukuAvailable) {
             showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
         } else {
+            mIsBatchUninstallChecking = true;
             new Thread(() -> {
                 final boolean rootAvailable = FUFUtils.checkRootPermission();
                 runOnUiThread(() -> {
+                    mIsBatchUninstallChecking = false;
                     if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
                         return;
                     }
@@ -2204,6 +2207,7 @@ public class Main extends FreezeYouBaseActivity {
 
     private AlertDialog mUninstallCompletedDialog = null;
     private volatile boolean mIsBatchUninstallRunning = false;
+    private volatile boolean mIsBatchUninstallChecking = false;
 
     private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
         if (isFinishing() || isDestroyed()) {
