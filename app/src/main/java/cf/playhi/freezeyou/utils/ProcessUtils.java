@@ -33,10 +33,11 @@ public final class ProcessUtils {
     public static int fAURoot(String pkgName, Boolean enable, Boolean hideMode) throws Exception {
         Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
         DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
+        String quotedPkg = PrivilegedShellUtils.shellQuote(pkgName);
         if (enable) {
-            outputStream.writeBytes("pm " + (hideMode ? "unhide " : "enable ") + pkgName + "\n");
+            outputStream.writeBytes("pm " + (hideMode ? "unhide " : "enable ") + quotedPkg + "\n");
         } else {
-            outputStream.writeBytes("pm " + (hideMode ? "hide " : "disable ") + pkgName + "\n");
+            outputStream.writeBytes("pm " + (hideMode ? "hide " : "disable ") + quotedPkg + "\n");
         }
         outputStream.writeBytes("exit\n");
         outputStream.flush();
