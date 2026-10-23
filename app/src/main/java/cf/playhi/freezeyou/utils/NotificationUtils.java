@@ -201,6 +201,7 @@ public final class NotificationUtils {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         String singleSurvivor = null;
         List<String> survivors = null;
+        List<String> restoreIndividual = null;
         long targetVersion = 0;
         boolean cancelBatch = false;
         boolean createQuick = createQuickFUFNotiAfterUnfrozen.getValue(null);
@@ -221,8 +222,11 @@ public final class NotificationUtils {
                 }
                 List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
                 if (notificationManager != null) {
-                    if (!createQuick || !combineBatch || remaining.isEmpty()) {
+                    if (!createQuick || remaining.isEmpty()) {
                         cancelBatch = true;
+                    } else if (!combineBatch) {
+                        cancelBatch = true;
+                        restoreIndividual = remaining;
                     } else if (remaining.size() == 1) {
                         cancelBatch = true;
                         singleSurvivor = remaining.get(0);
@@ -237,7 +241,11 @@ public final class NotificationUtils {
                 notificationManager.cancel(BATCH_NOTIFICATION_ID);
             }
         }
-        if (singleSurvivor != null) {
+        if (restoreIndividual != null) {
+            for (String pkg : restoreIndividual) {
+                FUFUtils.checkAndCreateFUFQuickNotification(context, pkg);
+            }
+        } else if (singleSurvivor != null) {
             FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
         } else if (survivors != null && notificationManager != null) {
             postBatchQuickNotification(context, notificationManager, survivors, targetVersion);
@@ -268,9 +276,10 @@ public final class NotificationUtils {
         // Checked here and not only where an unfreeze asks for the card, because a removal from the
         // notifying list rebuilds this card too: with either setting off it has to stay off whichever
         // way the list moved.
-        if (!createQuickFUFNotiAfterUnfrozen.getValue(null) || !combineBatchQuickNotification.getValue(null)) {
+        if (!createQuickFUFNotiAfterUnfrozen.getValue(null)) {
             return;
         }
+        boolean combineBatch = combineBatchQuickNotification.getValue(null);
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) {
@@ -297,7 +306,69 @@ public final class NotificationUtils {
                 storage.unlock();
             }
         }
+        if (!combineBatch) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            for (String pkg : allPackages) {
+                FUFUtils.checkAndCreateFUFQuickNotification(context, pkg);
+            }
+            return;
+        }
+        if (allPackages.size() == 1) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            FUFUtils.checkAndCreateFUFQuickNotification(context, allPackages.get(0));
+            return;
+        }
+        for (String pkg : allPackages) {
+            notificationManager.cancel(pkg.hashCode());
+        }
         postBatchQuickNotification(context, notificationManager, allPackages, targetVersion);
+    }
+
+    public static void reconcileQuickNotifications(Context context) {
+        if (context == null) {
+            return;
+        }
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null) {
+            return;
+        }
+        boolean createQuick = createQuickFUFNotiAfterUnfrozen.getValue(null);
+        boolean combineBatch = combineBatchQuickNotification.getValue(null);
+        List<String> allPackages;
+        long targetVersion;
+        synchronized (NOTIFYING_LOCK) {
+            DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            storage.lock();
+            try {
+                String notifying = storage.getString(NOTIFYING, "");
+                allPackages = Arrays.asList(PackageListUtils.parse(notifying));
+                targetVersion = storage.getLong(NOTIFYING_VERSION, 0L);
+            } finally {
+                storage.unlock();
+            }
+        }
+        if (!createQuick || allPackages.isEmpty()) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            for (String pkg : allPackages) {
+                notificationManager.cancel(pkg.hashCode());
+            }
+        } else if (combineBatch) {
+            if (allPackages.size() > 1) {
+                for (String pkg : allPackages) {
+                    notificationManager.cancel(pkg.hashCode());
+                }
+                postBatchQuickNotification(context, notificationManager, allPackages, targetVersion);
+            } else {
+                notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                FUFUtils.checkAndCreateFUFQuickNotification(context, allPackages.get(0));
+            }
+        } else {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            for (String pkg : allPackages) {
+                FUFUtils.checkAndCreateFUFQuickNotification(context, pkg);
+            }
+        }
     }
 
     private static void postBatchQuickNotification(

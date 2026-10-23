@@ -34,6 +34,15 @@ $auditSource = Join-Path $sourceDir ".agents\audit"
 $auditTarget = Join-Path $targetDir "audit"
 if (Test-Path $auditSource) {
     New-Item -ItemType Directory -Force -Path $auditTarget | Out-Null
+    $targetLen = $auditTarget.Length
+    Get-ChildItem -Path $auditTarget -Recurse | Sort-Object -Property FullName -Descending | ForEach-Object {
+        $relPath = $_.FullName.Substring($targetLen).TrimStart('\', '/')
+        $srcPath = Join-Path $auditSource $relPath
+        if (-not (Test-Path $srcPath)) {
+            Remove-Item -Path $_.FullName -Recurse -Force
+            Write-Host "Removed obsolete audit file: $relPath"
+        }
+    }
     Copy-Item -Path (Join-Path $auditSource "*") -Destination $auditTarget -Recurse -Force
     Write-Host "Copied .agents/audit"
 }

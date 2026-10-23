@@ -167,6 +167,28 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         )
     }
 
+    private fun parseLegacyOneKeyPackages(pkgNameS: String?): List<String> {
+        if (pkgNameS.isNullOrEmpty()) return emptyList()
+        val result = mutableListOf<String>()
+        if (pkgNameS.contains("||") || pkgNameS.contains("|")) {
+            val parts = pkgNameS.split("\\|\\|".toRegex())
+            for (part in parts) {
+                val cleaned = part.replace("\\|".toRegex(), "").trim()
+                if (cleaned.isNotEmpty()) {
+                    result.add(cleaned)
+                }
+            }
+        } else {
+            val parsed = PackageListUtils.parse(pkgNameS)
+            for (p in parsed) {
+                if (p.isNotEmpty()) {
+                    result.add(p)
+                }
+            }
+        }
+        return result
+    }
+
     private fun migrateOneKeyData(
         oldFile: File,
         old_shared_prefs_name: String,
@@ -176,14 +198,11 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             val pkgNameS = applicationContext.getSharedPreferences(
                 old_shared_prefs_name, MODE_PRIVATE
             ).getString("pkgName", "")
-            if (pkgNameS != null) {
-                val pkgNames = pkgNameS.split("\\|\\|".toRegex()).toTypedArray()
-                for (aPkgNameList in pkgNames) {
-                    val tmp = aPkgNameList.replace("\\|".toRegex(), "")
-                    if ("" != tmp) OneKeyListUtils.addToOneKeyList(this, new_key_name, tmp)
-                }
-                oldFile.delete()
+            val packages = parseLegacyOneKeyPackages(pkgNameS)
+            if (packages.isNotEmpty()) {
+                OneKeyListUtils.addToOneKeyList(this, new_key_name, packages)
             }
+            oldFile.delete()
         }
     }
 
@@ -209,11 +228,9 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             )
             listKeys.forEach { key ->
                 val pkgNames = legacyOneKeyListFromPreferences(key)
-                if (!pkgNames.isNullOrEmpty()) {
-                    val packages = PackageListUtils.parse(pkgNames)
-                    if (packages.isNotEmpty()) {
-                        OneKeyListUtils.addToOneKeyList(this, key, packages.toList())
-                    }
+                val packages = parseLegacyOneKeyPackages(pkgNames)
+                if (packages.isNotEmpty()) {
+                    OneKeyListUtils.addToOneKeyList(this, key, packages)
                 }
             }
             migrateLock.createNewFile()

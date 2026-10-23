@@ -91,14 +91,14 @@ public final class BackupUtils {
                     cursor = db.query(
                             "tasks",
                             new String[]{"_id"},
-                            "hour = ? AND minutes = ? AND repeat = ? AND enabled = ? AND label = ? AND task = ?",
+                            "hour = ? AND minutes = ? AND COALESCE(repeat, '') = ? AND enabled = ? AND COALESCE(label, '') = ? AND COALESCE(task, '') = ?",
                             new String[]{
                                     String.valueOf(hour),
                                     String.valueOf(minutes),
-                                    repeat,
+                                    repeat == null ? "" : repeat,
                                     String.valueOf(enabled),
-                                    label,
-                                    task
+                                    label == null ? "" : label,
+                                    task == null ? "" : task
                             },
                             null, null, null, "1"
                     );
@@ -170,13 +170,13 @@ public final class BackupUtils {
                     cursor = db.query(
                             "tasks",
                             new String[]{"_id"},
-                            "tg = ? AND tgextra = ? AND enabled = ? AND label = ? AND task = ?",
+                            "tg = ? AND COALESCE(tgextra, '') = ? AND enabled = ? AND COALESCE(label, '') = ? AND COALESCE(task, '') = ?",
                             new String[]{
                                     tg,
-                                    tgextra,
+                                    tgextra == null ? "" : tgextra,
                                     String.valueOf(enabled),
-                                    label,
-                                    task
+                                    label == null ? "" : label,
+                                    task == null ? "" : task
                             },
                             null, null, null, "1"
                     );
