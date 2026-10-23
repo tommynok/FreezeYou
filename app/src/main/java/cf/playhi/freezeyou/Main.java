@@ -1831,6 +1831,9 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
 
+        final ActionMode actionModeSnapshot = currentSelectionActionMode;
+        final List<String> selectedSnapshot = new ArrayList<>(selectedPackages);
+
         final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
         if (shizukuAvailable) {
             showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
@@ -1839,6 +1842,11 @@ public class Main extends FreezeYouBaseActivity {
                 final boolean rootAvailable = FUFUtils.checkRootPermission();
                 runOnUiThread(() -> {
                     if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                        return;
+                    }
+                    if (currentSelectionActionMode == null
+                            || currentSelectionActionMode != actionModeSnapshot
+                            || !selectedPackages.equals(selectedSnapshot)) {
                         return;
                     }
                     showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
