@@ -328,12 +328,12 @@ public final class NotificationUtils {
         StringBuilder names = new StringBuilder();
         for (int i = 0; i < allPackages.size() && i < maxNamesShown; i++) {
             if (names.length() > 0) {
-                names.append(", ");
+                names.append("\n");
             }
-            names.append(getApplicationLabel(context, null, null, allPackages.get(i)));
+            names.append("• ").append(getApplicationLabel(context, null, null, allPackages.get(i)));
         }
         if (allPackages.size() > maxNamesShown) {
-            names.append(" ").append(context.getString(
+            names.append("\n").append(context.getString(
                     R.string.andMoreApplications, allPackages.size() - maxNamesShown));
         }
         Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle()
