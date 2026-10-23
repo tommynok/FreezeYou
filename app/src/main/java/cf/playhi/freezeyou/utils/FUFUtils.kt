@@ -446,7 +446,7 @@ object FUFUtils {
                     sendStatusChangedBroadcast(appContext)
                 }
                 withContext(Dispatchers.Main) {
-                    showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                    showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks, freeze)
                     if (bookkeepingException != null) {
                         bookkeepingException.printStackTrace()
                         ToastUtils.showToast(
@@ -625,7 +625,8 @@ object FUFUtils {
         batch: RootBatch,
         succeeded: List<String>,
         failed: List<String>,
-        triggeredTasks: ArrayList<String>
+        triggeredTasks: ArrayList<String>,
+        freeze: Boolean
     ) {
         batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
         batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
@@ -646,7 +647,7 @@ object FUFUtils {
         if (failed.isNotEmpty()) {
             showFailedApplicationsToast(context, failed)
         } else if (!lesserToast.getValue()) {
-            if (batch.freeze && succeeded.size > 1) {
+            if (freeze && succeeded.size > 1) {
                 ToastUtils.showToast(context, "${context.getString(R.string.freezeCompleted)}: ${succeeded.size}")
             } else {
                 ToastUtils.showToast(context, R.string.executed)
@@ -679,7 +680,7 @@ object FUFUtils {
         } finally {
             sendStatusChangedBroadcast(context)
         }
-        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks, freeze)
         if (bookkeepingException != null) {
             bookkeepingException.printStackTrace()
             ToastUtils.showToast(
