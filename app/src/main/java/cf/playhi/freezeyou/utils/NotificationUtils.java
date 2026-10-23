@@ -57,10 +57,9 @@ public final class NotificationUtils {
     private static final String QUICK_FUF_CHANNEL_ID = "FAUf";
 
     /**
-     * Serialises the read-modify-write of {@link #NOTIFYING} inside this process. The store itself is
-     * safe across processes, but "read the list, decide, write the list back" is not: two unfreezes
-     * that finish together can both read the same list, and the write that lands last describes only
-     * its own application - the other keeps a card on screen that nothing records any more.
+     * Serialises the read-modify-write of {@link #NOTIFYING} inside this process, used in tandem with
+     * MMKV's cross-process file lock (storage.lock()). NOTIFYING_LOCK serialises threads within the same
+     * JVM, while storage.lock() coordinates with other processes (e.g. :backgroundService).
      */
     private static final Object NOTIFYING_LOCK = new Object();
 
@@ -127,7 +126,10 @@ public final class NotificationUtils {
                         String notifying = storage.getString(NOTIFYING, "");
                         String updated = addToNotifyingList(notifying, pkgName);
                         if (!updated.equals(notifying)) {
-                            storage.putString(NOTIFYING, updated).sync();
+                            long targetVersion = storage.getLong(NOTIFYING_VERSION, 0L) + 1;
+                            storage.putString(NOTIFYING, updated)
+                                    .putLong(NOTIFYING_VERSION, targetVersion)
+                                    .sync();
                         }
                     } finally {
                         storage.unlock();
@@ -200,6 +202,9 @@ public final class NotificationUtils {
         String singleSurvivor = null;
         List<String> survivors = null;
         long targetVersion = 0;
+        boolean cancelBatch = false;
+        boolean createQuick = createQuickFUFNotiAfterUnfrozen.getValue(null);
+        boolean combineBatch = combineBatchQuickNotification.getValue(null);
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
             storage.lock();
@@ -216,16 +221,10 @@ public final class NotificationUtils {
                 }
                 List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
                 if (notificationManager != null) {
-                    if (!createQuickFUFNotiAfterUnfrozen.getValue(null)
-                            || !combineBatchQuickNotification.getValue(null)
-                            || remaining.isEmpty()) {
-                        // The card id is cancelled if disabled or empty: one posted while the setting
-                        // was on can still be standing, and it would go on counting applications that have since frozen.
-                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                    if (!createQuick || !combineBatch || remaining.isEmpty()) {
+                        cancelBatch = true;
                     } else if (remaining.size() == 1) {
-                        // A card counting a batch says nothing useful about one application, so it goes and the
-                        // ordinary notification takes over: it names and shows the icon of that application.
-                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                        cancelBatch = true;
                         singleSurvivor = remaining.get(0);
                     } else {
                         survivors = remaining;
@@ -234,6 +233,9 @@ public final class NotificationUtils {
             } finally {
                 storage.unlock();
             }
+        }
+        if (cancelBatch && notificationManager != null) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
         }
         if (singleSurvivor != null) {
             if (new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) == targetVersion) {
@@ -284,11 +286,14 @@ public final class NotificationUtils {
             try {
                 String notifying = storage.getString(NOTIFYING, "");
                 String updated = addBatchToNotifyingList(notifying, pkgNames);
-                targetVersion = storage.getLong(NOTIFYING_VERSION, 0L) + 1;
                 if (!updated.equals(notifying)) {
-                    storage.putString(NOTIFYING, updated);
+                    targetVersion = storage.getLong(NOTIFYING_VERSION, 0L) + 1;
+                    storage.putString(NOTIFYING, updated)
+                            .putLong(NOTIFYING_VERSION, targetVersion)
+                            .sync();
+                } else {
+                    targetVersion = storage.getLong(NOTIFYING_VERSION, 0L);
                 }
-                storage.putLong(NOTIFYING_VERSION, targetVersion).sync();
                 allPackages = Arrays.asList(PackageListUtils.parse(updated));
             } finally {
                 storage.unlock();
@@ -366,17 +371,19 @@ public final class NotificationUtils {
                 context, BATCH_NOTIFICATION_ID, deletedIntent, pendingIntentFlags);
         builder.setDeleteIntent(deletedPendingIntent);
 
-        if (expectedVersion > 0 && new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) != expectedVersion) {
-            return;
-        }
+        synchronized (NOTIFYING_LOCK) {
+            if (expectedVersion > 0 && new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) != expectedVersion) {
+                return;
+            }
 
-        // Once one card names the whole list, the per-application cards for those same
-        // applications say the same thing twice - and the batch card is the one that keeps the
-        // freeze-all action, so it is the individual ones that go.
-        for (String pkgName : allPackages) {
-            notificationManager.cancel(pkgName.hashCode());
+            // Once one card names the whole list, the per-application cards for those same
+            // applications say the same thing twice - and the batch card is the one that keeps the
+            // freeze-all action, so it is the individual ones that go.
+            for (String pkgName : allPackages) {
+                notificationManager.cancel(pkgName.hashCode());
+            }
+            notificationManager.notify(BATCH_NOTIFICATION_ID, builder.build());
         }
-        notificationManager.notify(BATCH_NOTIFICATION_ID, builder.build());
     }
 
     /**

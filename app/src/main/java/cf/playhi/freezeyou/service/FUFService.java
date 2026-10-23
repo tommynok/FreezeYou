@@ -30,6 +30,7 @@ public class FUFService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        startServiceForeground();
         if (intent == null) {
             return super.onStartCommand(null, flags, startId);
         }
@@ -105,6 +106,10 @@ public class FUFService extends FreezeYouBaseService {
     @Override
     public void onCreate() {
         super.onCreate();
+        startServiceForeground();
+    }
+
+    private void startServiceForeground() {
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null)

@@ -1841,19 +1841,26 @@ public class Main extends FreezeYouBaseActivity {
         } else {
             mIsBatchUninstallChecking = true;
             new Thread(() -> {
-                final boolean rootAvailable = FUFUtils.checkRootPermission();
-                runOnUiThread(() -> {
-                    mIsBatchUninstallChecking = false;
-                    if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
-                        return;
-                    }
-                    if (currentSelectionActionMode == null
-                            || currentSelectionActionMode != actionModeSnapshot
-                            || !selectedPackages.equals(selectedSnapshot)) {
-                        return;
-                    }
-                    showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
-                });
+                boolean root = false;
+                try {
+                    root = FUFUtils.checkRootPermission();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                } finally {
+                    final boolean rootAvailable = root;
+                    runOnUiThread(() -> {
+                        mIsBatchUninstallChecking = false;
+                        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            return;
+                        }
+                        if (currentSelectionActionMode == null
+                                || currentSelectionActionMode != actionModeSnapshot
+                                || !selectedPackages.equals(selectedSnapshot)) {
+                            return;
+                        }
+                        showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
+                    });
+                }
             }, "BatchUninstallRootCheck").start();
         }
     }
