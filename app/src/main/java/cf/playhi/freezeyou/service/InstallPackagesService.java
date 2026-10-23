@@ -18,12 +18,9 @@ import android.os.Looper;
 import android.os.Parcelable;
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,7 +35,6 @@ import cf.playhi.freezeyou.utils.DebugModeUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
-import cf.playhi.freezeyou.utils.RootUtils;
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -48,7 +44,6 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
-import static cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 // Install and uninstall
@@ -412,21 +407,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 // Root Mode
                 String result = null;
                 try {
-                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-                    DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                    outputStream.writeBytes("pm install -r \"" + apkFilePath + "\"\n");
-                    outputStream.writeBytes("exit\n");
-                    outputStream.flush();
-                    process.waitFor();
-
-                    // Delete Temp File
+                    String cmd = "pm install -r " + PrivilegedShellUtils.shellQuote(apkFilePath);
+                    PrivilegedShellUtils.CommandResult cmdRes = PrivilegedShellUtils.runRootCommand(cmd);
                     InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
-
-                    InputStream pi = process.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(pi));
-                    result = bufferedReader.readLine();
-
-                    destroyProcess(outputStream, process);
+                    result = cmdRes.output;
                 } finally {
                     if (result != null && result.toLowerCase().contains("success")) {
                         InstallPackagesUtils
