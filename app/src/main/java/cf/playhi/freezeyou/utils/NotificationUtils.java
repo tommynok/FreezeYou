@@ -233,14 +233,12 @@ public final class NotificationUtils {
             } finally {
                 storage.unlock();
             }
-        }
-        if (cancelBatch && notificationManager != null) {
-            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            if (cancelBatch && notificationManager != null) {
+                notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            }
         }
         if (singleSurvivor != null) {
-            if (new DefaultMultiProcessMMKVStorage().getLong(NOTIFYING_VERSION, 0L) == targetVersion) {
-                FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
-            }
+            FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
         } else if (survivors != null && notificationManager != null) {
             postBatchQuickNotification(context, notificationManager, survivors, targetVersion);
         }
