@@ -5,7 +5,6 @@ import androidx.annotation.Keep
 import androidx.preference.Preference
 import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import cf.playhi.freezeyou.R
-import cf.playhi.freezeyou.utils.NotificationUtils
 import cf.playhi.freezeyou.utils.NotificationUtils.startAppNotificationSettingsSystemActivity
 
 @Keep
@@ -19,22 +18,6 @@ class SettingsNotificationFragment : CardPreferenceFragment() {
                 requireActivity(), requireContext().packageName,
                 requireContext().applicationInfo.uid
             )
-            true
-        }
-
-        findPreference<Preference?>("combineBatchQuickNotification")?.setOnPreferenceChangeListener { _, _ ->
-            val appContext = activity?.applicationContext
-            if (appContext != null) {
-                NotificationUtils.reconcileQuickNotifications(appContext)
-            }
-            true
-        }
-
-        findPreference<Preference?>("createQuickFUFNotiAfterUnfrozen")?.setOnPreferenceChangeListener { _, _ ->
-            val appContext = activity?.applicationContext
-            if (appContext != null) {
-                NotificationUtils.reconcileQuickNotifications(appContext)
-            }
             true
         }
     }
