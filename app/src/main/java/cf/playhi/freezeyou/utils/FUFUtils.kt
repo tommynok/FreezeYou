@@ -167,7 +167,8 @@ object FUFUtils {
         context: Context, pkgName: String, apiMode: Int,
         enable: Boolean, showUnnecessaryToast: Boolean,
         askRun: Boolean = false, target: String? = null, tasks: String? = null,
-        runImmediately: Boolean = false, activity: Activity? = null, finish: Boolean = false
+        runImmediately: Boolean = false, activity: Activity? = null, finish: Boolean = false,
+        skipQuickNotification: Boolean = false
     ): Boolean {
         val result = checkAndExecuteAction(
             context, pkgName,
@@ -181,7 +182,9 @@ object FUFUtils {
             sendStatusChangedBroadcast(context, pkgName)
             if (enable) {
                 TasksUtils.onUFApplications(context, pkgName)
-                checkAndCreateFUFQuickNotification(context, pkgName)
+                if (!skipQuickNotification) {
+                    checkAndCreateFUFQuickNotification(context, pkgName)
+                }
                 if (askRun) {
                     askRun(context, pkgName, target, tasks, runImmediately, activity, finish)
                 }
@@ -743,6 +746,7 @@ object FUFUtils {
             else -> if (pkgNameList != null) {
                 val failedPkgNames = mutableListOf<String>()
                 val unfrozenPkgNames = mutableListOf<String>()
+                val combineBatchNoti = !freeze && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
@@ -751,7 +755,11 @@ object FUFUtils {
                             apiMode != FUFSinglePackage.API_FREEZEYOU_MROOT_DPM ||
                             !freeze || !checkMRootFrozen(context, aPkgName)
                         ) {
-                            if (!processAction(context, aPkgName, apiMode, !freeze, false)) {
+                            if (!processAction(
+                                    context, aPkgName, apiMode, !freeze, false,
+                                    skipQuickNotification = combineBatchNoti
+                                )
+                            ) {
                                 failedPkgNames.add(aPkgName)
                             } else if (!freeze) {
                                 unfrozenPkgNames.add(aPkgName)
@@ -768,15 +776,12 @@ object FUFUtils {
                 } else if (!lesserToast.getValue()) {
                     ToastUtils.showToast(context, R.string.executed)
                 }
-                // processAction has already put a notification out for each of these, one per
-                // application, which is what this loop used to leave standing however many the batch
-                // was. With the batch card switched on it is asked for once, at the end, and takes
-                // the individual cards down as it goes up.
-                if (!freeze
-                    && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
-                    && unfrozenPkgNames.size > 1
-                ) {
-                    NotificationUtils.createBatchQuickNotification(context, unfrozenPkgNames)
+                if (!freeze && combineBatchNoti) {
+                    if (unfrozenPkgNames.size > 1) {
+                        NotificationUtils.createBatchQuickNotification(context, unfrozenPkgNames)
+                    } else if (unfrozenPkgNames.size == 1) {
+                        checkAndCreateFUFQuickNotification(context, unfrozenPkgNames[0])
+                    }
                 }
             }
         }

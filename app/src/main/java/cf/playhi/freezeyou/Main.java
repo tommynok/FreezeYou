@@ -1831,8 +1831,30 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
 
-        boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
-        boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+        final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
+        if (shizukuAvailable) {
+            showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
+        } else {
+            new Thread(() -> {
+                final boolean rootAvailable = FUFUtils.checkRootPermission();
+                runOnUiThread(() -> {
+                    if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                        return;
+                    }
+                    showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
+                });
+            }, "BatchUninstallRootCheck").start();
+        }
+    }
+
+    private void showBatchUninstallDialog(
+            List<String> userApps,
+            List<String> systemAppsWithUpdates,
+            List<String> systemApps,
+            int totalFound,
+            boolean shizukuAvailable,
+            boolean rootAvailable) {
+
         boolean hasPrivilegedShell = shizukuAvailable || rootAvailable;
         int skippedSystemCount = systemAppsWithUpdates.size() + systemApps.size();
 
