@@ -194,47 +194,48 @@ public final class NotificationUtils {
      * hold a notification of their own, so the list simply gets shorter.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
-        String singleSurvivor = null;
-        List<String> batchSurvivors = null;
+        boolean shouldRebuild = false;
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            String updated;
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
-                updated = removeFromNotifyingList(notifying, pkgNames);
+                String updated = removeFromNotifyingList(notifying, pkgNames);
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
+                }
+                if (notificationManager != null) {
+                    if (!combineBatchQuickNotification.getValue(null)) {
+                        // By default every application keeps a notification of its own, so the ones left on
+                        // the list are already on screen and nothing has to be rebuilt as the list shrinks.
+                        // The card id is cancelled anyway: one posted while the setting was on can still be
+                        // standing, and it would go on counting applications that have since frozen.
+                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                    } else {
+                        List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
+                        if (remaining.isEmpty()) {
+                            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                        } else {
+                            shouldRebuild = true;
+                        }
+                    }
                 }
             } finally {
                 storage.unlock();
             }
-            List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
-            NotificationManager notificationManager =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                if (!combineBatchQuickNotification.getValue(null)) {
-                    // By default every application keeps a notification of its own, so the ones left on
-                    // the list are already on screen and nothing has to be rebuilt as the list shrinks.
-                    // The card id is cancelled anyway: one posted while the setting was on can still be
-                    // standing, and it would go on counting applications that have since frozen.
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                } else if (remaining.isEmpty()) {
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                } else if (remaining.size() == 1) {
-                    // A card counting a batch says nothing useful about one application, so it goes and the
-                    // ordinary notification takes over: it names and shows the icon of that application.
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                    singleSurvivor = remaining.get(0);
-                } else {
-                    batchSurvivors = remaining;
-                }
-            }
         }
-        if (singleSurvivor != null) {
-            FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
-        } else if (batchSurvivors != null) {
-            createBatchQuickNotification(context, batchSurvivors);
+        if (shouldRebuild && notificationManager != null) {
+            List<String> currentSurvivors = getNotifyingPackages();
+            if (currentSurvivors.isEmpty()) {
+                notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            } else if (currentSurvivors.size() == 1) {
+                notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                FUFUtils.checkAndCreateFUFQuickNotification(context, currentSurvivors.get(0));
+            } else {
+                postBatchQuickNotification(context, notificationManager, currentSurvivors);
+            }
         }
     }
 
@@ -270,6 +271,7 @@ public final class NotificationUtils {
         if (notificationManager == null) {
             return;
         }
+        List<String> allPackages;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
             String updated;
@@ -283,88 +285,87 @@ public final class NotificationUtils {
             } finally {
                 storage.unlock();
             }
-
-            // The card is built from the whole stored list rather than from the batch that asked for
-            // it. There is one card, replaced by id, so a second batch that described only its own
-            // applications took the first batch off the screen. Those earlier applications still had
-            // no card of their own either - the batch card had cancelled it when it was posted - so
-            // they stayed unfrozen with nothing on screen saying so.
-            List<String> allPackages = Arrays.asList(PackageListUtils.parse(updated));
-            if (allPackages.isEmpty()) {
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                return;
-            }
-
-            String content = context.getString(R.string.quickFUFGroupSummaryContent, allPackages.size());
-            Notification.Builder builder;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ensureQuickFufChannel(context, notificationManager);
-                builder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
-            } else {
-                builder = new Notification.Builder(context);
-            }
-            builder.setSmallIcon(R.drawable.ic_notification);
-            builder.setContentTitle(context.getString(R.string.app_name));
-            builder.setContentText(content);
-            builder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
-            builder.setOngoing(notificationBarDisableSlideOut.getValue(null));
-
-            // A batch of thirty names is a wall of text nobody reads on a lock screen, so the card
-            // lists the first few and says how many more there are. The count is the whole list
-            // either way, and freeze-all still takes the whole list.
-            final int maxNamesShown = 6;
-            StringBuilder names = new StringBuilder();
-            for (int i = 0; i < allPackages.size() && i < maxNamesShown; i++) {
-                if (names.length() > 0) {
-                    names.append(", ");
-                }
-                names.append(getApplicationLabel(context, null, null, allPackages.get(i)));
-            }
-            if (allPackages.size() > maxNamesShown) {
-                names.append(" ").append(context.getString(
-                        R.string.andMoreApplications, allPackages.size() - maxNamesShown));
-            }
-            Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle()
-                    .setBigContentTitle(content)
-                    .bigText(names);
-            builder.setStyle(bigTextStyle);
-
-            int pendingIntentFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                    ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                    : PendingIntent.FLAG_UPDATE_CURRENT;
-            String[] packages = allPackages.toArray(new String[0]);
-
-            Intent freezeAllIntent = new Intent(context, FUFService.class)
-                    .putExtra("freeze", true)
-                    .putExtra("packages", packages);
-            PendingIntent freezeAllPendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    ? PendingIntent.getForegroundService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags)
-                    : PendingIntent.getService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
-            builder.addAction(R.drawable.ic_notification,
-                    context.getString(R.string.freezeAll), freezeAllPendingIntent);
-
-            // Tapping the card opens FreezeYou, whichever way the single-application notifications
-            // behave. Freezing the lot belongs to the action button alone: the body of a card
-            // naming two dozen applications is far too easy to brush against, and what it would do
-            // is freeze all of them.
-            PendingIntent mainPendingIntent = PendingIntent.getActivity(
-                    context, BATCH_NOTIFICATION_ID, new Intent(context, Main.class), pendingIntentFlags);
-            builder.setContentIntent(mainPendingIntent);
-
-            Intent deletedIntent = new Intent(context, NotificationDeletedReceiver.class)
-                    .putExtra("packages", packages);
-            PendingIntent deletedPendingIntent = PendingIntent.getBroadcast(
-                    context, BATCH_NOTIFICATION_ID, deletedIntent, pendingIntentFlags);
-            builder.setDeleteIntent(deletedPendingIntent);
-
-            // Once one card names the whole list, the per-application cards for those same
-            // applications say the same thing twice - and the batch card is the one that keeps the
-            // freeze-all action, so it is the individual ones that go.
-            for (String pkgName : allPackages) {
-                notificationManager.cancel(pkgName.hashCode());
-            }
-            notificationManager.notify(BATCH_NOTIFICATION_ID, builder.build());
+            allPackages = Arrays.asList(PackageListUtils.parse(updated));
         }
+        postBatchQuickNotification(context, notificationManager, allPackages);
+    }
+
+    private static void postBatchQuickNotification(
+            Context context, NotificationManager notificationManager, List<String> allPackages) {
+        if (allPackages == null || allPackages.isEmpty()) {
+            notificationManager.cancel(BATCH_NOTIFICATION_ID);
+            return;
+        }
+
+        String content = context.getString(R.string.quickFUFGroupSummaryContent, allPackages.size());
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ensureQuickFufChannel(context, notificationManager);
+            builder = new Notification.Builder(context, QUICK_FUF_CHANNEL_ID);
+        } else {
+            builder = new Notification.Builder(context);
+        }
+        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setContentTitle(context.getString(R.string.app_name));
+        builder.setContentText(content);
+        builder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
+        builder.setOngoing(notificationBarDisableSlideOut.getValue(null));
+
+        // A batch of thirty names is a wall of text nobody reads on a lock screen, so the card
+        // lists the first few and says how many more there are. The count is the whole list
+        // either way, and freeze-all still takes the whole list.
+        final int maxNamesShown = 6;
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < allPackages.size() && i < maxNamesShown; i++) {
+            if (names.length() > 0) {
+                names.append(", ");
+            }
+            names.append(getApplicationLabel(context, null, null, allPackages.get(i)));
+        }
+        if (allPackages.size() > maxNamesShown) {
+            names.append(" ").append(context.getString(
+                    R.string.andMoreApplications, allPackages.size() - maxNamesShown));
+        }
+        Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle()
+                .setBigContentTitle(content)
+                .bigText(names);
+        builder.setStyle(bigTextStyle);
+
+        int pendingIntentFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+        String[] packages = allPackages.toArray(new String[0]);
+
+        Intent freezeAllIntent = new Intent(context, FUFService.class)
+                .putExtra("freeze", true)
+                .putExtra("packages", packages);
+        PendingIntent freezeAllPendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? PendingIntent.getForegroundService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags)
+                : PendingIntent.getService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
+        builder.addAction(R.drawable.ic_notification,
+                context.getString(R.string.freezeAll), freezeAllPendingIntent);
+
+        // Tapping the card opens FreezeYou, whichever way the single-application notifications
+        // behave. Freezing the lot belongs to the action button alone: the body of a card
+        // naming two dozen applications is far too easy to brush against, and what it would do
+        // is freeze all of them.
+        PendingIntent mainPendingIntent = PendingIntent.getActivity(
+                context, BATCH_NOTIFICATION_ID, new Intent(context, Main.class), pendingIntentFlags);
+        builder.setContentIntent(mainPendingIntent);
+
+        Intent deletedIntent = new Intent(context, NotificationDeletedReceiver.class)
+                .putExtra("packages", packages);
+        PendingIntent deletedPendingIntent = PendingIntent.getBroadcast(
+                context, BATCH_NOTIFICATION_ID, deletedIntent, pendingIntentFlags);
+        builder.setDeleteIntent(deletedPendingIntent);
+
+        // Once one card names the whole list, the per-application cards for those same
+        // applications say the same thing twice - and the batch card is the one that keeps the
+        // freeze-all action, so it is the individual ones that go.
+        for (String pkgName : allPackages) {
+            notificationManager.cancel(pkgName.hashCode());
+        }
+        notificationManager.notify(BATCH_NOTIFICATION_ID, builder.build());
     }
 
     /**
