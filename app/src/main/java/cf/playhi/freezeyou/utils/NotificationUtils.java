@@ -199,7 +199,6 @@ public final class NotificationUtils {
         String singleSurvivor = null;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            List<String> remaining;
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
@@ -207,19 +206,25 @@ public final class NotificationUtils {
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
                 }
-                remaining = Arrays.asList(PackageListUtils.parse(updated));
+                List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
+                if (notificationManager != null) {
+                    if (!createQuickFUFNotiAfterUnfrozen.getValue(null)
+                            || !combineBatchQuickNotification.getValue(null)
+                            || remaining.isEmpty()) {
+                        // The card id is cancelled if disabled or empty: one posted while the setting
+                        // was on can still be standing, and it would go on counting applications that have since frozen.
+                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                    } else if (remaining.size() == 1) {
+                        // A card counting a batch says nothing useful about one application, so it goes and the
+                        // ordinary notification takes over: it names and shows the icon of that application.
+                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                        singleSurvivor = remaining.get(0);
+                    } else {
+                        postBatchQuickNotification(context, notificationManager, remaining);
+                    }
+                }
             } finally {
                 storage.unlock();
-            }
-            if (notificationManager != null) {
-                if (!combineBatchQuickNotification.getValue(null) || remaining.isEmpty()) {
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                } else if (remaining.size() == 1) {
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                    singleSurvivor = remaining.get(0);
-                } else {
-                    postBatchQuickNotification(context, notificationManager, remaining);
-                }
             }
         }
         if (singleSurvivor != null) {
@@ -261,7 +266,6 @@ public final class NotificationUtils {
         }
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            List<String> allPackages;
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
@@ -269,11 +273,11 @@ public final class NotificationUtils {
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
                 }
-                allPackages = Arrays.asList(PackageListUtils.parse(updated));
+                List<String> allPackages = Arrays.asList(PackageListUtils.parse(updated));
+                postBatchQuickNotification(context, notificationManager, allPackages);
             } finally {
                 storage.unlock();
             }
-            postBatchQuickNotification(context, notificationManager, allPackages);
         }
     }
 
