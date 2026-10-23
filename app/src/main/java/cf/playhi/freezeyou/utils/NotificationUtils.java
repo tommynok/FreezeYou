@@ -194,11 +194,12 @@ public final class NotificationUtils {
      * hold a notification of their own, so the list simply gets shorter.
      */
     public static void deleteNotifying(Context context, List<String> pkgNames) {
-        boolean shouldRebuild = false;
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        String singleSurvivor = null;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            List<String> remaining;
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
@@ -206,36 +207,23 @@ public final class NotificationUtils {
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
                 }
-                if (notificationManager != null) {
-                    if (!combineBatchQuickNotification.getValue(null)) {
-                        // By default every application keeps a notification of its own, so the ones left on
-                        // the list are already on screen and nothing has to be rebuilt as the list shrinks.
-                        // The card id is cancelled anyway: one posted while the setting was on can still be
-                        // standing, and it would go on counting applications that have since frozen.
-                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                    } else {
-                        List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
-                        if (remaining.isEmpty()) {
-                            notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                        } else {
-                            shouldRebuild = true;
-                        }
-                    }
-                }
+                remaining = Arrays.asList(PackageListUtils.parse(updated));
             } finally {
                 storage.unlock();
             }
-        }
-        if (shouldRebuild && notificationManager != null) {
-            List<String> currentSurvivors = getNotifyingPackages();
-            if (currentSurvivors.isEmpty()) {
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-            } else if (currentSurvivors.size() == 1) {
-                notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                FUFUtils.checkAndCreateFUFQuickNotification(context, currentSurvivors.get(0));
-            } else {
-                postBatchQuickNotification(context, notificationManager, currentSurvivors);
+            if (notificationManager != null) {
+                if (!combineBatchQuickNotification.getValue(null) || remaining.isEmpty()) {
+                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                } else if (remaining.size() == 1) {
+                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
+                    singleSurvivor = remaining.get(0);
+                } else {
+                    postBatchQuickNotification(context, notificationManager, remaining);
+                }
             }
+        }
+        if (singleSurvivor != null) {
+            FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
         }
     }
 
@@ -271,23 +259,22 @@ public final class NotificationUtils {
         if (notificationManager == null) {
             return;
         }
-        List<String> allPackages;
         synchronized (NOTIFYING_LOCK) {
             DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-            String updated;
+            List<String> allPackages;
             storage.lock();
             try {
                 String notifying = storage.getString(NOTIFYING, "");
-                updated = addBatchToNotifyingList(notifying, pkgNames);
+                String updated = addBatchToNotifyingList(notifying, pkgNames);
                 if (!updated.equals(notifying)) {
                     storage.putString(NOTIFYING, updated).sync();
                 }
+                allPackages = Arrays.asList(PackageListUtils.parse(updated));
             } finally {
                 storage.unlock();
             }
-            allPackages = Arrays.asList(PackageListUtils.parse(updated));
+            postBatchQuickNotification(context, notificationManager, allPackages);
         }
-        postBatchQuickNotification(context, notificationManager, allPackages);
     }
 
     private static void postBatchQuickNotification(
