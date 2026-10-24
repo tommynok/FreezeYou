@@ -737,7 +737,10 @@ public class Main extends FreezeYouBaseActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                main_loading_progress_textView.setText(R.string.sorting);
+                TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+                if (main_loading_progress_textView != null) {
+                    main_loading_progress_textView.setText(R.string.sorting);
+                }
             }
         });
 
