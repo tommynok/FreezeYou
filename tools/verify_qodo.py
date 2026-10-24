@@ -234,8 +234,11 @@ def check_qodo_status(opener, token, pr_num):
 
     # SHA alignment: the review summary MUST be for the current HEAD commit
     sha_aligned = False
-    if reviewed_sha and (head_sha.startswith(reviewed_sha) or reviewed_sha.startswith(head_short)):
-        sha_aligned = True
+    if reviewed_sha:
+        if len(reviewed_sha) == len(head_sha):
+            sha_aligned = (reviewed_sha == head_sha)
+        else:
+            sha_aligned = head_sha.startswith(reviewed_sha)
 
     bugs_count = None
     violations_count = None

@@ -201,10 +201,13 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 old_shared_prefs_name, MODE_PRIVATE
             ).getString("pkgName", "")
             val packages = parseLegacyOneKeyPackages(pkgNameS)
+            var success = true
             if (packages.isNotEmpty()) {
-                OneKeyListUtils.addToOneKeyList(this, new_key_name, packages)
+                success = OneKeyListUtils.addToOneKeyList(this, new_key_name, packages)
             }
-            oldFile.delete()
+            if (success) {
+                oldFile.delete()
+            }
         }
     }
 
@@ -228,14 +231,19 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 getString(R.string.sOneKeyUFApplicationList),
                 getString(R.string.sFreezeOnceQuit)
             )
+            var allSuccess = true
             listKeys.forEach { key ->
                 val pkgNames = legacyOneKeyListFromPreferences(key)
                 val packages = parseLegacyOneKeyPackages(pkgNames)
                 if (packages.isNotEmpty()) {
-                    OneKeyListUtils.addToOneKeyList(this, key, packages)
+                    if (!OneKeyListUtils.addToOneKeyList(this, key, packages)) {
+                        allSuccess = false
+                    }
                 }
             }
-            migrateLock.createNewFile()
+            if (allSuccess) {
+                migrateLock.createNewFile()
+            }
         }
     }
 
