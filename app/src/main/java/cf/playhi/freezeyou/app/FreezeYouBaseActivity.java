@@ -97,6 +97,11 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
                                 .putExtra("unlockLogoPkgName", mUnlockLogoPkgName),
                         APP_LOCK_ACTIVITY_REQUEST_CODE
                 );
+                if (Build.VERSION.SDK_INT >= 34) {
+                    overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+                } else {
+                    overridePendingTransition(0, 0);
+                }
                 return true;
             } else {
                 mHadBeenUnlocked = true;

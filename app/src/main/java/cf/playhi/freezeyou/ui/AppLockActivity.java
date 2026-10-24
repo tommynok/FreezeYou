@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -38,6 +39,11 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
         setContentView(R.layout.app_lock_main);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
@@ -58,8 +64,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
 
         if (!getIntent().getBooleanExtra("ignoreCurrentUnlockStatus", false)
                 && !isLocked()) {
-            setResult(RESULT_OK);
-            finish();
+            finishImmediately(RESULT_OK);
             return;
         }
 
@@ -109,6 +114,20 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         }
     }
 
+    private void finishImmediately(int resultCode) {
+        View content = findViewById(android.R.id.content);
+        if (content != null) {
+            content.setVisibility(View.GONE);
+        }
+        setResult(resultCode);
+        finish();
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -151,8 +170,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                                         32, MMKV.MULTI_PROCESS_MODE, null)
                                 .encode("unlockTime", new Date().getTime());
 
-                        setResult(RESULT_OK);
-                        finish();
+                        finishImmediately(RESULT_OK);
                     }
 
                     @Override
