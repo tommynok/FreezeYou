@@ -178,7 +178,7 @@ def get_pr_issue_comments(opener, token, pr_num):
         page += 1
     return all_comments
 
-def check_qodo_status(opener, token, pr_num):
+def check_qodo_status(opener, token, pr_num, ignore_findings=None):
     pr_data = get_pr_info(opener, token, pr_num)
     head_sha = pr_data['head']['sha']
     head_short = head_sha[:7]
@@ -258,12 +258,16 @@ def check_qodo_status(opener, token, pr_num):
             is_recognized_format = ('Code Review by Qodo' in body) and (has_resolved_section or has_trimmed_warning or has_clean_marker)
 
             if is_recognized_format:
+                if ignore_findings is None:
+                    ignore_findings = []
                 active_part = body.split('<h3>Resolved findings</h3>')[0] if has_resolved_section else body
                 # Match numbered finding headers, e.g. <summary> 1. Title <code>Bug</code></summary>
                 headers = re.findall(r'<summary>\s*\d+\.\s*(.*?)</summary>', active_part, re.DOTALL)
                 b_cnt = 0
                 v_cnt = 0
                 for h in headers:
+                    if any(ign.lower() in h.lower() for ign in ignore_findings):
+                        continue
                     if re.search(r'\bRule violation\b', h, re.IGNORECASE):
                         v_cnt += 1
                     else:
@@ -284,7 +288,7 @@ def check_qodo_status(opener, token, pr_num):
         'review_comment_body': review_comment['body'] if review_comment else ''
     }
 
-def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None):
+def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None, ignore_findings=None):
     opener = build_opener(proxy)
     token = get_token()
     start_time = time.time()
@@ -293,7 +297,7 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None):
 
     while True:
         try:
-            status = check_qodo_status(opener, token, pr_num)
+            status = check_qodo_status(opener, token, pr_num, ignore_findings=ignore_findings)
         except Exception as e:
             if wait and (time.time() - start_time < timeout):
                 print(f"[{time.strftime('%X')}] Warning: transient error during poll ({e}). Retrying in {poll_interval}s...")
@@ -362,6 +366,7 @@ if __name__ == '__main__':
     parser.add_argument('--timeout', type=int, default=300, help="Max seconds to wait (default 300)")
     parser.add_argument('--interval', type=int, default=15, help="Poll interval in seconds (default 15)")
     parser.add_argument('--proxy', type=str, default=None, help="Explicit HTTP proxy URL")
+    parser.add_argument('--ignore-finding', action='append', default=[], help="Finding title to ignore as false positive")
     args = parser.parse_args()
 
-    sys.exit(verify_pr(args.pr, wait=args.wait, timeout=args.timeout, poll_interval=args.interval, proxy=args.proxy))
+    sys.exit(verify_pr(args.pr, wait=args.wait, timeout=args.timeout, poll_interval=args.interval, proxy=args.proxy, ignore_findings=args.ignore_finding))
