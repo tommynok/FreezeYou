@@ -203,14 +203,6 @@ public final class TasksUtils {
      * @param taskTrigger trigger identifier tag (e.g. "OLA_com.example" or "onScreenOn") used for cancellation tracking
      */
     public static void runTask(String task, Context context, String taskTrigger) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            new Thread(() -> runTaskInternal(task, context, taskTrigger)).start();
-        } else {
-            runTaskInternal(task, context, taskTrigger);
-        }
-    }
-
-    private static void runTaskInternal(String task, Context context, String taskTrigger) {
         String[] sTasks = task.split(";");
         for (String asTasks : sTasks) {
             int length = asTasks.length();
@@ -543,16 +535,8 @@ public final class TasksUtils {
      * this method should run on UI thread.
      */
     public static void runCollectedTasks(Context context, ArrayList<String> tasks) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            new Thread(() -> {
-                for (String task : tasks) {
-                    runTaskInternal(task, context, null);
-                }
-            }).start();
-        } else {
-            for (String task : tasks) {
-                runTaskInternal(task, context, null);
-            }
+        for (String task : tasks) {
+            runTask(task, context, null);
         }
     }
 
