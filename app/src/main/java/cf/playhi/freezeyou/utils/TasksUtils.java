@@ -695,11 +695,8 @@ public final class TasksUtils {
      * was scheduled, and those codes are kept per trigger: "OSA_&lt;package&gt;" and
      * "OLA_&lt;package&gt;" for entering and leaving an application, "onScreenOn" and
      * "onScreenOff" for the screen.
-     *
-     * Public because the one-time Tray migration recognises the task keys by this rule rather than
-     * by a copy of it.
      */
-    public static List<String> delayTaskTriggerKeys(Set<String> storedKeys) {
+    private static List<String> delayTaskTriggerKeys(Set<String> storedKeys) {
         List<String> triggers = new ArrayList<>();
         for (String key : storedKeys) {
             if (key != null && (key.startsWith("OSA_") || key.startsWith("OLA_")
@@ -750,10 +747,8 @@ public final class TasksUtils {
      * The codes are kept outside the database for that reason, the same way the delayed tasks
      * already keep theirs. Alarms do not survive a reboot, and what is re-registered after one
      * comes from the database, so an alarm that predates this list disappears at the next restart.
-     *
-     * Public because the one-time Tray migration copies this exact key and must not guess its name.
      */
-    public static final String PUBLISHED_TIME_TASK_IDS = "publishedTimeTaskIds";
+    private static final String PUBLISHED_TIME_TASK_IDS = "publishedTimeTaskIds";
 
     private static void rememberPublishedTimeTask(int id) {
         DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();

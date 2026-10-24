@@ -69,11 +69,17 @@ public final class AutoAllowListUtils {
         if (pkgName == null) {
             return;
         }
-        List<String> entries = splitEntries(readRaw(key));
-        String encoded = encode(pkgName);
-        if (!entries.contains(encoded)) {
-            entries.add(encoded);
-            write(context, key, joinEntries(entries));
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        storage.lock();
+        try {
+            List<String> entries = splitEntries(readRaw(key));
+            String encoded = encode(pkgName);
+            if (!entries.contains(encoded)) {
+                entries.add(encoded);
+                write(context, key, joinEntries(entries));
+            }
+        } finally {
+            storage.unlock();
         }
     }
 
@@ -81,9 +87,15 @@ public final class AutoAllowListUtils {
         if (pkgName == null) {
             return;
         }
-        List<String> entries = splitEntries(readRaw(key));
-        if (entries.remove(encode(pkgName))) {
-            write(context, key, joinEntries(entries));
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        storage.lock();
+        try {
+            List<String> entries = splitEntries(readRaw(key));
+            if (entries.remove(encode(pkgName))) {
+                write(context, key, joinEntries(entries));
+            }
+        } finally {
+            storage.unlock();
         }
     }
 
