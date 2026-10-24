@@ -25,6 +25,7 @@ import java.util.Date;
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.utils.FUFUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 import cf.playhi.freezeyou.utils.ThemeUtils;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 
@@ -404,6 +405,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 shortcutIntent.putExtra("target", target);
                 shortcutIntent.putExtra("tasks", tasks);
                 shortcutIntent.putExtra("justLaunch", activityShortcutMode);
+                ShortcutTokenUtils.attachToken(shortcutIntent);
                 Intent intent = new Intent();
                 intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
                 intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
@@ -475,13 +477,13 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
             String target = lscaga_target_editText.getText().toString();
             String tasks = lscaga_task_editText.getText().toString();
             target = FUFUtils.normalizeSelectedTarget(this, target);
-            startActivity(
-                    new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class)
-                            .putExtra("pkgName", currentPkgName)
-                            .putExtra("target", target)
-                            .putExtra("tasks", tasks)
-                            .putExtra("justLaunch", activityShortcutMode)
-            );
+            Intent simIntent = new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class)
+                    .putExtra("pkgName", currentPkgName)
+                    .putExtra("target", target)
+                    .putExtra("tasks", tasks)
+                    .putExtra("justLaunch", activityShortcutMode);
+            ShortcutTokenUtils.attachToken(simIntent);
+            startActivity(simIntent);
         });
     }
 

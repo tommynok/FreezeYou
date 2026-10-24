@@ -105,16 +105,22 @@ public class UriFreezeActivity extends FreezeYouBaseActivity {
                 && intent.getStringExtra(Intent.EXTRA_REFERRER_NAME) == null) {
             Uri referrerUri = getReferrer();
             if (referrerUri != null && "android-app".equals(referrerUri.getScheme())) {
-                refererPackage = referrerUri.getEncodedSchemeSpecificPart().substring(2);
-                refererPackageLabel =
-                        getApplicationLabel(
-                                UriFreezeActivity.this,
-                                null,
-                                ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, this),
-                                refererPackage
-                        );
-                if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
+                String ssp = referrerUri.getEncodedSchemeSpecificPart();
+                if (ssp != null && ssp.startsWith("//") && ssp.length() > 2) {
+                    refererPackage = ssp.substring(2);
+                    refererPackageLabel =
+                            getApplicationLabel(
+                                    UriFreezeActivity.this,
+                                    null,
+                                    ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, this),
+                                    refererPackage
+                            );
+                    if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
+                        refererPackageLabel = ILLEGALPKGNAME;
+                    }
+                } else {
                     refererPackageLabel = ILLEGALPKGNAME;
+                    refererPackage = ILLEGALPKGNAME;
                 }
             } else {
                 refererPackageLabel = ILLEGALPKGNAME;

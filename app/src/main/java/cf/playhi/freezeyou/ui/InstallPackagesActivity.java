@@ -131,24 +131,34 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         final String fromPkgLabel;
         final String fromPkgName;
-        if (Build.VERSION.SDK_INT >= 22) {
+        Intent intent = getIntent();
+        if (Build.VERSION.SDK_INT >= 22
+                && intent != null
+                && intent.getParcelableExtra(Intent.EXTRA_REFERRER) == null
+                && intent.getStringExtra(Intent.EXTRA_REFERRER_NAME) == null) {
             Uri referrerUri = getReferrer();
-            if (referrerUri == null || !"android-app".equals(referrerUri.getScheme())) {
+            if (referrerUri != null && "android-app".equals(referrerUri.getScheme())) {
+                String ssp = referrerUri.getEncodedSchemeSpecificPart();
+                if (ssp != null && ssp.startsWith("//") && ssp.length() > 2) {
+                    fromPkgName = ssp.substring(2);
+                    String refererPackageLabel =
+                            getApplicationLabel(
+                                    InstallPackagesActivity.this,
+                                    null, null,
+                                    fromPkgName
+                            );
+                    if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
+                        fromPkgLabel = ILLEGALPKGNAME;
+                    } else {
+                        fromPkgLabel = refererPackageLabel;
+                    }
+                } else {
+                    fromPkgLabel = ILLEGALPKGNAME;
+                    fromPkgName = ILLEGALPKGNAME;
+                }
+            } else {
                 fromPkgLabel = ILLEGALPKGNAME;
                 fromPkgName = ILLEGALPKGNAME;
-            } else {
-                fromPkgName = referrerUri.getEncodedSchemeSpecificPart().substring(2);
-                String refererPackageLabel =
-                        getApplicationLabel(
-                                InstallPackagesActivity.this,
-                                null, null,
-                                fromPkgName
-                        );
-                if (refererPackageLabel.equals(getString(R.string.uninstalled))) {
-                    fromPkgLabel = ILLEGALPKGNAME;
-                } else {
-                    fromPkgLabel = refererPackageLabel;
-                }
             }
         } else {
             fromPkgLabel = ILLEGALPKGNAME;

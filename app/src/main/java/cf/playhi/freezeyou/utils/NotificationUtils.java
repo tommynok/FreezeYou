@@ -110,6 +110,7 @@ public final class NotificationUtils {
                         : PendingIntent.getService(context, mId, resultIntent, pendingIntentFlags);
             } else {
                 resultIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
+                ShortcutTokenUtils.attachToken(resultIntent);
                 resultPendingIntent =
                         PendingIntent.getActivity(
                                 context, mId, resultIntent, pendingIntentFlags);

@@ -98,6 +98,7 @@ import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -2802,10 +2803,14 @@ public class Main extends FreezeYouBaseActivity {
                         startActivity(new Intent(this, AboutActivity.class));
                         return true;
                     case R.id.menu_oneKeyFreezeImmediately:
-                        startActivity(new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false));
+                        Intent oneKeyFreezeIntent = new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false);
+                        ShortcutTokenUtils.attachToken(oneKeyFreezeIntent);
+                        startActivity(oneKeyFreezeIntent);
                         return true;
                     case R.id.menu_oneKeyUFImmediately:
-                        startActivity(new Intent(this, OneKeyUF.class));
+                        Intent oneKeyUFIntent = new Intent(this, OneKeyUF.class);
+                        ShortcutTokenUtils.attachToken(oneKeyUFIntent);
+                        startActivity(oneKeyUFIntent);
                         return true;
                     case R.id.menu_vM_onlyFrozen:
                         new Thread(new Runnable() {

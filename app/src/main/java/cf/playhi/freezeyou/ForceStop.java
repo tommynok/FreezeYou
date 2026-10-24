@@ -9,6 +9,7 @@ import android.os.Bundle;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
@@ -18,6 +19,11 @@ public class ForceStop extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (!ShortcutTokenUtils.verifyToken(getIntent())) {
+            finish();
+            return;
+        }
 
         String pkgName = getIntent().getStringExtra("pkgName");
 

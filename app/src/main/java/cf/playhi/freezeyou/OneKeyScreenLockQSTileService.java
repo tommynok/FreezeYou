@@ -6,6 +6,7 @@ import android.os.Build;
 import android.service.quicksettings.TileService;
 
 import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -14,9 +15,9 @@ public class OneKeyScreenLockQSTileService extends TileService {
     @Override
     public void onClick() {
         super.onClick();
-        startActivity(
-                new Intent(this, OneKeyScreenLockImmediatelyActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        );
+        Intent intent = new Intent(this, OneKeyScreenLockImmediatelyActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ShortcutTokenUtils.attachToken(intent);
+        startActivity(intent);
     }
 }

@@ -19,6 +19,7 @@ import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSuppo
 import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.PackageListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.utils.ServiceUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
@@ -107,6 +108,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
         }
         checkAndEnableShizukuMultiProcessSupport(this)
+        ShortcutTokenUtils.initDynamicShortcuts(this)
         try {
             // The process can be started by a provider/binder call from another app: on
             // Android 12+ starting a foreground service from that background state throws

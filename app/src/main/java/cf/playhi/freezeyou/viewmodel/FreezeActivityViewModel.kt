@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
@@ -86,6 +87,10 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun loadStartedIntentAndPkgName(startedIntent: Intent) {
         mStartedIntent = startedIntent
+        if (!ShortcutTokenUtils.verifyToken(startedIntent)) {
+            mFinishMe.value = true
+            return
+        }
         if ("freezeyou" == mStartedIntent.scheme) {
             val dataUri = mStartedIntent.data
             dataUri?.run { getQueryParameter("pkgName")?.let { mPkgName.value = it } }

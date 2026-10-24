@@ -108,6 +108,7 @@ object LauncherShortcutUtils {
         context: Context,
         bm: Bitmap?
     ) {
+        ShortcutTokenUtils.attachToken(intent)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             requestCreateShortCutOldApi(title, intent, icon, context, bm)
         } else {
