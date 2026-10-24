@@ -627,7 +627,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     if (getPackageManager().canRequestPackageInstalls()) {
                         requestSysInstallPkg(apkFilePath);
-                        finish();
                     } else {
                         showInstallPermissionCheckFailedDialog(
                                 install, apkFilePath, packageUri,
@@ -639,7 +638,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     }
                 } else {
                     requestSysInstallPkg(apkFilePath);
-                    finish();
                 }
             }
         });
@@ -656,10 +654,17 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             } catch (IllegalArgumentException e) {
                 new Thread(() -> {
                     File targetDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
-                    File tempFile = new File(targetDir, "ZDF-sys-install-temp.apk");
-                    if (tempFile.exists()) {
-                        tempFile.delete();
+                    if (targetDir != null) {
+                        File[] oldFallbacks = targetDir.listFiles((dir, name) -> name.startsWith("ZDF-fallback-"));
+                        if (oldFallbacks != null) {
+                            for (File f : oldFallbacks) {
+                                if (System.currentTimeMillis() - f.lastModified() > 300_000L) {
+                                    f.delete();
+                                }
+                            }
+                        }
                     }
+                    File tempFile = new File(targetDir, "ZDF-fallback-" + System.currentTimeMillis() + ".apk");
                     try (InputStream in = new FileInputStream(file)) {
                         FileUtils.copyFile(in, tempFile.getAbsolutePath());
                         Uri uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", tempFile);
@@ -669,7 +674,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         if (tempFile.exists()) {
                             tempFile.delete();
                         }
-                        runOnUiThread(() -> showToast(this, R.string.failed));
+                        runOnUiThread(() -> {
+                            showToast(this, R.string.failed);
+                            finish();
+                        });
                     }
                 }).start();
             }
@@ -679,18 +687,19 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     private void launchSysInstall(Uri uri) {
-        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
-            return;
-        }
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
-        intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        Intent chooser = Intent.createChooser(intent, getString(R.string.plsSelect));
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivity(chooser);
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+            intent.setDataAndType(uri, "application/vnd.android.package-archive");
+            Intent chooser = Intent.createChooser(intent, getString(R.string.plsSelect));
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(chooser);
+            }
+        } finally {
+            finish();
         }
     }
 
