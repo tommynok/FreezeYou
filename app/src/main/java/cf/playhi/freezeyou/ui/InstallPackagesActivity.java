@@ -648,29 +648,44 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     private void requestSysInstallPkg(String filePath) {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         File file = new File(filePath);
-        Uri uri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
-                uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
+                Uri uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
+                launchSysInstall(uri);
             } catch (IllegalArgumentException e) {
-                File targetDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
-                File tempFile = new File(targetDir, "ZDF-" + System.currentTimeMillis() + "_" + file.getName());
-                try (InputStream in = new FileInputStream(file)) {
-                    FileUtils.copyFile(in, tempFile.getAbsolutePath());
-                    file = tempFile;
-                    uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    showToast(this, R.string.failed);
-                    return;
-                }
+                new Thread(() -> {
+                    File targetDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
+                    File tempFile = new File(targetDir, "ZDF-sys-install-temp.apk");
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
+                    try (InputStream in = new FileInputStream(file)) {
+                        FileUtils.copyFile(in, tempFile.getAbsolutePath());
+                        Uri uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", tempFile);
+                        runOnUiThread(() -> launchSysInstall(uri));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        if (tempFile.exists()) {
+                            tempFile.delete();
+                        }
+                        runOnUiThread(() -> showToast(this, R.string.failed));
+                    }
+                }).start();
             }
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         } else {
-            uri = Uri.fromFile(file);
+            launchSysInstall(Uri.fromFile(file));
+        }
+    }
+
+    private void launchSysInstall(Uri uri) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
         intent.setDataAndType(uri, "application/vnd.android.package-archive");
         Intent chooser = Intent.createChooser(intent, getString(R.string.plsSelect));

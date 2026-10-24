@@ -22,7 +22,12 @@ public class UninstallReceiver extends BroadcastReceiver {
             return;
         }
 
-        if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(intent.getAction())) {
+        String action = intent.getAction();
+        if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)
+                || Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+            if (intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                return;
+            }
             String pkgName = intent.getDataString();
             if (pkgName != null) {
                 pkgName = pkgName.replace("package:", "");
