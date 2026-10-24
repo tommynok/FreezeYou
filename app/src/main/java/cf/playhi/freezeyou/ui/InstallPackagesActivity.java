@@ -677,6 +677,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     private void launchSysInstall(Uri uri) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+            return;
+        }
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
