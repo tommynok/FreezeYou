@@ -440,7 +440,19 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             }
             val db2 = openOrCreateDatabase("scheduledTasks", Context.MODE_PRIVATE, null)
             try {
-                db2.execSQL("CREATE TABLE IF NOT EXISTS tasks(_id INTEGER PRIMARY KEY AUTOINCREMENT, time VARCHAR, repeat VARCHAR, enabled INTEGER(1), label VARCHAR, task VARCHAR, column1 VARCHAR, column2 VARCHAR)")
+                val cursor = db2.rawQuery("PRAGMA table_info(tasks)", null)
+                var hasTimeCol = false
+                while (cursor.moveToNext()) {
+                    if ("time" == cursor.getString(1)) {
+                        hasTimeCol = true
+                        break
+                    }
+                }
+                cursor.close()
+                if (hasTimeCol) {
+                    db2.execSQL("DROP TABLE IF EXISTS tasks")
+                }
+                db2.execSQL("CREATE TABLE IF NOT EXISTS tasks(_id INTEGER PRIMARY KEY AUTOINCREMENT, hour INTEGER(2), minutes INTEGER(2), repeat VARCHAR, enabled INTEGER(1), label VARCHAR, task VARCHAR, column1 VARCHAR, column2 VARCHAR)")
             } finally {
                 db2.close()
             }

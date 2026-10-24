@@ -288,7 +288,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void addUpUseTimes(String currentPackage) {
-        mExecutor.execute(() -> DataStatisticsUtils.addUseTimes(getApplicationContext(), currentPackage));
+        DataStatisticsUtils.addUseTimes(getApplicationContext(), currentPackage);
     }
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {

@@ -100,6 +100,7 @@ class TriggerScreenLockListener {
             SQLiteDatabase db = null;
             Cursor cursor = null;
             boolean hasScreenTrigger = false;
+            boolean scanSucceeded = false;
             try {
                 db = context.openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
                 cursor = db.query("tasks", null, null, null, null, null, null);
@@ -127,6 +128,7 @@ class TriggerScreenLockListener {
                         }
                     }
                 }
+                scanSucceeded = true;
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } finally {
@@ -137,7 +139,7 @@ class TriggerScreenLockListener {
                     db.close();
                 }
             }
-            if (!hasScreenTrigger) {
+            if (scanSucceeded && !hasScreenTrigger) {
                 context.stopService(new Intent(context, TriggerTasksService.class));
             }
         }

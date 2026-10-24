@@ -856,6 +856,7 @@ public final class TasksUtils {
         SQLiteDatabase db = null;
         Cursor cursor = null;
         boolean hasScreenTrigger = false;
+        boolean scanSucceeded = false;
         try {
             db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
             cursor = db.query("tasks", null, null, null, null, null, null);
@@ -870,6 +871,7 @@ public final class TasksUtils {
                     cursor.moveToNext();
                 }
             }
+            scanSucceeded = true;
         } catch (SQLiteException e) {
             e.printStackTrace();
         } finally {
@@ -883,7 +885,7 @@ public final class TasksUtils {
 
         if (hasScreenTrigger) {
             startService(context, new Intent(context, TriggerTasksService.class));
-        } else {
+        } else if (scanSucceeded) {
             context.stopService(new Intent(context, TriggerTasksService.class));
         }
     }
