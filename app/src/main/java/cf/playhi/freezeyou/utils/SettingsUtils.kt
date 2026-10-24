@@ -49,6 +49,14 @@ object SettingsUtils {
         syncMMKVDataToMMKVWhenSharedPreferenceDataChanged(context, sharedPreferences, abstractKey)
 
         when (abstractKey) {
+            openAndUFImmediately -> {
+                if (openAndUFImmediately.getValue()) {
+                    shortcutClickAction.setValue("open_and_uf")
+                    shortcutAutoFUF.setValue(false)
+                } else if (shortcutClickAction.getValue() == "open_and_uf") {
+                    shortcutClickAction.setValue("dialog")
+                }
+            }
             onekeyFreezeWhenLockScreen -> {
                 if (onekeyFreezeWhenLockScreen.getValue()) {
                     ServiceUtils.startService(

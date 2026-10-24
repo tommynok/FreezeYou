@@ -47,7 +47,7 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
     },
 
     shortcutClickAction {
-        override fun defaultValue() = "dialog"
+        override fun defaultValue() = ""
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.shortcutClickAction
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_FREEZE_AND_UNFREEZE

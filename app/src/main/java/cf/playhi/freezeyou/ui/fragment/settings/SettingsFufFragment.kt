@@ -31,14 +31,18 @@ class SettingsFufFragment : CardPreferenceFragment() {
         val openImmediatelyPref = findPreference<Preference>("openImmediatelyAfterUnfreezeUseShortcutAutoFUF")
         val needConfirmPref = findPreference<Preference>("needConfirmWhenFreezeUseShortcutAutoFUF")
 
-        // Sync initial state from MMKV: migrate from legacy booleans if not set
-        var currentAction = shortcutClickAction.getValue()
-        if (currentAction.isNullOrEmpty() || currentAction == "dialog") {
-            currentAction = when {
+        // Sync initial state from MMKV: migrate from legacy booleans if unset, and persist resolved choice
+        val savedAction = shortcutClickAction.getValue()
+        val currentAction = if (!savedAction.isNullOrEmpty()) {
+            savedAction
+        } else {
+            val resolved = when {
                 shortcutAutoFUF.getValue() -> "toggle"
                 openAndUFImmediately.getValue() -> "open_and_uf"
                 else -> "dialog"
             }
+            shortcutClickAction.setValue(resolved)
+            resolved
         }
         shortcutActionPref.value = currentAction
 
