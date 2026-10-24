@@ -11,7 +11,6 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -49,15 +48,10 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 public class Freeze extends FreezeYouBaseActivity {
     private FreezeActivityViewModel viewModel;
     private ImageView applicationIconImageView;
-    /**
-     * The work now finishes long before the animation does, so closing as soon as the result
-     * arrives would leave nothing to see. Hold the window until the animation has run out.
-     */
-    private long animationEndsAtUptime = 0L;
     private boolean mPendingGo = false;
     private boolean mIsExecuting = false;
     private final Queue<Intent> mPendingIntents = new ArrayDeque<>();
-    private final Runnable mFinishRunnable = this::finish;
+    private AlertDialog mCurrentDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +104,13 @@ public class Freeze extends FreezeYouBaseActivity {
         }
     }
 
+    private void dismissCurrentDialog() {
+        if (mCurrentDialog != null && mCurrentDialog.isShowing()) {
+            mCurrentDialog.dismiss();
+            mCurrentDialog = null;
+        }
+    }
+
     private void finishOrProcessNext() {
         if (!mPendingIntents.isEmpty()) {
             Intent next = mPendingIntents.poll();
@@ -118,16 +119,7 @@ public class Freeze extends FreezeYouBaseActivity {
             checkAndExecuteGo();
         } else {
             mIsExecuting = false;
-            finishWhenAnimationIsOver();
-        }
-    }
-
-    private void finishWhenAnimationIsOver() {
-        long remaining = animationEndsAtUptime - SystemClock.uptimeMillis();
-        getWindow().getDecorView().removeCallbacks(mFinishRunnable);
-        if (remaining > 0) {
-            getWindow().getDecorView().postDelayed(mFinishRunnable, remaining);
-        } else {
+            dismissCurrentDialog();
             finish();
         }
     }
@@ -168,7 +160,7 @@ public class Freeze extends FreezeYouBaseActivity {
                                             getApplicationInfoFromPkgName(
                                                     pkgName,
                                                     this
-                                            ),
+                                             ),
                                             false
                                     )
                             )
@@ -189,7 +181,6 @@ public class Freeze extends FreezeYouBaseActivity {
 
     private void onUnfreezeStart() {
         long animDuration = viewModel.getAnimationDurationMillis();
-        animationEndsAtUptime = SystemClock.uptimeMillis() + animDuration;
         ObjectAnimator fadeAnim = ObjectAnimator.ofFloat(
                 applicationIconImageView, "alpha", 0.2f, 1f);
         fadeAnim.setDuration(animDuration);
@@ -222,7 +213,6 @@ public class Freeze extends FreezeYouBaseActivity {
 
     private void onFreezeStart() {
         long animDuration = viewModel.getAnimationDurationMillis();
-        animationEndsAtUptime = SystemClock.uptimeMillis() + animDuration;
         ObjectAnimator fadeAnim = ObjectAnimator.ofFloat(
                 applicationIconImageView, "alpha", 1f, 0f);
         fadeAnim.setDuration(animDuration);
@@ -261,7 +251,6 @@ public class Freeze extends FreezeYouBaseActivity {
             }
             mPendingGo = false;
             mIsExecuting = true;
-            getWindow().getDecorView().removeCallbacks(mFinishRunnable);
             viewModel.go();
         }
     }
@@ -275,13 +264,16 @@ public class Freeze extends FreezeYouBaseActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (!isLocked()) finish();
+        if (!isLocked()) {
+            dismissCurrentDialog();
+            finish();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        getWindow().getDecorView().removeCallbacks(mFinishRunnable);
+        dismissCurrentDialog();
     }
 
     @Override
@@ -304,7 +296,8 @@ public class Freeze extends FreezeYouBaseActivity {
      */
     private void buildAndShowUnfreezeToLaunchDialog(DialogData data) {
         if (data == null) return;
-        FreezeYouAlertDialogBuilder(this)
+        dismissCurrentDialog();
+        mCurrentDialog = FreezeYouAlertDialogBuilder(this)
                 .setIcon(
                         getApplicationIcon(
                                 this,
@@ -332,6 +325,7 @@ public class Freeze extends FreezeYouBaseActivity {
     }
 
     private void buildAndShowFUFDialog(DialogData data) {
+        dismissCurrentDialog();
         AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this)
                 .setIcon(
                         getApplicationIcon(
@@ -375,6 +369,6 @@ public class Freeze extends FreezeYouBaseActivity {
                     )
             );
         }
-        builder.show();
+        mCurrentDialog = builder.show();
     }
 }

@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class FreezeActivityViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        private const val ANIMATION_DURATION_MILLIS = 450L
+        private const val ANIMATION_DURATION_MILLIS = 50L
     }
 
     private lateinit var mStartedIntent: Intent
