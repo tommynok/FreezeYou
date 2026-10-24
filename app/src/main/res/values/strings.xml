@@ -473,6 +473,17 @@
         <item>askLockScreen</item>
         <item>lockScreenImmediately</item>
     </string-array>
+    <string name="shortcutClickAction">Action on application shortcut click</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Ask for action (default)</item>
+        <item>Always open (unfreeze and launch)</item>
+        <item>Toggle (freeze / unfreeze)</item>
+    </string-array>
+    <string-array name="shortcutClickActionSelectionValues" translatable="false">
+        <item>dialog</item>
+        <item>open_and_uf</item>
+        <item>toggle</item>
+    </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>Default</item>
         <item>List</item>

@@ -448,6 +448,12 @@
         <item>Запрашивать блокировку экрана</item>
         <item>Блокировать экран сразу</item>
     </string-array>
+    <string name="shortcutClickAction">Действие при нажатии на ярлык приложения</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Спрашивать действие (по умолчанию)</item>
+        <item>Всегда открывать (разморозка и запуск)</item>
+        <item>Переключатель (заморозка / разморозка)</item>
+    </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>По умолчанию</item>
         <item>Список</item>

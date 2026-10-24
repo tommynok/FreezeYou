@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_SUCCESS
 import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -143,7 +144,11 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 }
                 return
             }
-            if (mIsFromShortcut && shortcutAutoFUF.getValue()) {
+            val clickAction = shortcutClickAction.getValue()
+            val isAutoFUF = if (!clickAction.isNullOrEmpty()) clickAction == "toggle" else shortcutAutoFUF.getValue()
+            val isOpenAndUF = if (!clickAction.isNullOrEmpty()) clickAction == "open_and_uf" else openAndUFImmediately.getValue()
+
+            if (mIsFromShortcut && isAutoFUF) {
                 if (frozen) {
                     fufAction(
                         it,
@@ -159,7 +164,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                             target,
                             tasks,
                             frozen = false,
-                            ignoreAutoRun = true
+                            ignoreAutoRun = true,
+                            openAndUF = isOpenAndUF
                         )
                     } else {
                         fufAction(it, target, tasks, runImmediately = false, frozen = false)
@@ -171,7 +177,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                     target,
                     tasks,
                     frozen,
-                    !mIsFromShortcut
+                    !mIsFromShortcut,
+                    openAndUF = isOpenAndUF
                 )
             }
         }
@@ -182,9 +189,10 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         target: String?,
         tasks: String?,
         frozen: Boolean,
-        ignoreAutoRun: Boolean
+        ignoreAutoRun: Boolean,
+        openAndUF: Boolean = openAndUFImmediately.getValue()
     ) {
-        if (!ignoreAutoRun && openAndUFImmediately.getValue()) {
+        if (!ignoreAutoRun && openAndUF) {
             if (frozen) {
                 fufAction(pkgName, target, tasks, runImmediately = true, frozen = true)
             } else {

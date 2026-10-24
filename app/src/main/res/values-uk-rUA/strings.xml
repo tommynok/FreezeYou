@@ -448,6 +448,12 @@
         <item>Запит блокування екрану</item>
         <item>Блокувати екран відразу</item>
     </string-array>
+    <string name="shortcutClickAction">Дія при натисканні на ярлик додатка</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Запитувати дію (за замовчуванням)</item>
+        <item>Завжди відкривати (розморозка та запуск)</item>
+        <item>Перемикач (заморозка / розморозка)</item>
+    </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>За замовчуванням</item>
         <item>Список</item>
