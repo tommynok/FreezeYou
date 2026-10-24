@@ -26,6 +26,10 @@ public class UninstallReceiver extends BroadcastReceiver {
             String pkgName = intent.getDataString();
             if (pkgName != null) {
                 pkgName = pkgName.replace("package:", "");
+                if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
+                    // Clean up notification data if not installed for current user
+                    deleteNotification(context, pkgName);
+                }
                 if (ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context) == null) {
                     removeFromOneKeyList(context, context.getString(R.string.sAutoFreezeApplicationList), pkgName);
                     removeFromOneKeyList(context, context.getString(R.string.sOneKeyUFApplicationList), pkgName);
@@ -47,8 +51,6 @@ public class UninstallReceiver extends BroadcastReceiver {
                     // Clean up cached name for uninstalled application
                     context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                             .edit().remove(pkgName).apply();
-                    // Clean up notification data if present
-                    deleteNotification(context, pkgName);
                 }
             }
         }

@@ -2,6 +2,7 @@ package cf.playhi.freezeyou
 
 import android.app.Application
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build

@@ -21,6 +21,14 @@ class RestoreAndShellResultTest {
     }
 
     @Test
+    fun uninstalledFlagsReflectAbsenceOfFlagInstalled() {
+        assertTrue(RestoreUtils.isAppUninstalledFlags(0))
+        assertTrue(RestoreUtils.isAppUninstalledFlags(FLAG_SYSTEM))
+        assertFalse(RestoreUtils.isAppUninstalledFlags(FLAG_INSTALLED))
+        assertFalse(RestoreUtils.isAppUninstalledFlags(FLAG_SYSTEM or FLAG_INSTALLED))
+    }
+
+    @Test
     fun restoreActionIsRestrictedToUninstalledSystemFilter() {
         assertTrue(RestoreUtils.isRestoreFilter("OUS"))
         assertFalse(RestoreUtils.isRestoreFilter("all"))

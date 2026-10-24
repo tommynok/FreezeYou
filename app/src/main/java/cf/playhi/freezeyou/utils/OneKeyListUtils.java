@@ -169,8 +169,7 @@ public final class OneKeyListUtils {
         // Parsed rather than split on the comma: a padded entry would be looked up under a name
         // the package manager does not know, and then removed under a name the list does not hold.
         for (String pkgName : PackageListUtils.parse(s)) {
-            if (ApplicationInfoUtils
-                    .getApplicationInfoFromPkgName(pkgName, context) == null) {
+            if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
                 OneKeyListUtils.removeFromOneKeyList(
                         context,
                         oneKeyName,
@@ -313,8 +312,7 @@ public final class OneKeyListUtils {
                 // Parsed once, up front: the rebuilt string is shorter than the names it was made
                 // from, so walking it while removing would skip entries.
                 for (String pkgName : PackageListUtils.parse(packages)) {
-                    if (ApplicationInfoUtils
-                            .getApplicationInfoFromPkgName(pkgName, context) == null) {
+                    if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
                         packages = removePkgFromPkgNames(packages, pkgName);
                     }
                 }

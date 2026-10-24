@@ -214,7 +214,7 @@ public final class DataStatisticsUtils {
                             String encodedPkg = cursor.getString(cursor.getColumnIndexOrThrow("pkg"));
                             try {
                                 String pkgName = new String(Base64.decode(encodedPkg, Base64.DEFAULT));
-                                if (ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context) == null) {
+                                if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
                                     pkgsToRemove.add(encodedPkg);
                                 }
                             } catch (Exception ignored) {

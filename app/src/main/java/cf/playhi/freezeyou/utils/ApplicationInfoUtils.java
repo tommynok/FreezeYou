@@ -17,4 +17,19 @@ public final class ApplicationInfoUtils {
         return applicationInfo;
     }
 
+    /**
+     * Checks if the package exists and is currently installed for the targeted user.
+     * Evaluates against flags (including FLAG_INSTALLED) to avoid treating uninstalled system apps
+     * or data-kept uninstalled apps as installed.
+     */
+    public static boolean isAppInstalled(Context context, String pkgName) {
+        if (context == null || pkgName == null || pkgName.isEmpty()) return false;
+        try {
+            ApplicationInfo applicationInfo = context.getPackageManager().getApplicationInfo(pkgName, 0);
+            return applicationInfo != null && !RestoreUtils.isAppUninstalled(applicationInfo);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }

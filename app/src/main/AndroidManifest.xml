@@ -335,7 +335,7 @@
             android:name=".ui.InstallPackagesActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:excludeFromRecents="true"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/installAndUninstall"
             android:launchMode="singleInstance"
             android:process=":installAndUninstall"

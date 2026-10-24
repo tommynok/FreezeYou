@@ -71,6 +71,9 @@ public final class RestoreUtils {
      * Checks if the package represented by {@code appInfo} is marked as uninstalled for the current user.
      */
     public static boolean isAppUninstalled(ApplicationInfo appInfo) {
+        if (Build.VERSION.SDK_INT < 17) {
+            return false;
+        }
         return appInfo != null && isAppUninstalledFlags(appInfo.flags);
     }
 
@@ -88,6 +91,9 @@ public final class RestoreUtils {
      * in {@code /data/app} are wiped upon uninstallation.
      */
     public static boolean isRestorableSystemApp(ApplicationInfo appInfo) {
+        if (Build.VERSION.SDK_INT < 17) {
+            return false;
+        }
         return appInfo != null && isRestorableSystemAppFlags(appInfo.flags);
     }
 

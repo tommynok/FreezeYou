@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Date;
 
@@ -652,7 +653,21 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         File file = new File(filePath);
         Uri uri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
+            try {
+                uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
+            } catch (IllegalArgumentException e) {
+                File targetDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
+                File tempFile = new File(targetDir, "ZDF-" + System.currentTimeMillis() + "_" + file.getName());
+                try (InputStream in = new FileInputStream(file)) {
+                    FileUtils.copyFile(in, tempFile.getAbsolutePath());
+                    file = tempFile;
+                    uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", file);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showToast(this, R.string.failed);
+                    return;
+                }
+            }
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         } else {
             uri = Uri.fromFile(file);
@@ -669,7 +684,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 301) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 init();
             } else {
                 finish();
