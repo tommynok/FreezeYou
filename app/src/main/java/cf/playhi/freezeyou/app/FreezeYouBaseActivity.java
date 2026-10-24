@@ -87,10 +87,7 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    @CallSuper
-    protected void onResume() {
-        super.onResume();
+    protected boolean checkAppLock() {
         if (activityNeedCheckAppLock() && isAuthenticationEnabled()
                 && isBiometricPromptPartAvailable(this)) {
             if (isLocked()) {
@@ -100,10 +97,19 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
                                 .putExtra("unlockLogoPkgName", mUnlockLogoPkgName),
                         APP_LOCK_ACTIVITY_REQUEST_CODE
                 );
+                return true;
             } else {
                 mHadBeenUnlocked = true;
             }
         }
+        return false;
+    }
+
+    @Override
+    @CallSuper
+    protected void onResume() {
+        super.onResume();
+        checkAppLock();
     }
 
     @Override

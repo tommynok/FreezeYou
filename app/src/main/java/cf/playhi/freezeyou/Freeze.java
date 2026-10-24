@@ -254,7 +254,11 @@ public class Freeze extends FreezeYouBaseActivity {
     }
 
     private void checkAndExecuteGo() {
-        if (mPendingGo && !isLocked() && viewModel != null) {
+        if (mPendingGo && viewModel != null) {
+            if (isLocked()) {
+                checkAppLock();
+                return;
+            }
             mPendingGo = false;
             mIsExecuting = true;
             getWindow().getDecorView().removeCallbacks(mFinishRunnable);
