@@ -19,6 +19,9 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -53,7 +56,7 @@ public class Freeze extends FreezeYouBaseActivity {
     private long animationEndsAtUptime = 0L;
     private boolean mPendingGo = false;
     private boolean mIsExecuting = false;
-    private Intent mPendingIntent = null;
+    private final Queue<Intent> mPendingIntents = new ArrayDeque<>();
     private final Runnable mFinishRunnable = this::finish;
 
     @Override
@@ -83,16 +86,7 @@ public class Freeze extends FreezeYouBaseActivity {
         );
         viewModel.getFinishMe().observe(this, finishMe -> {
             if (finishMe) {
-                if (mPendingIntent != null) {
-                    Intent next = mPendingIntent;
-                    mPendingIntent = null;
-                    viewModel.loadStartedIntentAndPkgName(next);
-                    mPendingGo = true;
-                    checkAndExecuteGo();
-                } else {
-                    mIsExecuting = false;
-                    finishWhenAnimationIsOver();
-                }
+                finishOrProcessNext();
             }
         });
         viewModel.getPlayAnimator().observe(this, this::onPlayAnimator);
@@ -107,12 +101,24 @@ public class Freeze extends FreezeYouBaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (mIsExecuting) {
-            mPendingIntent = intent;
+        if (mIsExecuting || mPendingGo) {
+            mPendingIntents.add(intent);
         } else if (viewModel != null) {
             viewModel.loadStartedIntentAndPkgName(intent);
             mPendingGo = true;
             checkAndExecuteGo();
+        }
+    }
+
+    private void finishOrProcessNext() {
+        if (!mPendingIntents.isEmpty()) {
+            Intent next = mPendingIntents.poll();
+            viewModel.loadStartedIntentAndPkgName(next);
+            mPendingGo = true;
+            checkAndExecuteGo();
+        } else {
+            mIsExecuting = false;
+            finishWhenAnimationIsOver();
         }
     }
 
@@ -316,8 +322,8 @@ public class Freeze extends FreezeYouBaseActivity {
                                 true, true
                         )
                 )
-                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finish())
-                .setOnCancelListener(dialogInterface -> finish())
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finishOrProcessNext())
+                .setOnCancelListener(dialogInterface -> finishOrProcessNext())
                 .show();
     }
 
@@ -340,8 +346,8 @@ public class Freeze extends FreezeYouBaseActivity {
                                 data.getPkgName()
                         )
                 )
-                .setNeutralButton(R.string.cancel, (dialogInterface, i) -> finish())
-                .setOnCancelListener(dialogInterface -> finish());
+                .setNeutralButton(R.string.cancel, (dialogInterface, i) -> finishOrProcessNext())
+                .setOnCancelListener(dialogInterface -> finishOrProcessNext());
         if (data.getFrozen()) {
             builder.setPositiveButton(R.string.unfreeze, (dialogInterface, i) ->
                     viewModel.fufAction(
@@ -356,7 +362,7 @@ public class Freeze extends FreezeYouBaseActivity {
                         && result != FUFSinglePackage.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT) {
                     showToast(this, getFUFRelatedToastString(this, result));
                 }
-                finish();
+                finishOrProcessNext();
             });
             builder.setNegativeButton(R.string.freeze, (dialogInterface, i) ->
                     viewModel.fufAction(
