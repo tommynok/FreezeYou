@@ -431,6 +431,8 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     private fun initDatabases() {
+        val lockFile = File(filesDir, "initDatabases.lock")
+        if (lockFile.exists()) return
         try {
             val db1 = openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null)
             try {
@@ -470,6 +472,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     db4.close()
                 }
             }
+            lockFile.createNewFile()
         } catch (e: Exception) {
             e.printStackTrace()
         }

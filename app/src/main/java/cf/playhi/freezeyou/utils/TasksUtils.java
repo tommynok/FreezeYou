@@ -661,6 +661,7 @@ public final class TasksUtils {
                     Log.e("FreezeYou", "Could not delete the database " + name);
                 }
             }
+            new File(appContext.getFilesDir(), "initDatabases.lock").delete();
             checkTriggerTasks(appContext);
             if (onComplete != null) {
                 new Handler(Looper.getMainLooper()).post(onComplete);

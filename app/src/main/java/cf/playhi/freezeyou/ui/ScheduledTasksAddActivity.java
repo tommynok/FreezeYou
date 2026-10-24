@@ -379,8 +379,10 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                 case "onApplicationsForeground":
                 case "onLeaveApplications":
                     AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
+                    TasksUtils.checkTriggerTasks(this);
                     break;
                 default:
+                    TasksUtils.checkTriggerTasks(this);
                     break;
             }
         } else {
