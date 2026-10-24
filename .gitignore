@@ -15,6 +15,14 @@
 __pycache__/
 *.pyc
 
+# Keystore and build artifacts
+*.jks
+*.keystore
+release-keystore.jks
+app/release/
+app/debug/
+/build/
+
 # Private agent workspace (local + mirrored to freezeyou-docs/audit)
 /.agents/
 /CODER_HANDOFF.md

@@ -9,12 +9,15 @@ public final class UninstallPolicyUtils {
     private UninstallPolicyUtils() {}
 
     /**
-     * Removing an updated system app in one step cannot be guaranteed by the Device Owner
-     * PackageInstaller route; full removal needs the root/Shizuku two-step shell operation.
+     * In Android (DeletePackageHelper.mayDeletePackageLocked), Device Owner
+     * PackageInstaller.uninstall() lacks DELETE_SYSTEM_APP and cannot uninstall factory preinstalled
+     * system apps without updates, failing with DELETE_FAILED_INTERNAL_ERROR. Updated system apps
+     * also require a two-step operation. Thus, full removal of any system app requires a privileged
+     * shell (root or Shizuku).
      */
     public static boolean requiresPrivilegedShellForFullUninstall(
             boolean isSystemApp,
-            boolean hasSystemUpdate,
+            @SuppressWarnings("unused") boolean hasSystemUpdate,
             boolean uninstallUpdatesOnly) {
         return isSystemApp && !uninstallUpdatesOnly;
     }
