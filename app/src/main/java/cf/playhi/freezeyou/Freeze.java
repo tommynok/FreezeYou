@@ -52,6 +52,9 @@ public class Freeze extends FreezeYouBaseActivity {
      */
     private long animationEndsAtUptime = 0L;
     private boolean mPendingGo = false;
+    private boolean mIsExecuting = false;
+    private Intent mPendingIntent = null;
+    private final Runnable mFinishRunnable = this::finish;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +82,18 @@ public class Freeze extends FreezeYouBaseActivity {
                 )
         );
         viewModel.getFinishMe().observe(this, finishMe -> {
-            if (finishMe) finishWhenAnimationIsOver();
+            if (finishMe) {
+                if (mPendingIntent != null) {
+                    Intent next = mPendingIntent;
+                    mPendingIntent = null;
+                    viewModel.loadStartedIntentAndPkgName(next);
+                    mPendingGo = true;
+                    checkAndExecuteGo();
+                } else {
+                    mIsExecuting = false;
+                    finishWhenAnimationIsOver();
+                }
+            }
         });
         viewModel.getPlayAnimator().observe(this, this::onPlayAnimator);
         viewModel.getShowDialog().observe(this, this::buildAndShowFUFDialog);
@@ -93,7 +107,9 @@ public class Freeze extends FreezeYouBaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (viewModel != null) {
+        if (mIsExecuting) {
+            mPendingIntent = intent;
+        } else if (viewModel != null) {
             viewModel.loadStartedIntentAndPkgName(intent);
             mPendingGo = true;
             checkAndExecuteGo();
@@ -102,8 +118,9 @@ public class Freeze extends FreezeYouBaseActivity {
 
     private void finishWhenAnimationIsOver() {
         long remaining = animationEndsAtUptime - SystemClock.uptimeMillis();
+        getWindow().getDecorView().removeCallbacks(mFinishRunnable);
         if (remaining > 0) {
-            getWindow().getDecorView().postDelayed(this::finish, remaining);
+            getWindow().getDecorView().postDelayed(mFinishRunnable, remaining);
         } else {
             finish();
         }
@@ -233,6 +250,8 @@ public class Freeze extends FreezeYouBaseActivity {
     private void checkAndExecuteGo() {
         if (mPendingGo && !isLocked() && viewModel != null) {
             mPendingGo = false;
+            mIsExecuting = true;
+            getWindow().getDecorView().removeCallbacks(mFinishRunnable);
             viewModel.go();
         }
     }
@@ -247,6 +266,12 @@ public class Freeze extends FreezeYouBaseActivity {
     protected void onPause() {
         super.onPause();
         if (!isLocked()) finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        getWindow().getDecorView().removeCallbacks(mFinishRunnable);
     }
 
     @Override
