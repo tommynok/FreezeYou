@@ -90,9 +90,9 @@ public class Freeze extends FreezeYouBaseActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         if (viewModel != null) {
             viewModel.loadStartedIntentAndPkgName(intent);
-            viewModel.go();
         }
     }
 

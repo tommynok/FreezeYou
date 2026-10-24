@@ -87,6 +87,7 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun loadStartedIntentAndPkgName(startedIntent: Intent) {
         mStartedIntent = startedIntent
+        mPkgName.value = null
         val hasValidToken = ShortcutTokenUtils.verifyToken(startedIntent, ShortcutTokenUtils.ACTION_FREEZE)
         if ("freezeyou" == mStartedIntent.scheme) {
             val dataUri = mStartedIntent.data
