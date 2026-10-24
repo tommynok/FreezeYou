@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,11 +20,14 @@ import cf.playhi.freezeyou.utils.FUFUtils;
 
 import static cf.playhi.freezeyou.fuf.FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO;
 import static cf.playhi.freezeyou.fuf.FUFSinglePackage.API_FREEZEYOU_MROOT_DPM;
+import static cf.playhi.freezeyou.fuf.FUFSinglePackage.API_FREEZEYOU_MROOT_PROFILE_OWNER;
 import static cf.playhi.freezeyou.fuf.FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lesserToast;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode;
 import static cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner;
+import static cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isProfileOwner;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen;
+import static cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen;
 import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction;
 import static cf.playhi.freezeyou.utils.FUFUtils.processAction;
 import static cf.playhi.freezeyou.utils.FUFUtils.processMRootAction;
@@ -94,17 +99,31 @@ public class FUFService extends FreezeYouBaseService {
                             if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
                                 oneKeyAction(context, true, packages, API_FREEZEYOU_MROOT_DPM);
                             } else if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context)) {
-                                oneKeyAction(context, true, packages, API_FREEZEYOU_PROFILE_OWNER);
+                                oneKeyAction(context, true, packages, API_FREEZEYOU_MROOT_PROFILE_OWNER);
                             } else {
                                 oneKeyAction(context, true, packages, API_FREEZEYOU_ROOT_DISABLE_ENABLE);
                             }
                         } else {
                             if (Build.VERSION.SDK_INT >= 21 && (isDeviceOwner(context) || isProfileOwner(context))) {
                                 int dpmMode = isProfileOwner(context) && !isDeviceOwner(context)
-                                        ? API_FREEZEYOU_PROFILE_OWNER
+                                        ? API_FREEZEYOU_MROOT_PROFILE_OWNER
                                         : API_FREEZEYOU_MROOT_DPM;
                                 if (!FUFUtils.checkRootPermission()) {
-                                    oneKeyAction(context, false, packages, dpmMode);
+                                    List<String> dpmList = new ArrayList<>();
+                                    List<String> rootList = new ArrayList<>();
+                                    for (String pkg : packages) {
+                                        if (checkMRootFrozen(context, pkg) || !checkRootFrozen(context, pkg, null)) {
+                                            dpmList.add(pkg);
+                                        } else {
+                                            rootList.add(pkg);
+                                        }
+                                    }
+                                    if (!dpmList.isEmpty()) {
+                                        oneKeyAction(context, false, dpmList.toArray(new String[0]), dpmMode);
+                                    }
+                                    if (!rootList.isEmpty()) {
+                                        oneKeyAction(context, false, rootList.toArray(new String[0]), API_FREEZEYOU_ROOT_DISABLE_ENABLE);
+                                    }
                                 } else {
                                     List<String> dpmList = new ArrayList<>();
                                     List<String> rootList = new ArrayList<>();

@@ -119,10 +119,14 @@ open class FUFSinglePackage(
                     pureExecuteAPIDPMAction()
                 }
             } else if (Build.VERSION.SDK_INT >= 21 && (isDeviceOwner(context) || isProfileOwner(context)) && !checkRootPermission()) {
-                if (isProfileOwner(context) && !isDeviceOwner(context)) {
-                    pureExecuteAPIProfileOwnerAction()
+                if (!checkRootFrozen(context, singlePackageName, null)) {
+                    if (isProfileOwner(context) && !isDeviceOwner(context)) {
+                        pureExecuteAPIProfileOwnerAction()
+                    } else {
+                        pureExecuteAPIDPMAction()
+                    }
                 } else {
-                    pureExecuteAPIDPMAction()
+                    pureExecuteAPIRootAction()
                 }
             } else {
                 pureExecuteAPIRootAction()
