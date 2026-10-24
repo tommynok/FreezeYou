@@ -15,7 +15,8 @@ $files = @(
     "HISTORY_ARCHIVE.md",
     "LOCALE_TITLES_CHECK.md",
     "freezeyou_zh-CN_combined.md",
-    "SHORTCUTS_EXPLAINED.md"
+    "SHORTCUTS_EXPLAINED.md",
+    "DEVICE_VERIFICATION_CATALOG.md"
 )
 
 if (-not (Test-Path $targetDir)) {

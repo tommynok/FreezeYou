@@ -1,17 +1,17 @@
 *.iml
 .gradle
 /local.properties
-/.idea/workspace.xml
+/.idea/caches
 /.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
 /build
 /captures
 .externalNativeBuild
-/app/release
-/app/debug
-/.idea/caches
-/.idea
-/release-keystore.jks
+.cxx
 __pycache__/
 *.pyc
 
@@ -28,4 +28,5 @@ LESSONS_LEARNED.md
 HISTORY_ARCHIVE.md
 LOCALE_TITLES_CHECK.md
 freezeyou_zh-CN_combined.md
+DEVICE_VERIFICATION_CATALOG.md
 /scratch/
