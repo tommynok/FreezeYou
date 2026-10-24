@@ -237,9 +237,9 @@ public final class Support {
                     switch (item.getItemId()) {
                         case R.id.main_sca_menu_forceStop:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                Intent intent = new Intent(context, ForceStop.class).putExtra("pkgName", pkgName);
-                                ShortcutTokenUtils.attachToken(intent, ShortcutTokenUtils.ACTION_FORCE_STOP);
-                                context.startActivity(intent);
+                                Intent forceStopIntent = new Intent(context, ForceStop.class).putExtra("pkgName", pkgName);
+                                ShortcutTokenUtils.attachToken(forceStopIntent, ShortcutTokenUtils.ACTION_FORCE_STOP);
+                                context.startActivity(forceStopIntent);
                             }
                             break;
                         case R.id.main_sca_menu_addToFreezeOnceQuit:
@@ -252,11 +252,11 @@ public final class Support {
                             Support.checkAddOrRemove(context, UFPkgNames, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
                             break;
                         case R.id.main_sca_menu_appDetail:
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Intent appDetailIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                             Uri uri = Uri.fromParts("package", pkgName, null);
-                            intent.setData(uri);
+                            appDetailIntent.setData(uri);
                             try {
-                                context.startActivity(intent);
+                                context.startActivity(appDetailIntent);
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 showToast(context, e.getLocalizedMessage());
@@ -267,9 +267,9 @@ public final class Support {
                             break;
                         case R.id.main_sca_menu_disableAEnable:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                Intent intent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
-                                ShortcutTokenUtils.attachToken(intent, ShortcutTokenUtils.ACTION_FREEZE);
-                                context.startActivity(intent);
+                                Intent freezeIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
+                                ShortcutTokenUtils.attachToken(freezeIntent, ShortcutTokenUtils.ACTION_FREEZE);
+                                context.startActivity(freezeIntent);
                             }
                             break;
                         case R.id.main_sca_menu_createDisEnableShortCut:
