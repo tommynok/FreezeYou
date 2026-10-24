@@ -32,6 +32,7 @@ public class FUFService extends FreezeYouBaseService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         startServiceForeground();
         if (intent == null) {
+            stopSelf(startId);
             return super.onStartCommand(null, flags, startId);
         }
         boolean freeze = intent.getBooleanExtra("freeze", false);
@@ -43,63 +44,73 @@ public class FUFService extends FreezeYouBaseService {
             String tasks = intent.getStringExtra("tasks");
             boolean askRun = intent.getBooleanExtra("askRun", false);
             boolean runImmediately = intent.getBooleanExtra("runImmediately", false);
-            if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
-                if (freeze) {
-                    if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
-                        processMRootAction(
-                                context, pkgName, target, tasks, true, askRun,
-                                false, null, false,
-                                !lesserToast.getValue(null));
+            new Thread(() -> {
+                try {
+                    if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
+                        if (freeze) {
+                            if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+                                processMRootAction(
+                                        context, pkgName, target, tasks, true, askRun,
+                                        false, null, false,
+                                        !lesserToast.getValue(null));
+                            } else {
+                                processRootAction(pkgName, target, tasks, context, false, askRun,
+                                        false, null, false,
+                                        !lesserToast.getValue(null));
+                            }
+                        } else {
+                            if (checkMRootFrozen(context, pkgName)) {
+                                processMRootAction(context, pkgName, target, tasks, false,
+                                        askRun, runImmediately, null, false,
+                                        !lesserToast.getValue(null));
+                            } else {
+                                processRootAction(pkgName, target, tasks, context, true, askRun,
+                                        runImmediately, null, false,
+                                        !lesserToast.getValue(null));
+                            }
+                        }
                     } else {
-                        processRootAction(pkgName, target, tasks, context, false, askRun,
-                                false, null, false,
-                                !lesserToast.getValue(null));
+                        processAction(
+                                context, pkgName, apiMode, !freeze,
+                                !lesserToast.getValue(null),
+                                askRun, target, tasks,
+                                runImmediately, null, false
+                        );
                     }
-                } else {
-                    if (checkMRootFrozen(context, pkgName)) {
-                        processMRootAction(context, pkgName, target, tasks, false,
-                                askRun, runImmediately, null, false,
-                                !lesserToast.getValue(null));
-                    } else {
-                        processRootAction(pkgName, target, tasks, context, true, askRun,
-                                runImmediately, null, false,
-                                !lesserToast.getValue(null));
-                    }
+                } finally {
+                    stopSelf(startId);
                 }
-            } else {
-                processAction(
-                        context, pkgName, apiMode, !freeze,
-                        !lesserToast.getValue(null),
-                        askRun, target, tasks,
-                        runImmediately, null, false
-                );
-            }
+            }).start();
         } else {
             String[] packages = intent.getStringArrayExtra("packages");
+            new Thread(() -> {
+                try {
+                    int decidedApiMode;
 
-            int decidedApiMode;
+                    if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
+                        if (freeze) {
+                            if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+                                decidedApiMode = API_FREEZEYOU_MROOT_DPM;
+                            } else {
+                                decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
+                            }
+                        } else {
+                            if (FUFUtils.checkRootPermission()) {
+                                decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
+                            } else {
+                                decidedApiMode = API_FREEZEYOU_MROOT_DPM;
+                            }
+                        }
+                    } else {
+                        decidedApiMode = apiMode;
+                    }
 
-            if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
-                if (freeze) {
-                    if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
-                        decidedApiMode = API_FREEZEYOU_MROOT_DPM;
-                    } else {
-                        decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
-                    }
-                } else {
-                    if (FUFUtils.checkRootPermission()) {
-                        decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
-                    } else {
-                        decidedApiMode = API_FREEZEYOU_MROOT_DPM;
-                    }
+                    oneKeyAction(context, freeze, packages, decidedApiMode);
+                } finally {
+                    stopSelf(startId);
                 }
-            } else {
-                decidedApiMode = apiMode;
-            }
-
-            oneKeyAction(context, freeze, packages, decidedApiMode);
+            }).start();
         }
-        stopSelf();
         return super.onStartCommand(intent, flags, startId);
     }
 

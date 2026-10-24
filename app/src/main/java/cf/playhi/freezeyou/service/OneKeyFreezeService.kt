@@ -18,11 +18,9 @@ import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
 
 class OneKeyFreezeService : FreezeYouBaseService() {
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) {
-            // Restart after the process was killed: nothing to act on.
-            return super.onStartCommand(intent, flags, startId)
-        }
+
+    override fun onCreate() {
+        super.onCreate()
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 "OneKeyFreeze",
@@ -38,28 +36,38 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         } else {
             startForeground(2, Notification())
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            // Restart after the process was killed: nothing to act on.
+            doFinish(startId)
+            return super.onStartCommand(null, flags, startId)
+        }
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
         val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
         )
-        try {
-            if (pkgNames.isNotEmpty()) {
-                oneKeyAction(
-                    this, true,
-                    pkgNames,
-                    selectFUFMode.getValue()!!.toInt()
-                )
+        Thread {
+            try {
+                if (pkgNames.isNotEmpty()) {
+                    oneKeyAction(
+                        this, true,
+                        pkgNames,
+                        selectFUFMode.getValue()!!.toInt()
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                checkAuto(auto, this, startId)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            checkAuto(auto, this)
-        }
+        }.start()
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun checkAndLockScreen(context: Context) {
+    private fun checkAndLockScreen(context: Context, startId: Int) {
         when (shortCutOneKeyFreezeAdditionalOptions.getValue(null)) {
             "askLockScreen" -> {
                 startActivity(
@@ -68,18 +76,18 @@ class OneKeyFreezeService : FreezeYouBaseService() {
                         AskLockScreenActivity::class.java
                     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
-                doFinish()
+                doFinish(startId)
             }
             "lockScreenImmediately" -> {
                 DevicePolicyManagerUtils.doLockScreen(context)
-                doFinish()
+                doFinish(startId)
             }
-            "nothing" -> doFinish()
-            else -> doFinish()
+            "nothing" -> doFinish(startId)
+            else -> doFinish(startId)
         }
     }
 
-    private fun doFinish() {
+    private fun doFinish(startId: Int = -1) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -88,14 +96,14 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         }
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
         mNotificationManager?.cancel(2)
-        stopSelf()
+        if (startId != -1) stopSelf(startId) else stopSelf()
     }
 
-    private fun checkAuto(auto: Boolean, context: Context) {
+    private fun checkAuto(auto: Boolean, context: Context, startId: Int) {
         if (auto) {
-            checkAndLockScreen(context)
+            checkAndLockScreen(context, startId)
         } else {
-            doFinish()
+            doFinish(startId)
         }
     }
 

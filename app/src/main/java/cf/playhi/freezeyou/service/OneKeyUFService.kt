@@ -15,11 +15,8 @@ import cf.playhi.freezeyou.utils.PackageListUtils
 
 class OneKeyUFService : FreezeYouBaseService() {
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) {
-            // Restart after the process was killed: nothing to act on.
-            return super.onStartCommand(intent, flags, startId)
-        }
+    override fun onCreate() {
+        super.onCreate()
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 "OneKeyUF", getString(R.string.oneKeyUF), NotificationManager.IMPORTANCE_NONE
@@ -33,23 +30,33 @@ class OneKeyUFService : FreezeYouBaseService() {
         } else {
             startForeground(3, Notification())
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            // Restart after the process was killed: nothing to act on.
+            doFinish(startId)
+            return super.onStartCommand(null, flags, startId)
+        }
         val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
         )
-        try {
-            if (pkgNames.isNotEmpty()) {
-                oneKeyAction(
-                    this, false,
-                    pkgNames,
-                    selectFUFMode.getValue()!!.toInt()
-                )
+        Thread {
+            try {
+                if (pkgNames.isNotEmpty()) {
+                    oneKeyAction(
+                        this, false,
+                        pkgNames,
+                        selectFUFMode.getValue()!!.toInt()
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                doFinish(startId)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            doFinish()
-        }
+        }.start()
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -57,7 +64,7 @@ class OneKeyUFService : FreezeYouBaseService() {
         return null
     }
 
-    private fun doFinish() {
+    private fun doFinish(startId: Int = -1) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -66,6 +73,6 @@ class OneKeyUFService : FreezeYouBaseService() {
         }
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
         mNotificationManager?.cancel(3)
-        stopSelf()
+        if (startId != -1) stopSelf(startId) else stopSelf()
     }
 }

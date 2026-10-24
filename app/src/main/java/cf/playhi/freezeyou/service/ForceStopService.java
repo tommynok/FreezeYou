@@ -18,15 +18,20 @@ public class ForceStopService extends FreezeYouBaseService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
             // Restart after the process was killed: nothing to act on.
-            stopSelf();
+            stopSelf(startId);
             return super.onStartCommand(null, flags, startId);
         }
         Context context = getApplicationContext();
 
         String[] packages = intent.getStringArrayExtra("packages");
-        ForceStopUtils.forceStop(context, packages);
+        new Thread(() -> {
+            try {
+                ForceStopUtils.forceStop(context, packages);
+            } finally {
+                stopSelf(startId);
+            }
+        }).start();
 
-        stopSelf();
         return super.onStartCommand(intent, flags, startId);
     }
 

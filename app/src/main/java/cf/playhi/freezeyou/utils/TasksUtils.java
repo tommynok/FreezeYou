@@ -241,7 +241,7 @@ public final class TasksUtils {
                     case "ls"://Lock Screen
                         if (parseTaskAndReturnIfNeedExecuteImmediately(context, asTasks, taskTrigger)) {
                             if (!"onScreenOn".equals(taskTrigger)) {
-                                DevicePolicyManagerUtils.doLockScreen(context);
+                                new Thread(() -> DevicePolicyManagerUtils.doLockScreen(context)).start();
                             }
                         }
                         break;
@@ -372,7 +372,7 @@ public final class TasksUtils {
                         wifiManager.setWifiEnabled(enable);
                     break;
                 case "cd": // CellularData
-                    setMobileDataEnabled(context, enable);
+                    new Thread(() -> setMobileDataEnabled(context, enable)).start();
                     break;
                 case "bluetooth": // Bluetooth
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -570,13 +570,7 @@ public final class TasksUtils {
             } catch (Exception ee) {
                 ee.printStackTrace();
                 try { // Root method
-                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-                    DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                    outputStream.writeBytes("svc data " + (enable ? "enable" : "disable") + "\n");
-                    outputStream.writeBytes("exit\n");
-                    outputStream.flush();
-                    process.waitFor();
-                    destroyProcess(outputStream, process);
+                    PrivilegedShellUtils.runRootCommand("svc data " + (enable ? "enable" : "disable"), 5000L);
                 } catch (Exception eee) { // All methods failed
                     eee.printStackTrace();
                     showToast(context, R.string.failed);
