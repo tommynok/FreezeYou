@@ -51,6 +51,7 @@ public class Freeze extends FreezeYouBaseActivity {
      * arrives would leave nothing to see. Hold the window until the animation has run out.
      */
     private long animationEndsAtUptime = 0L;
+    private boolean mPendingGo = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +86,7 @@ public class Freeze extends FreezeYouBaseActivity {
         viewModel.getShowUnfreezeToLaunchDialog().observe(
                 this, this::buildAndShowUnfreezeToLaunchDialog);
         viewModel.loadStartedIntentAndPkgName(getIntent());
+        mPendingGo = true;
     }
 
     @Override
@@ -93,6 +95,8 @@ public class Freeze extends FreezeYouBaseActivity {
         setIntent(intent);
         if (viewModel != null) {
             viewModel.loadStartedIntentAndPkgName(intent);
+            mPendingGo = true;
+            checkAndExecuteGo();
         }
     }
 
@@ -226,10 +230,17 @@ public class Freeze extends FreezeYouBaseActivity {
         animatorSet.start();
     }
 
+    private void checkAndExecuteGo() {
+        if (mPendingGo && !isLocked() && viewModel != null) {
+            mPendingGo = false;
+            viewModel.go();
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isLocked()) viewModel.go();
+        checkAndExecuteGo();
     }
 
     @Override
