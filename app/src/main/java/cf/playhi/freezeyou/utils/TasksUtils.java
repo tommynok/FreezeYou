@@ -203,6 +203,14 @@ public final class TasksUtils {
      * @param taskTrigger trigger identifier tag (e.g. "OLA_com.example" or "onScreenOn") used for cancellation tracking
      */
     public static void runTask(String task, Context context, String taskTrigger) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            new Thread(() -> runTaskInternal(task, context, taskTrigger)).start();
+        } else {
+            runTaskInternal(task, context, taskTrigger);
+        }
+    }
+
+    private static void runTaskInternal(String task, Context context, String taskTrigger) {
         String[] sTasks = task.split(";");
         for (String asTasks : sTasks) {
             int length = asTasks.length();
@@ -241,7 +249,7 @@ public final class TasksUtils {
                     case "ls"://Lock Screen
                         if (parseTaskAndReturnIfNeedExecuteImmediately(context, asTasks, taskTrigger)) {
                             if (!"onScreenOn".equals(taskTrigger)) {
-                                new Thread(() -> DevicePolicyManagerUtils.doLockScreen(context)).start();
+                                DevicePolicyManagerUtils.doLockScreen(context);
                             }
                         }
                         break;
@@ -372,7 +380,7 @@ public final class TasksUtils {
                         wifiManager.setWifiEnabled(enable);
                     break;
                 case "cd": // CellularData
-                    new Thread(() -> setMobileDataEnabled(context, enable)).start();
+                    setMobileDataEnabled(context, enable);
                     break;
                 case "bluetooth": // Bluetooth
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -535,8 +543,16 @@ public final class TasksUtils {
      * this method should run on UI thread.
      */
     public static void runCollectedTasks(Context context, ArrayList<String> tasks) {
-        for (String task : tasks) {
-            runTask(task, context, null);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            new Thread(() -> {
+                for (String task : tasks) {
+                    runTaskInternal(task, context, null);
+                }
+            }).start();
+        } else {
+            for (String task : tasks) {
+                runTaskInternal(task, context, null);
+            }
         }
     }
 

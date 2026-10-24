@@ -8,11 +8,16 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
 import cf.playhi.freezeyou.utils.ForceStopUtils;
 
 public class ForceStopService extends FreezeYouBaseService {
+
+    private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -24,13 +29,13 @@ public class ForceStopService extends FreezeYouBaseService {
         Context context = getApplicationContext();
 
         String[] packages = intent.getStringArrayExtra("packages");
-        new Thread(() -> {
+        mExecutor.execute(() -> {
             try {
                 ForceStopUtils.forceStop(context, packages);
             } finally {
                 stopSelf(startId);
             }
-        }).start();
+        });
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -53,6 +58,12 @@ public class ForceStopService extends FreezeYouBaseService {
         } else {
             startForeground(6, new Notification());
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mExecutor.shutdown();
     }
 
     @Override

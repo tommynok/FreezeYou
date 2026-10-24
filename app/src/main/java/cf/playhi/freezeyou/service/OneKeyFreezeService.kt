@@ -16,8 +16,13 @@ import cf.playhi.freezeyou.ui.AskLockScreenActivity
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class OneKeyFreezeService : FreezeYouBaseService() {
+
+    private val mExecutor = Executors.newSingleThreadExecutor()
+    private val mActiveTasks = AtomicInteger(0)
 
     override fun onCreate() {
         super.onCreate()
@@ -41,7 +46,11 @@ class OneKeyFreezeService : FreezeYouBaseService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) {
             // Restart after the process was killed: nothing to act on.
-            doFinish(startId)
+            if (mActiveTasks.get() == 0) {
+                doFinish(startId)
+            } else {
+                stopSelf(startId)
+            }
             return super.onStartCommand(null, flags, startId)
         }
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
@@ -49,7 +58,8 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
         )
-        Thread {
+        mActiveTasks.incrementAndGet()
+        mExecutor.execute {
             try {
                 if (pkgNames.isNotEmpty()) {
                     oneKeyAction(
@@ -63,7 +73,7 @@ class OneKeyFreezeService : FreezeYouBaseService() {
             } finally {
                 checkAuto(auto, this, startId)
             }
-        }.start()
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -76,14 +86,22 @@ class OneKeyFreezeService : FreezeYouBaseService() {
                         AskLockScreenActivity::class.java
                     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
-                doFinish(startId)
+                finishTask(startId)
             }
             "lockScreenImmediately" -> {
                 DevicePolicyManagerUtils.doLockScreen(context)
-                doFinish(startId)
+                finishTask(startId)
             }
-            "nothing" -> doFinish(startId)
-            else -> doFinish(startId)
+            "nothing" -> finishTask(startId)
+            else -> finishTask(startId)
+        }
+    }
+
+    private fun finishTask(startId: Int) {
+        if (mActiveTasks.decrementAndGet() == 0) {
+            doFinish(startId)
+        } else {
+            stopSelf(startId)
         }
     }
 
@@ -103,8 +121,13 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         if (auto) {
             checkAndLockScreen(context, startId)
         } else {
-            doFinish(startId)
+            finishTask(startId)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mExecutor.shutdown()
     }
 
     override fun onBind(intent: Intent): IBinder? {

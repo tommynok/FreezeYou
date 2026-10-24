@@ -9,6 +9,8 @@ import android.os.Build;
 import android.os.IBinder;
 
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
@@ -28,6 +30,8 @@ import static cf.playhi.freezeyou.utils.FUFUtils.processRootAction;
 
 public class FUFService extends FreezeYouBaseService {
 
+    private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startServiceForeground();
@@ -44,7 +48,7 @@ public class FUFService extends FreezeYouBaseService {
             String tasks = intent.getStringExtra("tasks");
             boolean askRun = intent.getBooleanExtra("askRun", false);
             boolean runImmediately = intent.getBooleanExtra("runImmediately", false);
-            new Thread(() -> {
+            mExecutor.execute(() -> {
                 try {
                     if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
                         if (freeze) {
@@ -80,10 +84,10 @@ public class FUFService extends FreezeYouBaseService {
                 } finally {
                     stopSelf(startId);
                 }
-            }).start();
+            });
         } else {
             String[] packages = intent.getStringArrayExtra("packages");
-            new Thread(() -> {
+            mExecutor.execute(() -> {
                 try {
                     int decidedApiMode;
 
@@ -109,7 +113,7 @@ public class FUFService extends FreezeYouBaseService {
                 } finally {
                     stopSelf(startId);
                 }
-            }).start();
+            });
         }
         return super.onStartCommand(intent, flags, startId);
     }
@@ -138,6 +142,12 @@ public class FUFService extends FreezeYouBaseService {
         } else {
             startForeground(4, new Notification());
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mExecutor.shutdown();
     }
 
     @Override

@@ -12,8 +12,13 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class OneKeyUFService : FreezeYouBaseService() {
+
+    private val mExecutor = Executors.newSingleThreadExecutor()
+    private val mActiveTasks = AtomicInteger(0)
 
     override fun onCreate() {
         super.onCreate()
@@ -35,14 +40,19 @@ class OneKeyUFService : FreezeYouBaseService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) {
             // Restart after the process was killed: nothing to act on.
-            doFinish(startId)
+            if (mActiveTasks.get() == 0) {
+                doFinish(startId)
+            } else {
+                stopSelf(startId)
+            }
             return super.onStartCommand(null, flags, startId)
         }
         val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sOneKeyUFApplicationList), "")
         )
-        Thread {
+        mActiveTasks.incrementAndGet()
+        mExecutor.execute {
             try {
                 if (pkgNames.isNotEmpty()) {
                     oneKeyAction(
@@ -54,14 +64,18 @@ class OneKeyUFService : FreezeYouBaseService() {
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                doFinish(startId)
+                finishTask(startId)
             }
-        }.start()
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
-    override fun onBind(intent: Intent): IBinder? {
-        return null
+    private fun finishTask(startId: Int) {
+        if (mActiveTasks.decrementAndGet() == 0) {
+            doFinish(startId)
+        } else {
+            stopSelf(startId)
+        }
     }
 
     private fun doFinish(startId: Int = -1) {
@@ -74,5 +88,14 @@ class OneKeyUFService : FreezeYouBaseService() {
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
         mNotificationManager?.cancel(3)
         if (startId != -1) stopSelf(startId) else stopSelf()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mExecutor.shutdown()
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        return null
     }
 }
