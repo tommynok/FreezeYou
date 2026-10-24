@@ -894,9 +894,9 @@ object FUFUtils {
      * is done once for the whole batch, and the list is told once at the end.
      *
      * The root modes come here too, through [oneKeyActionRootAsync]: one su session for the batch
-     * instead of one process per application, driven on a background thread. Only the deprecated
-     * automatic mode stays on the service, because which way it lands — device owner or root — is
-     * decided per operation there, and that decision is the service's own.
+     * instead of one process per application, driven on a background thread. The deprecated
+     * automatic mode is dispatched through FUFService, which partitions packages between DPM/PO
+     * and batched root execution.
      */
     @JvmStatic
     fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
