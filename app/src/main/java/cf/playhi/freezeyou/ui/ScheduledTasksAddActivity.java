@@ -98,6 +98,9 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                                 }
                                 db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                 db.close();
+                                if (!isTimeTask) {
+                                    TasksUtils.checkTriggerTasks(ScheduledTasksAddActivity.this);
+                                }
                             }
                             finish();
                         })

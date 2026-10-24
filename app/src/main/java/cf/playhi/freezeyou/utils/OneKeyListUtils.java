@@ -10,6 +10,7 @@ import android.util.Base64;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -166,18 +167,18 @@ public final class OneKeyListUtils {
             return false;
         }
 
+        List<String> uninstalled = new ArrayList<>();
         // Parsed rather than split on the comma: a padded entry would be looked up under a name
         // the package manager does not know, and then removed under a name the list does not hold.
         for (String pkgName : PackageListUtils.parse(s)) {
             if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
-                OneKeyListUtils.removeFromOneKeyList(
-                        context,
-                        oneKeyName,
-                        pkgName
-                );
+                uninstalled.add(pkgName);
             }
         }
-        return true;
+        if (uninstalled.isEmpty()) {
+            return true;
+        }
+        return removeFromOneKeyList(context, oneKeyName, uninstalled);
     }
 
     public static String[] decodeUserListsInPackageNames(Context context, String[] pkgs) {

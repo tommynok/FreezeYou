@@ -16,7 +16,7 @@ public final class UninstallPolicyUtils {
             boolean isSystemApp,
             boolean hasSystemUpdate,
             boolean uninstallUpdatesOnly) {
-        return isSystemApp && hasSystemUpdate && !uninstallUpdatesOnly;
+        return isSystemApp && !uninstallUpdatesOnly;
     }
 
     public static boolean isValidUpdatesOnlyRequest(

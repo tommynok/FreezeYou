@@ -53,14 +53,13 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
             for (int i = 0; i < cursor.getCount(); i++) {
                 HashMap<String, Object> hm = new HashMap<>();
                 int id = cursor.getInt(cursor.getColumnIndex("_id"));
-                String title =
-                        new String(
-                                Base64.decode(
-                                        cursor.getString(
-                                                cursor.getColumnIndex("label")
-                                        ), Base64.DEFAULT
-                                )
-                        );
+                String rawLabel = cursor.getString(cursor.getColumnIndex("label"));
+                String title;
+                try {
+                    title = new String(Base64.decode(rawLabel, Base64.DEFAULT));
+                } catch (Exception e) {
+                    title = rawLabel != null ? rawLabel : "";
+                }
                 String packages = cursor.getString(cursor.getColumnIndex("packages"));
                 hm.put("id", id);
                 hm.put("title", title);

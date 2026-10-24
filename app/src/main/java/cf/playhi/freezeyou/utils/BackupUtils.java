@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Base64;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
@@ -246,6 +247,12 @@ public final class BackupUtils {
                     continue;
                 }
                 String label = oneUserDefinedCategoriesJSONObject.getString("label");
+                try {
+                    Base64.decode(label, Base64.DEFAULT);
+                } catch (IllegalArgumentException e) {
+                    isCompletelySuccess = false;
+                    continue;
+                }
                 // The two values come from a file someone can edit, and here they were pasted
                 // between quotes into SQL: a stray apostrophe ended the literal and the restore
                 // threw. Bound, they stay the data they are.

@@ -12,7 +12,7 @@ class UninstallPolicyTest {
         assertTrue(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, true, false))
         assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, true, true))
         assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(false, false, false))
-        assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, false, false))
+        assertTrue(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, false, false))
     }
 
     @Test

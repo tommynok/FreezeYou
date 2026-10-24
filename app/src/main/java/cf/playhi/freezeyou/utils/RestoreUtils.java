@@ -91,7 +91,7 @@ public final class RestoreUtils {
      * in {@code /data/app} are wiped upon uninstallation.
      */
     public static boolean isRestorableSystemApp(ApplicationInfo appInfo) {
-        if (Build.VERSION.SDK_INT < 17) {
+        if (Build.VERSION.SDK_INT < 26) {
             return false;
         }
         return appInfo != null && isRestorableSystemAppFlags(appInfo.flags);
@@ -225,6 +225,18 @@ public final class RestoreUtils {
         new Thread(() -> {
             final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
             final boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+            if (!shizukuAvailable && !rootAvailable) {
+                if (finalProgressDialog != null) {
+                    try {
+                        finalProgressDialog.dismiss();
+                    } catch (Exception ignored) {}
+                }
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    ToastUtils.showShortToast(context, R.string.insufficientPermission);
+                    if (onFinishedCallback != null) onFinishedCallback.run();
+                });
+                return;
+            }
             int restoredCount = 0;
 
             for (String packageName : packages) {

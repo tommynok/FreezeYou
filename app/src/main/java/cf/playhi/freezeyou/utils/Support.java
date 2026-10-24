@@ -105,7 +105,13 @@ public final class Support {
                 int id = cursor.getInt(cursor.getColumnIndexOrThrow("_id"));
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("label"));
                 userDefinedCategoriesHashMap.put(id, cursor.getString(cursor.getColumnIndexOrThrow("packages")));
-                vmUserDefinedSubMenu.add(R.id.main_sca_menu_userDefined_menuGroup, id, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                String decodedTitle;
+                try {
+                    decodedTitle = new String(Base64.decode(title, Base64.DEFAULT));
+                } catch (Exception e) {
+                    decodedTitle = title != null ? title : "";
+                }
+                vmUserDefinedSubMenu.add(R.id.main_sca_menu_userDefined_menuGroup, id, id, decodedTitle);
                 cursor.moveToNext();
             }
         }

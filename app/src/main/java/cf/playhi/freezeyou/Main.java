@@ -1729,7 +1729,7 @@ public class Main extends FreezeYouBaseActivity {
         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
         if (restoreItem == null) return;
         boolean uninstalledSystemFilter = RestoreUtils.isRestoreFilter(currentFilter);
-        boolean eligible = uninstalledSystemFilter
+        boolean eligible = uninstalledSystemFilter && Build.VERSION.SDK_INT >= 26
                 && !selectedPackages.isEmpty()
                 && !selectedPackages.contains(getString(R.string.notAvailable));
         restoreItem.setVisible(eligible);
@@ -2565,7 +2565,13 @@ public class Main extends FreezeYouBaseActivity {
             for (int i = 0; i < cursor.getCount(); i++) {
                 int id = cursor.getInt(cursor.getColumnIndex("_id"));
                 String title = cursor.getString(cursor.getColumnIndex("label"));
-                subMenu.add(groupId, id + idBase, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                String decodedTitle;
+                try {
+                    decodedTitle = new String(Base64.decode(title, Base64.DEFAULT));
+                } catch (Exception e) {
+                    decodedTitle = title != null ? title : "";
+                }
+                subMenu.add(groupId, id + idBase, id, decodedTitle);
                 cursor.moveToNext();
             }
         }
