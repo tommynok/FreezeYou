@@ -262,6 +262,14 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                             + getString(R.string.hourShouldBetween));
             return false;
         }
+        if (hour < 0 || hour >= 24) {
+            showToast(this, R.string.hourShouldBetween);
+            return false;
+        }
+        if (minutes < 0 || minutes > 59) {
+            showToast(this, R.string.minutesShouldBetween);
+            return false;
+        }
         int enabled = defaultSharedPreferences.getBoolean("stma_add_enable", true) ? 1 : 0;
         StringBuilder repeatStringBuilder = new StringBuilder();
         Set<String> stringSet = defaultSharedPreferences.getStringSet("stma_add_repeat", null);
@@ -450,9 +458,11 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
 
                         if (hour < 0 || hour >= 24) {
                             showToast(this, R.string.hourShouldBetween);
+                            break;
                         }
                         if (minutes < 0 || minutes > 59) {
                             showToast(this, R.string.minutesShouldBetween);
+                            break;
                         }
                     } else {
                         showToast(this, R.string.mustContainColon);
@@ -461,8 +471,8 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                 break;
             case "stma_add_trigger":
                 String stma_add_trigger = sharedPreferences.getString("stma_add_trigger", "");
-                if ("onApplicationsForeground".equals(stma_add_trigger)
-                        || "onLeaveApplications".equals(stma_add_trigger)
+                if (("onApplicationsForeground".equals(stma_add_trigger)
+                        || "onLeaveApplications".equals(stma_add_trigger))
                         && !isAccessibilitySettingsOn(this)) {
                     showToast(this, R.string.needActiveAccessibilityService);
                     openAccessibilitySettings(this);
