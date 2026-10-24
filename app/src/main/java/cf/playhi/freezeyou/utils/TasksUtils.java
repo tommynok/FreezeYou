@@ -169,7 +169,13 @@ public final class TasksUtils {
     }
 
     private static void setTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {//RTC
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
+            }
+        } else if (Build.VERSION.SDK_INT >= 23) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
         } else if (Build.VERSION.SDK_INT >= 19) {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
@@ -179,7 +185,13 @@ public final class TasksUtils {
     }
 
     private static void setRealTimeTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
+            }
+        } else if (Build.VERSION.SDK_INT >= 23) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
         } else if (Build.VERSION.SDK_INT >= 19) {
             alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
@@ -824,7 +836,11 @@ public final class TasksUtils {
                 String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
                 TasksUtils.cancelTheTask(context, id);
                 if (enabled == 1) {
-                    publishTask(context, id, hour, minutes, repeat, task);
+                    try {
+                        publishTask(context, id, hour, minutes, repeat, task);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
                 cursor.moveToNext();
             }

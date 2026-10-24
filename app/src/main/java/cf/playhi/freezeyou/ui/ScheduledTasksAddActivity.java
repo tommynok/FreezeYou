@@ -317,15 +317,23 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         values.put("task", task);
         values.put("column1", "");
         values.put("column2", "");
+        long newId = id;
         if (id == -5) {
-            db.insert("tasks", null, values);
+            newId = db.insert("tasks", null, values);
+            if (newId == -1) {
+                db.close();
+                showToast(this, R.string.failed);
+                return false;
+            }
         } else {
             db.update("tasks", values, "_id = ?", new String[]{String.valueOf(id)});
         }
         db.close();
-        TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+        if (id != -5) {
+            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+        }
         if (enabled == 1) {
-            publishTask(ScheduledTasksAddActivity.this, id, hour, minutes, repeat, task);
+            publishTask(ScheduledTasksAddActivity.this, (int) newId, hour, minutes, repeat, task);
         }
         setResult(RESULT_OK);
         return true;

@@ -22,9 +22,9 @@ import time
 import urllib.request
 import urllib.error
 
-if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+if hasattr(sys.stdout, 'reconfigure'):
     try:
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
 

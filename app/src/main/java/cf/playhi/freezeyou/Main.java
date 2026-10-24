@@ -2218,7 +2218,7 @@ public class Main extends FreezeYouBaseActivity {
     private volatile boolean mIsBatchUninstallChecking = false;
 
     private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
-        if (isFinishing() || isDestroyed()) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
             return;
         }
         if (hideUninstallSuccessDialog.getValue(this)) {

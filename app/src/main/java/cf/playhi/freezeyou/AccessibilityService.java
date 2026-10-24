@@ -163,7 +163,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      */
     @Override
     public boolean onUnbind(android.content.Intent intent) {
-        ProcessSharedState.clearForegroundPackage();
+        MainApplication.clearCurrentPackage();
         return super.onUnbind(intent);
     }
 

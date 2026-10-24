@@ -445,6 +445,12 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 field = intent
             }
 
+        @JvmStatic
+        fun clearCurrentPackage() {
+            mCurrentPackage = " "
+            ProcessSharedState.clearForegroundPackage()
+        }
+
         /**
          * Written by the accessibility service, which runs in `:backgroundService`, and read
          * wherever a freeze is about to happen — which is no longer the same process. It is kept
