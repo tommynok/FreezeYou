@@ -231,6 +231,14 @@ def check_qodo_status(opener, token, pr_num, ignore_findings=None):
             qodo_threads.append(t)
 
     unresolved_threads = [t for t in qodo_threads if not t.get('isResolved', False)]
+    if ignore_findings:
+        filtered = []
+        for t in unresolved_threads:
+            nodes = t.get('comments', {}).get('nodes', [])
+            body_text = nodes[0].get('body', '') if nodes else ''
+            if not any(ign.lower() in body_text.lower() for ign in ignore_findings):
+                filtered.append(t)
+        unresolved_threads = filtered
 
     # SHA alignment: the review summary MUST be for the current HEAD commit
     sha_aligned = False
