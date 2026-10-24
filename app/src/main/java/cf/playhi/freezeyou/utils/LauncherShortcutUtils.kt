@@ -74,15 +74,26 @@ object LauncherShortcutUtils {
         tasks: String? = null,
         justLaunch: Boolean = false
     ) {
+        val intent = Intent(context, cls)
+            .setAction(Intent.ACTION_MAIN)
+            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            .putExtra("pkgName", pkgName)
+            .putExtra("target", target)
+            .putExtra("tasks", tasks)
+            .putExtra("justLaunch", justLaunch)
+        val action = when (cls.name) {
+            "cf.playhi.freezeyou.Freeze" -> ShortcutTokenUtils.ACTION_FREEZE
+            "cf.playhi.freezeyou.ForceStop" -> ShortcutTokenUtils.ACTION_FORCE_STOP
+            "cf.playhi.freezeyou.OneKeyFreeze" -> ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE
+            "cf.playhi.freezeyou.OneKeyUF" -> ShortcutTokenUtils.ACTION_ONE_KEY_UF
+            "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
+            "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity" -> ShortcutTokenUtils.ACTION_LOCK_SCREEN
+            else -> ShortcutTokenUtils.ACTION_FREEZE
+        }
+        ShortcutTokenUtils.attachToken(intent, action)
         requestCreateShortCut(
             title,
-            Intent(context, cls)
-                .setAction(Intent.ACTION_MAIN)
-                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                .putExtra("pkgName", pkgName)
-                .putExtra("target", target)
-                .putExtra("tasks", tasks)
-                .putExtra("justLaunch", justLaunch),
+            intent,
             icon, id, context, null
         )
     }
@@ -108,7 +119,19 @@ object LauncherShortcutUtils {
         context: Context,
         bm: Bitmap?
     ) {
-        ShortcutTokenUtils.attachToken(intent)
+        if (!intent.hasExtra(ShortcutTokenUtils.EXTRA_AUTH_TOKEN)) {
+            val component = intent.component
+            val action = when (component?.className) {
+                "cf.playhi.freezeyou.Freeze" -> ShortcutTokenUtils.ACTION_FREEZE
+                "cf.playhi.freezeyou.ForceStop" -> ShortcutTokenUtils.ACTION_FORCE_STOP
+                "cf.playhi.freezeyou.OneKeyFreeze" -> ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE
+                "cf.playhi.freezeyou.OneKeyUF" -> ShortcutTokenUtils.ACTION_ONE_KEY_UF
+                "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
+                "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity" -> ShortcutTokenUtils.ACTION_LOCK_SCREEN
+                else -> ShortcutTokenUtils.ACTION_FREEZE
+            }
+            ShortcutTokenUtils.attachToken(intent, action)
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             requestCreateShortCutOldApi(title, intent, icon, context, bm)
         } else {

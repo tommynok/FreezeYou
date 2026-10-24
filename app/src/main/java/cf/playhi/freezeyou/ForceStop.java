@@ -20,7 +20,7 @@ public class ForceStop extends FreezeYouBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (!ShortcutTokenUtils.verifyToken(getIntent())) {
+        if (!ShortcutTokenUtils.verifyToken(getIntent(), ShortcutTokenUtils.ACTION_FORCE_STOP)) {
             finish();
             return;
         }

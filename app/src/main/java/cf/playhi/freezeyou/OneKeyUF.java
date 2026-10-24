@@ -14,18 +14,7 @@ public class OneKeyUF extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Intent.ACTION_CREATE_SHORTCUT.equals(getIntent().getAction())) {
-            Intent shortcutIntent = new Intent(this, OneKeyUF.class);
-            ShortcutTokenUtils.attachToken(shortcutIntent);
-            Intent intent = new Intent();
-            intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.oneKeyUF));
-            intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher_new_round));
-            setResult(RESULT_OK, intent);
-            finish();
-            return;
-        }
-        if (!ShortcutTokenUtils.verifyToken(getIntent())) {
+        if (!ShortcutTokenUtils.verifyToken(getIntent(), ShortcutTokenUtils.ACTION_ONE_KEY_UF)) {
             finish();
             return;
         }

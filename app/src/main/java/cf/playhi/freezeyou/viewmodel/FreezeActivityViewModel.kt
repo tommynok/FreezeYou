@@ -87,10 +87,7 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun loadStartedIntentAndPkgName(startedIntent: Intent) {
         mStartedIntent = startedIntent
-        if (!ShortcutTokenUtils.verifyToken(startedIntent)) {
-            mFinishMe.value = true
-            return
-        }
+        val hasValidToken = ShortcutTokenUtils.verifyToken(startedIntent, ShortcutTokenUtils.ACTION_FREEZE)
         if ("freezeyou" == mStartedIntent.scheme) {
             val dataUri = mStartedIntent.data
             dataUri?.run { getQueryParameter("pkgName")?.let { mPkgName.value = it } }
@@ -100,8 +97,14 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
             mIsFromShortcut = mStartedIntent.getBooleanExtra("fromShortcut", true)
         }
         mTarget = mStartedIntent.getStringExtra("target")
-        mTasks = mStartedIntent.getStringExtra("tasks")
-        mJustLaunch = mStartedIntent.getBooleanExtra("justLaunch", false)
+        // Privilege gating: arbitrary tasks and justLaunch require valid token authorization.
+        // Legacy/unauthenticated shortcuts fall back to user confirmation dialog.
+        mTasks = if (hasValidToken) mStartedIntent.getStringExtra("tasks") else null
+        mJustLaunch = if (hasValidToken) mStartedIntent.getBooleanExtra("justLaunch", false) else false
+        if (!hasValidToken) {
+            // Force user confirmation dialog: prevent silent automated actions from untrusted intents
+            mIsFromShortcut = false
+        }
     }
 
     fun go() {

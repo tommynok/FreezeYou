@@ -56,10 +56,6 @@ public class Freeze extends FreezeYouBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this, true);
         super.onCreate(savedInstanceState);
-        if (!ShortcutTokenUtils.verifyToken(getIntent())) {
-            finish();
-            return;
-        }
         if (playFUFAnimations.getValue(null)) initApplicationIconImageView();
         viewModel = new ViewModelProvider(this).get(FreezeActivityViewModel.class);
         viewModel.getPkgName().observe(this, pkgName -> {
@@ -94,8 +90,9 @@ public class Freeze extends FreezeYouBaseActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (!ShortcutTokenUtils.verifyToken(intent)) {
-            finish();
+        if (viewModel != null) {
+            viewModel.loadStartedIntentAndPkgName(intent);
+            viewModel.go();
         }
     }
 

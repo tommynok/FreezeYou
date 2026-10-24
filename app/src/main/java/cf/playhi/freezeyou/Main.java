@@ -2804,12 +2804,12 @@ public class Main extends FreezeYouBaseActivity {
                         return true;
                     case R.id.menu_oneKeyFreezeImmediately:
                         Intent oneKeyFreezeIntent = new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false);
-                        ShortcutTokenUtils.attachToken(oneKeyFreezeIntent);
+                        ShortcutTokenUtils.attachToken(oneKeyFreezeIntent, ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE);
                         startActivity(oneKeyFreezeIntent);
                         return true;
                     case R.id.menu_oneKeyUFImmediately:
                         Intent oneKeyUFIntent = new Intent(this, OneKeyUF.class);
-                        ShortcutTokenUtils.attachToken(oneKeyUFIntent);
+                        ShortcutTokenUtils.attachToken(oneKeyUFIntent, ShortcutTokenUtils.ACTION_ONE_KEY_UF);
                         startActivity(oneKeyUFIntent);
                         return true;
                     case R.id.menu_vM_onlyFrozen:

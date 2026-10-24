@@ -238,7 +238,7 @@ public final class Support {
                         case R.id.main_sca_menu_forceStop:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
                                 Intent intent = new Intent(context, ForceStop.class).putExtra("pkgName", pkgName);
-                                ShortcutTokenUtils.attachToken(intent);
+                                ShortcutTokenUtils.attachToken(intent, ShortcutTokenUtils.ACTION_FORCE_STOP);
                                 context.startActivity(intent);
                             }
                             break;
@@ -268,7 +268,7 @@ public final class Support {
                         case R.id.main_sca_menu_disableAEnable:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
                                 Intent intent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
-                                ShortcutTokenUtils.attachToken(intent);
+                                ShortcutTokenUtils.attachToken(intent, ShortcutTokenUtils.ACTION_FREEZE);
                                 context.startActivity(intent);
                             }
                             break;

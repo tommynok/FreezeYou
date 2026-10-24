@@ -17,7 +17,7 @@ public class OneKeyScreenLockQSTileService extends TileService {
         super.onClick();
         Intent intent = new Intent(this, OneKeyScreenLockImmediatelyActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        ShortcutTokenUtils.attachToken(intent);
+        ShortcutTokenUtils.attachToken(intent, ShortcutTokenUtils.ACTION_LOCK_SCREEN);
         startActivity(intent);
     }
 }

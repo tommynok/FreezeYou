@@ -13,18 +13,7 @@ public class OneKeyScreenLockImmediatelyActivity extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Intent.ACTION_CREATE_SHORTCUT.equals(getIntent().getAction())) {
-            Intent shortcutIntent = new Intent(this, this.getClass());
-            ShortcutTokenUtils.attachToken(shortcutIntent);
-            Intent intent = new Intent();
-            intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.oneKeyLockScreen));
-            intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.drawable.screenlock));
-            setResult(RESULT_OK, intent);
-            finish();
-            return;
-        }
-        if (!ShortcutTokenUtils.verifyToken(getIntent())) {
+        if (!ShortcutTokenUtils.verifyToken(getIntent(), ShortcutTokenUtils.ACTION_LOCK_SCREEN)) {
             finish();
             return;
         }

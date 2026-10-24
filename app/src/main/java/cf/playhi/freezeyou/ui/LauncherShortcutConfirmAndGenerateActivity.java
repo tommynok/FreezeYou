@@ -405,7 +405,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 shortcutIntent.putExtra("target", target);
                 shortcutIntent.putExtra("tasks", tasks);
                 shortcutIntent.putExtra("justLaunch", activityShortcutMode);
-                ShortcutTokenUtils.attachToken(shortcutIntent);
+                ShortcutTokenUtils.attachToken(shortcutIntent, ShortcutTokenUtils.ACTION_FREEZE);
                 Intent intent = new Intent();
                 intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
                 intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
@@ -482,7 +482,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                     .putExtra("target", target)
                     .putExtra("tasks", tasks)
                     .putExtra("justLaunch", activityShortcutMode);
-            ShortcutTokenUtils.attachToken(simIntent);
+            ShortcutTokenUtils.attachToken(simIntent, ShortcutTokenUtils.ACTION_FREEZE);
             startActivity(simIntent);
         });
     }
