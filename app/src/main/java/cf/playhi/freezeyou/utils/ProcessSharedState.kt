@@ -26,6 +26,7 @@ object ProcessSharedState {
     @JvmStatic
     fun setForegroundPackage(pkgName: String?) {
         if (pkgName.isNullOrEmpty()) return
+        if (pkgName == getForegroundPackage()) return
         DefaultMultiProcessMMKVStorage().putString(KEY_FOREGROUND_PACKAGE, pkgName)
     }
 

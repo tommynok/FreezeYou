@@ -54,8 +54,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null)
+        if (intent == null) {
+            stopSelf(startId);
             return super.onStartCommand(null, flags, startId);
+        }
 
         final Intent i = new Intent(intent);
         i.putExtra("requestTime", new Date().getTime());

@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Base64;
 
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
@@ -189,7 +190,6 @@ public final class OneKeyListUtils {
         SQLiteDatabase userDefinedDb = null;
         try {
             userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
-            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
             for (String pkg : pkgs) {
                 if ("".equals(pkg.trim())) {
                     continue;
@@ -214,7 +214,7 @@ public final class OneKeyListUtils {
                                             null, null
                                     );
 
-                            if (cursor.moveToFirst()) {
+                            if (cursor != null && cursor.moveToFirst()) {
                                 String packages =
                                         cursor.getString(cursor.getColumnIndexOrThrow("packages"));
                                 // Null, not "null": a category with nothing written to the column
@@ -239,6 +239,8 @@ public final class OneKeyListUtils {
                     result.append(",");
                 }
             }
+        } catch (SQLiteException e) {
+            e.printStackTrace();
         } finally {
             if (userDefinedDb != null) {
                 userDefinedDb.close();

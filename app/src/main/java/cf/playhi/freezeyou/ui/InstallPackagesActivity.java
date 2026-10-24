@@ -299,7 +299,8 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 alertDialogMessage.append(nl);
             }
             java.util.List<String> critical = CriticalPackagesUtils.findCriticalPackages(this, java.util.Collections.singletonList(packageName));
-            if (!critical.isEmpty()) {
+            boolean isCritical = !critical.isEmpty();
+            if (isCritical) {
                 alertDialogMessage.append(getString(R.string.caution)).append(": ");
                 alertDialogMessage.append(getString(R.string.critical_package_uninstall_warning_single));
                 alertDialogMessage.append(nl);
@@ -315,13 +316,17 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             showInstallDialog(
                     progressDialog, 0,
                     alertDialogMessage, apkFilePath,
-                    packageUri, fromPkgLabel, fromPkgName, uninstalledPackageInfo
+                    packageUri, fromPkgLabel, fromPkgName, uninstalledPackageInfo, isCritical
             );
         }
     }
 
     //install: 0-uninstall, 1-install, 2-failed.
     private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
+        showInstallDialog(progressDialog, install, alertDialogMessage, apkFilePath, packageUri, fromPkgLabel, fromPkgName, processedPackageInfo, false);
+    }
+
+    private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo, final boolean isCriticalApp) {
         final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null
@@ -334,8 +339,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
 
         final String uninstallPkg = packageUri == null ? "" : packageUri.getEncodedSchemeSpecificPart();
-        final boolean isCriticalApp = install == 0 && uninstallPkg != null && !uninstallPkg.isEmpty()
-                && !CriticalPackagesUtils.findCriticalPackages(this, java.util.Collections.singletonList(uninstallPkg)).isEmpty();
 
         switch (install) {
             case 0:
@@ -400,7 +403,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                         showInstallDialog(
                                                 progressDialog, install,
                                                 alertDialogMessage, apkFilePath, packageUri,
-                                                fromPkgLabel, fromPkgName, processedPackageInfo)
+                                                fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
                                 )
                                 .setNegativeButton(R.string.cancel, (dialog12, which12) -> {
                                     if (install != 0) clearTempFile(apkFilePath);
@@ -409,7 +412,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 .setOnCancelListener(dialog13 ->
                                         showInstallDialog(progressDialog, install,
                                                 alertDialogMessage, apkFilePath, packageUri,
-                                                fromPkgLabel, fromPkgName, processedPackageInfo)
+                                                fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
                                 )
                                 .create().show();
                     } else {
@@ -531,7 +534,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                                     progressDialog, install,
                                                     alertDialogMessage, apkFilePath,
                                                     packageUri, fromPkgLabel,
-                                                    fromPkgName, processedPackageInfo)
+                                                    fromPkgName, processedPackageInfo, isCriticalApp)
                                     )
                                     .setNegativeButton(R.string.cancel, (dialog15, which14) -> {
                                         if (install != 0) clearTempFile(apkFilePath);

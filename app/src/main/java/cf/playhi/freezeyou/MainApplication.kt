@@ -136,6 +136,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             checkAndMigrateOneKeyListsToMMKV()
             checkAndMigrateOneKeyConfig()
             checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
+            initDatabases()
         } finally {
             try {
                 lock?.release()
@@ -429,6 +430,39 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         }
     }
 
+    private fun initDatabases() {
+        try {
+            val db1 = openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null)
+            try {
+                db1.execSQL("CREATE TABLE IF NOT EXISTS tasks(_id INTEGER PRIMARY KEY AUTOINCREMENT, tg VARCHAR, tgextra VARCHAR, enabled INTEGER(1), label VARCHAR, task VARCHAR, column1 VARCHAR, column2 VARCHAR)")
+            } finally {
+                db1.close()
+            }
+            val db2 = openOrCreateDatabase("scheduledTasks", Context.MODE_PRIVATE, null)
+            try {
+                db2.execSQL("CREATE TABLE IF NOT EXISTS tasks(_id INTEGER PRIMARY KEY AUTOINCREMENT, time VARCHAR, repeat VARCHAR, enabled INTEGER(1), label VARCHAR, task VARCHAR, column1 VARCHAR, column2 VARCHAR)")
+            } finally {
+                db2.close()
+            }
+            val db3 = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null)
+            try {
+                db3.execSQL("CREATE TABLE IF NOT EXISTS categories(_id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR, packages VARCHAR)")
+            } finally {
+                db3.close()
+            }
+            for (dbName in arrayOf("ApplicationsUseTimes", "ApplicationsFreezeTimes", "ApplicationsUFreezeTimes")) {
+                val db4 = openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null)
+                try {
+                    db4.execSQL("CREATE TABLE IF NOT EXISTS TimesList(_id INTEGER PRIMARY KEY AUTOINCREMENT, pkg VARCHAR, times INT)")
+                } finally {
+                    db4.close()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     companion object {
         private var mCurrentPackage = " "
 
@@ -462,7 +496,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             @NonNull
             get() = ProcessSharedState.getForegroundPackage() ?: mCurrentPackage
             set(pkgName) {
-                if (pkgName != null) {
+                if (pkgName != null && pkgName != mCurrentPackage) {
                     mCurrentPackage = pkgName
                     ProcessSharedState.setForegroundPackage(pkgName)
                 }

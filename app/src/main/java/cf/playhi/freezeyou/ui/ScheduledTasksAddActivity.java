@@ -372,14 +372,9 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         if (enabled == 1 && trigger != null) {
             switch (trigger) {
                 case "onScreenOn":
-                    ServiceUtils.startService(this,
-                            new Intent(this, TriggerTasksService.class)
-                                    .putExtra("OnScreenOn", true));
-                    break;
                 case "onScreenOff":
                     ServiceUtils.startService(this,
-                            new Intent(this, TriggerTasksService.class)
-                                    .putExtra("OnScreenOff", true));
+                            new Intent(this, TriggerTasksService.class));
                     break;
                 case "onApplicationsForeground":
                 case "onLeaveApplications":
@@ -388,6 +383,8 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                 default:
                     break;
             }
+        } else {
+            TasksUtils.checkTriggerTasks(this);
         }
         setResult(RESULT_OK);
         return true;

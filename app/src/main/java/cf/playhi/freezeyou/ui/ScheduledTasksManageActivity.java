@@ -162,6 +162,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                         db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                         db.close();
                                     }
+                                    TasksUtils.checkTriggerTasks(ScheduledTasksManageActivity.this);
                                     mode.finish();
                                 })
                                 .setNegativeButton(R.string.no, null)

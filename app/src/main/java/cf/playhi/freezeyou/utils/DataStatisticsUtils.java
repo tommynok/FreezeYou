@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Base64;
 
 import java.util.ArrayList;
@@ -44,11 +45,12 @@ public final class DataStatisticsUtils {
         if (pkgNameStrings.isEmpty()) {
             return;
         }
-        SQLiteDatabase db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
-        if (db == null) {
-            return;
-        }
+        SQLiteDatabase db = null;
         try {
+            db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
+            if (db == null) {
+                return;
+            }
             createTableIfNeeded(db);
             db.beginTransaction();
             try {
@@ -59,21 +61,30 @@ public final class DataStatisticsUtils {
             } finally {
                 db.endTransaction();
             }
+        } catch (SQLiteException e) {
+            e.printStackTrace();
         } finally {
-            db.close();
+            if (db != null) {
+                db.close();
+            }
         }
     }
 
     public static void addUseTimes(Context context, String pkgNameString) {
-        SQLiteDatabase db = context.openOrCreateDatabase("ApplicationsUseTimes", Context.MODE_PRIVATE, null);
-        if (db == null) {
-            return;
-        }
+        SQLiteDatabase db = null;
         try {
+            db = context.openOrCreateDatabase("ApplicationsUseTimes", Context.MODE_PRIVATE, null);
+            if (db == null) {
+                return;
+            }
             createTableIfNeeded(db);
             addTimes(db, pkgNameString);
+        } catch (SQLiteException e) {
+            e.printStackTrace();
         } finally {
-            db.close();
+            if (db != null) {
+                db.close();
+            }
         }
     }
 
@@ -105,36 +116,42 @@ public final class DataStatisticsUtils {
             return;
         }
 
-        if (cursor.moveToFirst()) {
-            ContentValues values = new ContentValues();
-            values.put("times",
-                    Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow("times"))) + 1);
-            db.update("TimesList", values, "pkg = ?", pkgSelectionArgs);
-        } else {
-            // The row is created because this application was just acted on, so the count starts
-            // at one. It used to start at zero, which meant every application's first freeze went
-            // uncounted and the statistics were short by one for ever after.
-            ContentValues values = new ContentValues();
-            values.put("pkg", encodedPkg);
-            values.put("times", 1);
-            db.insert("TimesList", null, values);
+        try {
+            if (cursor.moveToFirst()) {
+                ContentValues values = new ContentValues();
+                values.put("times",
+                        Integer.parseInt(cursor.getString(cursor.getColumnIndexOrThrow("times"))) + 1);
+                db.update("TimesList", values, "pkg = ?", pkgSelectionArgs);
+            } else {
+                // The row is created because this application was just acted on, so the count starts
+                // at one. It used to start at zero, which meant every application's first freeze went
+                // uncounted and the statistics were short by one for ever after.
+                ContentValues values = new ContentValues();
+                values.put("pkg", encodedPkg);
+                values.put("times", 1);
+                db.insert("TimesList", null, values);
+            }
+        } finally {
+            cursor.close();
         }
-        cursor.close();
 
     }
 
     public static void resetTimes(Context context, String dbName) {
-        SQLiteDatabase db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
-
-        if (db == null) {
-            return;
-        }
-
+        SQLiteDatabase db = null;
         try {
+            db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
+            if (db == null) {
+                return;
+            }
             createTableIfNeeded(db);
             db.execSQL("UPDATE TimesList SET times = '0';");
+        } catch (SQLiteException e) {
+            e.printStackTrace();
         } finally {
-            db.close();
+            if (db != null) {
+                db.close();
+            }
         }
     }
 

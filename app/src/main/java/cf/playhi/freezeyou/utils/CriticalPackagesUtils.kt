@@ -93,7 +93,7 @@ object CriticalPackagesUtils {
         if (result.isEmpty()) {
             try {
                 if (PrivilegedShellUtils.isShizukuAvailable()) {
-                    val res = PrivilegedShellUtils.runShizukuCommand("settings get secure default_input_method")
+                    val res = PrivilegedShellUtils.runShizukuCommand("settings get secure default_input_method", 1000L)
                     if (res.isSuccessful) {
                         parsePackageNameFromImeId(res.output)?.let { result.add(it) }
                     }

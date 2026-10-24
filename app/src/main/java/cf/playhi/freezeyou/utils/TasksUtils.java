@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -660,6 +661,7 @@ public final class TasksUtils {
                     Log.e("FreezeYou", "Could not delete the database " + name);
                 }
             }
+            checkTriggerTasks(appContext);
             if (onComplete != null) {
                 new Handler(Looper.getMainLooper()).post(onComplete);
             }
@@ -851,40 +853,39 @@ public final class TasksUtils {
 
     public static void checkTriggerTasks(Context context) {
         // Event triggers
-        final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
-        db.execSQL(
-                "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-        );
-
-        final Cursor cursor = db.query("tasks", null, null, null, null, null, null);
-        if (cursor.moveToFirst()) {
-            for (int i = 0; i < cursor.getCount(); i++) {
-                String tg = cursor.getString(cursor.getColumnIndexOrThrow("tg"));
-                int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
-                if (enabled == 1) {
-                    if (tg == null) {
-                        tg = "";
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
+        boolean hasScreenTrigger = false;
+        try {
+            db = context.openOrCreateDatabase("scheduledTriggerTasks", Context.MODE_PRIVATE, null);
+            cursor = db.query("tasks", null, null, null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                for (int i = 0; i < cursor.getCount(); i++) {
+                    String tg = cursor.getString(cursor.getColumnIndexOrThrow("tg"));
+                    int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
+                    if (enabled == 1 && ("onScreenOn".equals(tg) || "onScreenOff".equals(tg))) {
+                        hasScreenTrigger = true;
+                        break;
                     }
-                    switch (tg) {
-                        case "onScreenOn":
-                            startService(context,
-                                    new Intent(context, TriggerTasksService.class)
-                                            .putExtra("OnScreenOn", true));
-                            break;
-                        case "onScreenOff":
-                            startService(context,
-                                    new Intent(context, TriggerTasksService.class)
-                                            .putExtra("OnScreenOff", true));
-                            break;
-                        default:
-                            break;
-                    }
+                    cursor.moveToNext();
                 }
-                cursor.moveToNext();
+            }
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (db != null) {
+                db.close();
             }
         }
-        cursor.close();
-        db.close();
+
+        if (hasScreenTrigger) {
+            startService(context, new Intent(context, TriggerTasksService.class));
+        } else {
+            context.stopService(new Intent(context, TriggerTasksService.class));
+        }
     }
 
 }
