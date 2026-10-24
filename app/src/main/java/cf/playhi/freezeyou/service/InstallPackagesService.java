@@ -201,7 +201,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     && DevicePolicyManagerUtils.isDeviceOwner(this);
             boolean fullUninstallNeedsShell = UninstallPolicyUtils
                     .requiresPrivilegedShellForFullUninstall(
-                            isSystemApp, hasSystemUpdate, uninstallUpdatesOnly);
+                            isSystemApp, uninstallUpdatesOnly);
             boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
                     deviceOwnerAvailable, fullUninstallNeedsShell);
             boolean rootAvailable = !shizukuAvailable && rootCheckRequired

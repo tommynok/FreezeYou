@@ -8,7 +8,10 @@ import org.junit.Test
 class UninstallPolicyTest {
 
     @Test
-    fun fullRemovalOfUpdatedSystemAppsRequiresPrivilegedShell() {
+    fun fullRemovalOfSystemAppsRequiresPrivilegedShell() {
+        assertTrue(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, false))
+        assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, true))
+        assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(false, false))
         assertTrue(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, true, false))
         assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(true, true, true))
         assertFalse(UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(false, false, false))

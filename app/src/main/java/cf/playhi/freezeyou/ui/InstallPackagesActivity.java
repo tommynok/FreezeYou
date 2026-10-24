@@ -430,7 +430,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                     .isDeviceOwner(InstallPackagesActivity.this);
                             boolean fullUninstallNeedsShell = install == 0
                                     && UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
-                                    isSystemApp, hasSystemUpdate, false);
+                                    isSystemApp, false);
                             boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
                                     deviceOwnerAvailable, fullUninstallNeedsShell);
                             boolean rootAvailable = !shizukuAvailable && rootCheckRequired

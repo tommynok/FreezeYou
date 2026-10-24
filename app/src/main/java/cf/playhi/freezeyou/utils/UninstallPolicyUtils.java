@@ -17,9 +17,20 @@ public final class UninstallPolicyUtils {
      */
     public static boolean requiresPrivilegedShellForFullUninstall(
             boolean isSystemApp,
-            @SuppressWarnings("unused") boolean hasSystemUpdate,
             boolean uninstallUpdatesOnly) {
         return isSystemApp && !uninstallUpdatesOnly;
+    }
+
+    /**
+     * @deprecated hasSystemUpdate is obsolete because in Android (DeletePackageHelper),
+     * PackageInstaller lacks DELETE_SYSTEM_APP and fails on factory preinstalled system apps too.
+     */
+    @Deprecated
+    public static boolean requiresPrivilegedShellForFullUninstall(
+            boolean isSystemApp,
+            boolean hasSystemUpdate,
+            boolean uninstallUpdatesOnly) {
+        return requiresPrivilegedShellForFullUninstall(isSystemApp, uninstallUpdatesOnly);
     }
 
     public static boolean isValidUpdatesOnlyRequest(
