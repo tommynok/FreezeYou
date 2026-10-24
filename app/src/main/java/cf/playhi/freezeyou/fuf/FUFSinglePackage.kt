@@ -12,6 +12,7 @@ import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.*
 import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
+import cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
 import rikka.shizuku.ShizukuBinderWrapper
