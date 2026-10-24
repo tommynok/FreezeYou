@@ -265,9 +265,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
             }
 
             if (deviceOwnerAvailable) {
-                // PackageInstaller can silently uninstall ordinary packages as Device Owner.
-                // It cannot express the two-step "remove update, then uninstall for the current
-                // user" operation, so do not claim a complete removal for an updated system app.
+                // PackageInstaller can silently uninstall ordinary user packages as Device Owner.
+                // In Android (DeletePackageHelper.mayDeletePackageLocked), it lacks DELETE_SYSTEM_APP
+                // and fails on factory preinstalled system apps, and cannot express the two-step removal
+                // for updated system apps. Full removal of any system app therefore requires a privileged shell.
                 if (fullUninstallNeedsShell) {
                     throw new IllegalStateException(
                             getString(R.string.full_system_uninstall_requires_shell));
