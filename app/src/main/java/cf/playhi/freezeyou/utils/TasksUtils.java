@@ -418,7 +418,10 @@ public final class TasksUtils {
      *   <li>Returns {@code false} to indicate the task has been deferred.</li>
      * </ol>
      *
-     * @return true if the task contains no delay flag and should execute immediately; false if deferred
+     * <p>If the flag is malformed (missing, non-numeric or negative operand), the error is logged
+     * and {@code false} is returned so the command is never executed.
+     *
+     * @return true if the task contains no delay flag and should execute immediately; false if deferred or rejected
      */
     private static boolean parseTaskAndReturnIfNeedExecuteImmediately(Context context, String task, String taskTrigger) {
         String[] splitTask = task.split(" ");
@@ -432,11 +435,11 @@ public final class TasksUtils {
                             delayAtSeconds = Long.parseLong(splitTask[i + 1]);
                         } catch (NumberFormatException e) {
                             Log.e("TasksLogE", "Invalid -d delay value: " + splitTask[i + 1]);
-                            break;
+                            return false;
                         }
                         if (delayAtSeconds < 0) {
                             Log.e("TasksLogE", "Negative -d delay value: " + splitTask[i + 1]);
-                            break;
+                            return false;
                         }
                         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                         Intent intent = new Intent(context, TasksNeedExecuteReceiver.class)
@@ -466,7 +469,8 @@ public final class TasksUtils {
                         }
                         return false;
                     }
-                    break;
+                    Log.e("TasksLogE", "Missing -d delay value: " + task);
+                    return false;
                 default:
                     break;
             }
