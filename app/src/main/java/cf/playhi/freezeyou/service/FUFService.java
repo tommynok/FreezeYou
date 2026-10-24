@@ -89,27 +89,7 @@ public class FUFService extends FreezeYouBaseService {
             String[] packages = intent.getStringArrayExtra("packages");
             mExecutor.execute(() -> {
                 try {
-                    int decidedApiMode;
-
-                    if (apiMode == API_FREEZEYOU_LEGACY_AUTO) {
-                        if (freeze) {
-                            if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
-                                decidedApiMode = API_FREEZEYOU_MROOT_DPM;
-                            } else {
-                                decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
-                            }
-                        } else {
-                            if (FUFUtils.checkRootPermission()) {
-                                decidedApiMode = API_FREEZEYOU_ROOT_DISABLE_ENABLE;
-                            } else {
-                                decidedApiMode = API_FREEZEYOU_MROOT_DPM;
-                            }
-                        }
-                    } else {
-                        decidedApiMode = apiMode;
-                    }
-
-                    oneKeyAction(context, freeze, packages, decidedApiMode);
+                    oneKeyAction(context, freeze, packages, apiMode);
                 } finally {
                     stopSelf(startId);
                 }

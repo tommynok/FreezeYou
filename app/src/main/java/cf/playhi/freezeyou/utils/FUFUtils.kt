@@ -1152,6 +1152,28 @@ object FUFUtils {
     }
 
     @JvmStatic
+    fun checkHiddenFrozen(context: Context, pkgName: String, pm: PackageManager?): Boolean {
+        val packageManager = pm ?: context.packageManager ?: return false
+        return try {
+            packageManager.getApplicationInfo(pkgName, 0)
+            false
+        } catch (e: PackageManager.NameNotFoundException) {
+            try {
+                @Suppress("DEPRECATION")
+                val appInfo = packageManager.getApplicationInfo(
+                    pkgName,
+                    PackageManager.GET_UNINSTALLED_PACKAGES
+                )
+                (appInfo.flags and ApplicationInfo.FLAG_INSTALLED) != 0
+            } catch (ignored: Exception) {
+                false
+            }
+        } catch (ignored: Exception) {
+            false
+        }
+    }
+
+    @JvmStatic
     fun checkRootFrozen(
         context: Context,
         pkgName: String,
@@ -1163,7 +1185,7 @@ object FUFUtils {
                     pkgName
                 )
         } catch (e: Exception) {
-            -1
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
         }.let {
             it != PackageManager.COMPONENT_ENABLED_STATE_DEFAULT &&
                     it != PackageManager.COMPONENT_ENABLED_STATE_ENABLED
@@ -1177,6 +1199,7 @@ object FUFUtils {
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String): Boolean {
         return (checkMRootFrozen(context, packageName)
+                || checkHiddenFrozen(context, packageName, context.packageManager)
                 || checkRootFrozen(context, packageName, context.packageManager))
     }
 
@@ -1186,7 +1209,9 @@ object FUFUtils {
      */
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String, pm: PackageManager?): Boolean {
-        return checkRootFrozen(context, packageName, pm) || checkMRootFrozen(context, packageName)
+        return (checkMRootFrozen(context, packageName)
+                || checkHiddenFrozen(context, packageName, pm)
+                || checkRootFrozen(context, packageName, pm))
     }
 
     @JvmStatic

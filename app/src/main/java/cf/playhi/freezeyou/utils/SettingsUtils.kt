@@ -138,7 +138,11 @@ object SettingsUtils {
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE ->
-                        if (!FUFUtils.isSystemApp(context)) {
+                        if (!FUFUtils.isSystemApp(context) ||
+                            context.checkCallingOrSelfPermission(
+                                android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
                             showToast(context, R.string.insufficientPermission)
                         }
                     API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,

@@ -106,12 +106,18 @@ open class FUFSinglePackage(
         return if (actionMode == ACTION_MODE_FREEZE) {
             if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
                 pureExecuteAPIDPMAction()
+            } else if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context)) {
+                pureExecuteAPIProfileOwnerAction()
             } else {
                 pureExecuteAPIRootAction()
             }
         } else {
             if (checkMRootFrozen(context, singlePackageName)) {
-                pureExecuteAPIDPMAction()
+                if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context) && !isDeviceOwner(context)) {
+                    pureExecuteAPIProfileOwnerAction()
+                } else {
+                    pureExecuteAPIDPMAction()
+                }
             } else {
                 pureExecuteAPIRootAction()
             }
@@ -209,16 +215,26 @@ open class FUFSinglePackage(
 
         if (Build.VERSION.SDK_INT < 18) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**
@@ -230,16 +246,26 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledUserAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**
@@ -251,16 +277,26 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**
