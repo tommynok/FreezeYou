@@ -16,11 +16,14 @@
 
     <Button
         android:id="@+id/app_lock_main_unlock_button"
-        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        style="@style/Widget.App.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="24dp"
+        android:minWidth="160dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
         android:text="@string/unlock" />
 </RelativeLayout>
