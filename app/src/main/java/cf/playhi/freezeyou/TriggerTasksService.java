@@ -26,20 +26,12 @@ public class TriggerTasksService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        if (intent != null) {
-            if (triggerScreenLockListener == null && intent.getBooleanExtra("OnScreenOn", false)) {
-                triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
-                triggerScreenLockListener.registerListener();
-            }
-
-            if (triggerScreenLockListener == null && intent.getBooleanExtra("OnScreenOff", false)) {
-                triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
-                triggerScreenLockListener.registerListener();
-            }
+        if (triggerScreenLockListener == null) {
+            triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
+            triggerScreenLockListener.registerListener();
         }
 
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     @Override

@@ -11,23 +11,27 @@ import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.legacy.LegacyPreferenceSource
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
 import cf.playhi.freezeyou.utils.OneKeyListUtils
+import cf.playhi.freezeyou.utils.PackageListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.utils.ServiceUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
 import com.tencent.mmkv.MMKV
-import net.grandcentrix.tray.AppPreferences
 import android.app.Activity
 import android.os.Bundle
 import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
 import java.lang.ref.WeakReference
+import java.nio.channels.FileLock
+
 
 class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
 
@@ -92,12 +96,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             )
         }
         try {
-            checkAndMigrateOneKeyConfig()
-            checkAndMigrateSharedPreferenceDataToTray()
-            checkAndMigrateAppIconDataPreference()
-            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV()
-            checkAndMigrateMultiProcessPreferenceDataToMMKV()
-            checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
+            runMigrationsWithIpcLock()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -109,6 +108,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
         }
         checkAndEnableShizukuMultiProcessSupport(this)
+        ShortcutTokenUtils.initDynamicShortcuts(this)
         try {
             // The process can be started by a provider/binder call from another app: on
             // Android 12+ starting a foreground service from that background state throws
@@ -118,6 +118,33 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             checkAndStartScreenLockOneKeyFreezeService()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun runMigrationsWithIpcLock() {
+        val lockFile = File(filesDir, "migrations_ipc.lock")
+        val channel = RandomAccessFile(lockFile, "rw").channel
+        var lock: FileLock? = null
+        try {
+            lock = channel.lock()
+            // Read once for the whole chain. Legacy SharedPreferences fallback is migrated to MMKV.
+            val legacy = LegacyPreferenceSource(this)
+            checkAndMigrateAppIconDataPreference()
+            checkAndMigrateSharedPreferencesSettingsToMMKV()
+            checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(legacy)
+            checkAndMigrateMultiProcessPreferenceDataToMMKV(legacy)
+            checkAndMigrateOneKeyListsToMMKV()
+            checkAndMigrateOneKeyConfig()
+            checkAndMigrateKeySAFUFAndNCWFUSAFUFAndOIAUUSAFUF()
+        } finally {
+            try {
+                lock?.release()
+            } catch (ignored: Exception) {
+            }
+            try {
+                channel.close()
+            } catch (ignored: Exception) {
+            }
         }
     }
 
@@ -142,6 +169,28 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         )
     }
 
+    private fun parseLegacyOneKeyPackages(pkgNameS: String?): List<String> {
+        if (pkgNameS.isNullOrEmpty()) return emptyList()
+        val result = mutableListOf<String>()
+        if (pkgNameS.contains("||") || pkgNameS.contains("|")) {
+            val parts = pkgNameS.split("\\|\\|".toRegex())
+            for (part in parts) {
+                val cleaned = part.replace("\\|".toRegex(), "").trim()
+                if (cleaned.isNotEmpty()) {
+                    result.add(cleaned)
+                }
+            }
+        } else {
+            val parsed = PackageListUtils.parse(pkgNameS)
+            for (p in parsed) {
+                if (p.isNotEmpty()) {
+                    result.add(p)
+                }
+            }
+        }
+        return result
+    }
+
     private fun migrateOneKeyData(
         oldFile: File,
         old_shared_prefs_name: String,
@@ -151,16 +200,63 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             val pkgNameS = applicationContext.getSharedPreferences(
                 old_shared_prefs_name, MODE_PRIVATE
             ).getString("pkgName", "")
-            if (pkgNameS != null) {
-                val pkgNames = pkgNameS.split("\\|\\|".toRegex()).toTypedArray()
-                for (aPkgNameList in pkgNames) {
-                    val tmp = aPkgNameList.replace("\\|".toRegex(), "")
-                    if ("" != tmp) OneKeyListUtils.addToOneKeyList(this, new_key_name, tmp)
-                }
+            val packages = parseLegacyOneKeyPackages(pkgNameS)
+            var success = true
+            if (packages.isNotEmpty()) {
+                success = OneKeyListUtils.addToOneKeyList(this, new_key_name, packages)
+            }
+            if (success) {
                 oldFile.delete()
             }
         }
     }
+
+    /**
+     * Copy the three OneKEY lists into the multi-process store.
+     *
+     * An empty list is left alone: there is nothing to carry, and writing "" would make the next
+     * reader's default meaningless.
+     */
+    @Throws(IOException::class)
+    private fun checkAndMigrateOneKeyListsToMMKV() {
+        val migrateLock = File(
+            filesDir.absolutePath + File.separator
+                    + "migrateOneKeyListsToMMKV.lock"
+        )
+        if (!migrateLock.exists()) {
+            // Resolved outside the store: DefaultMultiProcessMMKVStorage has its own getString(),
+            // and these three names are resource IDs, not keys.
+            val listKeys = listOf(
+                getString(R.string.sAutoFreezeApplicationList),
+                getString(R.string.sOneKeyUFApplicationList),
+                getString(R.string.sFreezeOnceQuit)
+            )
+            var allSuccess = true
+            listKeys.forEach { key ->
+                val pkgNames = legacyOneKeyListFromPreferences(key)
+                val packages = parseLegacyOneKeyPackages(pkgNames)
+                if (packages.isNotEmpty()) {
+                    if (!OneKeyListUtils.addToOneKeyList(this, key, packages)) {
+                        allSuccess = false
+                    }
+                }
+            }
+            if (allSuccess) {
+                migrateLock.createNewFile()
+            }
+        }
+    }
+
+    /**
+     * A OneKEY list as it was kept before Tray: a preferences file named after the key, holding the
+     * whole list under `pkgName`.
+     *
+     * Importing those three files was all ImportTrayPreferences ever did, and an install that never
+     * ran a build with that import still keeps its lists there. The key name and the file name are
+     * the same string, which is why the lookup needs nothing else.
+     */
+    private fun legacyOneKeyListFromPreferences(key: String): String? =
+        getSharedPreferences(key, MODE_PRIVATE).getString("pkgName", "")
 
     @Throws(IOException::class)
     private fun checkAndMigrateOneKeyConfig() {
@@ -219,61 +315,9 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     @Throws(IOException::class)
-    private fun checkAndMigrateSharedPreferenceDataToTray() {
-        val importTrayLock = File(filesDir.absolutePath + File.separator + "p2d.lock")
-        if (!importTrayLock.exists()) {
-            ImportTrayPreferences(this)
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val appPreferences = AppPreferences(this)
-            appPreferences.put(
-                "freezeOnceQuit",
-                sharedPreferences.getBoolean("freezeOnceQuit", false)
-            )
-            appPreferences.put(
-                "shortCutOneKeyFreezeAdditionalOptions",
-                sharedPreferences.getString("shortCutOneKeyFreezeAdditionalOptions", "nothing")
-            )
-            appPreferences.put(
-                "useForegroundService",
-                sharedPreferences.getBoolean("useForegroundService", false)
-            )
-            appPreferences.put(
-                "onekeyFreezeWhenLockScreen",
-                sharedPreferences.getBoolean("onekeyFreezeWhenLockScreen", false)
-            )
-            importTrayLock.createNewFile()
-        }
-        val dataTransfer20180816Lock =
-            File(filesDir.absolutePath + File.separator + "20180816.lock")
-        if (!dataTransfer20180816Lock.exists()) {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val appPreferences = AppPreferences(this)
-            appPreferences.put(
-                "notificationBarFreezeImmediately",
-                sharedPreferences.getBoolean("notificationBarFreezeImmediately", true)
-            )
-            appPreferences.put(
-                "openImmediately",
-                sharedPreferences.getBoolean("openImmediately", false)
-            )
-            appPreferences.put(
-                "openAndUFImmediately",
-                sharedPreferences.getBoolean("openAndUFImmediately", false)
-            )
-            appPreferences.put(
-                "notificationBarDisableSlideOut",
-                sharedPreferences.getBoolean("notificationBarDisableSlideOut", false)
-            )
-            appPreferences.put(
-                "notificationBarDisableClickDisappear",
-                sharedPreferences.getBoolean("notificationBarDisableClickDisappear", true)
-            )
-            dataTransfer20180816Lock.createNewFile()
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun checkAndMigrateEnableAuthenticationPreferenceDataToMMKV() {
+    private fun checkAndMigrateEnableAuthenticationPreferenceDataToMMKV(
+        legacy: LegacyPreferenceSource
+    ) {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
                     + "migrateEnableAuthenticationPreferenceDataToMMKV.lock"
@@ -282,40 +326,51 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             DefaultMultiProcessMMKVStorage()
                 .putBoolean(
                     enableAuthentication.name,
-                    AppPreferences(this)
-                        .getBoolean(enableAuthentication.name, enableAuthentication.defaultValue())
+                    legacy.getBoolean(
+                        enableAuthentication.name, enableAuthentication.defaultValue()
+                    )
                 )
                 .sync()
             migrateLock.createNewFile()
         }
     }
 
+    /**
+     * Copy settings that are written to default SharedPreferences directly into multi-process MMKV.
+     *
+     * These settings never depended on Tray database contents, so they are migrated independently
+     * of whether Tray can be read.
+     */
     @Throws(IOException::class)
-    private fun checkAndMigrateMultiProcessPreferenceDataToMMKV() {
-        checkAndMigratePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV()
+    private fun checkAndMigrateSharedPreferencesSettingsToMMKV() {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
-                    + "migrateMultiProcessPreferenceDataToMMKV.lock"
+                    + "migrateSharedPreferencesSettingsToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            val appPreference = AppPreferences(this)
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
             DefaultMultiProcessMMKVStorage().run {
-                DefaultMultiProcessMMKVStorageBooleanKeys.values().forEach { key ->
-                    if (key.name != enableAuthentication.name) {
-                        putBoolean(
-                            key.name,
-                            appPreference
-                                .getBoolean(key.name, key.defaultValue())
-                        )
-                    }
-                }
-                DefaultMultiProcessMMKVStorageStringKeys.values().forEach { key ->
-                    putString(
-                        key.name,
-                        appPreference
-                            .getString(key.name, key.defaultValue())
+                putBoolean(
+                    tryDelApkAfterInstalled.name,
+                    sharedPreferences.getBoolean(
+                        tryDelApkAfterInstalled.name,
+                        tryDelApkAfterInstalled.defaultValue()
                     )
-                }
+                )
+                putString(
+                    languagePref.name,
+                    sharedPreferences.getString(
+                        languagePref.name,
+                        languagePref.defaultValue()
+                    ) ?: languagePref.defaultValue()
+                )
+                putString(
+                    selectFUFMode.name,
+                    sharedPreferences.getString(
+                        selectFUFMode.name,
+                        selectFUFMode.defaultValue()
+                    ) ?: selectFUFMode.defaultValue()
+                )
                 sync()
             }
             migrateLock.createNewFile()
@@ -323,30 +378,26 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     @Throws(IOException::class)
-    private fun checkAndMigratePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV() {
+    private fun checkAndMigrateMultiProcessPreferenceDataToMMKV(
+        legacy: LegacyPreferenceSource
+    ) {
         val migrateLock = File(
             filesDir.absolutePath + File.separator
-                    + "migrateSomePreferenceDataFromSharedPreferenceToTrayForFurtherMigrateToMMKV.lock"
+                    + "migrateMultiProcessPreferenceDataToMMKV.lock"
         )
         if (!migrateLock.exists()) {
-            val sp = PreferenceManager.getDefaultSharedPreferences(this@MainApplication)
-            AppPreferences(this).run {
-                put(
-                    languagePref.name,
-                    sp.getString(languagePref.name, languagePref.defaultValue())
-                )
-                remove(selectFUFMode.name)
-                put(
-                    selectFUFMode.name,
-                    sp.getString(selectFUFMode.name, selectFUFMode.defaultValue())
-                )
-                put(
-                    tryDelApkAfterInstalled.name,
-                    sp.getBoolean(
-                        tryDelApkAfterInstalled.name,
-                        tryDelApkAfterInstalled.defaultValue()
-                    )
-                )
+            DefaultMultiProcessMMKVStorage().run {
+                DefaultMultiProcessMMKVStorageBooleanKeys.values().forEach { key ->
+                    if (key.name != enableAuthentication.name && key != tryDelApkAfterInstalled) {
+                        putBoolean(key.name, legacy.getBoolean(key.name, key.defaultValue()))
+                    }
+                }
+                DefaultMultiProcessMMKVStorageStringKeys.values().forEach { key ->
+                    if (key != languagePref && key != selectFUFMode) {
+                        putString(key.name, legacy.getString(key.name, key.defaultValue()))
+                    }
+                }
+                sync()
             }
             migrateLock.createNewFile()
         }
@@ -393,6 +444,12 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             set(intent) {
                 field = intent
             }
+
+        @JvmStatic
+        fun clearCurrentPackage() {
+            mCurrentPackage = " "
+            ProcessSharedState.clearForegroundPackage()
+        }
 
         /**
          * Written by the accessibility service, which runs in `:backgroundService`, and read

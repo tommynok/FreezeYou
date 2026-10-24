@@ -19,7 +19,7 @@ FreezeYou disables applications you do not want running in the background and re
 - Home-screen shortcuts and widgets for freeze/unfreeze and launch
 - Lists and filters: frozen, unfrozen, system, user, custom groups
 - Quick notification after unfreezing, one-tap actions from it
-- Backup and restore of settings, lists, shortcuts and scheduled tasks
+- Backup and restore of settings, lists and scheduled tasks
 
 ---
 

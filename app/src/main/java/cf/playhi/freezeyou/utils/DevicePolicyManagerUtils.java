@@ -1,16 +1,14 @@
 package cf.playhi.freezeyou.utils;
 
-import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.PowerManager;
+import android.provider.Settings;
 
 import androidx.annotation.Nullable;
-
-import java.io.DataOutputStream;
 
 import cf.playhi.freezeyou.DeviceAdminReceiver;
 import cf.playhi.freezeyou.R;
@@ -23,48 +21,115 @@ public final class DevicePolicyManagerUtils {
         return (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
     }
 
-    public static void openDevicePolicyManager(Context context) {
-        showToast(context, R.string.needActiveAccessibilityService);
-        if (context instanceof Activity) {
-            ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
-            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName);
-            context.startActivity(intent);
-        }
+    public static void openDevicePolicyManager(final Context context) {
+        if (context == null) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            showToast(context, R.string.needActiveDeviceAdmin);
+
+            // 1. Primary: Device Admin settings list (standard Android settings screen)
+            try {
+                Intent adminListIntent = new Intent("android.settings.DEVICE_ADMIN_SETTINGS");
+                adminListIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(adminListIntent);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // 2. Fallback: Security settings (universal fallback across all Android versions and skins)
+            try {
+                Intent securityIntent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+                securityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(securityIntent);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // 3. Fallback: General Settings
+            try {
+                Intent generalSettingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                generalSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(generalSettingsIntent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
-     * Lock screen using ROOT if available, otherwise fall back to non-ROOT (DPM)
+     * Lock screen using Shizuku or ROOT if available, otherwise fall back to non-ROOT (DPM)
      *
      * @param context Context
+     * @return true if screen was locked or already off, false if user action is required
      */
-    public static void doLockScreen(Context context) {
-        // Try ROOT first to avoid breaking Smart Lock
-        try {
-            Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-            DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-            outputStream.writeBytes("input keyevent KEYCODE_POWER" + "\n");
-            outputStream.writeBytes("exit\n");
-            outputStream.flush();
-            process.waitFor();
-            ProcessUtils.destroyProcess(outputStream, process);
-        } catch (Exception e) {
-            e.printStackTrace();
+    private static boolean isScreenOn(Context context) {
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (pm == null) {
+            return true;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            return pm.isInteractive();
+        } else {
+            return pm.isScreenOn();
+        }
+    }
+
+    public static boolean doLockScreen(Context context) {
+        if (!isScreenOn(context)) {
+            return true;
         }
 
-        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        if (pm == null || pm.isScreenOn()) {
-            DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
-            ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
-            if (devicePolicyManager != null) {
-                if (devicePolicyManager.isAdminActive(componentName)) {
-                    devicePolicyManager.lockNow();
-                } else {
-                    openDevicePolicyManager(context);
+        // Try Shizuku first to avoid breaking Smart Lock / Biometric unlock
+        if (PrivilegedShellUtils.isShizukuAvailable(context)) {
+            try {
+                String cmd = Build.VERSION.SDK_INT >= 20 ? "input keyevent 223" : "input keyevent 26";
+                PrivilegedShellUtils.CommandResult result =
+                        PrivilegedShellUtils.runShizukuCommand(cmd, 2000L);
+                if (!isScreenOn(context) || (result.isSuccessful() && Build.VERSION.SDK_INT >= 20)) {
+                    return true;
                 }
-            } else {
-                showToast(context, R.string.devicePolicyManagerNotFound);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        }
+
+        // Recheck before root fallback so we never wake an already sleeping screen
+        if (!isScreenOn(context)) {
+            return true;
+        }
+
+        // Try ROOT next to avoid breaking Smart Lock / Biometric unlock
+        if (PrivilegedShellUtils.isRootAvailable()) {
+            try {
+                String cmd = Build.VERSION.SDK_INT >= 20 ? "input keyevent 223" : "input keyevent 26";
+                PrivilegedShellUtils.CommandResult result =
+                        PrivilegedShellUtils.runRootCommand(cmd, 2000L);
+                if (!isScreenOn(context) || (result.isSuccessful() && Build.VERSION.SDK_INT >= 20)) {
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (!isScreenOn(context)) {
+            return true;
+        }
+
+        DevicePolicyManager devicePolicyManager = getDevicePolicyManager(context);
+        ComponentName componentName = new ComponentName(context, DeviceAdminReceiver.class);
+        if (devicePolicyManager != null) {
+            if (devicePolicyManager.isAdminActive(componentName)) {
+                devicePolicyManager.lockNow();
+                return true;
+            } else {
+                openDevicePolicyManager(context);
+                return false;
+            }
+        } else {
+            showToast(context, R.string.devicePolicyManagerNotFound);
+            return false;
         }
     }
 

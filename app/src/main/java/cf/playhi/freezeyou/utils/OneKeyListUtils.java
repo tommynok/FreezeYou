@@ -6,29 +6,90 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
 
-import net.grandcentrix.tray.AppPreferences;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public final class OneKeyListUtils {
 
+    private static final Object LIST_LOCK = new Object();
     private static final String USER_DEFINED_DB = "userDefinedCategories";
     private static final String CATEGORIES_TABLE = "categories";
     private static final String CREATE_CATEGORIES_TABLE =
             "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)";
 
     public static boolean addToOneKeyList(Context context, String key, String pkgName) {
-        final AppPreferences sharedPreferences = new AppPreferences(context);
-        final String pkgNames = sharedPreferences.getString(key, "");
-        return existsInOneKeyList(pkgNames, pkgName)
-                || sharedPreferences.put(key, addPkgToPkgNames(pkgNames, pkgName));
+        if (pkgName == null || pkgName.trim().isEmpty()) {
+            return true;
+        }
+        return addToOneKeyList(context, key, Collections.singletonList(pkgName));
+    }
+
+    public static boolean addToOneKeyList(Context context, String key, Collection<String> pkgNamesToAdd) {
+        if (pkgNamesToAdd == null || pkgNamesToAdd.isEmpty()) {
+            return true;
+        }
+        synchronized (LIST_LOCK) {
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            storage.lock();
+            try {
+                final String currentPkgNames = storage.getString(key, "");
+                String updatedPkgNames = currentPkgNames;
+                boolean changed = false;
+                for (String pkgName : pkgNamesToAdd) {
+                    if (pkgName != null && !pkgName.trim().isEmpty() && !existsInOneKeyList(updatedPkgNames, pkgName)) {
+                        updatedPkgNames = addPkgToPkgNames(updatedPkgNames, pkgName);
+                        changed = true;
+                    }
+                }
+                boolean success = true;
+                if (changed) {
+                    success = storage.encode(key, updatedPkgNames);
+                    storage.sync();
+                }
+                return success;
+            } finally {
+                storage.unlock();
+            }
+        }
     }
 
     public static boolean removeFromOneKeyList(Context context, String key, String pkgName) {
-        final AppPreferences sharedPreferences = new AppPreferences(context);
-        final String pkgNames = sharedPreferences.getString(key, "");
-        return !existsInOneKeyList(pkgNames, pkgName)
-                || sharedPreferences.put(key, removePkgFromPkgNames(pkgNames, pkgName));
+        if (pkgName == null || pkgName.trim().isEmpty()) {
+            return true;
+        }
+        return removeFromOneKeyList(context, key, Collections.singletonList(pkgName));
+    }
+
+    public static boolean removeFromOneKeyList(Context context, String key, Collection<String> pkgNamesToRemove) {
+        if (pkgNamesToRemove == null || pkgNamesToRemove.isEmpty()) {
+            return true;
+        }
+        synchronized (LIST_LOCK) {
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            storage.lock();
+            try {
+                final String currentPkgNames = storage.getString(key, "");
+                String updatedPkgNames = currentPkgNames;
+                boolean changed = false;
+                for (String pkgName : pkgNamesToRemove) {
+                    if (pkgName != null && existsInOneKeyList(updatedPkgNames, pkgName)) {
+                        updatedPkgNames = removePkgFromPkgNames(updatedPkgNames, pkgName);
+                        changed = true;
+                    }
+                }
+                boolean success = true;
+                if (changed) {
+                    success = storage.encode(key, updatedPkgNames);
+                    storage.sync();
+                }
+                return success;
+            } finally {
+                storage.unlock();
+            }
+        }
     }
 
     /**
@@ -93,11 +154,12 @@ public final class OneKeyListUtils {
     }
 
     public static boolean existsInOneKeyList(Context context, String onekeyName, String pkgName) {
-        return existsInOneKeyList(new AppPreferences(context).getString(onekeyName, ""), pkgName);
+        return existsInOneKeyList(
+                new DefaultMultiProcessMMKVStorage().getString(onekeyName, ""), pkgName);
     }
 
     public static boolean removeUninstalledFromOneKeyList(Context context, String oneKeyName) {
-        String s = new AppPreferences(context).getString(oneKeyName, "");
+        String s = new DefaultMultiProcessMMKVStorage().getString(oneKeyName, "");
 
         if (s == null) {
             return false;

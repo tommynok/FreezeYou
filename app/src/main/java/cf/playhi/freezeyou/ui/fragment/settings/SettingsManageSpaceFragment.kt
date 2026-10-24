@@ -15,6 +15,10 @@ import cf.playhi.freezeyou.utils.FileUtils.deleteAllFiles
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromOneKeyList
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromUserDefinedCategories
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @Keep
@@ -83,16 +87,22 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
      * others.
      */
     private fun clearUninstalledPkgsInAllLists() {
-        var success = removeUninstalledFromUserDefinedCategories(requireContext())
-        for (listKeyName in listOf(
-            getString(R.string.sAutoFreezeApplicationList),
-            getString(R.string.sOneKeyUFApplicationList),
-            getString(R.string.sFreezeOnceQuit)
-        )) {
-            success = removeUninstalledFromOneKeyList(requireContext(), listKeyName) && success
+        val appContext = context?.applicationContext ?: return
+        val currentActivity = activity
+        CoroutineScope(Dispatchers.IO).launch {
+            var success = removeUninstalledFromUserDefinedCategories(appContext)
+            for (listKeyName in listOf(
+                appContext.getString(R.string.sAutoFreezeApplicationList),
+                appContext.getString(R.string.sOneKeyUFApplicationList),
+                appContext.getString(R.string.sFreezeOnceQuit)
+            )) {
+                success = removeUninstalledFromOneKeyList(appContext, listKeyName) && success
+            }
+            success = purgeUninstalledPackageTimes(appContext) && success
+            withContext(Dispatchers.Main) {
+                showToast(currentActivity, if (success) R.string.success else R.string.failed)
+            }
         }
-        success = purgeUninstalledPackageTimes(requireContext()) && success
-        showToast(activity, if (success) R.string.success else R.string.failed)
     }
 
     private fun askIfResetTimes(dbName: String) {

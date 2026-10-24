@@ -12,6 +12,7 @@ import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.*
 import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
+import cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
 import rikka.shizuku.ShizukuBinderWrapper
@@ -106,12 +107,28 @@ open class FUFSinglePackage(
         return if (actionMode == ACTION_MODE_FREEZE) {
             if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
                 pureExecuteAPIDPMAction()
+            } else if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context)) {
+                pureExecuteAPIProfileOwnerAction()
             } else {
                 pureExecuteAPIRootAction()
             }
         } else {
             if (checkMRootFrozen(context, singlePackageName)) {
-                pureExecuteAPIDPMAction()
+                if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context) && !isDeviceOwner(context)) {
+                    pureExecuteAPIProfileOwnerAction()
+                } else {
+                    pureExecuteAPIDPMAction()
+                }
+            } else if (Build.VERSION.SDK_INT >= 21 && (isDeviceOwner(context) || isProfileOwner(context)) && !checkRootPermission()) {
+                if (!checkRootFrozen(context, singlePackageName, null)) {
+                    if (isProfileOwner(context) && !isDeviceOwner(context)) {
+                        pureExecuteAPIProfileOwnerAction()
+                    } else {
+                        pureExecuteAPIDPMAction()
+                    }
+                } else {
+                    pureExecuteAPIRootAction()
+                }
             } else {
                 pureExecuteAPIRootAction()
             }
@@ -209,16 +226,26 @@ open class FUFSinglePackage(
 
         if (Build.VERSION.SDK_INT < 18) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**
@@ -230,16 +257,26 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledUserAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**
@@ -251,16 +288,26 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            return ERROR_INSUFFICIENT_PERMISSION
+        }
         val freeze = actionMode == ACTION_MODE_FREEZE
-        context.packageManager.setApplicationEnabledSetting(
-            singlePackageName,
-            if (freeze)
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-        )
-        return ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        return try {
+            context.packageManager.setApplicationEnabledSetting(
+                singlePackageName,
+                if (freeze)
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                else
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                0
+            )
+            ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
+        } catch (e: SecurityException) {
+            ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            ERROR_OTHER
+        }
     }
 
     /**

@@ -7,12 +7,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_SUCCESS
 import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -86,6 +88,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun loadStartedIntentAndPkgName(startedIntent: Intent) {
         mStartedIntent = startedIntent
+        mPkgName.value = null
+        val hasValidToken = ShortcutTokenUtils.verifyToken(startedIntent, ShortcutTokenUtils.ACTION_FREEZE)
         if ("freezeyou" == mStartedIntent.scheme) {
             val dataUri = mStartedIntent.data
             dataUri?.run { getQueryParameter("pkgName")?.let { mPkgName.value = it } }
@@ -95,8 +99,14 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
             mIsFromShortcut = mStartedIntent.getBooleanExtra("fromShortcut", true)
         }
         mTarget = mStartedIntent.getStringExtra("target")
-        mTasks = mStartedIntent.getStringExtra("tasks")
-        mJustLaunch = mStartedIntent.getBooleanExtra("justLaunch", false)
+        // Privilege gating: arbitrary tasks and justLaunch require valid token authorization.
+        // Legacy/unauthenticated shortcuts fall back to user confirmation dialog.
+        mTasks = if (hasValidToken) mStartedIntent.getStringExtra("tasks") else null
+        mJustLaunch = if (hasValidToken) mStartedIntent.getBooleanExtra("justLaunch", false) else false
+        if (!hasValidToken) {
+            // Force user confirmation dialog: prevent silent automated actions from untrusted intents
+            mIsFromShortcut = false
+        }
     }
 
     fun go() {
@@ -134,7 +144,11 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 }
                 return
             }
-            if (mIsFromShortcut && shortcutAutoFUF.getValue()) {
+            val clickAction = shortcutClickAction.getValue()
+            val isAutoFUF = if (!clickAction.isNullOrEmpty()) clickAction == "toggle" else shortcutAutoFUF.getValue()
+            val isOpenAndUF = if (!clickAction.isNullOrEmpty()) clickAction == "open_and_uf" else openAndUFImmediately.getValue()
+
+            if (mIsFromShortcut && isAutoFUF) {
                 if (frozen) {
                     fufAction(
                         it,
@@ -150,7 +164,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                             target,
                             tasks,
                             frozen = false,
-                            ignoreAutoRun = true
+                            ignoreAutoRun = true,
+                            openAndUF = isOpenAndUF
                         )
                     } else {
                         fufAction(it, target, tasks, runImmediately = false, frozen = false)
@@ -162,7 +177,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                     target,
                     tasks,
                     frozen,
-                    !mIsFromShortcut
+                    !mIsFromShortcut,
+                    openAndUF = isOpenAndUF
                 )
             }
         }
@@ -173,9 +189,10 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         target: String?,
         tasks: String?,
         frozen: Boolean,
-        ignoreAutoRun: Boolean
+        ignoreAutoRun: Boolean,
+        openAndUF: Boolean = openAndUFImmediately.getValue()
     ) {
-        if (!ignoreAutoRun && openAndUFImmediately.getValue()) {
+        if (!ignoreAutoRun && openAndUF) {
             if (frozen) {
                 fufAction(pkgName, target, tasks, runImmediately = true, frozen = true)
             } else {

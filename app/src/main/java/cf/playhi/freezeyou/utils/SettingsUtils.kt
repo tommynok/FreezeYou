@@ -49,6 +49,14 @@ object SettingsUtils {
         syncMMKVDataToMMKVWhenSharedPreferenceDataChanged(context, sharedPreferences, abstractKey)
 
         when (abstractKey) {
+            openAndUFImmediately -> {
+                if (openAndUFImmediately.getValue()) {
+                    shortcutClickAction.setValue(value = "open_and_uf")
+                    shortcutAutoFUF.setValue(value = false)
+                } else if (shortcutClickAction.getValue() == "open_and_uf") {
+                    shortcutClickAction.setValue(value = "dialog")
+                }
+            }
             onekeyFreezeWhenLockScreen -> {
                 if (onekeyFreezeWhenLockScreen.getValue()) {
                     ServiceUtils.startService(
@@ -138,7 +146,9 @@ object SettingsUtils {
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE ->
-                        if (!FUFUtils.isSystemApp(context)) {
+                        if (!FUFUtils.isSystemApp(context) ||
+                            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE) != PackageManager.PERMISSION_GRANTED
+                        ) {
                             showToast(context, R.string.insufficientPermission)
                         }
                     API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,

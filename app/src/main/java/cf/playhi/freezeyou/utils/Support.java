@@ -25,8 +25,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -34,6 +32,7 @@ import cf.playhi.freezeyou.ForceStop;
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.InstallPackagesActivity;
 import cf.playhi.freezeyou.ui.LauncherShortcutConfirmAndGenerateActivity;
 
@@ -113,19 +112,19 @@ public final class Support {
         cursor.close();
         vmUserDefinedDb.close();
 
-        final AppPreferences sharedPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
 
-        final String pkgNames = sharedPreferences.getString(context.getString(R.string.sAutoFreezeApplicationList), "");
+        final String pkgNames = storage.getString(context.getString(R.string.sAutoFreezeApplicationList), "");
         if (existsInOneKeyList(pkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyList).setTitle(R.string.removeFromOneKeyList);
         }
 
-        final String FreezeOnceQuitPkgNames = sharedPreferences.getString(context.getString(R.string.sFreezeOnceQuit), "");
+        final String FreezeOnceQuitPkgNames = storage.getString(context.getString(R.string.sFreezeOnceQuit), "");
         if (existsInOneKeyList(FreezeOnceQuitPkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToFreezeOnceQuit).setTitle(R.string.removeFromFreezeOnceQuit);
         }
 
-        final String UFPkgNames = sharedPreferences.getString(context.getString(R.string.sOneKeyUFApplicationList), "");
+        final String UFPkgNames = storage.getString(context.getString(R.string.sOneKeyUFApplicationList), "");
         if (existsInOneKeyList(UFPkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyUFList).setTitle(R.string.removeFromOneKeyUFList);
         }
@@ -238,7 +237,9 @@ public final class Support {
                     switch (item.getItemId()) {
                         case R.id.main_sca_menu_forceStop:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                context.startActivity(new Intent(context, ForceStop.class).putExtra("pkgName", pkgName));
+                                Intent forceStopIntent = new Intent(context, ForceStop.class).putExtra("pkgName", pkgName);
+                                ShortcutTokenUtils.attachToken(forceStopIntent, ShortcutTokenUtils.ACTION_FORCE_STOP);
+                                context.startActivity(forceStopIntent);
                             }
                             break;
                         case R.id.main_sca_menu_addToFreezeOnceQuit:
@@ -251,11 +252,11 @@ public final class Support {
                             Support.checkAddOrRemove(context, UFPkgNames, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
                             break;
                         case R.id.main_sca_menu_appDetail:
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Intent appDetailIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                             Uri uri = Uri.fromParts("package", pkgName, null);
-                            intent.setData(uri);
+                            appDetailIntent.setData(uri);
                             try {
-                                context.startActivity(intent);
+                                context.startActivity(appDetailIntent);
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 showToast(context, e.getLocalizedMessage());
@@ -266,7 +267,9 @@ public final class Support {
                             break;
                         case R.id.main_sca_menu_disableAEnable:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                context.startActivity(new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false));
+                                Intent freezeIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
+                                ShortcutTokenUtils.attachToken(freezeIntent, ShortcutTokenUtils.ACTION_FREEZE);
+                                context.startActivity(freezeIntent);
                             }
                             break;
                         case R.id.main_sca_menu_createDisEnableShortCut:

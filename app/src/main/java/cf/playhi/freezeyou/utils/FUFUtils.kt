@@ -28,7 +28,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import rikka.sui.Sui
 import rikka.shizuku.ShizukuProvider
-import java.io.DataOutputStream
 import java.util.*
 
 /**
@@ -45,9 +44,10 @@ import java.util.*
  *       Dispatched via [startBatchService] when operations are invoked headlessly (widgets, automated
  *       tasks, lock screen triggers, or legacy Root batch modes) where no foreground activity is alive
  *       to manage the coroutine lifecycle.</li>
- *   <li><b>Root Batch Optimization ([oneKeyActionRoot]):</b>
- *       Pipes all batch unfreeze/freeze instructions into a single persistent {@code su} shell session
- *       using a piped {@link java.io.DataOutputStream}, avoiding per-package su process invocation.</li>
+ *   <li><b>Root Batch Optimization ([oneKeyActionRoot], [oneKeyActionRootAsync]):</b>
+ *       Pipes all batch unfreeze/freeze instructions into as few {@code su} shell sessions as it
+ *       takes ([PrivilegedShellUtils.executeBatchPrivilegedCommand]), avoiding per-package su process
+ *       invocation while still reading back one exit code and one block of output per package.</li>
  * </ul>
  *
  * <p><b>Safety Protocols &amp; State Guards:</b><br>
@@ -167,7 +167,8 @@ object FUFUtils {
         context: Context, pkgName: String, apiMode: Int,
         enable: Boolean, showUnnecessaryToast: Boolean,
         askRun: Boolean = false, target: String? = null, tasks: String? = null,
-        runImmediately: Boolean = false, activity: Activity? = null, finish: Boolean = false
+        runImmediately: Boolean = false, activity: Activity? = null, finish: Boolean = false,
+        skipQuickNotification: Boolean = false
     ): Boolean {
         val result = checkAndExecuteAction(
             context, pkgName,
@@ -181,13 +182,17 @@ object FUFUtils {
             sendStatusChangedBroadcast(context, pkgName)
             if (enable) {
                 TasksUtils.onUFApplications(context, pkgName)
-                checkAndCreateFUFQuickNotification(context, pkgName)
+                if (!skipQuickNotification) {
+                    checkAndCreateFUFQuickNotification(context, pkgName)
+                }
                 if (askRun) {
                     askRun(context, pkgName, target, tasks, runImmediately, activity, finish)
                 }
             } else {
                 TasksUtils.onFApplications(context, pkgName)
-                NotificationUtils.deleteNotification(context, pkgName)
+                if (!skipQuickNotification) {
+                    NotificationUtils.deleteNotification(context, pkgName)
+                }
             }
             return true
         }
@@ -336,14 +341,47 @@ object FUFUtils {
     }
 
     /**
-     * Executes a batch freeze or unfreeze operation using a single persistent Root (su) shell process.
+     * What a batch of privileged commands did: the packages left in the state that was asked for,
+     * and the packages that were not.
+     *
+     * The packages held back by the user's own guards — an application still notifying, the one in
+     * the foreground — are in neither list. Nothing was asked of the shell for them, and the reason
+     * was told to the user one application at a time.
+     */
+    class RootBatchSummary(val succeeded: List<String>, val failed: List<String>)
+
+    /**
+     * A root batch, from the decision to the answer, kept as one value because in the asynchronous
+     * path the deciding, the shell and the reporting happen on three different threads.
+     */
+    private class RootBatch(
+        /** Packages the shell was sent a command for, parallel to [commands]. */
+        val batched: List<String>,
+        val commands: List<String>,
+        /** Packages already in the state asked for: nothing to run, so nothing that can fail. */
+        val alreadyInDesiredState: List<String>,
+        /** Packages whose enabled setting the package manager would not answer for. */
+        val unreadable: List<String>,
+        val stillNotifying: List<String>,
+        val foreground: List<String>,
+        /** null when the shell had nothing to do. */
+        val shell: PrivilegedShellUtils.BatchResult?
+    )
+
+    /**
+     * Executes a batch freeze or unfreeze through as few privileged shell sessions as it can.
      *
      * <p><b>Performance Optimization:</b><br>
-     * Instead of spawning an individual {@code su} command per package (which incurs a 300-500ms process
-     * creation and permission check cost per app), this method opens a single root shell stream
-     * ({@link java.io.DataOutputStream}) and writes all {@code pm disable}/{@code pm enable} (or {@code pm hide}/{@code pm unhide})
-     * instructions sequentially. Bookkeeping (database updates, automation trigger scans) is also
-     * aggregated into a single batch pass at completion.
+     * An individual {@code su} invocation costs a process and a privilege escalation — several
+     * hundred milliseconds — while {@code pm disable} itself is a fraction of that. The whole batch
+     * is fed to one shell by [PrivilegedShellUtils.executeBatchPrivilegedCommand], which still
+     * reports every command on its own, so a batch that was refused for one application is known as
+     * that instead of being reported as a success. Bookkeeping (freeze counters, notification
+     * removal, automation triggers) is then done once, for the applications that changed.
+     *
+     * <p><b>Threads:</b> blocks for the shell, so call it from a thread that may block, and that has
+     * a Looper — the toast and the triggered tasks at the end want one. [oneKeyActionRootAsync] is
+     * the same operation for a caller on the UI thread.
      *
      * @param context execution context
      * @param freeze true to freeze, false to unfreeze
@@ -355,126 +393,314 @@ object FUFUtils {
     fun oneKeyActionRoot(
         context: Context, freeze: Boolean, pkgNameList: Array<String>?,
         disableModeTrueOrHideModeFalse: Boolean = true
+    ): RootBatchSummary {
+        val appContext = context.applicationContext
+        return reportRootBatch(
+            appContext,
+            runRootBatch(appContext, pkgNameList, freeze, disableModeTrueOrHideModeFalse),
+            freeze
+        )
+    }
+
+    /**
+     * [oneKeyActionRoot] off the calling thread.
+     *
+     * A batch of two dozen root commands takes a second or two, and until now that wait happened on
+     * the activity's own thread whenever the batch was started from a legacy entry point — the app
+     * looked frozen to the user while the shell was still working through the list.
+     *
+     * Database updates, notifications, and task collection remain on the background thread to keep
+     * the UI fluid; only toasts, task execution, and [onComplete] are dispatched on the main thread.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun oneKeyActionRootAsync(
+        context: Context, freeze: Boolean, pkgNameList: Array<String>?,
+        disableModeTrueOrHideModeFalse: Boolean = true,
+        onComplete: Runnable? = null
     ) {
         // Same reason as in oneKeyAction: an empty list must not end in the "executed" toast.
-        if (pkgNameList.isNullOrEmpty()) return
-        if (pkgNameList != null) {
-            var currentPackage: String? = " "
-            if (DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeForegroundApplications.getValue()) {
-                currentPackage = MainApplication.currentPackage
-            }
-            if (currentPackage == null) currentPackage = " "
-            var process: Process? = null
-            var outputStream: DataOutputStream? = null
+        if (pkgNameList.isNullOrEmpty()) {
+            onComplete?.run()
+            return
+        }
+        val appContext = context.applicationContext
+        inProcessFUFScope.launch {
             try {
-                process = Runtime.getRuntime().exec(RootUtils.getSuBinary())
-                outputStream = DataOutputStream(process.outputStream)
-                if (freeze) {
-                    for (aPkgNameList in pkgNameList) {
-                        if (context.packageName != aPkgNameList) {
-                            if (isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(
-                                    aPkgNameList
-                                )
-                            ) {
-                                checkAndShowAppStillNotifyingToast(context, aPkgNameList)
-                            } else if (currentPackage == aPkgNameList) {
-                                checkAndShowAppIsForegroundApplicationToast(context, aPkgNameList)
-                            } else {
-                                try {
-                                    val tmp = context.packageManager.getApplicationEnabledSetting(
-                                        aPkgNameList
-                                    )
-                                    if (tmp != PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER && tmp != PackageManager.COMPONENT_ENABLED_STATE_DISABLED && tmp != PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED) {
-                                        outputStream.writeBytes(
-                                            """
-                                                pm ${if (disableModeTrueOrHideModeFalse) "disable " else "hide "}$aPkgNameList
-                                                
-                                                """.trimIndent()
-                                        )
-                                    }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    //                                    if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                        showToast(context, R.string.plsRemoveUninstalledApplications);
-//                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for (aPkgNameList in pkgNameList) {
-                        try {
-                            if (disableModeTrueOrHideModeFalse) {
-                                val tmp =
-                                    context.packageManager.getApplicationEnabledSetting(aPkgNameList)
-                                if (tmp == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER || tmp == PackageManager.COMPONENT_ENABLED_STATE_DISABLED || tmp == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED) {
-                                    outputStream.writeBytes("pm enable $aPkgNameList\n")
-                                }
-                            } else {
-                                outputStream.writeBytes("pm unhide $aPkgNameList\n")
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            //                            if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                showToast(context, R.string.plsRemoveUninstalledApplications);
-//                            }
-                        }
-                    }
-                }
-                outputStream.writeBytes("exit\n")
-                outputStream.flush()
-                val exitValue = process.waitFor()
-                if (exitValue == 0) {
-                    // The same bookkeeping as the in-process batch, and it used to be done one
-                    // application at a time: onFApplications alone opened the statistics database
-                    // and scanned the trigger table per package, which for a couple of dozen of
-                    // them cost several times as long as the freezing. Same set of packages as
-                    // before, so nothing changes but the number of database round trips.
-                    val batch = pkgNameList.toList()
-                    if (freeze) {
-                        DataStatisticsUtils.addFreezeTimes(context, batch)
-                        NotificationUtils.deleteNotifications(context, batch)
-                        TasksUtils.runCollectedTasks(
-                            context,
-                            TasksUtils.collectTriggeredTasks(context, batch, "onFApplications")
-                        )
+                val batch = runRootBatch(
+                    appContext, pkgNameList, freeze, disableModeTrueOrHideModeFalse
+                )
+                val outcomes = resolveRootBatchOutcomes(batch)
+                val shell = batch.shell
+                var bookkeepingException: Exception? = null
+                val triggeredTasks = try {
+                    if (shell == null || shell.sessionStarted) {
+                        executeBackgroundBookkeeping(appContext, outcomes.actuallyChanged, freeze)
                     } else {
-                        DataStatisticsUtils.addUFreezeTimes(context, batch)
-                        TasksUtils.runCollectedTasks(
-                            context,
-                            TasksUtils.collectTriggeredTasks(context, batch, "onUFApplications")
+                        ArrayList()
+                    }
+                } catch (e: Exception) {
+                    bookkeepingException = e
+                    ArrayList()
+                } finally {
+                    sendStatusChangedBroadcast(appContext)
+                }
+                withContext(Dispatchers.Main) {
+                    showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                    if (bookkeepingException != null) {
+                        bookkeepingException.printStackTrace()
+                        ToastUtils.showToast(
+                            appContext,
+                            appContext.getString(R.string.exception) + bookkeepingException.message
                         )
                     }
-                    if (!lesserToast.getValue()) {
-                        ToastUtils.showToast(context, R.string.executed)
-                    }
-                    // After the toast, for the reason given in the in-process batch: an icon per
-                    // application is the slowest part of an unfreeze and nothing waits on it.
-                    if (!freeze) {
-                        for (aPkgNameList in pkgNameList) {
-                            checkAndCreateFUFQuickNotification(context, aPkgNameList)
-                        }
-                    }
-                } else {
-                    ToastUtils.showToast(context, R.string.mayUnrootedOrOtherEx)
                 }
-                ProcessUtils.destroyProcess(outputStream, process)
             } catch (e: Exception) {
                 e.printStackTrace()
-                ToastUtils.showToast(context, context.getString(R.string.exception) + e.message)
-                val msg = e.message?.lowercase(Locale.getDefault()) ?: ""
-                if (msg.lowercase(Locale.getDefault())
-                        .contains("permission denied") || msg.lowercase(
-                        Locale.getDefault()
-                    ).contains("not found")
-                ) {
-                    ToastUtils.showToast(context, R.string.mayUnrooted)
+                withContext(Dispatchers.Main) {
+                    ToastUtils.showToast(appContext, appContext.getString(R.string.exception) + e.message)
                 }
-                ProcessUtils.destroyProcess(outputStream, process)
+            } finally {
+                withContext(Dispatchers.Main) {
+                    onComplete?.run()
+                }
             }
-            sendStatusChangedBroadcast(context)
         }
     }
+
+    /**
+     * Java convenience overload to provide a completion callback with default disable/enable mode.
+     */
+    @JvmStatic
+    fun oneKeyActionRootAsync(
+        context: Context, freeze: Boolean, pkgNameList: Array<String>?,
+        onComplete: Runnable?
+    ) {
+        oneKeyActionRootAsync(context, freeze, pkgNameList, true, onComplete)
+    }
+
+    /**
+     * Decides what the shell has to do for this batch and asks for it.
+     *
+     * The decisions are the ones the loop used to make in the middle of the command stream: the
+     * user's guards, and whether the application is already in the state asked for. The second is
+     * worth making before anything is sent, because {@code pm} answers for an already disabled
+     * application in whichever way that release happens to. It is deliberately not made on the
+     * unfreeze half of Mode 3: hiding an application leaves its enabled setting alone, so the check
+     * would find a hidden application enabled and skip exactly the unfreeze it was asked to do.
+     */
+    private fun runRootBatch(
+        context: Context, pkgNameList: Array<String>?, freeze: Boolean,
+        disableModeTrueOrHideModeFalse: Boolean
+    ): RootBatch {
+        val batched = ArrayList<String>()
+        val commands = ArrayList<String>()
+        val alreadyInDesiredState = ArrayList<String>()
+        val unreadable = ArrayList<String>()
+        val stillNotifying = ArrayList<String>()
+        val foreground = ArrayList<String>()
+        // The list arrives from Java callers that may hand over null, and an empty one has nothing to
+        // walk: taking it as one non-null local keeps the decisions below free of both cases.
+        val targets = pkgNameList ?: emptyArray()
+        var currentPackage: String? = " "
+        if (DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeForegroundApplications.getValue()) {
+            currentPackage = MainApplication.currentPackage
+        }
+        if (currentPackage == null) currentPackage = " "
+        val verb = when {
+            freeze && disableModeTrueOrHideModeFalse -> "disable"
+            freeze -> "hide"
+            disableModeTrueOrHideModeFalse -> "enable"
+            else -> "unhide"
+        }
+        for (pkgName in targets) {
+            // Compare against the id this build runs as, for the reason given in
+            // checkAndExecuteAction: a fork under another applicationId has to recognise itself.
+            if (context.packageName == pkgName) {
+                continue
+            }
+            if (freeze) {
+                if (isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(pkgName)) {
+                    stillNotifying += pkgName
+                    continue
+                }
+                if (currentPackage == pkgName) {
+                    foreground += pkgName
+                    continue
+                }
+            }
+            if (freeze || disableModeTrueOrHideModeFalse) {
+                val state = enabledSettingOrNull(context, pkgName)
+                if (state == null) {
+                    unreadable += pkgName
+                    continue
+                }
+                // Freeze wants the frozen states, unfreeze wants to leave them: the same question
+                // either way, asked once.
+                if (freeze == isFrozenEnabledSetting(state)) {
+                    alreadyInDesiredState += pkgName
+                    continue
+                }
+            }
+            batched += pkgName
+            // Quoted because a package name is editable text in a list and in a backup file, and an
+            // unquoted one of them is a command of whoever wrote it.
+            commands += "pm $verb ${PrivilegedShellUtils.shellQuote(pkgName)}"
+        }
+        val shell = if (commands.isEmpty()) null else PrivilegedShellUtils
+            .executeBatchPrivilegedCommand(
+                commands, context, PrivilegedShellUtils.Backend.ROOT
+            )
+        return RootBatch(
+            batched, commands, alreadyInDesiredState, unreadable, stillNotifying, foreground, shell
+        )
+    }
+
+    private class RootBatchOutcomes(
+        val succeeded: List<String>,
+        val failed: List<String>,
+        val actuallyChanged: List<String>
+    )
+
+    private fun resolveRootBatchOutcomes(batch: RootBatch): RootBatchOutcomes {
+        val shell = batch.shell
+        val succeeded = ArrayList(batch.alreadyInDesiredState)
+        val failed = ArrayList<String>(batch.unreadable)
+        val actuallyChanged = ArrayList<String>()
+
+        if (shell != null && !shell.sessionStarted) {
+            failed += batch.batched
+        } else if (shell != null) {
+            batch.batched.forEachIndexed { index, pkgName ->
+                if (shell.outcomes[index].isSuccessful()) {
+                    succeeded += pkgName
+                    actuallyChanged += pkgName
+                } else {
+                    failed += pkgName
+                }
+            }
+        }
+        return RootBatchOutcomes(succeeded, failed, actuallyChanged)
+    }
+
+    /**
+     * Performs database persistence, notification cancellation, and trigger collection on the background
+     * dispatcher to avoid stalling UI threads during large batches.
+     */
+    private fun executeBackgroundBookkeeping(
+        context: Context,
+        actuallyChanged: List<String>,
+        freeze: Boolean
+    ): ArrayList<String> {
+        if (actuallyChanged.isEmpty()) return ArrayList()
+        if (freeze) {
+            DataStatisticsUtils.addFreezeTimes(context, actuallyChanged)
+            NotificationUtils.deleteNotifications(context, actuallyChanged)
+        } else {
+            DataStatisticsUtils.addUFreezeTimes(context, actuallyChanged)
+        }
+        val triggered = TasksUtils.collectTriggeredTasks(
+            context, actuallyChanged, if (freeze) "onFApplications" else "onUFApplications"
+        )
+        if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+            // One notification per application, the way the system stacks them into a bundle of its
+            // own accord. The single card for the lot is opt-in, and worth having only when there is
+            // more than one application to put on it.
+            if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                && actuallyChanged.size > 1
+            ) {
+                NotificationUtils.createBatchQuickNotification(context, actuallyChanged)
+            } else {
+                actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
+            }
+        }
+        return triggered ?: ArrayList()
+    }
+
+    /**
+     * Dispatches user-facing toasts and task execution on the main Looper thread.
+     */
+    private fun showRootBatchUI(
+        context: Context,
+        batch: RootBatch,
+        succeeded: List<String>,
+        failed: List<String>,
+        triggeredTasks: ArrayList<String>
+    ) {
+        batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
+        batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
+
+        val shell = batch.shell
+        if (shell != null && !shell.sessionStarted) {
+            ToastUtils.showToast(context, R.string.mayUnrootedOrOtherEx)
+            val message = shell.error?.lowercase(Locale.getDefault()) ?: ""
+            if (message.contains("permission denied") || message.contains("not found")) {
+                ToastUtils.showToast(context, R.string.mayUnrooted)
+            }
+            return
+        }
+
+        if (triggeredTasks.isNotEmpty()) {
+            TasksUtils.runCollectedTasks(context, triggeredTasks)
+        }
+        if (failed.isNotEmpty()) {
+            showFailedApplicationsToast(context, failed)
+        } else if (!lesserToast.getValue()) {
+            ToastUtils.showToast(context, R.string.executed)
+        }
+    }
+
+    /**
+     * Tells the user, the list and the scheduled tasks what the batch did.
+     *
+     * The bookkeeping follows the applications that reached the state asked for rather than the list
+     * that was handed in: a freeze counted for an application the shell refused, or that a guard of
+     * the user's own held back, reported a freeze nobody had done.
+     */
+    private fun reportRootBatch(
+        context: Context, batch: RootBatch, freeze: Boolean
+    ): RootBatchSummary {
+        val outcomes = resolveRootBatchOutcomes(batch)
+        val shell = batch.shell
+        var bookkeepingException: Exception? = null
+        val triggeredTasks = try {
+            if (shell == null || shell.sessionStarted) {
+                executeBackgroundBookkeeping(context, outcomes.actuallyChanged, freeze)
+            } else {
+                ArrayList()
+            }
+        } catch (e: Exception) {
+            bookkeepingException = e
+            ArrayList()
+        } finally {
+            sendStatusChangedBroadcast(context)
+        }
+        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+        if (bookkeepingException != null) {
+            bookkeepingException.printStackTrace()
+            ToastUtils.showToast(
+                context,
+                context.getString(R.string.exception) + bookkeepingException.message
+            )
+        }
+        return RootBatchSummary(outcomes.succeeded, outcomes.failed)
+    }
+
+    /**
+     * @return the enabled setting, or null when the package manager will not answer for the package
+     * at all — uninstalled, or in a state the caller is not allowed to read.
+     */
+    private fun enabledSettingOrNull(context: Context, pkgName: String): Int? =
+        try {
+            context.packageManager.getApplicationEnabledSetting(pkgName)
+        } catch (e: Exception) {
+            null
+        }
+
+    private fun isFrozenEnabledSetting(state: Int): Boolean =
+        state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER ||
+                state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
+                state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
 
     @JvmStatic
     @TargetApi(21)
@@ -492,9 +718,12 @@ object FUFUtils {
     /**
      * Dispatches a batch freeze/unfreeze action according to [apiMode].
      *
-     * <p>Routes Root modes (2, 3) to [oneKeyActionRoot] for single-session su batching.
-     * Routes all other modes (DPM, Shizuku, System App) through iterative execution while collecting
-     * failures into a capped summary toast.
+     * <p>Routes Root modes (2, 3) to [oneKeyActionRoot], which feeds the whole batch to one su
+     * session and reports each package back separately. Routes all other modes (DPM, Shizuku, System
+     * App) through iterative execution while collecting failures into a capped summary toast.
+     *
+     * <p>Blocks for the shell: callers that own a screen want [oneKeyActionRootAsync] instead, and
+     * the list already goes that way through [processBatchAction].
      */
     @JvmStatic
     fun oneKeyAction(context: Context, freeze: Boolean, pkgNameList: Array<String>?, apiMode: Int) {
@@ -518,6 +747,10 @@ object FUFUtils {
             )
             else -> if (pkgNameList != null) {
                 val failedPkgNames = mutableListOf<String>()
+                val succeededPkgNames = mutableListOf<String>()
+                val isBatch = pkgNameList.size > 1
+                val combineBatchNoti = !freeze && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                val skipNoti = isBatch || combineBatchNoti
                 for (aPkgName in pkgNameList) {
                     try {
                         @Suppress("DEPRECATION")
@@ -526,8 +759,14 @@ object FUFUtils {
                             apiMode != FUFSinglePackage.API_FREEZEYOU_MROOT_DPM ||
                             !freeze || !checkMRootFrozen(context, aPkgName)
                         ) {
-                            if (!processAction(context, aPkgName, apiMode, !freeze, false)) {
+                            if (!processAction(
+                                    context, aPkgName, apiMode, !freeze, false,
+                                    skipQuickNotification = skipNoti
+                                )
+                            ) {
                                 failedPkgNames.add(aPkgName)
+                            } else {
+                                succeededPkgNames.add(aPkgName)
                             }
                         }
                     } catch (e: Exception) {
@@ -540,6 +779,19 @@ object FUFUtils {
                     showFailedApplicationsToast(context, failedPkgNames)
                 } else if (!lesserToast.getValue()) {
                     ToastUtils.showToast(context, R.string.executed)
+                }
+                if (freeze) {
+                    if (isBatch && succeededPkgNames.isNotEmpty()) {
+                        NotificationUtils.deleteNotifications(context, succeededPkgNames)
+                    }
+                } else if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+                    if (combineBatchNoti && succeededPkgNames.size > 1) {
+                        NotificationUtils.createBatchQuickNotification(context, succeededPkgNames)
+                    } else if (combineBatchNoti && succeededPkgNames.size == 1) {
+                        checkAndCreateFUFQuickNotification(context, succeededPkgNames[0])
+                    } else if (isBatch) {
+                        succeededPkgNames.forEach { checkAndCreateFUFQuickNotification(context, it) }
+                    }
                 }
             }
         }
@@ -641,8 +893,10 @@ object FUFUtils {
      * Now the applications are handled one after another on a background thread, the bookkeeping
      * is done once for the whole batch, and the list is told once at the end.
      *
-     * The root modes stay on the service: they drive a single su session for the whole batch
-     * already, and report through toasts from the calling thread.
+     * The root modes come here too, through [oneKeyActionRootAsync]: one su session for the batch
+     * instead of one process per application, driven on a background thread. The deprecated
+     * automatic mode is dispatched through FUFService, which partitions packages between DPM/PO
+     * and batched root execution.
      */
     @JvmStatic
     fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
@@ -657,11 +911,17 @@ object FUFUtils {
         }
 
         @Suppress("DEPRECATION")
-        if (apiMode == FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO ||
-            apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE ||
+        if (apiMode == FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO) {
+            startBatchService(context, packages, freeze)
+            return
+        }
+        if (apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE ||
             apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_UNHIDE_HIDE
         ) {
-            startBatchService(context, packages, freeze)
+            oneKeyActionRootAsync(
+                context, freeze, packages,
+                apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE
+            )
             return
         }
 
@@ -721,13 +981,18 @@ object FUFUtils {
 
             // Last, and after the list has been told to refresh and the toast has been shown,
             // because this is the slowest part of an unfreeze and nothing waits on its result.
-            // Each notification carries the application's icon, which means a package manager
-            // lookup, an icon loaded or decoded from the cache, a bitmap drawn from it and a
-            // binder transaction to post it — measured at 1.4 s for 24 applications, against
-            // 237 ms for the unfreezing itself. Held before the toast, that was the whole
-            // perceived cost of a batch.
-            if (!freeze) {
-                succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+            // Each application gets a notification of its own, with its own icon: that is what the
+            // system stacks into a bundle, and the cost of it — a package manager lookup and an
+            // icon decoded — is the price of the stock behaviour. The single card for the batch is
+            // opt-in and cheaper, because it names the applications without decoding their icons.
+            if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+                if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                    && succeeded.size > 1
+                ) {
+                    NotificationUtils.createBatchQuickNotification(appContext, succeeded)
+                } else {
+                    succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+                }
             }
 
             if (DebugModeUtils.isDebugModeEnabled()) {
@@ -887,6 +1152,28 @@ object FUFUtils {
     }
 
     @JvmStatic
+    fun checkHiddenFrozen(context: Context, pkgName: String, pm: PackageManager?): Boolean {
+        val packageManager = pm ?: context.packageManager ?: return false
+        return try {
+            packageManager.getApplicationInfo(pkgName, 0)
+            false
+        } catch (e: PackageManager.NameNotFoundException) {
+            try {
+                @Suppress("DEPRECATION")
+                val appInfo = packageManager.getApplicationInfo(
+                    pkgName,
+                    PackageManager.GET_UNINSTALLED_PACKAGES
+                )
+                (appInfo.flags and ApplicationInfo.FLAG_INSTALLED) != 0
+            } catch (ignored: Exception) {
+                false
+            }
+        } catch (ignored: Exception) {
+            false
+        }
+    }
+
+    @JvmStatic
     fun checkRootFrozen(
         context: Context,
         pkgName: String,
@@ -898,7 +1185,7 @@ object FUFUtils {
                     pkgName
                 )
         } catch (e: Exception) {
-            -1
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
         }.let {
             it != PackageManager.COMPONENT_ENABLED_STATE_DEFAULT &&
                     it != PackageManager.COMPONENT_ENABLED_STATE_ENABLED
@@ -912,6 +1199,7 @@ object FUFUtils {
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String): Boolean {
         return (checkMRootFrozen(context, packageName)
+                || checkHiddenFrozen(context, packageName, context.packageManager)
                 || checkRootFrozen(context, packageName, context.packageManager))
     }
 
@@ -921,7 +1209,9 @@ object FUFUtils {
      */
     @JvmStatic
     fun realGetFrozenStatus(context: Context, packageName: String, pm: PackageManager?): Boolean {
-        return checkRootFrozen(context, packageName, pm) || checkMRootFrozen(context, packageName)
+        return (checkMRootFrozen(context, packageName)
+                || checkHiddenFrozen(context, packageName, pm)
+                || checkRootFrozen(context, packageName, pm))
     }
 
     @JvmStatic

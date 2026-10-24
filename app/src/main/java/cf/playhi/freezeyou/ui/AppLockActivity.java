@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -32,11 +33,17 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 public class AppLockActivity extends FreezeYouBaseActivity {
     private BiometricPrompt mBiometricPrompt;
     private BiometricPrompt.PromptInfo mPromptInfo;
+    private boolean mPromptHasBeenShown = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
         setContentView(R.layout.app_lock_main);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
@@ -48,6 +55,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        mPromptHasBeenShown = false;
     }
 
     @Override
@@ -56,17 +64,19 @@ public class AppLockActivity extends FreezeYouBaseActivity {
 
         if (!getIntent().getBooleanExtra("ignoreCurrentUnlockStatus", false)
                 && !isLocked()) {
-            finish();
+            finishImmediately(RESULT_OK);
             return;
         }
 
         Button unlockButton = findViewById(R.id.app_lock_main_unlock_button);
         ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
-        unlockButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
-        logoImageView.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
+        unlockButton.setOnClickListener(v -> showBiometricPrompt());
+        logoImageView.setOnClickListener(v -> showBiometricPrompt());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ImageButton fingerprintImageButton = findViewById(R.id.app_lock_main_fingerprint_imageButton);
-            fingerprintImageButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
+            if (fingerprintImageButton != null) {
+                fingerprintImageButton.setOnClickListener(v -> showBiometricPrompt());
+            }
         }
         String logoPkgName = getIntent().getStringExtra("unlockLogoPkgName");
         if (logoPkgName != null) {
@@ -80,14 +90,53 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     )
             );
         }
-
-        mBiometricPrompt.authenticate(mPromptInfo);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mBiometricPrompt.cancelAuthentication();
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && !mPromptHasBeenShown) {
+            mPromptHasBeenShown = true;
+            getWindow().getDecorView().post(this::showBiometricPrompt);
+        }
+    }
+
+    private void showBiometricPrompt() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        if (mBiometricPrompt != null && mPromptInfo != null) {
+            try {
+                mBiometricPrompt.authenticate(mPromptInfo);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void finishImmediately(int resultCode) {
+        View content = findViewById(android.R.id.content);
+        if (content != null) {
+            content.setVisibility(View.GONE);
+        }
+        setResult(resultCode);
+        finish();
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBiometricPrompt != null) {
+            try {
+                mBiometricPrompt.cancelAuthentication();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private void initBiometricPromptPart() {
@@ -98,12 +147,16 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     public void onAuthenticationError(
                             int errorCode, @NonNull CharSequence errString) {
                         super.onAuthenticationError(errorCode, errString);
-                        showShortToast(
-                                getApplicationContext(),
-                                String.format(
-                                        getString(R.string.authenticationError_colon), errString
-                                )
-                        );
+                        if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
+                                && errorCode != BiometricPrompt.ERROR_CANCELED
+                                && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                            showShortToast(
+                                    getApplicationContext(),
+                                    String.format(
+                                            getString(R.string.authenticationError_colon), errString
+                                    )
+                            );
+                        }
                         setResult(RESULT_CANCELED);
                     }
 
@@ -117,8 +170,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                                         32, MMKV.MULTI_PROCESS_MODE, null)
                                 .encode("unlockTime", new Date().getTime());
 
-                        setResult(RESULT_OK);
-                        finish();
+                        finishImmediately(RESULT_OK);
                     }
 
                     @Override

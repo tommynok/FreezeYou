@@ -10,8 +10,6 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,16 +24,12 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys;
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import static android.content.Context.MODE_PRIVATE;
 
 // Note: Backup/restore schema and process is complex. Version flag in backup format can be used to distinguish schemas.
 public final class BackupUtils {
-
-    public static String convertSharedPreference(
-            AppPreferences appPreferences, String key, String defValue) {
-        return appPreferences.getString(key, defValue);
-    }
 
     private static void importStringSharedPreference(
             Context context, Activity activity, JSONObject jsonObject,
@@ -84,13 +78,48 @@ public final class BackupUtils {
                 }
                 // Read back out of a file someone can edit, and here these were pasted between
                 // quotes into SQL: a stray apostrophe ended the literal and the restore threw.
+                int hour = oneUserTimeScheduledTaskJSONObject.getInt("hour");
+                int minutes = oneUserTimeScheduledTaskJSONObject.getInt("minutes");
+                String repeat = oneUserTimeScheduledTaskJSONObject.getString("repeat");
+                int enabled = oneUserTimeScheduledTaskJSONObject.getInt("enabled");
+                String label = oneUserTimeScheduledTaskJSONObject.getString("label");
+                String task = oneUserTimeScheduledTaskJSONObject.getString("task");
+
+                Cursor cursor = null;
+                boolean exists = false;
+                try {
+                    cursor = db.query(
+                            "tasks",
+                            new String[]{"_id"},
+                            "hour = ? AND minutes = ? AND COALESCE(repeat, '') = ? AND enabled = ? AND COALESCE(label, '') = ? AND COALESCE(task, '') = ?",
+                            new String[]{
+                                    String.valueOf(hour),
+                                    String.valueOf(minutes),
+                                    repeat == null ? "" : repeat,
+                                    String.valueOf(enabled),
+                                    label == null ? "" : label,
+                                    task == null ? "" : task
+                            },
+                            null, null, null, "1"
+                    );
+                    exists = (cursor != null && cursor.moveToFirst());
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+
+                if (exists) {
+                    continue;
+                }
+
                 ContentValues values = new ContentValues();
-                values.put("hour", oneUserTimeScheduledTaskJSONObject.getInt("hour"));
-                values.put("minutes", oneUserTimeScheduledTaskJSONObject.getInt("minutes"));
-                values.put("repeat", oneUserTimeScheduledTaskJSONObject.getString("repeat"));
-                values.put("enabled", oneUserTimeScheduledTaskJSONObject.getInt("enabled"));
-                values.put("label", oneUserTimeScheduledTaskJSONObject.getString("label"));
-                values.put("task", oneUserTimeScheduledTaskJSONObject.getString("task"));
+                values.put("hour", hour);
+                values.put("minutes", minutes);
+                values.put("repeat", repeat);
+                values.put("enabled", enabled);
+                values.put("label", label);
+                values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
                 db.insert("tasks", null, values);
@@ -129,12 +158,45 @@ public final class BackupUtils {
                 if (oneUserTriggerScheduledTaskJSONObject.optBoolean("doNotImport", false)) {
                     continue;
                 }
+                String tg = oneUserTriggerScheduledTaskJSONObject.getString("tg");
+                String tgextra = oneUserTriggerScheduledTaskJSONObject.getString("tgextra");
+                int enabled = oneUserTriggerScheduledTaskJSONObject.getInt("enabled");
+                String label = oneUserTriggerScheduledTaskJSONObject.getString("label");
+                String task = oneUserTriggerScheduledTaskJSONObject.getString("task");
+
+                Cursor cursor = null;
+                boolean exists = false;
+                try {
+                    cursor = db.query(
+                            "tasks",
+                            new String[]{"_id"},
+                            "tg = ? AND COALESCE(tgextra, '') = ? AND enabled = ? AND COALESCE(label, '') = ? AND COALESCE(task, '') = ?",
+                            new String[]{
+                                    tg,
+                                    tgextra == null ? "" : tgextra,
+                                    String.valueOf(enabled),
+                                    label == null ? "" : label,
+                                    task == null ? "" : task
+                            },
+                            null, null, null, "1"
+                    );
+                    exists = (cursor != null && cursor.moveToFirst());
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
+
+                if (exists) {
+                    continue;
+                }
+
                 ContentValues values = new ContentValues();
-                values.put("tg", oneUserTriggerScheduledTaskJSONObject.getString("tg"));
-                values.put("tgextra", oneUserTriggerScheduledTaskJSONObject.getString("tgextra"));
-                values.put("enabled", oneUserTriggerScheduledTaskJSONObject.getInt("enabled"));
-                values.put("label", oneUserTriggerScheduledTaskJSONObject.getString("label"));
-                values.put("task", oneUserTriggerScheduledTaskJSONObject.getString("task"));
+                values.put("tg", tg);
+                values.put("tgextra", tgextra);
+                values.put("enabled", enabled);
+                values.put("label", label);
+                values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
                 db.insert("tasks", null, values);
@@ -205,7 +267,8 @@ public final class BackupUtils {
         return isCompletelySuccess;
     }
 
-    private static boolean importOneKeyLists(Context context, JSONObject jsonObject, AppPreferences appPreferences) {
+    private static boolean importOneKeyLists(
+            Context context, JSONObject jsonObject, DefaultMultiProcessMMKVStorage storage) {
         JSONArray array = jsonObject.optJSONArray("oneKeyList");
         if (array == null) {
             return false;
@@ -216,36 +279,41 @@ public final class BackupUtils {
         }
 
         importOneKeyListsFromProcessedJSONObject(
-                context, oneKeyListJSONObject, appPreferences);
+                context, oneKeyListJSONObject, storage);
 
         return true;
     }
 
     private static void importOneKeyListsFromProcessedJSONObject(
-            Context context, JSONObject oneKeyListJSONObject, AppPreferences appPreferences) {
+            Context context, JSONObject oneKeyListJSONObject,
+            DefaultMultiProcessMMKVStorage storage) {
         Iterator<String> it = oneKeyListJSONObject.keys();
         String s;
         while (it.hasNext()) {
             s = it.next();
+            String listKey;
+            String list;
             switch (s) {
                 case "okff":
-                    appPreferences.put(
-                            context.getString(R.string.sAutoFreezeApplicationList),
-                            oneKeyListJSONObject.optString("okff"));
+                    listKey = context.getString(R.string.sAutoFreezeApplicationList);
+                    list = oneKeyListJSONObject.optString("okff");
                     break;
                 case "okuf":
-                    appPreferences.put(
-                            context.getString(R.string.sOneKeyUFApplicationList),
-                            oneKeyListJSONObject.optString("okuf"));
+                    listKey = context.getString(R.string.sOneKeyUFApplicationList);
+                    list = oneKeyListJSONObject.optString("okuf");
                     break;
                 case "foq":
-                    appPreferences.put(
-                            context.getString(R.string.sFreezeOnceQuit),
-                            oneKeyListJSONObject.optString("foq"));
+                    listKey = context.getString(R.string.sFreezeOnceQuit);
+                    list = oneKeyListJSONObject.optString("foq");
                     break;
                 default:
-                    break;
+                    continue;
             }
+            // Restoring a whole list is a replacement, not an append, so the pair of calls that
+            // used to write one Tray row now writes the store, flushes it and tells the other
+            // process - a restore that left :backgroundService freezing yesterday's list would
+            // be the worst possible surprise.
+            storage.putString(listKey, list).sync();
         }
     }
 
@@ -393,33 +461,23 @@ public final class BackupUtils {
         }
     }
 
-    private static boolean importUriAutoAllowPkgsJSONArray(JSONObject jsonObject, AppPreferences ap) {
-        JSONArray array = jsonObject.optJSONArray("uriAutoAllowPkgs_allows");
+    private static void importAutoAllowList(Context context, JSONObject jsonObject, String listKey) {
+        JSONArray array = jsonObject.optJSONArray(listKey);
         if (array == null) {
-            return false;
+            return;
         }
         JSONObject jObj = array.optJSONObject(0);
         if (jObj == null) {
-            return false;
+            return;
         }
-        return ap.put("uriAutoAllowPkgs_allows", jObj.optString("lists"));
-    }
-
-    private static boolean importInstallPkgsAutoAllowPkgsJSONArray(JSONObject jsonObject, AppPreferences ap) {
-        JSONArray array = jsonObject.optJSONArray("installPkgs_autoAllowPkgs_allows");
-        if (array == null) {
-            return false;
-        }
-        JSONObject jObj = array.optJSONObject(0);
-        if (jObj == null) {
-            return false;
-        }
-        return ap.put("installPkgs_autoAllowPkgs_allows", jObj.optString("lists"));
+        // A whitelist in a backup is the whole list, not an edit to the one on the device, and
+        // write() is what tells :backgroundService that it changed.
+        AutoAllowListUtils.write(context, listKey, jObj.optString("lists"));
     }
 
     public static void importContents(Context context, Activity activity, JSONObject jsonObject) {
         final SharedPreferences defSP = PreferenceManager.getDefaultSharedPreferences(context);
-        final AppPreferences appPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage listStorage = new DefaultMultiProcessMMKVStorage();
 
         Iterator<String> jsonKeysIterator = jsonObject.keys();
         while (jsonKeysIterator.hasNext()) {
@@ -437,7 +495,7 @@ public final class BackupUtils {
                 // General settings import end
                 // One-key freeze/unfreeze/leave lists start
                 case "oneKeyList":
-                    importOneKeyLists(context, jsonObject, appPreferences);
+                    importOneKeyLists(context, jsonObject, listStorage);
                     break;
                 // One-key freeze/unfreeze/leave lists end
                 // Scheduled tasks - Time start
@@ -457,12 +515,12 @@ public final class BackupUtils {
                 // User defined categories end
                 // URI request whitelist start
                 case "uriAutoAllowPkgs_allows":
-                    importUriAutoAllowPkgsJSONArray(jsonObject, appPreferences);
+                    importAutoAllowList(context, jsonObject, AutoAllowListUtils.URI_ALLOW);
                     break;
                 // URI request whitelist end
                 // Install request whitelist start
                 case "installPkgs_autoAllowPkgs_allows":
-                    importInstallPkgsAutoAllowPkgsJSONArray(jsonObject, appPreferences);
+                    importAutoAllowList(context, jsonObject, AutoAllowListUtils.INSTALL_ALLOW);
                     break;
                 // Install request whitelist end
                 default:
@@ -473,7 +531,7 @@ public final class BackupUtils {
     }
 
     public static String getExportContent(@NonNull Context context) {
-        final AppPreferences appPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage listStorage = new DefaultMultiProcessMMKVStorage();
         final SharedPreferences defSP = PreferenceManager.getDefaultSharedPreferences(context);
 
         JSONObject finalOutputJsonObject = new JSONObject();
@@ -546,23 +604,25 @@ public final class BackupUtils {
             JSONObject oneKeyListJSONObject = new JSONObject();
             oneKeyListJSONObject.put(
                     "okff",
-                    appPreferences.getString(context.getString(R.string.sAutoFreezeApplicationList), "")
+                    listStorage.getString(context.getString(R.string.sAutoFreezeApplicationList), "")
             );
             oneKeyListJSONObject.put(
                     "okuf",
-                    appPreferences.getString(context.getString(R.string.sOneKeyUFApplicationList), "")
+                    listStorage.getString(context.getString(R.string.sOneKeyUFApplicationList), "")
             );
             oneKeyListJSONObject.put(
                     "foq",
-                    appPreferences.getString(context.getString(R.string.sFreezeOnceQuit), "")
+                    listStorage.getString(context.getString(R.string.sFreezeOnceQuit), "")
             );
             oneKeyListJSONArray.put(oneKeyListJSONObject);
             finalOutputJsonObject.put("oneKeyList", oneKeyListJSONArray);
             // One-key freeze/unfreeze/leave lists end
 
             // Install package request and URI request whitelist start
-            finalOutputJsonObject.put("uriAutoAllowPkgs_allows", generateUriAutoAllowPkgsJSONArray(context));
-            finalOutputJsonObject.put("installPkgs_autoAllowPkgs_allows", generateInstallPkgsAutoAllowPkgsJSONArray(context));
+            finalOutputJsonObject.put("uriAutoAllowPkgs_allows",
+                    generateAutoAllowListJSONArray(AutoAllowListUtils.URI_ALLOW));
+            finalOutputJsonObject.put("installPkgs_autoAllowPkgs_allows",
+                    generateAutoAllowListJSONArray(AutoAllowListUtils.INSTALL_ALLOW));
             // Install package request and URI request whitelist end
 
             // Scheduled tasks - Time start
@@ -679,27 +739,11 @@ public final class BackupUtils {
         return userDefinedCategoriesJSONArray;
     }
 
-    private static JSONArray generateUriAutoAllowPkgsJSONArray(Context context) throws JSONException {
-        JSONArray userDefinedCategoriesJSONArray = new JSONArray();
-        JSONObject oneUserDefinedCategoriesJSONObject = new JSONObject();
-        AppPreferences ap = new AppPreferences(context);
-        oneUserDefinedCategoriesJSONObject.put(
-                "lists",
-                convertSharedPreference(ap, "uriAutoAllowPkgs_allows", "")
-        );
-        userDefinedCategoriesJSONArray.put(oneUserDefinedCategoriesJSONObject);
-        return userDefinedCategoriesJSONArray;
-    }
-
-    private static JSONArray generateInstallPkgsAutoAllowPkgsJSONArray(Context context) throws JSONException {
-        JSONArray userDefinedCategoriesJSONArray = new JSONArray();
-        JSONObject oneUserDefinedCategoriesJSONObject = new JSONObject();
-        AppPreferences ap = new AppPreferences(context);
-        oneUserDefinedCategoriesJSONObject.put(
-                "lists",
-                convertSharedPreference(ap, "installPkgs_autoAllowPkgs_allows", "")
-        );
-        userDefinedCategoriesJSONArray.put(oneUserDefinedCategoriesJSONObject);
-        return userDefinedCategoriesJSONArray;
+    private static JSONArray generateAutoAllowListJSONArray(String listKey) throws JSONException {
+        JSONArray whitelistJSONArray = new JSONArray();
+        JSONObject whitelistJSONObject = new JSONObject();
+        whitelistJSONObject.put("lists", AutoAllowListUtils.readRaw(listKey));
+        whitelistJSONArray.put(whitelistJSONObject);
+        return whitelistJSONArray;
     }
 }

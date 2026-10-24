@@ -12,6 +12,12 @@
 /.idea/caches
 /.idea
 /release-keystore.jks
+__pycache__/
+*.pyc
+
+# Private agent workspace (local + mirrored to freezeyou-docs/audit)
+/.agents/
+/CODER_HANDOFF.md
 
 # Internal notes and documentation (tracked in private tommynok/freezeyou-docs)
 CLAUDE.md
@@ -22,3 +28,4 @@ LESSONS_LEARNED.md
 HISTORY_ARCHIVE.md
 LOCALE_TITLES_CHECK.md
 freezeyou_zh-CN_combined.md
+/scratch/

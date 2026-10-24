@@ -25,9 +25,6 @@ import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 
-import net.grandcentrix.tray.AppPreferences;
-import net.grandcentrix.tray.core.TrayItem;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.lang.reflect.Method;
@@ -37,6 +34,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Date;
+import java.util.Set;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.TriggerTasksService;
@@ -45,6 +43,7 @@ import cf.playhi.freezeyou.service.FUFService;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.service.OneKeyFreezeService;
 import cf.playhi.freezeyou.service.OneKeyUFService;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.ShowSimpleDialogActivity;
 
 import static cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess;
@@ -64,7 +63,7 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
  *       or [AccessibilityService] foreground transitions).</li>
  *   <li><b>Deferred Command Execution ({@code -d <seconds>}):</b> Any command can specify an execution delay
  *       using the {@code -d} switch. Deferred tasks are scheduled using {@link AlarmManager#ELAPSED_REALTIME_WAKEUP}
- *       and tracked in persistent storage ([AppPreferences]).</li>
+ *       and tracked in persistent storage ([DefaultMultiProcessMMKVStorage]).</li>
  *   <li><b>State-Aware Task Cancellation ([cancelAllUnexecutedDelayTasks]):</b>
  *       When an action is scheduled with a trigger-specific prefix (e.g. {@code OLA_<pkg>} for "on-leave"),
  *       its pending alarm request code is recorded. If the user re-enters or foregrounds the application before
@@ -119,7 +118,7 @@ public final class TasksUtils {
         calendar.set(Calendar.MILLISECOND, 0);
 
         if (alarmMgr != null) {
-            rememberPublishedTimeTask(context, id);
+            rememberPublishedTimeTask(id);
             if ("0".equals(repeat)) {
                 if (systemTime >= calendar.getTimeInMillis()) {
                     calendar.add(Calendar.DAY_OF_MONTH, 1);
@@ -170,7 +169,13 @@ public final class TasksUtils {
     }
 
     private static void setTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {//RTC
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
+            }
+        } else if (Build.VERSION.SDK_INT >= 23) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
         } else if (Build.VERSION.SDK_INT >= 19) {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
@@ -180,7 +185,13 @@ public final class TasksUtils {
     }
 
     private static void setRealTimeTask(AlarmManager alarmManager, long triggerAtMillis, PendingIntent operation) {
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
+            }
+        } else if (Build.VERSION.SDK_INT >= 23) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
         } else if (Build.VERSION.SDK_INT >= 19) {
             alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, operation);
@@ -402,7 +413,7 @@ public final class TasksUtils {
      * <ol>
      *   <li>Schedules a one-shot alarm via {@link AlarmManager#ELAPSED_REALTIME_WAKEUP} targeting {@link TasksNeedExecuteReceiver}.</li>
      *   <li>If {@code taskTrigger} is non-null (e.g. {@code OLA_<pkg>}), records the generated request code in
-     *       {@link AppPreferences} so that it can be cancelled if the user returns to the app.</li>
+     *       {@link DefaultMultiProcessMMKVStorage} so that it can be cancelled if the user returns to the app.</li>
      *   <li>Returns {@code false} to indicate the task has been deferred.</li>
      * </ol>
      *
@@ -435,11 +446,12 @@ public final class TasksUtils {
                                                 : PendingIntent.FLAG_UPDATE_CURRENT);
                         createDelayTasks(alarmMgr, delayAtSeconds, pendingIntent);
                         if (taskTrigger != null) { // null for timed tasks or tasks where cancellation is unsupported
-                            AppPreferences appPreferences = new AppPreferences(context);
-                            appPreferences.put(
+                            final DefaultMultiProcessMMKVStorage storage =
+                                    new DefaultMultiProcessMMKVStorage();
+                            storage.putString(
                                     taskTrigger,
-                                    addIdToList(appPreferences.getString(taskTrigger, ""), requestCode)
-                            );
+                                    addIdToList(storage.getString(taskTrigger, ""), requestCode)
+                            ).sync();
                         }
                         return false;
                     }
@@ -570,13 +582,7 @@ public final class TasksUtils {
             } catch (Exception ee) {
                 ee.printStackTrace();
                 try { // Root method
-                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-                    DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                    outputStream.writeBytes("svc data " + (enable ? "enable" : "disable") + "\n");
-                    outputStream.writeBytes("exit\n");
-                    outputStream.flush();
-                    process.waitFor();
-                    destroyProcess(outputStream, process);
+                    PrivilegedShellUtils.runRootCommand("svc data " + (enable ? "enable" : "disable"), 5000L);
                 } catch (Exception eee) { // All methods failed
                     eee.printStackTrace();
                     showToast(context, R.string.failed);
@@ -588,7 +594,8 @@ public final class TasksUtils {
     /**
      * Cancels all pending delayed tasks associated with the specified trigger identifier.
      *
-     * <p>Scans [AppPreferences] for all alarm request codes registered under {@code typeNeedsCheckTaskTrigger}
+     * <p>Scans the multi-process store for all alarm request codes registered under
+     * {@code typeNeedsCheckTaskTrigger}
      * (e.g. {@code OLA_<pkg>} for "on-leave" or {@code OSA_<pkg>} for "on-start").
      * Calls {@link AlarmManager#cancel} on each pending intent, preventing actions scheduled during an app exit
      * from firing if the user re-enters the application before the timer elapses.
@@ -600,8 +607,8 @@ public final class TasksUtils {
         if (typeNeedsCheckTaskTrigger != null) {
             AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             Intent intent = new Intent(context, TasksNeedExecuteReceiver.class);
-            AppPreferences appPreferences = new AppPreferences(context);
-            String unprocessed = appPreferences.getString(typeNeedsCheckTaskTrigger, "");
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            String unprocessed = storage.getString(typeNeedsCheckTaskTrigger, "");
             if (unprocessed == null)
                 unprocessed = "";
 
@@ -623,7 +630,10 @@ public final class TasksUtils {
                     alarmMgr.cancel(alarmIntent);
                 }
             }
-            appPreferences.put(typeNeedsCheckTaskTrigger, "");
+            // Removed rather than emptied: the key is named after a package, so writing "" would
+            // leave one dead key behind for every app the user ever ran a delayed task against, and
+            // the scan below would walk all of them forever.
+            storage.remove(typeNeedsCheckTaskTrigger).sync();
         }
     }
 
@@ -659,8 +669,8 @@ public final class TasksUtils {
     private static void cancelEveryTimeTask(Context context) {
         // The recorded codes first, because they are the only thing that reaches an alarm whose row
         // has already been deleted — and those are exactly the ones nothing else can call off.
-        final AppPreferences preferences = new AppPreferences(context);
-        final String recorded = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        final String recorded = storage.getString(PUBLISHED_TIME_TASK_IDS, "");
         for (String id : splitIdList(recorded)) {
             try {
                 cancelTheTask(context, Integer.parseInt(id));
@@ -668,7 +678,7 @@ public final class TasksUtils {
                 e.printStackTrace();
             }
         }
-        preferences.put(PUBLISHED_TIME_TASK_IDS, "");
+        storage.remove(PUBLISHED_TIME_TASK_IDS).sync();
 
         if (!context.getDatabasePath("scheduledTasks").exists()) {
             return;
@@ -698,16 +708,26 @@ public final class TasksUtils {
      * "OLA_&lt;package&gt;" for entering and leaving an application, "onScreenOn" and
      * "onScreenOff" for the screen.
      */
+    private static List<String> delayTaskTriggerKeys(Set<String> storedKeys) {
+        List<String> triggers = new ArrayList<>();
+        for (String key : storedKeys) {
+            if (key != null && (key.startsWith("OSA_") || key.startsWith("OLA_")
+                    || "onScreenOn".equals(key) || "onScreenOff".equals(key))) {
+                triggers.add(key);
+            }
+        }
+        return triggers;
+    }
+
+    /**
+     * Cancel every delayed task of every trigger. The store is walked for the trigger names, and the
+     * keys are copied out first: {@link #cancelAllUnexecutedDelayTasks} removes the key it has just
+     * cancelled, and walking a live key set while it shrinks would skip triggers.
+     */
     private static void cancelEveryPendingDelayTask(Context context) {
-        for (TrayItem item : new AppPreferences(context).getAll()) {
-            final String key = item.key();
-            if (key == null) {
-                continue;
-            }
-            if (key.startsWith("OSA_") || key.startsWith("OLA_")
-                    || "onScreenOn".equals(key) || "onScreenOff".equals(key)) {
-                cancelAllUnexecutedDelayTasks(context, key);
-            }
+        final Set<String> storedKeys = new DefaultMultiProcessMMKVStorage().allKeys();
+        for (String key : new ArrayList<>(delayTaskTriggerKeys(storedKeys))) {
+            cancelAllUnexecutedDelayTasks(context, key);
         }
     }
 
@@ -724,7 +744,7 @@ public final class TasksUtils {
         if (alarmMgr != null) {
             alarmMgr.cancel(alarmIntent);
         }
-        forgetPublishedTimeTask(context, id);
+        forgetPublishedTimeTask(id);
     }
 
     /**
@@ -742,21 +762,21 @@ public final class TasksUtils {
      */
     private static final String PUBLISHED_TIME_TASK_IDS = "publishedTimeTaskIds";
 
-    private static void rememberPublishedTimeTask(Context context, int id) {
-        AppPreferences preferences = new AppPreferences(context);
-        final String stored = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+    private static void rememberPublishedTimeTask(int id) {
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        final String stored = storage.getString(PUBLISHED_TIME_TASK_IDS, "");
         final String updated = addIdToList(stored, id);
         if (!updated.equals(stored)) {
-            preferences.put(PUBLISHED_TIME_TASK_IDS, updated);
+            storage.putString(PUBLISHED_TIME_TASK_IDS, updated).sync();
         }
     }
 
-    private static void forgetPublishedTimeTask(Context context, int id) {
-        AppPreferences preferences = new AppPreferences(context);
-        final String stored = preferences.getString(PUBLISHED_TIME_TASK_IDS, "");
+    private static void forgetPublishedTimeTask(int id) {
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        final String stored = storage.getString(PUBLISHED_TIME_TASK_IDS, "");
         final String updated = removeIdFromList(stored, id);
         if (!updated.equals(stored)) {
-            preferences.put(PUBLISHED_TIME_TASK_IDS, updated);
+            storage.putString(PUBLISHED_TIME_TASK_IDS, updated).sync();
         }
     }
 
@@ -816,7 +836,11 @@ public final class TasksUtils {
                 String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
                 TasksUtils.cancelTheTask(context, id);
                 if (enabled == 1) {
-                    publishTask(context, id, hour, minutes, repeat, task);
+                    try {
+                        publishTask(context, id, hour, minutes, repeat, task);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
                 cursor.moveToNext();
             }

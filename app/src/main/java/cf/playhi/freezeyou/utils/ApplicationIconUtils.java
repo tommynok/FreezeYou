@@ -82,23 +82,36 @@ public final class ApplicationIconUtils {
         String path = context.getCacheDir() + "/icon/" + pkgName + ".png";
         if (saveIconCache && new File(path).exists()) {
             drawable = BitmapDrawable.createFromPath(path);
-        } else if (applicationInfo != null) {
-            drawable = applicationInfo.loadIcon(context.getPackageManager());
-            if (saveIconCache) {
-                folderCheck(context.getCacheDir() + "/icon");
-                writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+            if (drawable == null || drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+                new File(path).delete();
+                drawable = null;
             }
-        } else if (!"".equals(pkgName)) {
-            try {
-                drawable = context.getPackageManager().getApplicationIcon(pkgName);
-                if (saveIconCache) {
-                    folderCheck(context.getCacheDir() + "/icon");
-                    writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+        }
+        if (drawable == null) {
+            if (applicationInfo != null) {
+                try {
+                    drawable = applicationInfo.loadIcon(context.getPackageManager());
+                    if (saveIconCache && drawable != null) {
+                        folderCheck(context.getCacheDir() + "/icon");
+                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    }
+                } catch (Throwable t) {
+                    android.util.Log.w("ApplicationIconUtils", "Failed to load icon from applicationInfo for " + pkgName, t);
+                    drawable = null;
                 }
-            } catch (PackageManager.NameNotFoundException e) {
-                drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
-            } catch (Exception e) {
-                drawable = context.getResources().getDrawable(android.R.drawable.sym_def_app_icon);
+            } else if (!"".equals(pkgName)) {
+                try {
+                    drawable = context.getPackageManager().getApplicationIcon(pkgName);
+                    if (saveIconCache && drawable != null) {
+                        folderCheck(context.getCacheDir() + "/icon");
+                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
+                } catch (Throwable t) {
+                    android.util.Log.w("ApplicationIconUtils", "Failed to load icon for " + pkgName, t);
+                    drawable = context.getResources().getDrawable(android.R.drawable.sym_def_app_icon);
+                }
             }
         }
         if ((drawable == null) || (drawable.getIntrinsicWidth() <= 0) || (drawable.getIntrinsicHeight() <= 0)) {
@@ -119,14 +132,25 @@ public final class ApplicationIconUtils {
     }
 
     private static void writeBitmapToFile(String filePath, Bitmap b) {
+        if (b == null) return;
+        File targetFile = new File(filePath);
+        File tempFile = new File(filePath + ".tmp." + System.nanoTime());
         try {
-            File file = new File(filePath);
-            FileOutputStream fos = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            b.compress(Bitmap.CompressFormat.PNG, 100, bos);
-            bos.flush();
-            bos.close();
+            try (FileOutputStream fos = new FileOutputStream(tempFile);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                b.compress(Bitmap.CompressFormat.PNG, 100, bos);
+                bos.flush();
+            }
+            if (tempFile.exists()) {
+                if (targetFile.exists()) {
+                    targetFile.delete();
+                }
+                tempFile.renameTo(targetFile);
+            }
         } catch (Exception e) {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
             e.printStackTrace();
         }
     }

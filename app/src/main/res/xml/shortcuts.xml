@@ -19,38 +19,6 @@
     <!-- Specify more shortcuts here. -->
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/ic_shortcut_logo"
-        android:shortcutDisabledMessage="@string/oneKeyFreeze"
-        android:shortcutId="onekeyFreeze"
-        android:shortcutLongLabel="@string/oneKeyFreeze"
-        android:shortcutShortLabel="@string/oneKeyFreeze">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetClass="cf.playhi.freezeyou.OneKeyFreeze"
-            android:targetPackage="cf.playhi.freezeyou" />
-        <!-- If your shortcut is associated with multiple intents, include them
-             here. The last intent in the list determines what the user sees when
-             they launch this shortcut. -->
-        <categories android:name="android.shortcut.conversation" />
-    </shortcut>
-    <shortcut
-        android:enabled="true"
-        android:icon="@drawable/ic_shortcut_logo"
-        android:shortcutDisabledMessage="@string/oneKeyUF"
-        android:shortcutId="onekeyUF"
-        android:shortcutLongLabel="@string/oneKeyUF"
-        android:shortcutShortLabel="@string/oneKeyUF">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetClass="cf.playhi.freezeyou.OneKeyUF"
-            android:targetPackage="cf.playhi.freezeyou" />
-        <!-- If your shortcut is associated with multiple intents, include them
-             here. The last intent in the list determines what the user sees when
-             they launch this shortcut. -->
-        <categories android:name="android.shortcut.conversation" />
-    </shortcut>
-    <shortcut
-        android:enabled="true"
         android:icon="@drawable/ic_shortcut_access_alarm"
         android:shortcutDisabledMessage="@string/scheduledTasks"
         android:shortcutId="scheduledTasks"

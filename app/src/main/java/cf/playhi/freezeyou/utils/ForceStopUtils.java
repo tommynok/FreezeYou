@@ -66,12 +66,9 @@ public final class ForceStopUtils {
                             FUFUtils.checkAndShowAppIsForegroundApplicationToast(context, aPkgNameList);
                         } else {
                             try {
-                                outputStream.writeBytes("am force-stop " + aPkgNameList + "\n");
+                                outputStream.writeBytes("am force-stop " + PrivilegedShellUtils.shellQuote(aPkgNameList) + "\n");
                             } catch (Exception e) {
                                 e.printStackTrace();
-//                                    if (!(new AppPreferences(context).getBoolean("lesserToast", false))) {
-//                                        showToast(context, R.string.plsRemoveUninstalledApplications);
-//                                    }
                             }
                         }
                     }

@@ -16,12 +16,14 @@ public class TasksNeedExecuteReceiver extends BroadcastReceiver {
         String task = intent.getStringExtra("task");
         String repeat = intent.getStringExtra("repeat");
         if (id != -6) { // -6 is delayed task
-            if ("0".equals(repeat) && id != -5) {
-                SQLiteDatabase db =
-                        context.openOrCreateDatabase("scheduledTasks",
-                                Context.MODE_PRIVATE, null);
-                db.execSQL("UPDATE tasks SET enabled = 0 WHERE _id = " + id + ";");
-                db.close();
+            if ("0".equals(repeat)) {
+                if (id != -5) {
+                    SQLiteDatabase db =
+                            context.openOrCreateDatabase("scheduledTasks",
+                                    Context.MODE_PRIVATE, null);
+                    db.execSQL("UPDATE tasks SET enabled = 0 WHERE _id = " + id + ";");
+                    db.close();
+                }
             } else {
                 TasksUtils.publishTask(context, id, hour, minute, repeat, task);
             }

@@ -34,8 +34,10 @@
     <string name="mayUnrootedOrOtherEx">Не надані дозволи, цілі були видалені або виникли інші винятки</string>
     <string name="nApplicationsFailedColonList">Не вдалося (%1$d): %2$s</string>
     <string name="andNMoreApplications">, і ще %1$d</string>
+    <string name="andMoreApplications">… та ще %1$d</string>
     <string name="summary_notificationBar_more">Системні налаштування сповіщень FreezeYou — канали та дозвіл на показ сповіщень</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
+    <string name="summary_combineBatchQuickNotification">Показувати одну картку з кнопкою «Заморозити все» замість окремих сповіщень для кожного додатка</string>
     <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Дозволяє відкривати та встановлювати сторонні APK-файли через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Видаляє файл APK після успішного встановлення, щоб звільнити місце</string>
@@ -128,6 +130,8 @@
     <string name="notificationBar">Сповіщення</string>
     <string name="disableSlideOut">Не зникати при змахуванні</string>
     <string name="disableClickDisappear">Не зникати після натискання</string>
+    <string name="freezeAll">Заморозити все</string>
+    <string name="quickFUFGroupSummaryContent">Розморожено додатків: %1$d</string>
     <string name="effectNextCreate">Вступить в силу в наступний раз</string>
     <string name="helpTranslate">Допоможіть перекласти цей додаток</string>
     <string name="thanksList">Подяки учасникам проєкту</string>
@@ -151,6 +155,7 @@
     <string name="freezeOnceQuit">Заморожування після виходу</string>
     <string name="freezeOnceQuitSummary">Додатки зі списку «Заморожування після виходу» заморожуються, щойно ви з них вийшли.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
+    <string name="needActiveDeviceAdmin">Потрібно активувати права адміністратора пристрою</string>
     <string name="invalidArguments">Неправильні параметри</string>
     <string name="plsConfirm">Будь ласка, підтвердіть</string>
     <string name="removeNoRootCaution">Ви дійсно хочете скасувати дозвіл для режиму без-root? Щоб уникнути непотрібних проблем, необхідно розморозити всі заморожені додатки перед відключенням цього режиму!</string>
@@ -246,7 +251,7 @@
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
     <string name="backupAndRestore">Бекап і відновлення</string>
-    <string name="summary_backupAndRestore">Експорт налаштувань, списків, ярликів і завдань у файл та імпорт назад</string>
+    <string name="summary_backupAndRestore">Експорт налаштувань, списків і завдань у файл та імпорт назад</string>
     <string name="status">Стан</string>
     <string name="debugMode">Режим налагодження</string>
     <string name="debugModeSummary">Записує в журнал внутрішні дії додатку (спроби заморожування/розморожування, виклики Shizuku/root) для діагностики проблем. Може дещо знизити продуктивність.</string>
@@ -376,6 +381,7 @@
     <string name="jumpToSysInstaller">Перейти до системного установника</string>
     <string name="appearance">Зовнішній вигляд</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Створити сповіщення про швидку заморожування після розморожування</string>
+    <string name="combineBatchQuickNotification">Об\'єднувати пакетні сповіщення</string>
     <string name="executionResult_colon_message">Результат виконання: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат невідомий (ймовірно успіх)</string>
     <string name="unknownError">Невідома помилка</string>
@@ -441,6 +447,12 @@
         <item>Немає</item>
         <item>Запит блокування екрану</item>
         <item>Блокувати екран відразу</item>
+    </string-array>
+    <string name="shortcutClickAction">Дія при натисканні на ярлик додатка</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Запитувати дію (за замовчуванням)</item>
+        <item>Завжди відкривати (розморозка та запуск)</item>
+        <item>Перемикач (заморозка / розморозка)</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>За замовчуванням</item>

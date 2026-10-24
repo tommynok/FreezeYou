@@ -9,6 +9,7 @@ import android.os.Bundle;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.service.ForceStopService;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
@@ -18,6 +19,11 @@ public class ForceStop extends FreezeYouBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (!ShortcutTokenUtils.verifyToken(getIntent(), ShortcutTokenUtils.ACTION_FORCE_STOP)) {
+            finish();
+            return;
+        }
 
         String pkgName = getIntent().getStringExtra("pkgName");
 
@@ -35,29 +41,43 @@ public class ForceStop extends FreezeYouBaseActivity {
             userDefinedDb.execSQL(
                     "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
             );
-            Cursor cursor =
-                    userDefinedDb.query(
-                            "categories",
-                            new String[]{"packages"},
-                            "label = '" + categoryLabel + "'",
-                            null, null, null, null
-                    );
-            if (cursor.moveToFirst()) {
-                packages = cursor.getString(cursor.getColumnIndex("packages")).split(",");
-            } else {
-                showToast(this, R.string.failed);
+            Cursor cursor = null;
+            try {
+                cursor = userDefinedDb.query(
+                        "categories",
+                        new String[]{"packages"},
+                        "label = ?",
+                        new String[]{categoryLabel},
+                        null, null, null, null
+                );
+                if (cursor != null && cursor.moveToFirst()) {
+                    int colIndex = cursor.getColumnIndex("packages");
+                    if (colIndex >= 0) {
+                        String pkgString = cursor.getString(colIndex);
+                        if (pkgString != null) {
+                            packages = pkgString.split(",");
+                        }
+                    }
+                } else {
+                    showToast(this, R.string.failed);
+                }
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                userDefinedDb.close();
             }
-            cursor.close();
-            userDefinedDb.close();
         } else {
             packages = new String[] {pkgName};
         }
 
-        ServiceUtils.startService(
-                this,
-                new Intent(getApplicationContext(), ForceStopService.class)
-                        .putExtra("packages", packages)
-        );
+        if (packages != null) {
+            ServiceUtils.startService(
+                    this,
+                    new Intent(getApplicationContext(), ForceStopService.class)
+                            .putExtra("packages", packages)
+            );
+        }
         finish();
     }
 }

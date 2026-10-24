@@ -11,7 +11,7 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import static cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled;
 import static cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner;
 import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionMRoot;
-import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionRoot;
+import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionRootAsync;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -38,8 +38,7 @@ public class EnableApplications extends FreezeYouBaseActivity {
                     oneKeyActionMRoot(EnableApplications.this, false, packages);
                     finish();
                 } else {
-                    oneKeyActionRoot(EnableApplications.this, false, packages);
-                    finish();
+                    oneKeyActionRootAsync(EnableApplications.this, false, packages, true, this::finish);
                 }
             }
         } else {

@@ -56,8 +56,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -74,12 +72,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.service.ForceStopService;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
 import cf.playhi.freezeyou.ui.FirstTimeSetupActivity;
@@ -99,6 +99,7 @@ import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -181,8 +182,8 @@ public class Main extends FreezeYouBaseActivity {
     private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
-    private String currentFilter = "all";
-    private int currentSortRule = SORT_BY_DEFAULT;
+    private volatile String currentFilter = "all";
+    private volatile int currentSortRule = SORT_BY_DEFAULT;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
     private boolean shortcutsCompleted = true;
@@ -195,6 +196,11 @@ public class Main extends FreezeYouBaseActivity {
     private String mCurrentUnprivilegedUninstallPkg = null;
     private int mUnprivilegedUninstallSuccessCount = 0;
 
+    private final AtomicInteger mListGeneration = new AtomicInteger(0);
+    private TextWatcher mSearchTextWatcher = null;
+    private ImageButton mMoreSettingsImageButton;
+    private ImageButton mSelectionActionsImageButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
@@ -204,6 +210,7 @@ public class Main extends FreezeYouBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         applyOriginalLightMainBackground();
+        setupFloatingButtons();
         setupBackNavigation();
         try {
             manageCrashLog();
@@ -232,6 +239,45 @@ public class Main extends FreezeYouBaseActivity {
      *       to finish the activity / exit the application naturally.</li>
      * </ol>
      */
+    private void setupFloatingButtons() {
+        mMoreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
+        mSelectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
+
+        if (mMoreSettingsImageButton != null) {
+            mMoreSettingsImageButton.setOnLongClickListener(v -> {
+                if (mMoreSettingsImageButton.getAlpha() == 0.2f) {
+                    mMoreSettingsImageButton.setAlpha(1f);
+                } else {
+                    mMoreSettingsImageButton.setAlpha(0.2f);
+                }
+                return true;
+            });
+
+            mMoreSettingsImageButton.setOnClickListener(v -> {
+                mMoreSettingsImageButton.setAlpha(1f);
+                PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
+                popupMenu.inflate(R.menu.menu);
+                onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
+                popupMenu.setOnMenuItemClickListener(this::onMainOptionsItemSelected);
+                popupMenu.setOnDismissListener(menu -> {
+                    RotateAnimation animation =
+                            new RotateAnimation(45, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                    animation.setDuration(300);
+                    animation.setRepeatMode(RotateAnimation.REVERSE);
+                    animation.setFillAfter(true);
+                    mMoreSettingsImageButton.startAnimation(animation);
+                });
+                RotateAnimation animation =
+                        new RotateAnimation(0, 45, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                animation.setDuration(300);
+                animation.setRepeatMode(RotateAnimation.REVERSE);
+                animation.setFillAfter(true);
+                mMoreSettingsImageButton.startAnimation(animation);
+                popupMenu.show();
+            });
+        }
+    }
+
     private void setupBackNavigation() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -454,79 +500,44 @@ public class Main extends FreezeYouBaseActivity {
     private void generateList(String filter, int sortRule) {
         currentFilter = filter;
         currentSortRule = sortRule;
-        updateFilterTitle(filter);
-        final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
-        final ProgressBar progressBar = findViewById(R.id.progressBar);
-        final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
-        final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
-        final FrameLayout linearLayout = findViewById(R.id.layout2);
+        final int generation = mListGeneration.incrementAndGet();
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
-        final EditText search_editText = findViewById(R.id.search_editText);
-        final ImageButton moreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
-        final ImageButton selectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
-
         final Context applicationContext = getApplicationContext();
-
-        moreSettingsImageButton.setOnLongClickListener(v -> {
-            if (moreSettingsImageButton.getAlpha() == 0.2f) {
-                moreSettingsImageButton.setAlpha(1f);
-            } else {
-                moreSettingsImageButton.setAlpha(0.2f);
-            }
-            return true;
-        });
-
-        moreSettingsImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreSettingsImageButton.setAlpha(1f);
-                PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
-                popupMenu.inflate(R.menu.menu);
-                onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        return onMainOptionsItemSelected(item);
-                    }
-                });
-                popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-                    @Override
-                    public void onDismiss(PopupMenu menu) {
-                        RotateAnimation animation =
-                                new RotateAnimation(45, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                        animation.setDuration(300);
-                        animation.setRepeatMode(RotateAnimation.REVERSE);
-                        animation.setFillAfter(true);
-                        moreSettingsImageButton.startAnimation(animation);
-                    }
-                });
-                RotateAnimation animation =
-                        new RotateAnimation(0, 45, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                animation.setDuration(300);
-                animation.setRepeatMode(RotateAnimation.REVERSE);
-                animation.setFillAfter(true);
-                moreSettingsImageButton.startAnimation(animation);
-                popupMenu.show();
-            }
-        });
 
         if (isFinishing()) return;
 
         runOnUiThread(() -> {
+            if (generation != mListGeneration.get() || isFinishing()) return;
+
+            final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+            final ProgressBar progressBar = findViewById(R.id.progressBar);
+            final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
+            final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+            final FrameLayout linearLayout = findViewById(R.id.layout2);
 
             int floatingButtonBackground = Build.VERSION.SDK_INT >= 21 ?
                     (isGridMode ? R.drawable.oval_ripple_grid : R.drawable.oval_ripple) :
                     getThemeFabDotBackground(Main.this);
-            moreSettingsImageButton.setBackgroundResource(floatingButtonBackground);
-            selectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
+            if (mMoreSettingsImageButton != null) {
+                mMoreSettingsImageButton.setBackgroundResource(floatingButtonBackground);
+            }
+            if (mSelectionActionsImageButton != null) {
+                mSelectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
+            }
 
-            linearLayout.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.VISIBLE);
-            main_loading_progress_textView.setVisibility(View.VISIBLE);
-            appListFragmentContainer.setVisibility(View.GONE);
-            main_loading_progress_textView.setText(R.string.loadingPkgList);
-            if (noCaution.getValue(applicationContext)) {
-                mainCautionTextView.setVisibility(View.GONE);
+            if (linearLayout != null) linearLayout.setVisibility(View.VISIBLE);
+            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+            if (main_loading_progress_textView != null) {
+                main_loading_progress_textView.setVisibility(View.VISIBLE);
+                main_loading_progress_textView.setText(R.string.loadingPkgList);
+            }
+            if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.GONE);
+            if (mainCautionTextView != null) {
+                if (noCaution.getValue(applicationContext)) {
+                    mainCautionTextView.setVisibility(View.GONE);
+                } else {
+                    mainCautionTextView.setVisibility(View.VISIBLE);
+                }
             }
         });
 
@@ -616,19 +627,19 @@ public class Main extends FreezeYouBaseActivity {
                 break;
             case "OO":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sAutoFreezeApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sAutoFreezeApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "OOU":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sOneKeyUFApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sOneKeyUFApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "FOQ":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sFreezeOnceQuit), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sFreezeOnceQuit), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
@@ -726,7 +737,10 @@ public class Main extends FreezeYouBaseActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                main_loading_progress_textView.setText(R.string.sorting);
+                TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+                if (main_loading_progress_textView != null) {
+                    main_loading_progress_textView.setText(R.string.sorting);
+                }
             }
         });
 
@@ -955,11 +969,23 @@ public class Main extends FreezeYouBaseActivity {
 
             }
         }
-        if (isFinishing()) return;
+        if (generation != mListGeneration.get() || isFinishing()) return;
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (generation != mListGeneration.get() || isFinishing()) return;
+
+                currentFilter = filter;
+                currentSortRule = sortRule;
+                updateFilterTitle(filter);
+
+                final EditText search_editText = findViewById(R.id.search_editText);
+                final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+                final ProgressBar progressBar = findViewById(R.id.progressBar);
+                final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
+                final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+                final FrameLayout linearLayout = findViewById(R.id.layout2);
 
                 final MainAppListSimpleAdapter adapter =
                         mMainActivityAppListFragment.setAppListAdapter(
@@ -969,26 +995,35 @@ public class Main extends FreezeYouBaseActivity {
                         );
 
 
-                search_editText.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
+                if (search_editText != null) {
+                    if (mSearchTextWatcher != null) {
+                        search_editText.removeTextChangedListener(mSearchTextWatcher);
                     }
-
-                    @Override
-                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                        if (TextUtils.isEmpty(charSequence)) {
-                            adapter.replaceAllInFormerArrayList(AppList);
-                        } else {
-                            adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
+                    mSearchTextWatcher = new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                         }
-                    }
 
-                    @Override
-                    public void afterTextChanged(Editable editable) {
+                        @Override
+                        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                            if (TextUtils.isEmpty(charSequence)) {
+                                adapter.replaceAllInFormerArrayList(AppList);
+                            } else {
+                                adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
+                            }
+                        }
 
+                        @Override
+                        public void afterTextChanged(Editable editable) {
+                        }
+                    };
+                    search_editText.addTextChangedListener(mSearchTextWatcher);
+
+                    CharSequence currentQuery = search_editText.getText();
+                    if (!TextUtils.isEmpty(currentQuery)) {
+                        adapter.replaceAllInFormerArrayList(processListFilter(currentQuery, AppList));
                     }
-                });
+                }
 
                 main_loading_progress_textView.setText(R.string.finish);
                 progressBar.setVisibility(View.GONE);
@@ -1023,7 +1058,7 @@ public class Main extends FreezeYouBaseActivity {
                     @Override
                     public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
                         currentSelectionActionMode = actionMode;
-                        selectionActionsImageButton.setVisibility(View.VISIBLE);
+                        if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.VISIBLE);
                         Main.this.getMenuInflater().inflate(R.menu.multichoicemenu, menu);
                         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
                         if (restoreItem != null) restoreItem.setVisible(false);
@@ -1266,12 +1301,14 @@ public class Main extends FreezeYouBaseActivity {
                     public void onDestroyActionMode(ActionMode actionMode) {
                         selectedPackages.clear();
                         currentSelectionActionMode = null;
-                        selectionActionsImageButton.setVisibility(View.GONE);
+                        mIsBatchUninstallChecking = false;
+                        if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.GONE);
                     }
                 };
                 mMainActivityAppListFragment.setMultiChoiceModeListener(currentMultiChoiceModeListener);
 
-                selectionActionsImageButton.setOnClickListener(v -> {
+                if (mSelectionActionsImageButton != null) {
+                    mSelectionActionsImageButton.setOnClickListener(v -> {
                     if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
                         return;
                     }
@@ -1282,9 +1319,8 @@ public class Main extends FreezeYouBaseActivity {
                             currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
                     popupMenu.show();
                 });
+                }
 
-            }
-        });
 
         mMainActivityAppListFragment.setOnAppListItemClickListener((adapterView, view, i, l) -> {
             Map<String, Object> map =
@@ -1401,6 +1437,8 @@ public class Main extends FreezeYouBaseActivity {
                     default:
                         break;
                 }
+            }
+        });
             }
         });
     }
@@ -1732,23 +1770,19 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processAddToOneKeyList(String string) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!addToOneKeyList(getApplicationContext(), string, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
-            }
+        if (addToOneKeyList(getApplicationContext(), string, selectedPackages)) {
+            showToast(Main.this, R.string.success);
+        } else {
+            showToast(Main.this, R.string.failed);
         }
-        showToast(Main.this, R.string.success);
     }
 
     private void processRemoveFromOneKeyList(String s) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!removeFromOneKeyList(getApplicationContext(), s, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
-            }
+        if (removeFromOneKeyList(getApplicationContext(), s, selectedPackages)) {
+            showToast(Main.this, R.string.success);
+        } else {
+            showToast(Main.this, R.string.failed);
         }
-        showToast(Main.this, R.string.success);
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
@@ -1800,7 +1834,7 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processBatchUninstall() {
-        if (selectedPackages.isEmpty()) {
+        if (selectedPackages.isEmpty() || mIsBatchUninstallRunning || mIsBatchUninstallChecking) {
             return;
         }
 
@@ -1836,8 +1870,47 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
 
-        boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
-        boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+        final ActionMode actionModeSnapshot = currentSelectionActionMode;
+        final List<String> selectedSnapshot = new ArrayList<>(selectedPackages);
+
+        final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
+        if (shizukuAvailable) {
+            showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
+        } else {
+            mIsBatchUninstallChecking = true;
+            new Thread(() -> {
+                boolean root = false;
+                try {
+                    root = FUFUtils.checkRootPermission();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                } finally {
+                    final boolean rootAvailable = root;
+                    runOnUiThread(() -> {
+                        mIsBatchUninstallChecking = false;
+                        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            return;
+                        }
+                        if (currentSelectionActionMode == null
+                                || currentSelectionActionMode != actionModeSnapshot
+                                || !selectedPackages.equals(selectedSnapshot)) {
+                            return;
+                        }
+                        showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
+                    });
+                }
+            }, "BatchUninstallRootCheck").start();
+        }
+    }
+
+    private void showBatchUninstallDialog(
+            List<String> userApps,
+            List<String> systemAppsWithUpdates,
+            List<String> systemApps,
+            int totalFound,
+            boolean shizukuAvailable,
+            boolean rootAvailable) {
+
         boolean hasPrivilegedShell = shizukuAvailable || rootAvailable;
         int skippedSystemCount = systemAppsWithUpdates.size() + systemApps.size();
 
@@ -2179,9 +2252,10 @@ public class Main extends FreezeYouBaseActivity {
 
     private AlertDialog mUninstallCompletedDialog = null;
     private volatile boolean mIsBatchUninstallRunning = false;
+    private volatile boolean mIsBatchUninstallChecking = false;
 
     private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
-        if (isFinishing() || isDestroyed()) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
             return;
         }
         if (hideUninstallSuccessDialog.getValue(this)) {
@@ -2766,10 +2840,14 @@ public class Main extends FreezeYouBaseActivity {
                         startActivity(new Intent(this, AboutActivity.class));
                         return true;
                     case R.id.menu_oneKeyFreezeImmediately:
-                        startActivity(new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false));
+                        Intent oneKeyFreezeIntent = new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false);
+                        ShortcutTokenUtils.attachToken(oneKeyFreezeIntent, ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE);
+                        startActivity(oneKeyFreezeIntent);
                         return true;
                     case R.id.menu_oneKeyUFImmediately:
-                        startActivity(new Intent(this, OneKeyUF.class));
+                        Intent oneKeyUFIntent = new Intent(this, OneKeyUF.class);
+                        ShortcutTokenUtils.attachToken(oneKeyUFIntent, ShortcutTokenUtils.ACTION_ONE_KEY_UF);
+                        startActivity(oneKeyUFIntent);
                         return true;
                     case R.id.menu_vM_onlyFrozen:
                         new Thread(new Runnable() {

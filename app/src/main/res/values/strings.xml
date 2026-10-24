@@ -34,8 +34,10 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
+    <string name="andMoreApplications">… and %1$d more</string>
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
+    <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
@@ -128,6 +130,8 @@
     <string name="notificationBar">Notification</string>
     <string name="disableSlideOut">Do not disappear when slide out</string>
     <string name="disableClickDisappear">Do not disappear after clicked</string>
+    <string name="freezeAll">Freeze all</string>
+    <string name="quickFUFGroupSummaryContent">Unfrozen applications: %1$d</string>
     <string name="effectNextCreate">Take effects the next time created</string>
     <string name="helpTranslate">Help Translate</string>
     <string name="thanksList">Project contributors</string>
@@ -151,6 +155,7 @@
     <string name="freezeOnceQuit">Leave Freeze</string>
     <string name="freezeOnceQuitSummary">Applications in the "Freeze after leaving" list are frozen as soon as you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
+    <string name="needActiveDeviceAdmin">Need to activate Device Administrator</string>
     <string name="invalidArguments">Invalid parameters</string>
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>
@@ -246,7 +251,7 @@
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
-    <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
+    <string name="summary_backupAndRestore">Export your settings, lists and scheduled tasks to a file, and import it back</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
@@ -377,6 +382,7 @@
     <string name="jumpToSysInstaller">Go to system installer</string>
     <string name="appearance">Appearance</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Create quick freeze notification after unfrozen</string>
+    <string name="combineBatchQuickNotification">Combine batch notifications</string>
     <string name="executionResult_colon_message">Execution result: %1$s</string>
     <string name="unknownResult_probablySuccess">Unknown result (Probably success)</string>
     <string name="unknownError">Unknown error</string>
@@ -466,6 +472,17 @@
         <item>nothing</item>
         <item>askLockScreen</item>
         <item>lockScreenImmediately</item>
+    </string-array>
+    <string name="shortcutClickAction">Action on application shortcut click</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Ask for action (default)</item>
+        <item>Always open (unfreeze and launch)</item>
+        <item>Toggle (freeze / unfreeze)</item>
+    </string-array>
+    <string-array name="shortcutClickActionSelectionValues" translatable="false">
+        <item>dialog</item>
+        <item>open_and_uf</item>
+        <item>toggle</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>Default</item>

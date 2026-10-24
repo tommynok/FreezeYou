@@ -8,17 +8,21 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService;
 import cf.playhi.freezeyou.utils.FileUtils;
+import cf.playhi.freezeyou.utils.NotificationUtils;
+import cf.playhi.freezeyou.utils.PackageListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.VersionUtils;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.onekeyFreezeWhenLockScreen;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkAndCreateFUFQuickNotification;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen;
@@ -32,28 +36,38 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             return;
         }
 
-        switch (intent.getAction()) {
-            case Intent.ACTION_BOOT_COMPLETED:
-                runBackgroundService(context);
-                checkAndReNotifyNotifications(context);
-                checkTasks(context);
-                break;
-            case Intent.ACTION_MY_PACKAGE_REPLACED:
-                runBackgroundService(context);
-                checkAndReNotifyNotifications(context);
-                checkTasks(context);
-                cleanExternalCache(context);
+        final PendingResult pendingResult = goAsync();
+        final String action = intent.getAction();
+        new Thread(() -> {
+            try {
+                switch (action) {
+                    case Intent.ACTION_BOOT_COMPLETED:
+                        runBackgroundService(context);
+                        checkAndReNotifyNotifications(context);
+                        checkTasks(context);
+                        break;
+                    case Intent.ACTION_MY_PACKAGE_REPLACED:
+                        runBackgroundService(context);
+                        checkAndReNotifyNotifications(context);
+                        checkTasks(context);
+                        cleanExternalCache(context);
 
-                final SharedPreferences sharedPreferences =
-                        context.getSharedPreferences("Ver", Context.MODE_PRIVATE);
-                if (sharedPreferences.getInt("Ver", 0) < VersionUtils.getVersionCode(context)) {
-                    clearCrashLogs(context);
+                        final SharedPreferences sharedPreferences =
+                                context.getSharedPreferences("Ver", Context.MODE_PRIVATE);
+                        if (sharedPreferences.getInt("Ver", 0) < VersionUtils.getVersionCode(context)) {
+                            clearCrashLogs(context);
+                        }
+
+                        break;
+                    default:
+                        break;
                 }
-
-                break;
-            default:
-                break;
-        }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                pendingResult.finish();
+            }
+        }, "BootCompletedWorker").start();
     }
 
     private void cleanExternalCache(Context context) {
@@ -72,28 +86,45 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     }
 
     private void checkAndReNotifyNotifications(Context context) {
-        AppPreferences defaultSharedPreferences = new AppPreferences(context);
-        String string = defaultSharedPreferences.getString("notifying", "");
-        if (string != null && !"".equals(string)) {
-            String[] strings = string.split(",");
-            PackageManager pm = context.getPackageManager();
-            for (String aPkgName : strings) {
-                if (!checkFrozenStatus(context, aPkgName, pm)) {
-                    checkAndCreateFUFQuickNotification(context, aPkgName);
-                }
+        reNotifyUnfrozen(context, NotificationUtils.getNotifyingPackages());
+
+        // The list sat in the default SharedPreferences before it sat in Tray. An install that has
+        // not run a build since the move still holds it there, so it is re-notified once and dropped.
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        List<String> legacy = Arrays.asList(
+                PackageListUtils.parse(sharedPreferences.getString("notifying", "")));
+        if (!legacy.isEmpty()) {
+            reNotifyUnfrozen(context, legacy);
+            sharedPreferences.edit().remove("notifying").apply();
+        }
+    }
+
+    private void reNotifyUnfrozen(Context context, List<String> pkgNames) {
+        PackageManager pm = context.getPackageManager();
+        List<String> stillUnfrozen = new ArrayList<>();
+        List<String> alreadyFrozen = new ArrayList<>();
+        for (String aPkgName : pkgNames) {
+            if (checkFrozenStatus(context, aPkgName, pm)) {
+                alreadyFrozen.add(aPkgName);
+            } else {
+                stillUnfrozen.add(aPkgName);
             }
         }
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String oldNotifying = sharedPreferences.getString("notifying", "");
-        if (oldNotifying != null && !"".equals(oldNotifying)) {
-            String[] oldNotifyings = oldNotifying.split(",");
-            PackageManager pm = context.getPackageManager();
-            for (String aPkgName : oldNotifyings) {
-                if (!checkFrozenStatus(context, aPkgName, pm)) {
-                    checkAndCreateFUFQuickNotification(context, aPkgName);
-                }
+        // Something froze the app while the phone was off, so its name is still on a list of
+        // notifications that no longer exist. Leaving it there keeps the count on the card wrong from
+        // the first screen after boot, and one pass takes the whole lot out at once.
+        if (!alreadyFrozen.isEmpty()) {
+            NotificationUtils.deleteNotifying(context, alreadyFrozen);
+        }
+        // One notification per application, as they were put out in the first place. The single card
+        // for the whole lot is the user's own choice; it is also what keeps a boot that unfroze
+        // twenty applications from leaving twenty rows on a screen nobody is looking at.
+        if (combineBatchQuickNotification.getValue(null) && stillUnfrozen.size() > 1) {
+            NotificationUtils.createBatchQuickNotification(context, stillUnfrozen);
+        } else {
+            for (String aPkgName : stillUnfrozen) {
+                checkAndCreateFUFQuickNotification(context, aPkgName);
             }
-            sharedPreferences.edit().putString("notifying", "").apply();
         }
     }
 
