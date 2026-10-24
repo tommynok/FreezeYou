@@ -51,10 +51,10 @@ object SettingsUtils {
         when (abstractKey) {
             openAndUFImmediately -> {
                 if (openAndUFImmediately.getValue()) {
-                    shortcutClickAction.setValue("open_and_uf")
-                    shortcutAutoFUF.setValue(false)
+                    shortcutClickAction.setValue(value = "open_and_uf")
+                    shortcutAutoFUF.setValue(value = false)
                 } else if (shortcutClickAction.getValue() == "open_and_uf") {
-                    shortcutClickAction.setValue("dialog")
+                    shortcutClickAction.setValue(value = "dialog")
                 }
             }
             onekeyFreezeWhenLockScreen -> {

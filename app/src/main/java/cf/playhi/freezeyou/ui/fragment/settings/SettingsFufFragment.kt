@@ -41,7 +41,7 @@ class SettingsFufFragment : CardPreferenceFragment() {
                 openAndUFImmediately.getValue() -> "open_and_uf"
                 else -> "dialog"
             }
-            shortcutClickAction.setValue(resolved)
+            shortcutClickAction.setValue(value = resolved)
             resolved
         }
         shortcutActionPref.value = currentAction
@@ -57,19 +57,19 @@ class SettingsFufFragment : CardPreferenceFragment() {
         shortcutActionPref.onPreferenceChangeListener =
             Preference.OnPreferenceChangeListener { _, newValue ->
                 val strValue = newValue as? String ?: "dialog"
-                shortcutClickAction.setValue(strValue)
+                shortcutClickAction.setValue(value = strValue)
                 when (strValue) {
                     "toggle" -> {
-                        shortcutAutoFUF.setValue(true)
-                        openAndUFImmediately.setValue(false)
+                        shortcutAutoFUF.setValue(value = true)
+                        openAndUFImmediately.setValue(value = false)
                     }
                     "open_and_uf" -> {
-                        shortcutAutoFUF.setValue(false)
-                        openAndUFImmediately.setValue(true)
+                        shortcutAutoFUF.setValue(value = false)
+                        openAndUFImmediately.setValue(value = true)
                     }
                     else -> { // "dialog"
-                        shortcutAutoFUF.setValue(false)
-                        openAndUFImmediately.setValue(false)
+                        shortcutAutoFUF.setValue(value = false)
+                        openAndUFImmediately.setValue(value = false)
                     }
                 }
                 updateDependents(strValue)
