@@ -20,30 +20,36 @@ public class DisableApplications extends FreezeYouBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
-
-        if (intent != null) {
-            String[] packages = intent.getStringArrayExtra("packages");
-
-            if (isDebugModeEnabled()) {
-                Log.e("DebugModeLogcat", "Intent toString:" + intent.toString());
-                for (String p : packages) {
-                    Log.e("DebugModeLogcat", "Intent packages:" + p);
-                }
-            }
-
-            if (packages != null) {
-                setResult(Activity.RESULT_OK);
-                if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(DisableApplications.this)) {
-                    oneKeyActionMRoot(DisableApplications.this, true, packages);
-                    finish();
-                } else {
-                    oneKeyActionRootAsync(DisableApplications.this, true, packages, true, this::finish);
-                }
-            }
-        } else {
+        if (intent == null) {
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "Intent: null");
             }
+            finish();
+            return;
+        }
+
+        String[] packages = intent.getStringArrayExtra("packages");
+        if (packages == null || packages.length == 0) {
+            if (isDebugModeEnabled()) {
+                Log.e("DebugModeLogcat", "Intent packages: null or empty");
+            }
+            finish();
+            return;
+        }
+
+        if (isDebugModeEnabled()) {
+            Log.e("DebugModeLogcat", "Intent toString:" + intent.toString());
+            for (String p : packages) {
+                Log.e("DebugModeLogcat", "Intent packages:" + p);
+            }
+        }
+
+        setResult(Activity.RESULT_OK);
+        if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(DisableApplications.this)) {
+            oneKeyActionMRoot(DisableApplications.this, true, packages);
+            finish();
+        } else {
+            oneKeyActionRootAsync(DisableApplications.this, true, packages, true, this::finish);
         }
     }
 }

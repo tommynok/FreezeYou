@@ -426,8 +426,18 @@ public final class TasksUtils {
         for (int i = 0; i < splitTaskLength; i++) {
             switch (splitTask[i]) {
                 case "-d":
-                    if (splitTaskLength >= i + 1) {
-                        long delayAtSeconds = Long.parseLong(splitTask[i + 1]);
+                    if (i + 1 < splitTaskLength) {
+                        long delayAtSeconds;
+                        try {
+                            delayAtSeconds = Long.parseLong(splitTask[i + 1]);
+                        } catch (NumberFormatException e) {
+                            Log.e("TasksLogE", "Invalid -d delay value: " + splitTask[i + 1]);
+                            break;
+                        }
+                        if (delayAtSeconds < 0) {
+                            Log.e("TasksLogE", "Negative -d delay value: " + splitTask[i + 1]);
+                            break;
+                        }
                         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                         Intent intent = new Intent(context, TasksNeedExecuteReceiver.class)
                                 .putExtra("id", -6)

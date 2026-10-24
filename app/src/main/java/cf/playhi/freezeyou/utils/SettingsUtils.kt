@@ -122,7 +122,7 @@ object SettingsUtils {
                     )
                 }
             selectFUFMode -> {
-                when (selectFUFMode.getValue()?.toInt()) {
+                when (selectFUFMode.getValue()?.toIntOrNull()) {
                     API_FREEZEYOU_MROOT_DPM ->
                         if (!DevicePolicyManagerUtils.isDeviceOwner(context)) {
                             showToast(context, R.string.noMRootPermission)
