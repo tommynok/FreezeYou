@@ -606,7 +606,9 @@ object FUFUtils {
             // One notification per application, the way the system stacks them into a bundle of its
             // own accord. The single card for the lot is opt-in, and worth having only when there is
             // more than one application to put on it.
-            if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()) {
+            if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                && actuallyChanged.size > 1
+            ) {
                 NotificationUtils.createBatchQuickNotification(context, actuallyChanged)
             } else {
                 actuallyChanged.forEach { checkAndCreateFUFQuickNotification(context, it) }
@@ -783,8 +785,10 @@ object FUFUtils {
                         NotificationUtils.deleteNotifications(context, succeededPkgNames)
                     }
                 } else if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
-                    if (combineBatchNoti) {
+                    if (combineBatchNoti && succeededPkgNames.size > 1) {
                         NotificationUtils.createBatchQuickNotification(context, succeededPkgNames)
+                    } else if (combineBatchNoti && succeededPkgNames.size == 1) {
+                        checkAndCreateFUFQuickNotification(context, succeededPkgNames[0])
                     } else if (isBatch) {
                         succeededPkgNames.forEach { checkAndCreateFUFQuickNotification(context, it) }
                     }
@@ -982,7 +986,9 @@ object FUFUtils {
             // icon decoded — is the price of the stock behaviour. The single card for the batch is
             // opt-in and cheaper, because it names the applications without decoding their icons.
             if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
-                if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()) {
+                if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                    && succeeded.size > 1
+                ) {
                     NotificationUtils.createBatchQuickNotification(appContext, succeeded)
                 } else {
                     succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }

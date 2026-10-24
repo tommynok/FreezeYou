@@ -16,9 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.Main;
@@ -204,7 +201,6 @@ public final class NotificationUtils {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         String singleSurvivor = null;
         List<String> survivors = null;
-        List<String> restoreIndividual = null;
         long targetVersion = 0;
         boolean cancelBatch = false;
         boolean createQuick = createQuickFUFNotiAfterUnfrozen.getValue(null);
@@ -225,11 +221,8 @@ public final class NotificationUtils {
                 }
                 List<String> remaining = Arrays.asList(PackageListUtils.parse(updated));
                 if (notificationManager != null) {
-                    if (!createQuick || remaining.isEmpty()) {
+                    if (!createQuick || !combineBatch || remaining.isEmpty()) {
                         cancelBatch = true;
-                    } else if (!combineBatch) {
-                        cancelBatch = true;
-                        restoreIndividual = remaining;
                     } else if (remaining.size() == 1) {
                         cancelBatch = true;
                         singleSurvivor = remaining.get(0);
@@ -244,11 +237,7 @@ public final class NotificationUtils {
                 notificationManager.cancel(BATCH_NOTIFICATION_ID);
             }
         }
-        if (restoreIndividual != null) {
-            for (String pkg : restoreIndividual) {
-                FUFUtils.checkAndCreateFUFQuickNotification(context, pkg);
-            }
-        } else if (singleSurvivor != null) {
+        if (singleSurvivor != null) {
             FUFUtils.checkAndCreateFUFQuickNotification(context, singleSurvivor);
         } else if (survivors != null && notificationManager != null) {
             postBatchQuickNotification(context, notificationManager, survivors, targetVersion);
@@ -279,10 +268,9 @@ public final class NotificationUtils {
         // Checked here and not only where an unfreeze asks for the card, because a removal from the
         // notifying list rebuilds this card too: with either setting off it has to stay off whichever
         // way the list moved.
-        if (!createQuickFUFNotiAfterUnfrozen.getValue(null)) {
+        if (!createQuickFUFNotiAfterUnfrozen.getValue(null) || !combineBatchQuickNotification.getValue(null)) {
             return;
         }
-        boolean combineBatch = combineBatchQuickNotification.getValue(null);
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) {
@@ -309,79 +297,7 @@ public final class NotificationUtils {
                 storage.unlock();
             }
         }
-        if (!combineBatch) {
-            notificationManager.cancel(BATCH_NOTIFICATION_ID);
-            for (String pkg : allPackages) {
-                FUFUtils.checkAndCreateFUFQuickNotification(context, pkg);
-            }
-            return;
-        }
-        if (allPackages.size() == 1) {
-            notificationManager.cancel(BATCH_NOTIFICATION_ID);
-            FUFUtils.checkAndCreateFUFQuickNotification(context, allPackages.get(0));
-            return;
-        }
         postBatchQuickNotification(context, notificationManager, allPackages, targetVersion);
-    }
-
-    private static final ExecutorService NOTIFICATION_RECONCILE_EXECUTOR =
-            Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r, "NotificationReconcile");
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-
-    public static void reconcileQuickNotifications(final Context context) {
-        if (context == null) {
-            return;
-        }
-        final Context appContext = context.getApplicationContext();
-        NOTIFICATION_RECONCILE_EXECUTOR.execute(new Runnable() {
-            @Override
-            public void run() {
-                NotificationManager notificationManager =
-                        (NotificationManager) appContext.getSystemService(Context.NOTIFICATION_SERVICE);
-                if (notificationManager == null) {
-                    return;
-                }
-                boolean createQuick = createQuickFUFNotiAfterUnfrozen.getValue(null);
-                boolean combineBatch = combineBatchQuickNotification.getValue(null);
-                List<String> allPackages;
-                long targetVersion;
-                synchronized (NOTIFYING_LOCK) {
-                    DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
-                    storage.lock();
-                    try {
-                        String notifying = storage.getString(NOTIFYING, "");
-                        allPackages = Arrays.asList(PackageListUtils.parse(notifying));
-                        targetVersion = storage.getLong(NOTIFYING_VERSION, 0L);
-                    } finally {
-                        storage.unlock();
-                    }
-                }
-                if (!createQuick || allPackages.isEmpty()) {
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                    for (String pkg : allPackages) {
-                        notificationManager.cancel(pkg.hashCode());
-                    }
-                } else if (combineBatch) {
-                    if (allPackages.size() > 1) {
-                        postBatchQuickNotification(appContext, notificationManager, allPackages, targetVersion);
-                    } else {
-                        notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                        FUFUtils.checkAndCreateFUFQuickNotification(appContext, allPackages.get(0));
-                    }
-                } else {
-                    notificationManager.cancel(BATCH_NOTIFICATION_ID);
-                    for (String pkg : allPackages) {
-                        FUFUtils.checkAndCreateFUFQuickNotification(appContext, pkg);
-                    }
-                }
-            }
-        });
     }
 
     private static void postBatchQuickNotification(

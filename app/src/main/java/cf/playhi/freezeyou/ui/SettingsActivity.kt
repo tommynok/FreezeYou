@@ -11,8 +11,6 @@ import androidx.preference.PreferenceScreen
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode
@@ -20,7 +18,6 @@ import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsAutomationFragment
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsFragment
-import cf.playhi.freezeyou.utils.NotificationUtils
 import cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
@@ -126,9 +123,6 @@ class SettingsActivity : FreezeYouBaseActivity(),
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
-        if (combineBatchQuickNotification.name == s || createQuickFUFNotiAfterUnfrozen.name == s) {
-            NotificationUtils.reconcileQuickNotifications(applicationContext)
-        }
         if (languagePref.name == s
             || uiStyleSelection.name == s
             || themeOfAutoSwitchDarkMode.name == s
