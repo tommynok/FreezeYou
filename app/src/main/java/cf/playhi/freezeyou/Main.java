@@ -182,8 +182,8 @@ public class Main extends FreezeYouBaseActivity {
     private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
-    private String currentFilter = "all";
-    private int currentSortRule = SORT_BY_DEFAULT;
+    private volatile String currentFilter = "all";
+    private volatile int currentSortRule = SORT_BY_DEFAULT;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
     private boolean shortcutsCompleted = true;
@@ -498,6 +498,8 @@ public class Main extends FreezeYouBaseActivity {
      * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
+        currentFilter = filter;
+        currentSortRule = sortRule;
         final int generation = mListGeneration.incrementAndGet();
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
         final Context applicationContext = getApplicationContext();

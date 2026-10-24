@@ -89,7 +89,46 @@ public class FUFService extends FreezeYouBaseService {
             String[] packages = intent.getStringArrayExtra("packages");
             mExecutor.execute(() -> {
                 try {
-                    oneKeyAction(context, freeze, packages, apiMode);
+                    if (packages != null && packages.length > 0 && apiMode == API_FREEZEYOU_LEGACY_AUTO) {
+                        if (freeze) {
+                            if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(context)) {
+                                oneKeyAction(context, true, packages, API_FREEZEYOU_MROOT_DPM);
+                            } else if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context)) {
+                                oneKeyAction(context, true, packages, API_FREEZEYOU_PROFILE_OWNER);
+                            } else {
+                                oneKeyAction(context, true, packages, API_FREEZEYOU_ROOT_DISABLE_ENABLE);
+                            }
+                        } else {
+                            if (Build.VERSION.SDK_INT >= 21 && (isDeviceOwner(context) || isProfileOwner(context))) {
+                                int dpmMode = isProfileOwner(context) && !isDeviceOwner(context)
+                                        ? API_FREEZEYOU_PROFILE_OWNER
+                                        : API_FREEZEYOU_MROOT_DPM;
+                                if (!FUFUtils.checkRootPermission()) {
+                                    oneKeyAction(context, false, packages, dpmMode);
+                                } else {
+                                    List<String> dpmList = new ArrayList<>();
+                                    List<String> rootList = new ArrayList<>();
+                                    for (String pkg : packages) {
+                                        if (checkMRootFrozen(context, pkg)) {
+                                            dpmList.add(pkg);
+                                        } else {
+                                            rootList.add(pkg);
+                                        }
+                                    }
+                                    if (!dpmList.isEmpty()) {
+                                        oneKeyAction(context, false, dpmList.toArray(new String[0]), dpmMode);
+                                    }
+                                    if (!rootList.isEmpty()) {
+                                        oneKeyAction(context, false, rootList.toArray(new String[0]), API_FREEZEYOU_ROOT_DISABLE_ENABLE);
+                                    }
+                                }
+                            } else {
+                                oneKeyAction(context, false, packages, API_FREEZEYOU_ROOT_DISABLE_ENABLE);
+                            }
+                        }
+                    } else {
+                        oneKeyAction(context, freeze, packages, apiMode);
+                    }
                 } finally {
                     stopSelf(startId);
                 }

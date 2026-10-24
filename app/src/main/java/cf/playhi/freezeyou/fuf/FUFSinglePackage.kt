@@ -118,6 +118,12 @@ open class FUFSinglePackage(
                 } else {
                     pureExecuteAPIDPMAction()
                 }
+            } else if (Build.VERSION.SDK_INT >= 21 && (isDeviceOwner(context) || isProfileOwner(context)) && !checkRootPermission()) {
+                if (isProfileOwner(context) && !isDeviceOwner(context)) {
+                    pureExecuteAPIProfileOwnerAction()
+                } else {
+                    pureExecuteAPIDPMAction()
+                }
             } else {
                 pureExecuteAPIRootAction()
             }
@@ -215,7 +221,7 @@ open class FUFSinglePackage(
 
         if (Build.VERSION.SDK_INT < 18) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
-        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
             != PackageManager.PERMISSION_GRANTED) {
             return ERROR_INSUFFICIENT_PERMISSION
         }
@@ -246,7 +252,7 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledUserAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
-        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
             != PackageManager.PERMISSION_GRANTED) {
             return ERROR_INSUFFICIENT_PERMISSION
         }
@@ -277,7 +283,7 @@ open class FUFSinglePackage(
     private fun pureExecuteAPISystemAppDisabledAction(): Int {
 
         if (!isSystemApp(context)) return ERROR_NOT_SYSTEM_APP
-        if (context.checkCallingOrSelfPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
             != PackageManager.PERMISSION_GRANTED) {
             return ERROR_INSUFFICIENT_PERMISSION
         }
