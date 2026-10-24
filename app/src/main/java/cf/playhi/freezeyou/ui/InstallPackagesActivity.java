@@ -654,17 +654,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             } catch (IllegalArgumentException e) {
                 new Thread(() -> {
                     File targetDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
-                    if (targetDir != null) {
-                        File[] oldFallbacks = targetDir.listFiles((dir, name) -> name.startsWith("ZDF-fallback-"));
-                        if (oldFallbacks != null) {
-                            for (File f : oldFallbacks) {
-                                if (System.currentTimeMillis() - f.lastModified() > 300_000L) {
-                                    f.delete();
-                                }
-                            }
-                        }
-                    }
-                    File tempFile = new File(targetDir, "ZDF-fallback-" + System.currentTimeMillis() + ".apk");
+                    File tempFile = new File(targetDir, "ZDF-fallback-" + System.currentTimeMillis() + "_" + file.getName());
                     try (InputStream in = new FileInputStream(file)) {
                         FileUtils.copyFile(in, tempFile.getAbsolutePath());
                         Uri uri = FileProvider.getUriForFile(this, "cf.playhi.freezeyou.fileprovider", tempFile);
