@@ -251,37 +251,37 @@ def check_qodo_status(opener, token, pr_num, ignore_findings=None):
     bugs_count = None
     violations_count = None
     if review_comment:
-        b_match = re.search(r'Bugs\s*\(([0-9]+)\)', review_comment['body'])
-        if b_match:
-            bugs_count = int(b_match.group(1))
-        v_match = re.search(r'Rule violations\s*\(([0-9]+)\)', review_comment['body'])
-        if v_match:
-            violations_count = int(v_match.group(1))
+        if ignore_findings is None:
+            ignore_findings = []
 
-        if bugs_count is None and violations_count is None:
-            body = review_comment.get('body', '')
-            has_resolved_section = '<h3>Resolved findings</h3>' in body
-            has_trimmed_warning = 'Comment size exceeded' in body
-            has_clean_marker = bool(re.search(r'\b(no findings|no bugs|no rule violations|all checks passed)\b', body, re.IGNORECASE))
-            is_recognized_format = ('Code Review by Qodo' in body) and (has_resolved_section or has_trimmed_warning or has_clean_marker)
+        body = review_comment.get('body', '')
+        has_resolved_section = '<h3>Resolved findings</h3>' in body
+        has_trimmed_warning = 'Comment size exceeded' in body
+        has_clean_marker = bool(re.search(r'\b(no findings|no bugs|no rule violations|all checks passed)\b', body, re.IGNORECASE))
+        has_counters = bool(re.search(r'(?:Bugs|Rule violations)\s*\([0-9]+\)', body))
+        is_recognized_format = ('Code Review by Qodo' in body) and (has_resolved_section or has_trimmed_warning or has_clean_marker or has_counters)
 
-            if is_recognized_format:
-                if ignore_findings is None:
-                    ignore_findings = []
-                active_part = body.split('<h3>Resolved findings</h3>')[0] if has_resolved_section else body
-                # Match numbered finding headers, e.g. <summary> 1. Title <code>Bug</code></summary>
-                headers = re.findall(r'<summary>\s*\d+\.\s*(.*?)</summary>', active_part, re.DOTALL)
-                b_cnt = 0
-                v_cnt = 0
-                for h in headers:
-                    if any(ign.lower() in h.lower() for ign in ignore_findings):
-                        continue
-                    if re.search(r'\bRule violation\b', h, re.IGNORECASE):
-                        v_cnt += 1
-                    else:
-                        b_cnt += 1
-                bugs_count = b_cnt
-                violations_count = v_cnt
+        active_part = body.split('<h3>Resolved findings</h3>')[0] if has_resolved_section else body
+        # Match numbered finding headers, e.g. <summary> 1. Title <code>Bug</code></summary>
+        headers = re.findall(r'<summary>\s*\d+\.\s*(.*?)</summary>', active_part, re.DOTALL)
+
+        if headers:
+            b_cnt = 0
+            v_cnt = 0
+            for h in headers:
+                if any(ign.lower() in h.lower() for ign in ignore_findings):
+                    continue
+                if re.search(r'\bRule violation\b', h, re.IGNORECASE):
+                    v_cnt += 1
+                else:
+                    b_cnt += 1
+            bugs_count = b_cnt
+            violations_count = v_cnt
+        elif is_recognized_format:
+            b_match = re.search(r'Bugs\s*\(([0-9]+)\)', body)
+            v_match = re.search(r'Rule violations\s*\(([0-9]+)\)', body)
+            bugs_count = int(b_match.group(1)) if b_match else 0
+            violations_count = int(v_match.group(1)) if v_match else 0
 
     return {
         'head_sha': head_sha,
