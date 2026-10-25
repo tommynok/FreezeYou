@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Base64;
 
+import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
@@ -358,6 +359,40 @@ public final class OneKeyListUtils {
         ContentValues values = new ContentValues();
         values.put("packages", packages);
         userDefinedDb.update(CATEGORIES_TABLE, values, "_id = ?", new String[]{String.valueOf(id)});
+    }
+
+    /**
+     * Each of the three one-key filters shows exactly one list, so only a change to that list
+     * makes what is on screen wrong. Rebuilding for any other filter costs a full pass over the
+     * installed packages and resets the scroll position the user did not ask to lose.
+     */
+    public static boolean isOneKeyFilterAffected(String filter, String listKey, Context context) {
+        if (filter == null || listKey == null || context == null) {
+            return false;
+        }
+        final int keyShownByFilter;
+        switch (filter) {
+            case "OO":
+                keyShownByFilter = R.string.sAutoFreezeApplicationList;
+                break;
+            case "OOU":
+                keyShownByFilter = R.string.sOneKeyUFApplicationList;
+                break;
+            case "FOQ":
+                keyShownByFilter = R.string.sFreezeOnceQuit;
+                break;
+            default:
+                return false;
+        }
+        return listKey.equals(context.getString(keyShownByFilter));
+    }
+
+    /**
+     * A custom category is on screen as its package list, so the filter string does not name it;
+     * the list being viewed is the one opened under this Base64 label.
+     */
+    public static boolean isCategoryFilterAffected(String visibleCategoryLabel, String changedCategoryLabel) {
+        return visibleCategoryLabel != null && visibleCategoryLabel.equals(changedCategoryLabel);
     }
 
     /**

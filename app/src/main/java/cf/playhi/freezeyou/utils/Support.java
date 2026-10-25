@@ -30,6 +30,7 @@ import java.util.Locale;
 
 import cf.playhi.freezeyou.ForceStop;
 import cf.playhi.freezeyou.Freeze;
+import cf.playhi.freezeyou.Main;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
@@ -48,17 +49,18 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public final class Support {
 
-    public static void checkAddOrRemove(Context context, String pkgNames, String pkgName, String oneKeyName) {
+    /**
+     * Toggles one package in one list and reports whether the list was written, so the caller can
+     * tell a stored change from a failed one.
+     */
+    public static boolean checkAddOrRemove(Context context, String pkgNames, String pkgName, String oneKeyName) {
         if (existsInOneKeyList(pkgNames, pkgName)) {
-            showToast(context,
-                    removeFromOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.removed : R.string.removeFailed);
+            final boolean removed = removeFromOneKeyList(context, oneKeyName, pkgName);
+            showToast(context, removed ? R.string.removed : R.string.removeFailed);
+            return removed;
         } else {
-            showToast(context,
-                    addToOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.added : R.string.addFailed);
+            final boolean added = addToOneKeyList(context, oneKeyName, pkgName);
+            showToast(context, added ? R.string.added : R.string.addFailed);
             if (context.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
                 if (!freezeOnceQuit.getValue(null)) {
                     freezeOnceQuit.setValue(null, true);
@@ -71,6 +73,18 @@ public final class Support {
                 }
                 AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(context);
             }
+            return added;
+        }
+    }
+
+    /**
+     * The row menu can be opened over the main list, where the filter on screen may be the very
+     * list just changed. That list is read from storage only when it is rebuilt, so without this
+     * the row stays visible next to its own "Removed" toast until the filter is switched.
+     */
+    private static void checkAddOrRemoveAndRefresh(Context context, Activity activity, String pkgNames, String pkgName, String oneKeyName) {
+        if (checkAddOrRemove(context, pkgNames, pkgName, oneKeyName) && activity instanceof Main) {
+            ((Main) activity).refreshIfOneKeyListVisible(oneKeyName);
         }
     }
 
@@ -100,6 +114,8 @@ public final class Support {
         );
 
         final HashMap<Integer, String> userDefinedCategoriesHashMap = new HashMap<>();
+        // The stored Base64 label per row, which is how Main names the category on screen.
+        final HashMap<Integer, String> userDefinedCategoryLabelsHashMap = new HashMap<>();
 
         SQLiteDatabase vmUserDefinedDb = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
         vmUserDefinedDb.execSQL(
@@ -111,6 +127,7 @@ public final class Support {
                 int id = cursor.getInt(cursor.getColumnIndexOrThrow("_id"));
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("label"));
                 userDefinedCategoriesHashMap.put(id, cursor.getString(cursor.getColumnIndexOrThrow("packages")));
+                userDefinedCategoryLabelsHashMap.put(id, title);
                 String decodedTitle;
                 try {
                     decodedTitle = new String(Base64.decode(title, Base64.DEFAULT));
@@ -242,6 +259,9 @@ public final class Support {
                                 );
                                 vmUserDefinedDb1.close();
                                 showToast(activity, existed ? R.string.removed : R.string.added);
+                                if (activity instanceof Main) {
+                                    ((Main) activity).refreshIfCategoryVisible(userDefinedCategoryLabelsHashMap.get(itemId));
+                                }
                             }
                             break;
                     }
@@ -255,13 +275,13 @@ public final class Support {
                             }
                             break;
                         case R.id.main_sca_menu_addToFreezeOnceQuit:
-                            Support.checkAddOrRemove(context, FreezeOnceQuitPkgNames, pkgName, context.getString(R.string.sFreezeOnceQuit));
+                            checkAddOrRemoveAndRefresh(context, activity, FreezeOnceQuitPkgNames, pkgName, context.getString(R.string.sFreezeOnceQuit));
                             break;
                         case R.id.main_sca_menu_addToOneKeyList:
-                            Support.checkAddOrRemove(context, pkgNames, pkgName, context.getString(R.string.sAutoFreezeApplicationList));
+                            checkAddOrRemoveAndRefresh(context, activity, pkgNames, pkgName, context.getString(R.string.sAutoFreezeApplicationList));
                             break;
                         case R.id.main_sca_menu_addToOneKeyUFList:
-                            Support.checkAddOrRemove(context, UFPkgNames, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
+                            checkAddOrRemoveAndRefresh(context, activity, UFPkgNames, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
                             break;
                         case R.id.main_sca_menu_appDetail:
                             Intent appDetailIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);

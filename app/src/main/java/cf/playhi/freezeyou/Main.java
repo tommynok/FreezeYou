@@ -184,6 +184,9 @@ public class Main extends FreezeYouBaseActivity {
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
     private volatile String currentFilter = "all";
     private volatile int currentSortRule = SORT_BY_DEFAULT;
+    // The Base64 label of the custom category on screen, or null when the list came from a
+    // filter. A category is displayed as its package list, so currentFilter cannot name it.
+    private volatile String currentCategoryBase64Label = null;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
     private boolean shortcutsCompleted = true;
@@ -498,6 +501,11 @@ public class Main extends FreezeYouBaseActivity {
      * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
+        // Re-running the filter already on screen keeps the custom category it was opened from;
+        // any other filter replaces the list, so no category is being viewed any more.
+        if (!TextUtils.equals(filter, currentFilter)) {
+            currentCategoryBase64Label = null;
+        }
         currentFilter = filter;
         currentSortRule = sortRule;
         final int generation = mListGeneration.incrementAndGet();
@@ -1125,6 +1133,7 @@ public class Main extends FreezeYouBaseActivity {
                                                 menuItem.getGroupId()
                                                         == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
                                         String title = menuItem.getTitle().toString();
+                                        String categoryLabel = Base64.encodeToString(title.getBytes(), Base64.DEFAULT);
                                         String existsPkgs = "";
                                         SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
                                         userDefinedDb.execSQL(
@@ -1134,7 +1143,7 @@ public class Main extends FreezeYouBaseActivity {
                                                 userDefinedDb.query(
                                                         "categories",
                                                         new String[]{"packages"},
-                                                        "label = '" + Base64.encodeToString(title.getBytes(), Base64.DEFAULT) + "'",
+                                                        "label = '" + categoryLabel + "'",
                                                         null, null, null, null
                                                 );
 
@@ -1161,12 +1170,13 @@ public class Main extends FreezeYouBaseActivity {
                                                 "UPDATE categories SET packages = '"
                                                         + existsPkgs
                                                         + "' WHERE label = '"
-                                                        + Base64.encodeToString(title.getBytes(), Base64.DEFAULT)
+                                                        + categoryLabel
                                                         + "';"
                                         );
                                         cursor.close();
                                         userDefinedDb.close();
                                         showToast(Main.this, isInRemoveMode ? R.string.removed : R.string.added);
+                                        refreshIfCategoryVisible(categoryLabel);
                                         return true;
                                 }
                             default:
@@ -1404,22 +1414,22 @@ public class Main extends FreezeYouBaseActivity {
                         }
                         break;
                     case APPListViewOnClickMode_addToOFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        processSingleOneKeyListChange(true, getString(R.string.sAutoFreezeApplicationList), pkgName);
                         break;
                     case APPListViewOnClickMode_removeFromOFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        processSingleOneKeyListChange(false, getString(R.string.sAutoFreezeApplicationList), pkgName);
                         break;
                     case APPListViewOnClickMode_addToOUFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        processSingleOneKeyListChange(true, getString(R.string.sOneKeyUFApplicationList), pkgName);
                         break;
                     case APPListViewOnClickMode_removeFromOUFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        processSingleOneKeyListChange(false, getString(R.string.sOneKeyUFApplicationList), pkgName);
                         break;
                     case APPListViewOnClickMode_addToFOQList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed);
+                        processSingleOneKeyListChange(true, getString(R.string.sFreezeOnceQuit), pkgName);
                         break;
                     case APPListViewOnClickMode_removeFromFOQList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed);
+                        processSingleOneKeyListChange(false, getString(R.string.sFreezeOnceQuit), pkgName);
                         break;
                     case APPListViewOnClickMode_createFUFShortcut:
                         checkSettingsAndRequestCreateShortcut(
@@ -1772,6 +1782,7 @@ public class Main extends FreezeYouBaseActivity {
     private void processAddToOneKeyList(String string) {
         if (addToOneKeyList(getApplicationContext(), string, selectedPackages)) {
             showToast(Main.this, R.string.success);
+            refreshIfOneKeyListVisible(string);
         } else {
             showToast(Main.this, R.string.failed);
         }
@@ -1780,8 +1791,24 @@ public class Main extends FreezeYouBaseActivity {
     private void processRemoveFromOneKeyList(String s) {
         if (removeFromOneKeyList(getApplicationContext(), s, selectedPackages)) {
             showToast(Main.this, R.string.success);
+            refreshIfOneKeyListVisible(s);
         } else {
             showToast(Main.this, R.string.failed);
+        }
+    }
+
+    /**
+     * One app tapped in a "tapping adds to the list" mode. Same toast as before; the rebuild is
+     * what makes the row the user just removed actually disappear when the list on screen is that
+     * very list.
+     */
+    private void processSingleOneKeyListChange(boolean add, String listKey, String pkgName) {
+        final boolean success = add
+                ? addToOneKeyList(Main.this, listKey, pkgName)
+                : removeFromOneKeyList(Main.this, listKey, pkgName);
+        showToast(Main.this, success ? (add ? R.string.added : R.string.removed) : R.string.failed);
+        if (success) {
+            refreshIfOneKeyListVisible(listKey);
         }
     }
 
@@ -2670,11 +2697,37 @@ public class Main extends FreezeYouBaseActivity {
                 );
         if (cursor.moveToFirst()) {
             generateList(cursor.getString(cursor.getColumnIndex("packages")));
+            // Set after the rebuild: generateList drops the label of whatever was on screen
+            // before, and only this method knows which category the package list came from.
+            currentCategoryBase64Label = base64Label;
         } else {
             showToast(this, R.string.failed);
         }
         cursor.close();
         userDefinedDb.close();
+    }
+
+    /**
+     * The three one-key filters read their rows from storage only when the list is rebuilt, so
+     * without this the row just removed stays on screen next to its own "Removed" toast. A filter
+     * that reads no one-key list is left alone instead of losing its scroll position.
+     */
+    public void refreshIfOneKeyListVisible(String listKey) {
+        if (OneKeyListUtils.isOneKeyFilterAffected(currentFilter, listKey, this)) {
+            final String filter = currentFilter;
+            new Thread(() -> generateList(filter)).start();
+        }
+    }
+
+    /**
+     * The same for a custom category, which is on screen as its package list and has to be read
+     * back from the database.
+     */
+    public void refreshIfCategoryVisible(String base64Label) {
+        if (OneKeyListUtils.isCategoryFilterAffected(currentCategoryBase64Label, base64Label)) {
+            final String label = currentCategoryBase64Label;
+            new Thread(() -> generateListForCategory(label)).start();
+        }
     }
 
     private boolean onMainOptionsItemSelected(MenuItem item) {
