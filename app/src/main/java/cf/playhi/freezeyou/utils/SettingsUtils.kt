@@ -36,11 +36,17 @@ object SettingsUtils {
 
     /**
      * Show toast, check availability, sync to MMKV, etc.
+     *
+     * `isRestoreMode` applies a backup without any interactive side effects: no settings screens,
+     * no permission or root probes and no toasts. Only the non-interactive writes (MMKV sync,
+     * service and component state) are kept, so a restore cannot freeze or redirect the user.
      */
     @JvmStatic
+    @JvmOverloads
     fun checkPreferenceData(
         context: Context, activity: Activity,
-        sharedPreferences: SharedPreferences?, key: String?
+        sharedPreferences: SharedPreferences?, key: String?,
+        isRestoreMode: Boolean = false
     ) {
         if (key == null || sharedPreferences == null) return
 
@@ -70,7 +76,8 @@ object SettingsUtils {
             freezeOnceQuit,
             avoidFreezeForegroundApplications,
             tryToAvoidUpdateWhenUsing -> {
-                if (abstractKey.getValue() as Boolean
+                if (!isRestoreMode
+                    && abstractKey.getValue() as Boolean
                     && !AccessibilityUtils.isAccessibilitySettingsOn(context)
                 ) {
                     showToast(activity, R.string.needActiveAccessibilityService)
@@ -87,10 +94,10 @@ object SettingsUtils {
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    showToast(context, R.string.failed)
+                    if (!isRestoreMode) showToast(context, R.string.failed)
                 }
             avoidFreezeNotifyingApplications -> {
-                if (Build.VERSION.SDK_INT >= 21) {
+                if (!isRestoreMode && Build.VERSION.SDK_INT >= 21) {
                     val enabledNotificationListeners = Settings.Secure.getString(
                         context.contentResolver, "enabled_notification_listeners"
                     )
@@ -122,6 +129,7 @@ object SettingsUtils {
                     )
                 }
             selectFUFMode -> {
+                if (isRestoreMode) return
                 when (selectFUFMode.getValue()?.toIntOrNull()) {
                     API_FREEZEYOU_MROOT_DPM ->
                         if (!DevicePolicyManagerUtils.isDeviceOwner(context)) {
@@ -195,6 +203,7 @@ object SettingsUtils {
                     else -> showToast(context, R.string.unknown)
                 }
             }
+            else -> if (!isRestoreMode) showToast(context, R.string.unknown)
         }
     }
 

@@ -1,5 +1,7 @@
 package cf.playhi.freezeyou.ui;
 
+import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -12,12 +14,16 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
@@ -37,6 +43,14 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
      */
     private static final String BACKUP_MIME_TYPE = "application/octet-stream";
 
+    private static final int MAX_BACKUP_FILE_CHARS = 16 * 1024 * 1024;
+    // The decompressed JSON travels to the chooser as an Intent extra, and Binder rejects
+    // transactions around 1 MB. UTF-16 parcels two bytes per char, so 256K chars stay safe.
+    private static final int MAX_BACKUP_JSON_CHARS = 256 * 1024;
+
+    private final ExecutorService mBackupExecutor = Executors.newSingleThreadExecutor();
+    private ProgressDialog mProgressDialog;
+
     private ActivityResultLauncher<Intent> mSaveToFileLauncher;
     private ActivityResultLauncher<Intent> mRestoreFromFileLauncher;
 
@@ -49,6 +63,13 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
 
         registerFileLaunchers();
         initButtons();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mBackupExecutor.shutdownNow();
+        dismissProgress();
+        super.onDestroy();
     }
 
     private void registerFileLaunchers() {
@@ -160,15 +181,87 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
     }
 
     private void startImportChooser(String compressedContent) {
-        String decompressed = GZipUtils.gzipDecompress(compressedContent);
-        if ("".equals(decompressed)) {
+        if (compressedContent.isEmpty() || compressedContent.length() > MAX_BACKUP_FILE_CHARS) {
             ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
             return;
         }
-        startActivity(
-                new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
-                        .putExtra("jsonObjectString", decompressed)
-        );
+        processBackupAsync(() -> GZipUtils.gzipDecompress(compressedContent));
+    }
+
+    private void readBackupFromUri(Uri uri) {
+        final ContentResolver contentResolver = getContentResolver();
+        processBackupAsync(() -> {
+            StringBuilder builder = new StringBuilder();
+            try (InputStream inputStream = contentResolver.openInputStream(uri)) {
+                if (inputStream == null) {
+                    throw new IOException("Cannot open the selected backup file");
+                }
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(inputStream, "UTF-8"));
+                char[] buffer = new char[8192];
+                int n;
+                while ((n = reader.read(buffer)) != -1) {
+                    builder.append(buffer, 0, n);
+                    if (builder.length() > MAX_BACKUP_FILE_CHARS) {
+                        throw new IOException("Backup file is too large");
+                    }
+                }
+            }
+            return GZipUtils.gzipDecompress(builder.toString());
+        });
+    }
+
+    private void processBackupAsync(Callable<String> reader) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        showProgress();
+        mBackupExecutor.execute(() -> {
+            String json = null;
+            boolean readFailed = false;
+            try {
+                json = reader.call();
+            } catch (Exception | OutOfMemoryError e) {
+                e.printStackTrace();
+                readFailed = true;
+            }
+            final String decompressed = json;
+            final boolean failed = readFailed;
+            runOnUiThread(() -> {
+                dismissProgress();
+                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
+                if (failed) {
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+                    return;
+                }
+                if (decompressed == null || decompressed.isEmpty()
+                        || decompressed.length() > MAX_BACKUP_JSON_CHARS) {
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
+                    return;
+                }
+                startActivity(
+                        new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
+                                .putExtra("jsonObjectString", decompressed)
+                );
+            });
+        });
+    }
+
+    private void showProgress() {
+        dismissProgress();
+        mProgressDialog = ProgressDialog.show(
+                this, getString(R.string.plsWait), getString(R.string.loading___));
+    }
+
+    private void dismissProgress() {
+        if (mProgressDialog != null) {
+            if (mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+            }
+            mProgressDialog = null;
+        }
     }
 
     private void writeBackupToUri(Uri uri) {
@@ -188,25 +281,5 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
         // Deliberately not mirrored into the text field: it sits in a wrap_content ScrollView,
         // so a large backup would be laid out in full at once and freeze the UI for seconds.
         ToastUtils.showToast(BackupMainActivity.this, R.string.success);
-    }
-
-    private void readBackupFromUri(Uri uri) {
-        StringBuilder builder = new StringBuilder();
-        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
-            if (inputStream == null) {
-                ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
-                return;
-            }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
-            return;
-        }
-        startImportChooser(builder.toString());
     }
 }
