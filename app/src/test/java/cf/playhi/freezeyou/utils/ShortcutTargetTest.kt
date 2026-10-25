@@ -1,10 +1,15 @@
 package cf.playhi.freezeyou.utils
 
+import android.app.Application
+import cf.playhi.freezeyou.ui.SelectTargetActivityActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * A shortcut stores its target as text. Two of the choices are offered in the user's language, so
@@ -66,5 +71,65 @@ class ShortcutTargetTest {
         assertFalse(FUFUtils.isOnlyUnfreezeTarget(""))
         // The wording this choice used to be stored as, before it had a stable value.
         assertFalse(FUFUtils.isOnlyUnfreezeTarget("Только размороженые"))
+    }
+}
+
+/**
+ * A pinned shortcut is identified by its id: the same id replaces the existing pin, a new one
+ * adds a second shortcut beside it. The two standing choices are labelled with translated
+ * strings, so an id built from the label changes with the language and leaves duplicates behind.
+ *
+ * The Activity runs on Robolectric only because the id builder lives there; the test itself has
+ * no Android dependencies beyond loading that class.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class)
+class ShortcutIdTest {
+
+    private val pkgName = "com.looker.droidify"
+
+    private fun id(targetKey: String?, displayName: String) =
+        SelectTargetActivityActivity.buildShortcutId(pkgName, targetKey, displayName)
+
+    @Test
+    fun `the launch choice keeps one id across languages`() {
+        assertEquals(
+            id(SelectTargetActivityActivity.LAUNCH_TARGET_KEY, "Запуск"),
+            id(SelectTargetActivityActivity.LAUNCH_TARGET_KEY, "Run")
+        )
+        assertEquals(
+            "FreezeYou!$pkgName @launch",
+            id(SelectTargetActivityActivity.LAUNCH_TARGET_KEY, "Run")
+        )
+    }
+
+    @Test
+    fun `the only-unfreeze choice keeps one id across languages`() {
+        assertEquals(
+            id(FUFUtils.ONLY_UNFREEZE_TARGET, "Только разморозить"),
+            id(FUFUtils.ONLY_UNFREEZE_TARGET, "Only Unfreeze")
+        )
+        assertEquals(
+            "FreezeYou!$pkgName @onlyUnfreeze",
+            id(FUFUtils.ONLY_UNFREEZE_TARGET, "Only Unfreeze")
+        )
+    }
+
+    @Test
+    fun `an activity id is its class name in every language`() {
+        val activityName = "com.looker.droidify.MainActivity"
+        assertEquals(
+            "FreezeYou!$pkgName $activityName",
+            id(activityName, "Магазин")
+        )
+        assertEquals(
+            id(activityName, "Магазин"),
+            id(activityName, "Store")
+        )
+    }
+
+    @Test
+    fun `a row without a stable key falls back to its displayed name`() {
+        assertEquals("FreezeYou!$pkgName Store", id(null, "Store"))
     }
 }
