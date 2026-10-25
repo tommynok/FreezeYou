@@ -6,7 +6,6 @@ import java.io.DataOutputStream;
 
 import cf.playhi.freezeyou.MainApplication;
 import rikka.shizuku.Shizuku;
-import rikka.shizuku.ShizukuProvider;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode;
 import cf.playhi.freezeyou.R;
@@ -40,19 +39,16 @@ public final class ForceStopUtils {
                 } catch (NumberFormatException ignored) {
                 }
                 // A10A-07 / A3-05: Dynamically resolve the elevated shell backend.
-                // Priority: Shizuku (if binder reachable) -> Root (if su available) -> refuse.
+                // Priority: Shizuku (if binder reachable and permission granted) -> Root (if su available) -> refuse.
                 boolean shizukuMode = apiMode >= 8 && apiMode <= 10;
-                boolean shizukuAvailable = false;
-                if (shizukuMode || Shizuku.pingBinder()) {
-                    if (!Shizuku.pingBinder()) {
-                        ShizukuProvider.requestBinderForNonProviderProcess(context);
-                        int waited = 0;
-                        while (!Shizuku.pingBinder() && waited < 3000) {
-                            Thread.sleep(50);
-                            waited += 50;
-                        }
+                boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
+                if (shizukuMode && !shizukuAvailable) {
+                    int waited = 0;
+                    while (!PrivilegedShellUtils.isShizukuAvailable(context) && waited < 3000) {
+                        Thread.sleep(50);
+                        waited += 50;
                     }
-                    shizukuAvailable = Shizuku.pingBinder();
+                    shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
                 }
 
                 if (shizukuAvailable) {
