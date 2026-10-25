@@ -28,6 +28,7 @@ import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.NotificationUtils.startAppNotificationSettingsSystemActivity
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 
 class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     private lateinit var binding: AutodiagnosisBinding
@@ -126,17 +127,25 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                             )
                         }
                         "-8" -> try {
-                            if (Shizuku.pingBinder()) {
-                                if (Shizuku.checkSelfPermission()
-                                    != PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    Shizuku.requestPermission(0)
-                                }
-                            } else {
+                            if (!Shizuku.pingBinder()) {
+                                // The execution path requests the binder itself through
+                                // ShizukuProvider; attempt the same repair before reporting failure.
+                                ShizukuProvider.requestBinderForNonProviderProcess(applicationContext)
+                            }
+                            if (!Shizuku.pingBinder()) {
                                 showToast(
                                     this@AutoDiagnosisActivity,
                                     R.string.shizukuIsNotInstalledOrOtherExceptions
                                 )
+                            } else if (Shizuku.isPreV11()) {
+                                showToast(
+                                    this@AutoDiagnosisActivity,
+                                    R.string.shizukuVersionIsTooLow
+                                )
+                            } else if (Shizuku.checkSelfPermission()
+                                != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                Shizuku.requestPermission(0)
                             }
                         } catch (e: Exception) {
                             showToast(

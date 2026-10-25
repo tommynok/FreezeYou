@@ -32,6 +32,7 @@ import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isProfileOwner
 import cf.playhi.freezeyou.utils.FUFUtils
 import cf.playhi.freezeyou.utils.RootUtils
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -98,7 +99,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 loadingProgress.postValue(85)
 
                 checkProfileOwner(localList, profileOwnerRequired)
-                checkSystemAppMode(localList, systemAppRequired)
+                checkSystemAppMode(localList, systemAppRequired, fufMode)
                 checkShizuku(localList, shizukuRequired)
 
                 checkIsPowerSaveMode(localList)
@@ -314,10 +315,23 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun checkSystemAppMode(
-        localList: MutableList<Map<String, Any>>, systemAppRequired: Boolean
+        localList: MutableList<Map<String, Any>>, systemAppRequired: Boolean, fufMode: Int
     ) {
         if (!systemAppRequired) return
         val app = getApplication<Application>()
+        if (fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+            && Build.VERSION.SDK_INT < 18
+        ) {
+            localList.add(
+                generateHashMap(
+                    app.getString(R.string.sysVerLow),
+                    "",
+                    "-9",
+                    R.drawable.ic_warning
+                )
+            )
+            return
+        }
         val isSystemApp = FUFUtils.isSystemApp(app)
         val hasChangeComponentEnabledStatePermission =
             ActivityCompat.checkSelfPermission(
@@ -359,12 +373,55 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     ) {
         if (!shizukuRequired) return
         val app = getApplication<Application>()
-        val binderAlive: Boolean
-        val authorized: Boolean
         try {
-            binderAlive = Shizuku.pingBinder()
-            authorized = binderAlive
+            var binderAlive = Shizuku.pingBinder()
+            if (!binderAlive) {
+                // The execution path repairs a missing binder by requesting it
+                // through ShizukuProvider; do the same before reporting Shizuku unavailable.
+                ShizukuProvider.requestBinderForNonProviderProcess(app)
+                binderAlive = Shizuku.pingBinder()
+            }
+            val authorized = binderAlive
                     && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+            val versionTooLow = binderAlive && Shizuku.isPreV11()
+            when {
+                versionTooLow ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.shizukuVersionIsTooLow),
+                            "",
+                            "-8",
+                            R.drawable.ic_warning
+                        )
+                    )
+                authorized ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.authorizationStatus_authorized),
+                            "",
+                            "-8",
+                            R.drawable.ic_done
+                        )
+                    )
+                binderAlive ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.authorizationStatusNotAuthorized),
+                            "",
+                            "-8",
+                            R.drawable.ic_warning
+                        )
+                    )
+                else ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
+                            "",
+                            "-8",
+                            R.drawable.ic_warning
+                        )
+                    )
+            }
         } catch (e: Exception) {
             localList.add(
                 generateHashMap(
@@ -374,36 +431,6 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     R.drawable.ic_warning
                 )
             )
-            return
-        }
-        when {
-            authorized ->
-                localList.add(
-                    generateHashMap(
-                        app.getString(R.string.authorizationStatus_authorized),
-                        "",
-                        "-8",
-                        R.drawable.ic_done
-                    )
-                )
-            binderAlive ->
-                localList.add(
-                    generateHashMap(
-                        app.getString(R.string.authorizationStatusNotAuthorized),
-                        "",
-                        "-8",
-                        R.drawable.ic_warning
-                    )
-                )
-            else ->
-                localList.add(
-                    generateHashMap(
-                        app.getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
-                        "",
-                        "-8",
-                        R.drawable.ic_warning
-                    )
-                )
         }
     }
 
