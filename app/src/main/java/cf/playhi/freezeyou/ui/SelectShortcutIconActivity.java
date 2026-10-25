@@ -14,7 +14,6 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,27 +43,61 @@ public class SelectShortcutIconActivity extends FreezeYouBaseActivity {
             Uri fullPhotoUri = data.getData();
             if (fullPhotoUri != null) {
                 ContentResolver contentResolver = getContentResolver();
+                Bitmap bitmap = null;
                 try {
-                    Bitmap bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(fullPhotoUri));
-                    if (bitmap.getByteCount() > getBitmapFromDrawable(getResources().getDrawable(R.mipmap.ic_launcher_new_round)).getByteCount() * 5) {
+                    BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
+                    boundsOptions.inJustDecodeBounds = true;
+                    BitmapFactory.decodeStream(
+                            contentResolver.openInputStream(fullPhotoUri), null, boundsOptions);
+
+                    BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+                    decodeOptions.inSampleSize = calculateInSampleSize(
+                            boundsOptions.outWidth, boundsOptions.outHeight, 512, 512);
+                    bitmap = BitmapFactory.decodeStream(
+                            contentResolver.openInputStream(fullPhotoUri), null, decodeOptions);
+                    if (bitmap == null) {
+                        showToast(this, R.string.failed);
+                        return;
+                    }
+                    if (bitmap.getByteCount() > getBitmapFromDrawable(
+                            getResources().getDrawable(R.mipmap.ic_launcher_new_round)).getByteCount() * 5) {
                         int width = bitmap.getWidth();
                         int height = bitmap.getHeight();
                         Matrix matrix = new Matrix();
                         float scaleWidth = ((float) 192) / width;
                         float scaleHeight = ((float) 192) / height;
                         matrix.postScale(scaleWidth, scaleHeight);
-                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+                        Bitmap scaledBitmap =
+                                Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+                        bitmap.recycle();
+                        bitmap = scaledBitmap;
                     }
                     setResult(
                             RESULT_OK,
                             new Intent().putExtra("Icon", bitmap)
                     );
                     finish();
-                } catch (FileNotFoundException e) {
+                } catch (Throwable e) {
+                    if (bitmap != null) {
+                        bitmap.recycle();
+                    }
                     showToast(this, R.string.failed);
                 }
             }
         }
+    }
+
+    private static int calculateInSampleSize(int width, int height, int reqWidth, int reqHeight) {
+        int inSampleSize = 1;
+        if (height > reqHeight || width > reqWidth) {
+            int halfHeight = height / 2;
+            int halfWidth = width / 2;
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+        return inSampleSize;
     }
 
     private void init() {

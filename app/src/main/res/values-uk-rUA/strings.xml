@@ -429,6 +429,7 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операції з FreezeYou заборонені</string>
     <string name="shizukuVersionIsTooLow">Версія Shizuku застаріла</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не встановлено або інші винятки</string>
+    <string name="authorizationStatus_authorized">Дозвіл Shizuku надано</string>
     <string name="includeFUFActivityInRecents">Включати заморожування та розморожування в меню Нещодавні</string>
     <string name="includeFUFActivityInRecentsSummary">Також показує екран процесу заморожування/розморожування окремим пунктом у списку останніх додатків.</string>
     <string name="playFUFAnimations">Увімкнути анімацію заморожування та розморожування</string>

@@ -164,12 +164,18 @@ object SettingsUtils {
                                     if (Shizuku.shouldShowRequestPermissionRationale()) {
                                         showToast(context, R.string.insufficientPermission)
                                     } else {
-                                        Shizuku.addRequestPermissionResultListener { _, grantResult ->
-                                            if (grantResult == PERMISSION_GRANTED) {
-                                                checkAndEnableShizukuMultiProcessSupport(context)
+                                        val listener = object : Shizuku.OnRequestPermissionResultListener {
+                                            override fun onRequestPermissionResult(
+                                                requestCode: Int, grantResult: Int
+                                            ) {
+                                                Shizuku.removeRequestPermissionResultListener(this)
+                                                if (grantResult == PERMISSION_GRANTED) {
+                                                    checkAndEnableShizukuMultiProcessSupport(activity)
+                                                }
                                             }
                                         }
-                                        Shizuku.requestPermission(-1)
+                                        Shizuku.addRequestPermissionResultListener(listener)
+                                        Shizuku.requestPermission(0)
                                     }
                                 } else {
                                     checkAndEnableShizukuMultiProcessSupport(context)

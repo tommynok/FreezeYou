@@ -14,8 +14,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_LEGACY_AUTO
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_DPM
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_DISABLE_ENABLE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_UNHIDE_HIDE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
+import cf.playhi.freezeyou.utils.PrivilegedShellUtils
 import cf.playhi.freezeyou.utils.RootUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,45 +51,61 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             if (mutex.tryLock("AutoDiagnosisViewModelRefreshingDiagnosisData")) {
                 loadingProgress.postValue(-1)
 
-                problemsList.value!!.clear()
+                // The list is published once at the end; check methods must never touch
+                // problemsList directly, or the UI thread can observe a half-updated list.
+                val localList = ArrayList<Map<String, Any>>()
+                val fufMode = selectFUFMode.getValue(getApplication())?.toIntOrNull()
+                    ?: API_FREEZEYOU_LEGACY_AUTO
+                val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
+                        || fufMode == API_FREEZEYOU_MROOT_DPM
+                val rootRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
+                        || fufMode == API_FREEZEYOU_ROOT_DISABLE_ENABLE
+                        || fufMode == API_FREEZEYOU_ROOT_UNHIDE_HIDE
+                val shizukuRequired = fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
+                        || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+                        || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
                 loadingProgress.postValue(5)
 
-                checkSystemVersion()
+                checkSystemVersion(localList)
                 loadingProgress.postValue(15)
 
-                checkAccessibilityService()
+                checkAccessibilityService(localList)
                 loadingProgress.postValue(30)
 
-                checkNotificationListenerPermission()
+                checkNotificationListenerPermission(localList)
                 loadingProgress.postValue(45)
 
-                checkNotifyPermission()
+                checkNotifyPermission(localList)
                 loadingProgress.postValue(55)
 
-                checkBlueToothPermission()
+                checkBlueToothPermission(localList)
                 loadingProgress.postValue(65)
 
-                checkIsDeviceOwner()
+                checkIsDeviceOwner(localList, dpmRequired)
                 loadingProgress.postValue(75)
 
-                checkRootPermission()
+                checkRootPermission(localList, rootRequired)
                 loadingProgress.postValue(85)
 
-                checkIsPowerSaveMode()
+                checkShizuku(localList, shizukuRequired)
+
+                checkIsPowerSaveMode(localList)
                 loadingProgress.postValue(92)
 
-                checkIsIgnoringBatteryOptimizations()
+                checkIsIgnoringBatteryOptimizations(localList)
                 loadingProgress.postValue(97)
 
-                checkIfNoProblemFound()
+                checkIfNoProblemFound(localList)
                 loadingProgress.postValue(99)
 
-                problemsList.value!!.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
+                localList.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
                     val i = (t0["level"] as Int).compareTo(
                         (t1["level"] as Int)
                     )
                     if (i == 0) (t0["id"] as String).compareTo((t1["id"] as String)) else i
                 }
+
+                problemsList.postValue(localList)
 
                 loadingProgress.postValue(100)
 
@@ -104,9 +129,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         return hashMap
     }
 
-    private fun checkSystemVersion() {
+    private fun checkSystemVersion(localList: MutableList<Map<String, Any>>) {
         if (Build.VERSION.SDK_INT < 21) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.sysVerLow),
                     getApplication<Application>().getString(R.string.sysVerLowSummary),
@@ -115,7 +140,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.sysVerOk),
                     getApplication<Application>().getString(R.string.sysVerOkSummary),
@@ -126,9 +151,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkAccessibilityService() {
+    private fun checkAccessibilityService(localList: MutableList<Map<String, Any>>) {
         if (isAccessibilitySettingsOn(getApplication())) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.accessibilityServiceEnabled),
                     getApplication<Application>().getString(R.string.accessibilityServiceEnabledSummary),
@@ -137,7 +162,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.ACBSNotEnabled),
                     getApplication<Application>().getString(R.string.accessibilityServiceDisabledSummary),
@@ -148,7 +173,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkNotificationListenerPermission() {
+    private fun checkNotificationListenerPermission(localList: MutableList<Map<String, Any>>) {
         if (Build.VERSION.SDK_INT >= 21) {
             val s = Settings.Secure.getString(
                 getApplication<Application>().contentResolver,
@@ -157,7 +182,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             if (s == null
                 || !s.contains("cf.playhi.freezeyou/cf.playhi.freezeyou.MyNotificationListenerService")
             ) {
-                problemsList.value!!.add(
+                localList.add(
                     generateHashMap(
                         getApplication<Application>().getString(R.string.noNotificationListenerPermission),
                         getApplication<Application>().getString(R.string.notificationListenerPermissionNotGrantedSummary),
@@ -166,7 +191,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     )
                 )
             } else {
-                problemsList.value!!.add(
+                localList.add(
                     generateHashMap(
                         getApplication<Application>().getString(R.string.notificationListenerPermissionGranted),
                         getApplication<Application>().getString(R.string.notificationListenerPermissionGrantedSummary),
@@ -178,11 +203,11 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkNotifyPermission() {
+    private fun checkNotifyPermission(localList: MutableList<Map<String, Any>>) {
         val notificationManager =
             getApplication<Application>().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 24 && !notificationManager.areNotificationsEnabled()) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noNotifyPermission),
                     getApplication<Application>().getString(R.string.noNotifyPermissionSummary),
@@ -191,7 +216,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.notifyPermissionGranted),
                     getApplication<Application>().getString(R.string.notifyPermissionGrantedSummary),
@@ -202,9 +227,11 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkIsDeviceOwner() {
+    private fun checkIsDeviceOwner(
+        localList: MutableList<Map<String, Any>>, dpmRequired: Boolean
+    ) {
         if (isDeviceOwner(getApplication())) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.deviceOwnerActive),
                     getApplication<Application>().getString(R.string.deviceOwnerActiveSummary),
@@ -212,8 +239,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     R.drawable.ic_done
                 )
             )
-        } else {
-            problemsList.value!!.add(
+        } else if (dpmRequired) {
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noMRootPermission),
                     getApplication<Application>().getString(R.string.deviceOwnerNotActiveSummary),
@@ -224,18 +251,22 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkRootPermission() {
+    private fun checkRootPermission(
+        localList: MutableList<Map<String, Any>>, rootRequired: Boolean
+    ) {
         if (!RootUtils.checkRootPermission(true)) {
-            problemsList.value!!.add(
-                generateHashMap(
-                    getApplication<Application>().getString(R.string.noRootPermission),
-                    getApplication<Application>().getString(R.string.rootPermissionNotGrantedSummary),
-                    "-3",
-                    R.drawable.ic_warning
+            if (rootRequired) {
+                localList.add(
+                    generateHashMap(
+                        getApplication<Application>().getString(R.string.noRootPermission),
+                        getApplication<Application>().getString(R.string.rootPermissionNotGrantedSummary),
+                        "-3",
+                        R.drawable.ic_warning
+                    )
                 )
-            )
+            }
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.rootPermissionGranted),
                     getApplication<Application>().getString(R.string.rootPermissionGrantedSummary),
@@ -246,12 +277,37 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkIsIgnoringBatteryOptimizations() {
+    private fun checkShizuku(
+        localList: MutableList<Map<String, Any>>, shizukuRequired: Boolean
+    ) {
+        if (!shizukuRequired) return
+        if (PrivilegedShellUtils.isShizukuAvailable(getApplication())) {
+            localList.add(
+                generateHashMap(
+                    getApplication<Application>().getString(R.string.authorizationStatus_authorized),
+                    "",
+                    "-8",
+                    R.drawable.ic_done
+                )
+            )
+        } else {
+            localList.add(
+                generateHashMap(
+                    getApplication<Application>().getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
+                    "",
+                    "-8",
+                    R.drawable.ic_warning
+                )
+            )
+        }
+    }
+
+    private fun checkIsIgnoringBatteryOptimizations(localList: MutableList<Map<String, Any>>) {
         if (Build.VERSION.SDK_INT >= 23
             && !(getApplication<Application>().getSystemService(POWER_SERVICE) as PowerManager)
                 .isIgnoringBatteryOptimizations(getApplication<Application>().packageName)
         ) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noIgnoringBO),
                     getApplication<Application>().getString(R.string.batteryOptimizationNotIgnoredSummary),
@@ -260,7 +316,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.batteryOptimizationIgnored),
                     getApplication<Application>().getString(R.string.batteryOptimizationIgnoredSummary),
@@ -271,11 +327,11 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkIsPowerSaveMode() {
+    private fun checkIsPowerSaveMode(localList: MutableList<Map<String, Any>>) {
         if (Build.VERSION.SDK_INT >= 21
             && (getApplication<Application>().getSystemService(POWER_SERVICE) as PowerManager).isPowerSaveMode
         ) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.inPowerSaveMode),
                     getApplication<Application>().getString(R.string.powerSaveModeOnSummary),
@@ -284,7 +340,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.powerSaveModeOff),
                     getApplication<Application>().getString(R.string.powerSaveModeOffSummary),
@@ -295,7 +351,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun checkBlueToothPermission() {
+    private fun checkBlueToothPermission(localList: MutableList<Map<String, Any>>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             && ActivityCompat.checkSelfPermission(
                 getApplication(),
@@ -303,7 +359,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             )
             != PackageManager.PERMISSION_GRANTED
         ) {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.bluetoothPermissionIsNotGranted),
                     getApplication<Application>().getString(R.string.bluetoothPermissionNotGrantedSummary),
@@ -312,7 +368,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         } else {
-            problemsList.value!!.add(
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.bluetoothPermissionGranted),
                     getApplication<Application>().getString(R.string.bluetoothPermissionGrantedSummary),
@@ -324,9 +380,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     }
 
 
-    private fun checkIfNoProblemFound() {
-        if (problemsList.value!!.isEmpty()) {
-            problemsList.value!!.add(
+    private fun checkIfNoProblemFound(localList: MutableList<Map<String, Any>>) {
+        if (localList.isEmpty()) {
+            localList.add(
                 generateHashMap(
                     getApplication<Application>().getString(R.string.noProblemsFound),
                     getApplication<Application>().getString(R.string.everySeemsAllRight),
