@@ -155,6 +155,25 @@ object ShortcutTokenUtils {
 
     @JvmStatic
     fun initDynamicShortcuts(context: Context) {
+        // The shortcuts go out first: handing the new locale to the system can relaunch the
+        // process, and the published shortcuts have to survive that handover.
+        try {
+            publishDynamicShortcuts(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        // Last, and outside whatever the shortcuts did above: on Android 13+ this call is what
+        // makes the system recreate the open activities after a language change, because
+        // SettingsActivity no longer recreates them itself. A missing ShortcutManager or a
+        // publication that threw would otherwise save the language and apply it to nothing.
+        try {
+            syncApplicationLocales(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun publishDynamicShortcuts(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
             try {
                 val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
@@ -216,10 +235,6 @@ object ShortcutTokenUtils {
                         shortcutManager.updateShortcuts(toUpdate)
                     }
                 }
-
-                // Last: changing the per-app locale can make the system relaunch the process,
-                // and the shortcuts published above must survive that handover.
-                syncApplicationLocales(context)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
