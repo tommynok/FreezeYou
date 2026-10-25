@@ -341,7 +341,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         }
         db.close();
         if (id != -5) {
-            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, enabled != 1);
+            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, true);
         }
         if (enabled == 1) {
             publishTask(ScheduledTasksAddActivity.this, (int) newId, hour, minutes, repeat, task);
