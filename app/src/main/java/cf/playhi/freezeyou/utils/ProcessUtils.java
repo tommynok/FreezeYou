@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -47,26 +48,35 @@ public final class ProcessUtils {
     private static final long ROOT_RUNNING_PACKAGES_TIMEOUT_MS = 10_000L;
 
     /**
-     * Two workers per scan, one on each of the shell's output streams, and a couple of scans can
-     * overlap. Capped rather than cached-with-no-limit: a worker wedged on a read that neither the
-     * interrupt nor the closed stream releases would otherwise be replaced by a fresh thread on
-     * every refresh, forever. A saturated pool refuses the work instead, and the caller's existing
-     * failure path turns that into an empty set.
+     * Two workers per scan, one on each of the shell's output streams, and two scans can overlap.
+     * Capped rather than cached-with-no-limit: a worker wedged on a read that neither the interrupt
+     * nor the closed stream releases would otherwise be replaced by a fresh thread on every refresh
+     * of the filter, forever. A saturated pool refuses the work instead, and the caller's failure
+     * path turns that into an empty set and a line in the log.
      */
-    private static final int SHELL_IO_MAX_WORKERS = 8;
+    private static final int SHELL_IO_MAX_WORKERS = 4;
 
     /**
-     * Where the shell's streams are read and written, so that a shell which stops answering can be
-     * abandoned rather than waited on — a thread blocked in {@code read()} cannot time itself out.
-     * Daemon threads, because a read that never returns must not be able to hold the process open.
+     * Where the shell's streams are read, so that a shell which stops answering can be abandoned
+     * rather than waited on — a thread blocked in {@code read()} cannot time itself out. Daemon
+     * threads, because a read that never returns must not be able to hold the process open.
+     * <p>
+     * One pool per stream and not one for both, because the two run at the same time by design:
+     * shared capacity would let a wedged stderr drain take the worker a healthy scan's stdout read
+     * needs, and a shell that is answering perfectly well would come back as "nothing is running".
      */
-    private static final ExecutorService SHELL_IO_EXECUTOR = new ThreadPoolExecutor(
-            0, SHELL_IO_MAX_WORKERS, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-            r -> {
-                Thread t = new Thread(r, "process-utils-shell-io");
-                t.setDaemon(true);
-                return t;
-            });
+    private static final ExecutorService SCAN_READER_EXECUTOR = shellIoExecutor("scan-reader");
+    private static final ExecutorService ERROR_DRAIN_EXECUTOR = shellIoExecutor("scan-stderr");
+
+    private static ExecutorService shellIoExecutor(String role) {
+        return new ThreadPoolExecutor(
+                0, SHELL_IO_MAX_WORKERS, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                r -> {
+                    Thread t = new Thread(r, "process-utils-" + role);
+                    t.setDaemon(true);
+                    return t;
+                });
+    }
 
     public static void destroyProcess(DataOutputStream dataOutputStream, Process process1) {
         try {
@@ -161,7 +171,7 @@ public final class ProcessUtils {
     }
 
     /**
-     * The same scan under a deadline. It moves the read to {@link #SHELL_IO_EXECUTOR} because a
+     * The same scan under a deadline. It moves the read to {@link #SCAN_READER_EXECUTOR} because a
      * thread blocked in {@code read()} cannot limit itself, and the shell on the other end is not
      * obliged to ever produce another byte.
      * <p>
@@ -170,14 +180,18 @@ public final class ProcessUtils {
      * and a worker left sitting on a stream that is still open is a thread this method never gets
      * back.
      *
-     * @throws TimeoutException if the scan did not finish in time. The caller is then expected to
-     *                          destroy the process behind the stream, which is what stops the
-     *                          writer on the other end.
+     * @throws TimeoutException          if the scan did not finish in time. The caller is then
+     *                                   expected to destroy the process behind the stream, which
+     *                                   is what stops the writer on the other end.
+     * @throws RejectedExecutionException if every reader worker is still wedged on a scan of its
+     *                                   own. The scan is refused rather than queued, because an
+     *                                   answer that arrives after the list has moved on is worse
+     *                                   than no answer.
      */
     public static Set<String> parseRunningPackages(InputStream inputStream, long timeoutMs)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Set<String>> reading =
-                SHELL_IO_EXECUTOR.submit(() -> parseRunningPackages(inputStream));
+                SCAN_READER_EXECUTOR.submit(() -> parseRunningPackages(inputStream));
         try {
             return reading.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -224,7 +238,7 @@ public final class ProcessUtils {
             // blocks. A blocked shell produces no stdout either, so the scan would sit waiting on a
             // process that is waiting on us — a deadlock the stdout deadline alone cannot explain.
             final Process session = process;
-            errorStream = SHELL_IO_EXECUTOR.submit(() -> {
+            errorStream = ERROR_DRAIN_EXECUTOR.submit(() -> {
                 discard(session.getErrorStream());
                 return null;
             });
@@ -234,11 +248,11 @@ public final class ProcessUtils {
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "getRootRunningPackages: packages=" + packages.size());
             }
-        } catch (TimeoutException e) {
-            // Not behind the debug flag. An expired scan and a device with nothing running both
-            // come back as an empty set, so the list cannot tell them apart and this line is the
-            // only record that there is a difference to tell.
-            Log.w("FreezeYouDebug", "getRootRunningPackages: gave up on its "
+        } catch (TimeoutException | RejectedExecutionException e) {
+            // Not behind the debug flag. Both of these come back as an empty set, and so does a
+            // device with nothing running, so the list cannot tell them apart and this line is the
+            // only record that there was a difference to tell.
+            Log.w("FreezeYouDebug", "getRootRunningPackages: gave up within its "
                     + ROOT_RUNNING_PACKAGES_TIMEOUT_MS + "ms budget: " + e);
         } catch (Exception e) {
             e.printStackTrace();
