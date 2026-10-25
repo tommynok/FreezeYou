@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  * "OK / Cancel", and a cancelled system uninstall prompt used to be answered by throwing the
  * next package's prompt at the user until the queue ran out. Both are wording and flow the
  * owner judges by eye on the device, so the contract is pinned here: the canonical strings the
- * dialogs now use, and the rule that one back press ends the whole batch.
+ * dialogs now use, and the rule for when one system prompt ends the whole batch.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "ru-rRU", application = Application::class)
@@ -27,18 +27,23 @@ class MainDialogsAndUninstallTest {
         val app = RuntimeEnvironment.getApplication()
         assertEquals("ОК", app.getString(R.string.okay))
         assertEquals("Отмена", app.getString(R.string.cancel))
-        // The force-stop tap confirms itself with this one, without waiting for the service.
-        assertEquals("Выполнено", app.getString(R.string.executed))
     }
 
     @Test
-    fun `a cancelled system prompt ends the whole uninstall batch`() {
-        assertTrue(Main.abortUninstallBatchOnCancel(Activity.RESULT_CANCELED))
+    fun `a back press out of the system prompt ends the whole uninstall batch`() {
+        assertTrue(Main.abortUninstallBatchOnCancel(Activity.RESULT_CANCELED, true))
+    }
+
+    @Test
+    fun `a cancelled result for a package that is gone keeps the batch going`() {
+        // The uninstaller answers RESULT_CANCELED by default, so a successful removal arrives
+        // looking like a back press; treating it as one stopped the batch after the first app.
+        assertFalse(Main.abortUninstallBatchOnCancel(Activity.RESULT_CANCELED, false))
     }
 
     @Test
     fun `a confirmed or failed system prompt keeps the batch going`() {
-        assertFalse(Main.abortUninstallBatchOnCancel(Activity.RESULT_OK))
-        assertFalse(Main.abortUninstallBatchOnCancel(Activity.RESULT_FIRST_USER))
+        assertFalse(Main.abortUninstallBatchOnCancel(Activity.RESULT_OK, true))
+        assertFalse(Main.abortUninstallBatchOnCancel(Activity.RESULT_FIRST_USER, true))
     }
 }

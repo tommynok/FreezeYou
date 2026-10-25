@@ -138,7 +138,6 @@ import static cf.playhi.freezeyou.utils.ThemeUtils.getLightPopupContext;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getUiTheme;
 import static cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
-import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
 import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
@@ -393,7 +392,8 @@ public class Main extends FreezeYouBaseActivity {
                 }
                 break;
             case 80002:
-                if (abortUninstallBatchOnCancel(resultCode)) {
+                if (abortUninstallBatchOnCancel(
+                        resultCode, isPackageStillInstalled(mCurrentUnprivilegedUninstallPkg))) {
                     // The user backed out of a system uninstall prompt: the rest of the batch
                     // must not keep throwing prompts at them one after another.
                     mUnprivilegedUninstallQueue.clear();
@@ -1841,13 +1841,15 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
         String[] pkgNameList = targetPackages.toArray(new String[0]);
+        // No toast here on purpose: ForceStopUtils.forceStop is the one that learns whether the
+        // elevated shell was reachable, and it already reports "executed" or the failure. Saying
+        // "executed" up front would announce a success that may never happen, and would ignore
+        // the lesserToast preference that the real report respects.
         ServiceUtils.startService(
                 Main.this,
                 new Intent(Main.this, ForceStopService.class)
                         .putExtra("packages", pkgNameList)
         );
-        // The service works in the background for a while; the toast confirms the tap at once.
-        showShortToast(Main.this, R.string.executed);
     }
 
     private void processBatchUninstall() {
@@ -2228,9 +2230,24 @@ public class Main extends FreezeYouBaseActivity {
     /**
      * A cancelled system uninstall prompt ends the whole batch: the user pressed back, and the
      * prompts left in the queue would only trap them into confirming one package after another.
+     * The uninstaller reports RESULT_CANCELED by default though, so a removal that went through
+     * arrives looking exactly like a back press - the package has to still be installed before
+     * this may throw the rest of the queue away.
      */
-    static boolean abortUninstallBatchOnCancel(int resultCode) {
-        return resultCode == RESULT_CANCELED;
+    static boolean abortUninstallBatchOnCancel(int resultCode, boolean currentPkgStillInstalled) {
+        return resultCode == RESULT_CANCELED && currentPkgStillInstalled;
+    }
+
+    private boolean isPackageStillInstalled(String pkg) {
+        if (pkg == null) {
+            return false;
+        }
+        try {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
     }
 
     private void startUnprivilegedUninstallQueue(List<String> userApps) {
@@ -2245,13 +2262,7 @@ public class Main extends FreezeYouBaseActivity {
 
     private void processNextUnprivilegedUninstall() {
         if (mCurrentUnprivilegedUninstallPkg != null) {
-            boolean stillInstalled = true;
-            try {
-                getPackageManager().getPackageInfo(mCurrentUnprivilegedUninstallPkg, 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                stillInstalled = false;
-            }
-            if (!stillInstalled) {
+            if (!isPackageStillInstalled(mCurrentUnprivilegedUninstallPkg)) {
                 mUnprivilegedUninstallSuccessCount++;
             }
             mCurrentUnprivilegedUninstallPkg = null;
