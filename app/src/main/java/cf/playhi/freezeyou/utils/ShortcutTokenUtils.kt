@@ -80,6 +80,24 @@ object ShortcutTokenUtils {
     fun localizedContext(context: Context): Context =
         localizedContext(context, Support.getLocalString(context))
 
+    /**
+     * The device locale, taken from the system resources rather than from the process default:
+     * on Android 13+ the default already carries the per-app locale this very call may be about
+     * to clear, so Locale.getDefault() would publish "Default" labels in the language the user
+     * has just left.
+     */
+    private fun deviceLocale(): Locale {
+        val configuration = android.content.res.Resources.getSystem().configuration
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val locales = configuration.locales
+            if (!locales.isEmpty) {
+                return locales.get(0)
+            }
+        }
+        @Suppress("DEPRECATION")
+        return configuration.locale
+    }
+
     @JvmStatic
     fun localizedContext(context: Context, localeTag: String): Context {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -90,7 +108,7 @@ object ShortcutTokenUtils {
             if (DefaultMultiProcessMMKVStorageStringKeys.languagePref.defaultValue()
                     .equals(localeTag, ignoreCase = true)
             ) {
-                Locale.getDefault()
+                deviceLocale()
             } else {
                 Locale.forLanguageTag(localeTag)
             }

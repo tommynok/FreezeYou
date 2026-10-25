@@ -125,9 +125,9 @@ class SettingsActivity : FreezeYouBaseActivity(),
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
         if (languagePref.name == s) {
-            // The launcher keeps showing the labels this process published last, so the dynamic
-            // shortcuts are republished in the new language right away, before the recreate below.
-            ShortcutTokenUtils.initDynamicShortcuts(applicationContext)
+            // ShortcutManager IPC can take seconds, so the settings screen must not wait for the
+            // republish; the application context keeps the worker independent of this activity.
+            Thread { ShortcutTokenUtils.initDynamicShortcuts(applicationContext) }.start()
         }
         if (languagePref.name == s
             || uiStyleSelection.name == s
