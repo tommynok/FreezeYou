@@ -39,8 +39,11 @@ public final class ForceStopUtils {
                     if (modeValue != null) apiMode = Integer.parseInt(modeValue);
                 } catch (NumberFormatException ignored) {
                 }
+                // A10A-07 / A3-05: Dynamically resolve the elevated shell backend.
+                // Priority: Shizuku (if binder reachable) -> Root (if su available) -> refuse.
                 boolean shizukuMode = apiMode >= 8 && apiMode <= 10;
-                if (shizukuMode) {
+                boolean shizukuAvailable = false;
+                if (shizukuMode || Shizuku.pingBinder()) {
                     if (!Shizuku.pingBinder()) {
                         ShizukuProvider.requestBinderForNonProviderProcess(context);
                         int waited = 0;
@@ -48,14 +51,17 @@ public final class ForceStopUtils {
                             Thread.sleep(50);
                             waited += 50;
                         }
-                        if (!Shizuku.pingBinder()) {
-                            showToast(context, R.string.mayUnrootedOrOtherEx);
-                            return;
-                        }
                     }
+                    shizukuAvailable = Shizuku.pingBinder();
+                }
+
+                if (shizukuAvailable) {
                     process = Shizuku.newProcess(new String[]{"sh"}, null, null);
-                } else {
+                } else if (RootUtils.checkRootPermission()) {
                     process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
+                } else {
+                    showToast(context, R.string.mayUnrootedOrOtherEx);
+                    return;
                 }
                 outputStream = new DataOutputStream(process.getOutputStream());
                 for (String aPkgNameList : pkgNameList) {

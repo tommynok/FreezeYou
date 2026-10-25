@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,6 +21,7 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Date;
 
 import cf.playhi.freezeyou.Freeze;
@@ -71,12 +73,17 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
         // list would throw it away.
         openTargetPickerOnNextInit = activityShortcutMode && savedInstanceState == null;
 
-        targetSelfCls =
-                requestFromLauncher
-                        ?
-                        Freeze.class
-                        :
-                        ((Class<?>) intent.getSerializableExtra("class"));
+        Class<?> targetCls = null;
+        if (!requestFromLauncher) {
+            try {
+                Serializable s = intent.getSerializableExtra("class");
+                if (s instanceof Class && Activity.class.isAssignableFrom((Class<?>) s)) {
+                    targetCls = (Class<?>) s;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        targetSelfCls = requestFromLauncher ? Freeze.class : (targetCls != null ? targetCls : Freeze.class);
 
         init();
     }
