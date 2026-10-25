@@ -16,7 +16,7 @@ class BatchSelfSkipTest {
     private val self = "cf.playhi.freezeyou"
 
     private fun targetsOf(vararg packages: String) =
-        FUFUtils.batchTargetsWithoutSelf(self, packages)
+        FUFUtils.batchTargetsWithoutSelf(self, arrayOf(*packages))
 
     @Test
     fun `self is dropped wherever it sits in the list`() {
