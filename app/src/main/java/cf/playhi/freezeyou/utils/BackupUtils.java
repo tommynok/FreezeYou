@@ -114,7 +114,6 @@ public final class BackupUtils {
                 if (repeat == null || repeat.isEmpty()) {
                     repeat = "0";
                 }
-                sawValidEntry = true;
 
                 Cursor cursor = null;
                 boolean exists = false;
@@ -141,6 +140,7 @@ public final class BackupUtils {
                 }
 
                 if (exists) {
+                    sawValidEntry = true;
                     continue;
                 }
 
@@ -153,7 +153,9 @@ public final class BackupUtils {
                 values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
-                db.insert("tasks", null, values);
+                if (db.insert("tasks", null, values) != -1) {
+                    sawValidEntry = true;
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -197,7 +199,6 @@ public final class BackupUtils {
                 if (!TasksUtils.isValidImportedTriggerTask(tg, task, enabled)) {
                     continue;
                 }
-                sawValidEntry = true;
 
                 Cursor cursor = null;
                 boolean exists = false;
@@ -223,6 +224,7 @@ public final class BackupUtils {
                 }
 
                 if (exists) {
+                    sawValidEntry = true;
                     continue;
                 }
 
@@ -234,7 +236,9 @@ public final class BackupUtils {
                 values.put("task", task);
                 values.put("column1", "");
                 values.put("column2", "");
-                db.insert("tasks", null, values);
+                if (db.insert("tasks", null, values) != -1) {
+                    sawValidEntry = true;
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
