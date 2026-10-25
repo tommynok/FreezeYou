@@ -27,6 +27,19 @@ import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBool
 public final class ApplicationIconUtils {
 
     /**
+     * What a drawable that reports no intrinsic size is drawn into, since there is no size of its
+     * own to use: the size the list icons are scaled to anyway.
+     */
+    private static final int FALLBACK_ICON_SIZE = 72;
+
+    /**
+     * The smallest side an icon may have. A 1x1 image is the placeholder the no-size case used to
+     * produce and cache, and once on disk it was read back as that app's icon forever, so it has
+     * to be recognised as corrupt everywhere an icon is accepted.
+     */
+    private static final int MIN_ICON_SIZE = 2;
+
+    /**
      * Convert Drawable to Bitmap.
      * References:
      * - http://www.cnblogs.com/zhou2016/p/6281678.html
@@ -51,12 +64,11 @@ public final class ApplicationIconUtils {
 
             int width = drawable.getIntrinsicWidth(), height = drawable.getIntrinsicHeight();
             Rect oldBounds = drawable.copyBounds();
-            Bitmap bitmap;
-            if (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-                bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
-            } else {
-                bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            if (!hasIconSize(width, height)) {
+                width = FALLBACK_ICON_SIZE;
+                height = FALLBACK_ICON_SIZE;
             }
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             drawable.setBounds(0, 0, width, height);
             drawable.draw(new Canvas(bitmap));
             drawable.setBounds(oldBounds);
@@ -80,10 +92,11 @@ public final class ApplicationIconUtils {
     ) {
         Drawable drawable = null;
         String path = context.getCacheDir() + "/icon/" + pkgName + ".png";
-        if (saveIconCache && new File(path).exists()) {
+        File cacheFile = new File(path);
+        if (saveIconCache && cacheFile.exists()) {
             drawable = BitmapDrawable.createFromPath(path);
-            if (drawable == null || drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-                new File(path).delete();
+            if (drawable == null || !hasIconSize(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())) {
+                cacheFile.delete();
                 drawable = null;
             }
         }
@@ -91,9 +104,8 @@ public final class ApplicationIconUtils {
             if (applicationInfo != null) {
                 try {
                     drawable = applicationInfo.loadIcon(context.getPackageManager());
-                    if (saveIconCache && drawable != null) {
-                        folderCheck(context.getCacheDir() + "/icon");
-                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    if (saveIconCache) {
+                        writeIconToCache(path, drawable);
                     }
                 } catch (Throwable t) {
                     android.util.Log.w("ApplicationIconUtils", "Failed to load icon from applicationInfo for " + pkgName, t);
@@ -102,9 +114,8 @@ public final class ApplicationIconUtils {
             } else if (!"".equals(pkgName)) {
                 try {
                     drawable = context.getPackageManager().getApplicationIcon(pkgName);
-                    if (saveIconCache && drawable != null) {
-                        folderCheck(context.getCacheDir() + "/icon");
-                        writeBitmapToFile(path, getBitmapFromDrawable(drawable));
+                    if (saveIconCache) {
+                        writeIconToCache(path, drawable);
                     }
                 } catch (PackageManager.NameNotFoundException e) {
                     drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
@@ -114,7 +125,7 @@ public final class ApplicationIconUtils {
                 }
             }
         }
-        if ((drawable == null) || (drawable.getIntrinsicWidth() <= 0) || (drawable.getIntrinsicHeight() <= 0)) {
+        if ((drawable == null) || !hasIconSize(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())) {
             drawable = context.getResources().getDrawable(R.mipmap.ic_launcher_round);
         }
         if (resize) {
@@ -129,6 +140,28 @@ public final class ApplicationIconUtils {
         } else {
             return drawable;
         }
+    }
+
+    /**
+     * Cache an icon, unless it is not one. A drawable with no size of its own is drawn as a
+     * placeholder; a placeholder written to disk would be read back as that app's icon on every
+     * later launch, so it stays out of the cache and is loaded again next time instead.
+     */
+    private static void writeIconToCache(String path, @Nullable Drawable drawable) {
+        if (drawable == null
+                || !hasIconSize(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())) {
+            return;
+        }
+        Bitmap bitmap = getBitmapFromDrawable(drawable);
+        if (bitmap == null || !hasIconSize(bitmap.getWidth(), bitmap.getHeight())) {
+            return;
+        }
+        folderCheck(new File(path).getParent());
+        writeBitmapToFile(path, bitmap);
+    }
+
+    private static boolean hasIconSize(int width, int height) {
+        return width >= MIN_ICON_SIZE && height >= MIN_ICON_SIZE;
     }
 
     private static void writeBitmapToFile(String filePath, Bitmap b) {
