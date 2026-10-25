@@ -16,16 +16,22 @@ import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_LEGACY_AUTO
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_DPM
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_PROFILE_OWNER
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_DISABLE_ENABLE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_UNHIDE_HIDE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
-import cf.playhi.freezeyou.utils.PrivilegedShellUtils
+import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isProfileOwner
+import cf.playhi.freezeyou.utils.FUFUtils
 import cf.playhi.freezeyou.utils.RootUtils
+import rikka.shizuku.Shizuku
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -58,12 +64,16 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     ?: API_FREEZEYOU_LEGACY_AUTO
                 val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
                         || fufMode == API_FREEZEYOU_MROOT_DPM
+                val profileOwnerRequired = fufMode == API_FREEZEYOU_MROOT_PROFILE_OWNER
                 val rootRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
                         || fufMode == API_FREEZEYOU_ROOT_DISABLE_ENABLE
                         || fufMode == API_FREEZEYOU_ROOT_UNHIDE_HIDE
                 val shizukuRequired = fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
                         || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
                         || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
+                val systemAppRequired = fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
+                        || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+                        || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
                 loadingProgress.postValue(5)
 
                 checkSystemVersion(localList)
@@ -87,6 +97,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 checkRootPermission(localList, rootRequired)
                 loadingProgress.postValue(85)
 
+                checkProfileOwner(localList, profileOwnerRequired)
+                checkSystemAppMode(localList, systemAppRequired)
                 checkShizuku(localList, shizukuRequired)
 
                 checkIsPowerSaveMode(localList)
@@ -277,28 +289,121 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    private fun checkProfileOwner(
+        localList: MutableList<Map<String, Any>>, profileOwnerRequired: Boolean
+    ) {
+        if (isProfileOwner(getApplication())) {
+            localList.add(
+                generateHashMap(
+                    getApplication<Application>().getString(R.string.profileOwnerActive),
+                    "",
+                    "-3",
+                    R.drawable.ic_done
+                )
+            )
+        } else if (profileOwnerRequired) {
+            localList.add(
+                generateHashMap(
+                    getApplication<Application>().getString(R.string.isNotProfileOwner),
+                    "",
+                    "-3",
+                    R.drawable.ic_warning
+                )
+            )
+        }
+    }
+
+    private fun checkSystemAppMode(
+        localList: MutableList<Map<String, Any>>, systemAppRequired: Boolean
+    ) {
+        if (!systemAppRequired) return
+        val app = getApplication<Application>()
+        val isSystemApp = FUFUtils.isSystemApp(app)
+        val hasChangeComponentEnabledStatePermission =
+            ActivityCompat.checkSelfPermission(
+                app, Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        when {
+            isSystemApp && hasChangeComponentEnabledStatePermission ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.systemAppModeActive),
+                        "",
+                        "-9",
+                        R.drawable.ic_done
+                    )
+                )
+            !isSystemApp ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.isNotSystemApp),
+                        "",
+                        "-9",
+                        R.drawable.ic_warning
+                    )
+                )
+            else ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.insufficientPermission),
+                        "",
+                        "-9",
+                        R.drawable.ic_warning
+                    )
+                )
+        }
+    }
+
     private fun checkShizuku(
         localList: MutableList<Map<String, Any>>, shizukuRequired: Boolean
     ) {
         if (!shizukuRequired) return
-        if (PrivilegedShellUtils.isShizukuAvailable(getApplication())) {
+        val app = getApplication<Application>()
+        val binderAlive: Boolean
+        val authorized: Boolean
+        try {
+            binderAlive = Shizuku.pingBinder()
+            authorized = binderAlive
+                    && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        } catch (e: Exception) {
             localList.add(
                 generateHashMap(
-                    getApplication<Application>().getString(R.string.authorizationStatus_authorized),
-                    "",
-                    "-8",
-                    R.drawable.ic_done
-                )
-            )
-        } else {
-            localList.add(
-                generateHashMap(
-                    getApplication<Application>().getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
+                    app.getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
                     "",
                     "-8",
                     R.drawable.ic_warning
                 )
             )
+            return
+        }
+        when {
+            authorized ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.authorizationStatus_authorized),
+                        "",
+                        "-8",
+                        R.drawable.ic_done
+                    )
+                )
+            binderAlive ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.authorizationStatusNotAuthorized),
+                        "",
+                        "-8",
+                        R.drawable.ic_warning
+                    )
+                )
+            else ->
+                localList.add(
+                    generateHashMap(
+                        app.getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
+                        "",
+                        "-8",
+                        R.drawable.ic_warning
+                    )
+                )
         }
     }
 

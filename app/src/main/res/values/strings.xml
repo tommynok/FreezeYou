@@ -437,6 +437,9 @@
     <string name="shizukuVersionIsTooLow">Shizuku version is too low</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku is not installed or other exceptions</string>
     <string name="authorizationStatus_authorized">Shizuku authorization granted</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku permission not granted</string>
+    <string name="profileOwnerActive">Profile owner mode active</string>
+    <string name="systemAppModeActive">System app mode available</string>
     <string name="includeFUFActivityInRecents">Include freeze and unfreeze activity in recents</string>
     <string name="includeFUFActivityInRecentsSummary">Also shows the freeze/unfreeze progress screen as a separate entry in recent apps.</string>
     <string name="playFUFAnimations">Play freeze and unfreeze animations</string>

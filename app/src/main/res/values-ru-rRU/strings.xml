@@ -430,6 +430,9 @@
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
     <string name="authorizationStatus_authorized">Разрешение Shizuku предоставлено</string>
+    <string name="authorizationStatusNotAuthorized">Разрешение Shizuku не предоставлено</string>
+    <string name="profileOwnerActive">Режим владельца профиля активен</string>
+    <string name="systemAppModeActive">Доступен режим системного приложения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
     <string name="includeFUFActivityInRecentsSummary">Также отображает экран процесса заморозки/разморозки отдельным пунктом в списке недавних приложений.</string>
     <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>

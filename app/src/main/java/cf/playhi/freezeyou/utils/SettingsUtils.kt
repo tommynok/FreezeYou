@@ -170,12 +170,19 @@ object SettingsUtils {
                                             ) {
                                                 Shizuku.removeRequestPermissionResultListener(this)
                                                 if (grantResult == PERMISSION_GRANTED) {
-                                                    checkAndEnableShizukuMultiProcessSupport(activity)
+                                                    checkAndEnableShizukuMultiProcessSupport(
+                                                        context.applicationContext
+                                                    )
                                                 }
                                             }
                                         }
                                         Shizuku.addRequestPermissionResultListener(listener)
-                                        Shizuku.requestPermission(0)
+                                        try {
+                                            Shizuku.requestPermission(0)
+                                        } catch (e: Exception) {
+                                            Shizuku.removeRequestPermissionResultListener(listener)
+                                            throw e
+                                        }
                                     }
                                 } else {
                                     checkAndEnableShizukuMultiProcessSupport(context)

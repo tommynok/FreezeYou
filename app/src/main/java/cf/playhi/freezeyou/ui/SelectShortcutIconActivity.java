@@ -14,6 +14,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,14 +48,16 @@ public class SelectShortcutIconActivity extends FreezeYouBaseActivity {
                 try {
                     BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
                     boundsOptions.inJustDecodeBounds = true;
-                    BitmapFactory.decodeStream(
-                            contentResolver.openInputStream(fullPhotoUri), null, boundsOptions);
+                    try (InputStream boundsStream = contentResolver.openInputStream(fullPhotoUri)) {
+                        BitmapFactory.decodeStream(boundsStream, null, boundsOptions);
+                    }
 
                     BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
                     decodeOptions.inSampleSize = calculateInSampleSize(
                             boundsOptions.outWidth, boundsOptions.outHeight, 512, 512);
-                    bitmap = BitmapFactory.decodeStream(
-                            contentResolver.openInputStream(fullPhotoUri), null, decodeOptions);
+                    try (InputStream decodeStream = contentResolver.openInputStream(fullPhotoUri)) {
+                        bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions);
+                    }
                     if (bitmap == null) {
                         showToast(this, R.string.failed);
                         return;

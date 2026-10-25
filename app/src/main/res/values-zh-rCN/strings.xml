@@ -435,6 +435,9 @@
     <string name="shizukuVersionIsTooLow">Shizuku 的版本过低</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku 尚未安装或其他异常</string>
     <string name="authorizationStatus_authorized">Shizuku 授权已获取</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku 权限未授予</string>
+    <string name="profileOwnerActive">配置文件所有者模式已激活</string>
+    <string name="systemAppModeActive">系统应用模式可用</string>
     <string name="includeFUFActivityInRecents">在最近任务中包括冻结与解冻活动</string>
     <string name="includeFUFActivityInRecentsSummary">同时在最近任务列表中单独显示冻结/解冻进度界面。</string>
     <string name="playFUFAnimations">播放冻结与解冻动画</string>

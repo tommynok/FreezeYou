@@ -26,6 +26,8 @@ import cf.playhi.freezeyou.databinding.AutodiagnosisBinding
 import cf.playhi.freezeyou.utils.AccessibilityUtils.openAccessibilitySettings
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.NotificationUtils.startAppNotificationSettingsSystemActivity
+import cf.playhi.freezeyou.utils.ToastUtils.showToast
+import rikka.shizuku.Shizuku
 
 class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     private lateinit var binding: AutodiagnosisBinding
@@ -121,6 +123,25 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                                 this@AutoDiagnosisActivity,
                                 arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
                                 0
+                            )
+                        }
+                        "-8" -> try {
+                            if (Shizuku.pingBinder()) {
+                                if (Shizuku.checkSelfPermission()
+                                    != PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    Shizuku.requestPermission(0)
+                                }
+                            } else {
+                                showToast(
+                                    this@AutoDiagnosisActivity,
+                                    R.string.shizukuIsNotInstalledOrOtherExceptions
+                                )
+                            }
+                        } catch (e: Exception) {
+                            showToast(
+                                this@AutoDiagnosisActivity,
+                                R.string.shizukuIsNotInstalledOrOtherExceptions
                             )
                         }
                     }
