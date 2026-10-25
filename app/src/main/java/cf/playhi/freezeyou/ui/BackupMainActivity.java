@@ -232,6 +232,10 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
             runOnUiThread(() -> {
                 dismissProgress();
                 if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    // No chooser will open to consume and delete this payload.
+                    if (cacheFileName != null) {
+                        new File(getCacheDir(), cacheFileName).delete();
+                    }
                     return;
                 }
                 if (failed) {
