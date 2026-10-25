@@ -126,8 +126,8 @@ class SettingsActivity : FreezeYouBaseActivity(),
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
         if (languagePref.name == s) {
             // ShortcutManager IPC can take seconds, so the settings screen must not wait for the
-            // republish; the application context keeps the worker independent of this activity.
-            Thread { ShortcutTokenUtils.initDynamicShortcuts(applicationContext) }.start()
+            // republish; the shared worker keeps two quick language changes from racing.
+            ShortcutTokenUtils.initDynamicShortcutsAsync(applicationContext)
         }
         if (languagePref.name == s
             || uiStyleSelection.name == s

@@ -18,8 +18,16 @@ import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.Executors
 
 object ShortcutTokenUtils {
+
+    /**
+     * One worker for every republish: two language changes in a row must not race, and the task
+     * reads the saved language when it runs, so the last publication always carries the latest
+     * choice even if an earlier task is still queued.
+     */
+    private val publishExecutor = Executors.newSingleThreadExecutor()
 
     const val EXTRA_AUTH_TOKEN = "shortcutToken"
     private const val KEY_AUTH_TOKEN_PREFIX = "shortcutAuthToken_"
@@ -137,6 +145,12 @@ object ShortcutTokenUtils {
             } else {
                 android.os.LocaleList.forLanguageTags(localeTag)
             }
+    }
+
+    @JvmStatic
+    fun initDynamicShortcutsAsync(context: Context) {
+        val applicationContext = context.applicationContext
+        publishExecutor.execute { initDynamicShortcuts(applicationContext) }
     }
 
     @JvmStatic
