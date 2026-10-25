@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -225,8 +226,8 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
                 e.printStackTrace();
                 readFailed = true;
             }
-            final boolean stored = !readFailed && json != null && !json.isEmpty()
-                    && writeRestoreCache(json);
+            final String cacheFileName = !readFailed && json != null
+                    ? writeRestoreCache(json) : null;
             final boolean failed = readFailed;
             runOnUiThread(() -> {
                 dismissProgress();
@@ -237,24 +238,39 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
                     ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
                     return;
                 }
-                if (!stored) {
+                if (cacheFileName == null) {
                     ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
                     return;
                 }
-                startActivity(new Intent(BackupMainActivity.this, BackupImportChooserActivity.class));
+                try {
+                    startActivity(
+                            new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
+                                    .putExtra(BackupUtils.EXTRA_RESTORE_CACHE_FILE, cacheFileName)
+                    );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    new File(getCacheDir(), cacheFileName).delete();
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+                }
             });
         });
     }
 
-    private boolean writeRestoreCache(String json) {
-        try (OutputStream outputStream = new FileOutputStream(
-                new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME))) {
+    private String writeRestoreCache(String json) {
+        if (json.isEmpty()) {
+            return null;
+        }
+        final String fileName =
+                BackupUtils.RESTORE_CACHE_FILE_PREFIX + UUID.randomUUID() + ".json";
+        File file = new File(getCacheDir(), fileName);
+        try (OutputStream outputStream = new FileOutputStream(file)) {
             outputStream.write(json.getBytes("UTF-8"));
             outputStream.flush();
-            return true;
+            return fileName;
         } catch (Exception | OutOfMemoryError e) {
             e.printStackTrace();
-            return false;
+            file.delete();
+            return null;
         }
     }
 

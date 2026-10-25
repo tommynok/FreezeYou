@@ -2,12 +2,14 @@ package cf.playhi.freezeyou.ui;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.ListView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -63,6 +65,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
     private Button mFinishButton;
     private Button mCancelButton;
     private volatile boolean mImporting;
+    private String mCacheFileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +73,11 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         super.onCreate(savedInstanceState);
         processActionBar(getSupportActionBar());
         setContentView(R.layout.bica_main);
+
+        Intent intent = getIntent();
+        String requestedCacheFile =
+                intent == null ? null : intent.getStringExtra(BackupUtils.EXTRA_RESTORE_CACHE_FILE);
+        mCacheFileName = isRestoreCacheFileName(requestedCacheFile) ? requestedCacheFile : null;
 
         mFinishButton = findViewById(R.id.bica_finish_button);
         mCancelButton = findViewById(R.id.bica_cancel_button);
@@ -112,6 +120,13 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private static boolean isRestoreCacheFileName(String fileName) {
+        return fileName != null
+                && fileName.startsWith(BackupUtils.RESTORE_CACHE_FILE_PREFIX)
+                && fileName.endsWith(".json")
+                && fileName.equals(new File(fileName).getName());
+    }
+
     private void loadBackupAsync() {
         if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
             return;
@@ -120,19 +135,33 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         mLoadExecutor.execute(() -> {
             JSONObject jsonObject = null;
             boolean readFailed = false;
+            String content = null;
             try {
-                String content = readRestoreCache();
-                if (content == null) {
-                    readFailed = true;
-                } else {
-                    jsonObject = new JSONObject(content);
-                }
+                content = readRestoreCache();
             } catch (Exception | OutOfMemoryError e) {
                 e.printStackTrace();
                 readFailed = true;
             }
+            if (!readFailed) {
+                if (content == null) {
+                    readFailed = true;
+                } else {
+                    try {
+                        jsonObject = new JSONObject(content);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } catch (OutOfMemoryError e) {
+                        e.printStackTrace();
+                        readFailed = true;
+                    }
+                }
+            }
             final JSONObject parsed = jsonObject;
             final boolean failed = readFailed;
+            final ArrayList<HashMap<String, String>> titleAndCategoriesArrayList =
+                    new ArrayList<>();
+            final boolean hasRestorableEntries = parsed != null
+                    && generateGroupList(parsed, titleAndCategoriesArrayList) > 0;
             runOnUiThread(() -> {
                 dismissProgress();
                 if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
@@ -143,17 +172,16 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
                 } else if (parsed == null) {
                     showPlaceholder(getString(R.string.parseFailed));
                 } else {
-                    showContents(parsed);
+                    showContents(parsed, titleAndCategoriesArrayList, hasRestorableEntries);
                 }
             });
         });
     }
 
-    private void showContents(JSONObject jsonObject) {
+    private void showContents(JSONObject jsonObject,
+                              ArrayList<HashMap<String, String>> titleAndCategoriesArrayList,
+                              boolean hasRestorableEntries) {
         final ListView mainListView = findViewById(R.id.bica_main_listView);
-        final ArrayList<HashMap<String, String>> titleAndCategoriesArrayList = new ArrayList<>();
-        final boolean hasRestorableEntries =
-                generateGroupList(jsonObject, titleAndCategoriesArrayList) > 0;
         if (titleAndCategoriesArrayList.isEmpty()) {
             addPlaceholderRow(titleAndCategoriesArrayList, getString(R.string.nothing));
         }
@@ -222,7 +250,10 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
     }
 
     private String readRestoreCache() throws IOException {
-        File file = new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME);
+        if (mCacheFileName == null) {
+            return null;
+        }
+        File file = new File(getCacheDir(), mCacheFileName);
         if (!file.isFile()) {
             return null;
         }
@@ -243,7 +274,9 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
     }
 
     private void deleteRestoreCache() {
-        new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME).delete();
+        if (mCacheFileName != null) {
+            new File(getCacheDir(), mCacheFileName).delete();
+        }
     }
 
     private void showProgress() {

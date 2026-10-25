@@ -33,11 +33,14 @@ import static android.content.Context.MODE_PRIVATE;
 public final class BackupUtils {
 
     /**
-     * The restore source travels to the chooser through this app-private cache file: a backup can
+     * The restore source travels to the chooser through an app-private cache file: a backup can
      * be larger than the Binder transaction limit that caps Intent extras, and rejecting it would
-     * break restoring backups this very app exported.
+     * break restoring backups this very app exported. Each restore gets its own file so two
+     * sessions cannot overwrite or delete each other's payload.
      */
-    public static final String RESTORE_CACHE_FILE_NAME = "restore-backup.json";
+    public static final String RESTORE_CACHE_FILE_PREFIX = "restore-backup-";
+
+    public static final String EXTRA_RESTORE_CACHE_FILE = "restoreCacheFileName";
 
     public static final int MAX_RESTORE_JSON_CHARS = 16 * 1024 * 1024;
 
