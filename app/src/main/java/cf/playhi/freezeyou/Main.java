@@ -138,6 +138,7 @@ import static cf.playhi.freezeyou.utils.ThemeUtils.getLightPopupContext;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getUiTheme;
 import static cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
+import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
 import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
@@ -392,7 +393,21 @@ public class Main extends FreezeYouBaseActivity {
                 }
                 break;
             case 80002:
-                processNextUnprivilegedUninstall();
+                if (abortUninstallBatchOnCancel(resultCode)) {
+                    // The user backed out of a system uninstall prompt: the rest of the batch
+                    // must not keep throwing prompts at them one after another.
+                    mUnprivilegedUninstallQueue.clear();
+                    mCurrentUnprivilegedUninstallPkg = null;
+                    mIsBatchUninstallRunning = false;
+                    if (mUnprivilegedUninstallSuccessCount > 0) {
+                        showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
+                        sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                .putExtra("refreshAppList", true));
+                        new Thread(() -> generateList(currentFilter)).start();
+                    }
+                } else {
+                    processNextUnprivilegedUninstall();
+                }
                 break;
             default:
                 break;
@@ -1480,7 +1495,7 @@ public class Main extends FreezeYouBaseActivity {
                     shareCrashLog(logFile, logText);
                     checkIfNeedAskFirstTimeSetupAndShowDialog();
                 })
-                .setNegativeButton(R.string.no, (dialogInterface, i) -> {
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
                     logFile.delete();
                     checkIfNeedAskFirstTimeSetupAndShowDialog();
                 })
@@ -1831,6 +1846,8 @@ public class Main extends FreezeYouBaseActivity {
                 new Intent(Main.this, ForceStopService.class)
                         .putExtra("packages", pkgNameList)
         );
+        // The service works in the background for a while; the toast confirms the tap at once.
+        showShortToast(Main.this, R.string.executed);
     }
 
     private void processBatchUninstall() {
@@ -2208,11 +2225,21 @@ public class Main extends FreezeYouBaseActivity {
         startUnprivilegedUninstallQueue(userApps);
     }
 
+    /**
+     * A cancelled system uninstall prompt ends the whole batch: the user pressed back, and the
+     * prompts left in the queue would only trap them into confirming one package after another.
+     */
+    static boolean abortUninstallBatchOnCancel(int resultCode) {
+        return resultCode == RESULT_CANCELED;
+    }
+
     private void startUnprivilegedUninstallQueue(List<String> userApps) {
         mUnprivilegedUninstallQueue.clear();
         mUnprivilegedUninstallQueue.addAll(userApps);
         mUnprivilegedUninstallSuccessCount = 0;
         mCurrentUnprivilegedUninstallPkg = null;
+        // The queue spans many activity results, so a second batch must not start over it.
+        mIsBatchUninstallRunning = true;
         processNextUnprivilegedUninstall();
     }
 
@@ -2231,6 +2258,7 @@ public class Main extends FreezeYouBaseActivity {
         }
 
         if (mUnprivilegedUninstallQueue.isEmpty()) {
+            mIsBatchUninstallRunning = false;
             showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                     .putExtra("refreshAppList", true));
@@ -2427,9 +2455,9 @@ public class Main extends FreezeYouBaseActivity {
                             R.mipmap.ic_launcher_new_round,
                             R.string.notUpdatedForALongTimeMessage,
                             R.string.notice)
-                            .setPositiveButton(R.string.yes, (dialogInterface, i) ->
+                            .setPositiveButton(R.string.okay, (dialogInterface, i) ->
                                     checkUpdate(Main.this))
-                            .setNegativeButton(R.string.no, null)
+                            .setNegativeButton(R.string.cancel, null)
                             .setNeutralButton(R.string.later, (dialog, which) -> {
                                 sharedPreferences.edit()
                                         .putLong("Time", new Date().getTime())
@@ -3169,7 +3197,7 @@ public class Main extends FreezeYouBaseActivity {
         FreezeYouAlertDialogBuilder(this)
                 .setTitle(R.string.caution)
                 .setMessage(getString(warningResId, names.toString()))
-                .setPositiveButton(R.string.yes, (dialog, which) -> action.run())
+                .setPositiveButton(R.string.okay, (dialog, which) -> action.run())
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
