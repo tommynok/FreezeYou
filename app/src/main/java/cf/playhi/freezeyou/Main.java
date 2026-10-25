@@ -501,6 +501,15 @@ public class Main extends FreezeYouBaseActivity {
      * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
+        generateList(filter, sortRule, null);
+    }
+
+    /**
+     * @param filter              Filter rule or comma-separated package names
+     * @param sortRule            Sort rule ID
+     * @param categoryBase64Label Custom category this list is the package list of, or null
+     */
+    private void generateList(String filter, int sortRule, String categoryBase64Label) {
         // Re-running the filter already on screen keeps the custom category it was opened from;
         // any other filter replaces the list, so no category is being viewed any more.
         if (!TextUtils.equals(filter, currentFilter)) {
@@ -986,6 +995,11 @@ public class Main extends FreezeYouBaseActivity {
 
                 currentFilter = filter;
                 currentSortRule = sortRule;
+                // Committed here, under the generation guard, so a rebuild that was superseded
+                // while it ran cannot claim the list the user went on to open.
+                if (categoryBase64Label != null) {
+                    currentCategoryBase64Label = categoryBase64Label;
+                }
                 updateFilterTitle(filter);
 
                 final EditText search_editText = findViewById(R.id.search_editText);
@@ -2696,10 +2710,9 @@ public class Main extends FreezeYouBaseActivity {
                         null, null, null, null
                 );
         if (cursor.moveToFirst()) {
-            generateList(cursor.getString(cursor.getColumnIndex("packages")));
-            // Set after the rebuild: generateList drops the label of whatever was on screen
-            // before, and only this method knows which category the package list came from.
-            currentCategoryBase64Label = base64Label;
+            // Only this method knows which category the package list came from, so the label
+            // travels with the build and is committed with it.
+            generateList(cursor.getString(cursor.getColumnIndex("packages")), currentSortRule, base64Label);
         } else {
             showToast(this, R.string.failed);
         }
