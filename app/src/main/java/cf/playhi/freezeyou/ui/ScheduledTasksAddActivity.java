@@ -94,7 +94,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                             if (id != -5) {
                                 SQLiteDatabase db = openOrCreateDatabase(isTimeTask ? "scheduledTasks" : "scheduledTriggerTasks", MODE_PRIVATE, null);
                                 if (isTimeTask) {
-                                    TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+                                    TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, true);
                                 }
                                 db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                 db.close();
@@ -341,7 +341,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         }
         db.close();
         if (id != -5) {
-            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, enabled != 1);
         }
         if (enabled == 1) {
             publishTask(ScheduledTasksAddActivity.this, (int) newId, hour, minutes, repeat, task);

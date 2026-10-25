@@ -157,7 +157,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                         int id = integerArrayList.get(aSelectedTaskPosition);
                                         SQLiteDatabase db = openOrCreateDatabase(isTimeTask ? "scheduledTasks" : "scheduledTriggerTasks", MODE_PRIVATE, null);
                                         if (isTimeTask) {
-                                            TasksUtils.cancelTheTask(ScheduledTasksManageActivity.this, id);
+                                            TasksUtils.cancelTheTask(ScheduledTasksManageActivity.this, id, true);
                                         }
                                         db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                         db.close();

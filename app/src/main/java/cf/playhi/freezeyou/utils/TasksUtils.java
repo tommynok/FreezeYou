@@ -696,7 +696,7 @@ public final class TasksUtils {
         final String recorded = storage.getString(PUBLISHED_TIME_TASK_IDS, "");
         for (String id : splitIdList(recorded)) {
             try {
-                cancelTheTask(context, Integer.parseInt(id));
+                cancelTheTask(context, Integer.parseInt(id), true);
             } catch (NumberFormatException e) {
                 e.printStackTrace();
             }
@@ -715,7 +715,7 @@ public final class TasksUtils {
         try {
             cursor = db.query("tasks", new String[]{"_id"}, null, null, null, null, null);
             while (cursor.moveToNext()) {
-                cancelTheTask(context, cursor.getInt(cursor.getColumnIndexOrThrow("_id")));
+                cancelTheTask(context, cursor.getInt(cursor.getColumnIndexOrThrow("_id")), true);
             }
         } finally {
             if (cursor != null) {
@@ -757,6 +757,10 @@ public final class TasksUtils {
     }
 
     public static void cancelTheTask(Context context, int id) {
+        cancelTheTask(context, id, false);
+    }
+
+    public static void cancelTheTask(Context context, int id, boolean cancelDelayed) {
         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, TasksNeedExecuteReceiver.class)
                 .putExtra("id", id);
@@ -770,7 +774,9 @@ public final class TasksUtils {
             alarmMgr.cancel(alarmIntent);
         }
         forgetPublishedTimeTask(id);
-        cancelAllUnexecutedDelayTasks(context, "timedTask_" + id);
+        if (cancelDelayed) {
+            cancelAllUnexecutedDelayTasks(context, "timedTask_" + id);
+        }
     }
 
     /**
@@ -920,7 +926,7 @@ public final class TasksUtils {
                 int minutes = cursor.getInt(cursor.getColumnIndexOrThrow("minutes"));
                 int enabled = cursor.getInt(cursor.getColumnIndexOrThrow("enabled"));
                 String task = cursor.getString(cursor.getColumnIndexOrThrow("task"));
-                TasksUtils.cancelTheTask(context, id);
+                TasksUtils.cancelTheTask(context, id, enabled != 1);
                 if (enabled == 1) {
                     try {
                         publishTask(context, id, hour, minutes, repeat, task);
