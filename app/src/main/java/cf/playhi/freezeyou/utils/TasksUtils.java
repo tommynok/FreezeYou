@@ -33,8 +33,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.List;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import cf.playhi.freezeyou.R;
@@ -161,6 +162,10 @@ public final class TasksUtils {
                     if (timeTmp > 0 && timeTmp < timeInterval) {
                         timeInterval = timeTmp;
                     }
+                }
+                if (timeInterval == Long.MAX_VALUE) {
+                    Log.e("TasksUtils", "Cannot schedule task " + id + ": invalid repeat pattern '" + repeat + "'");
+                    return;
                 }
                 setTask(alarmMgr, systemTime + timeInterval, alarmIntent);
             }
@@ -442,13 +447,16 @@ public final class TasksUtils {
                             return false;
                         }
                         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+                        int requestCode = (task + new Date()).hashCode();
+                        String triggerKey = (taskTrigger != null) ? taskTrigger : DELAYED_STANDALONE_TASKS;
                         Intent intent = new Intent(context, TasksNeedExecuteReceiver.class)
                                 .putExtra("id", -6)
                                 .putExtra("task", task.replace(" -d " + splitTask[i + 1], ""))
                                 .putExtra("repeat", "-1")
                                 .putExtra("hour", -1)
-                                .putExtra("minute", -1);
-                        int requestCode = (task + new Date()).hashCode();
+                                .putExtra("minute", -1)
+                                .putExtra("requestCode", requestCode)
+                                .putExtra("taskTrigger", triggerKey);
                         PendingIntent pendingIntent =
                                 PendingIntent.getBroadcast(
                                         context,
@@ -459,14 +467,12 @@ public final class TasksUtils {
                                                 | PendingIntent.FLAG_IMMUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT);
                         createDelayTasks(alarmMgr, delayAtSeconds, pendingIntent);
-                        if (taskTrigger != null) { // null for timed tasks or tasks where cancellation is unsupported
-                            final DefaultMultiProcessMMKVStorage storage =
-                                    new DefaultMultiProcessMMKVStorage();
-                            storage.putString(
-                                    taskTrigger,
-                                    addIdToList(storage.getString(taskTrigger, ""), requestCode)
-                            ).sync();
-                        }
+                        final DefaultMultiProcessMMKVStorage storage =
+                                new DefaultMultiProcessMMKVStorage();
+                        storage.putString(
+                                triggerKey,
+                                addIdToList(storage.getString(triggerKey, ""), requestCode)
+                        ).sync();
                         return false;
                     }
                     Log.e("TasksLogE", "Missing -d delay value: " + task);
@@ -723,13 +729,15 @@ public final class TasksUtils {
      * A delayed task is registered not under its row id but under a request code invented when it
      * was scheduled, and those codes are kept per trigger: "OSA_&lt;package&gt;" and
      * "OLA_&lt;package&gt;" for entering and leaving an application, "onScreenOn" and
-     * "onScreenOff" for the screen.
+     * "onScreenOff" for the screen, "timedTask_&lt;id&gt;" for timed tasks, and
+     * {@link #DELAYED_STANDALONE_TASKS} for untriggered standalone executions.
      */
-    private static List<String> delayTaskTriggerKeys(Set<String> storedKeys) {
+    static List<String> delayTaskTriggerKeys(Set<String> storedKeys) {
         List<String> triggers = new ArrayList<>();
         for (String key : storedKeys) {
             if (key != null && (key.startsWith("OSA_") || key.startsWith("OLA_")
-                    || "onScreenOn".equals(key) || "onScreenOff".equals(key))) {
+                    || "onScreenOn".equals(key) || "onScreenOff".equals(key)
+                    || key.startsWith("timedTask_") || DELAYED_STANDALONE_TASKS.equals(key))) {
                 triggers.add(key);
             }
         }
@@ -762,6 +770,7 @@ public final class TasksUtils {
             alarmMgr.cancel(alarmIntent);
         }
         forgetPublishedTimeTask(id);
+        cancelAllUnexecutedDelayTasks(context, "timedTask_" + id);
     }
 
     /**
@@ -778,6 +787,66 @@ public final class TasksUtils {
      * comes from the database, so an alarm that predates this list disappears at the next restart.
      */
     private static final String PUBLISHED_TIME_TASK_IDS = "publishedTimeTaskIds";
+    public static final String DELAYED_STANDALONE_TASKS = "delayed_standalone_tasks";
+
+    public static final Set<String> SUPPORTED_TRIGGERS = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    "onScreenOn",
+                    "onScreenOff",
+                    "onApplicationsForeground",
+                    "onLeaveApplications",
+                    "onUFApplications",
+                    "onFApplications"
+            ))
+    );
+
+    public static void forgetDelayTaskId(String triggerKey, int requestCode) {
+        if (triggerKey != null) {
+            DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            String stored = storage.getString(triggerKey, "");
+            String updated = removeIdFromList(stored, requestCode);
+            if (updated == null || updated.isEmpty()) {
+                storage.remove(triggerKey).sync();
+            } else if (!updated.equals(stored)) {
+                storage.putString(triggerKey, updated).sync();
+            }
+        }
+    }
+
+    public static boolean isValidImportedTimeTask(int hour, int minutes, String repeat, String task, int enabled) {
+        if (hour < 0 || hour > 23) {
+            return false;
+        }
+        if (minutes < 0 || minutes > 59) {
+            return false;
+        }
+        if (enabled != 0 && enabled != 1) {
+            return false;
+        }
+        if (task == null || task.trim().isEmpty()) {
+            return false;
+        }
+        if (repeat == null || repeat.isEmpty() || "0".equals(repeat)) {
+            return true;
+        }
+        for (int i = 0; i < repeat.length(); i++) {
+            char c = repeat.charAt(i);
+            if (c < '1' || c > '7') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isValidImportedTriggerTask(String tg, String task, int enabled) {
+        if (enabled != 0 && enabled != 1) {
+            return false;
+        }
+        if (task == null || task.trim().isEmpty()) {
+            return false;
+        }
+        return tg != null && SUPPORTED_TRIGGERS.contains(tg);
+    }
 
     private static void rememberPublishedTimeTask(int id) {
         DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();

@@ -86,6 +86,14 @@ public final class BackupUtils {
                 String label = oneUserTimeScheduledTaskJSONObject.getString("label");
                 String task = oneUserTimeScheduledTaskJSONObject.getString("task");
 
+                if (!TasksUtils.isValidImportedTimeTask(hour, minutes, repeat, task, enabled)) {
+                    isCompletelySuccess = false;
+                    continue;
+                }
+                if (repeat == null || repeat.isEmpty()) {
+                    repeat = "0";
+                }
+
                 Cursor cursor = null;
                 boolean exists = false;
                 try {
@@ -164,6 +172,11 @@ public final class BackupUtils {
                 int enabled = oneUserTriggerScheduledTaskJSONObject.getInt("enabled");
                 String label = oneUserTriggerScheduledTaskJSONObject.getString("label");
                 String task = oneUserTriggerScheduledTaskJSONObject.getString("task");
+
+                if (!TasksUtils.isValidImportedTriggerTask(tg, task, enabled)) {
+                    isCompletelySuccess = false;
+                    continue;
+                }
 
                 Cursor cursor = null;
                 boolean exists = false;

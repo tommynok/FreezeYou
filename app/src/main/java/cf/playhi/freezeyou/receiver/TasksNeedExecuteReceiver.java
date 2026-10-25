@@ -10,6 +10,9 @@ import cf.playhi.freezeyou.utils.TasksUtils;
 public class TasksNeedExecuteReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (intent == null) {
+            return;
+        }
         int id = intent.getIntExtra("id", -5);
         int hour = intent.getIntExtra("hour", -1);
         int minute = intent.getIntExtra("minute", -1);
@@ -27,9 +30,16 @@ public class TasksNeedExecuteReceiver extends BroadcastReceiver {
             } else {
                 TasksUtils.publishTask(context, id, hour, minute, repeat, task);
             }
+        } else {
+            int requestCode = intent.getIntExtra("requestCode", -1);
+            String taskTrigger = intent.getStringExtra("taskTrigger");
+            if (requestCode != -1 && taskTrigger != null) {
+                TasksUtils.forgetDelayTaskId(taskTrigger, requestCode);
+            }
         }
         if (task != null && !"".equals(task)) {
-            TasksUtils.runTask(task, context.getApplicationContext(), null);
+            String trigger = (id != -6 && id != -5) ? ("timedTask_" + id) : null;
+            TasksUtils.runTask(task, context.getApplicationContext(), trigger);
         }
     }
 }
