@@ -9,13 +9,47 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled;
 
 public final class ProcessUtils {
+
+    /**
+     * How long the running-process scan may take. The scan is built to be quick — it reads /proc
+     * with the shell's own "read" builtin instead of forking per PID — so this is not a budget for
+     * the work, it is a limit on how long a shell that stopped answering may hold the thread: an
+     * su approval prompt nobody taps, or a su wedged behind its own full stderr pipe. Expiring it
+     * costs an empty set, which is the answer an unavailable source already gives, and the list is
+     * scanned again on the next generation.
+     * <p>
+     * Deliberately far below {@code PrivilegedShellUtils.ROOT_APPROVAL_TIMEOUT_MS}: that one guards
+     * a freeze the user asked for and has to survive a slow tap on the prompt, this one guards a
+     * background list refresh that is retried on its own.
+     */
+    private static final long ROOT_RUNNING_PACKAGES_TIMEOUT_MS = 10_000L;
+
+    /**
+     * Where the shell's streams are read and written, so that a shell which stops answering can be
+     * abandoned rather than waited on — a thread blocked in {@code read()} cannot time itself out.
+     * Daemon threads, because a read that never returns must not be able to hold the process open.
+     */
+    private static final ExecutorService SHELL_IO_EXECUTOR =
+            Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "process-utils-shell-io");
+                t.setDaemon(true);
+                return t;
+            });
 
     public static void destroyProcess(DataOutputStream dataOutputStream, Process process1) {
         try {
@@ -76,8 +110,7 @@ public final class ProcessUtils {
      * merged into one set. Returns an empty set on any parse failure instead of throwing, since
      * the caller treats "no matches" and "unavailable" the same way.
      */
-    public static Set<String> parseRunningPackages(java.io.InputStream inputStream)
-            throws java.io.IOException {
+    public static Set<String> parseRunningPackages(InputStream inputStream) throws IOException {
         Set<String> packages = new HashSet<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
@@ -110,10 +143,36 @@ public final class ProcessUtils {
         return packages;
     }
 
+    /**
+     * The same scan under a deadline. It moves the read to {@link #SHELL_IO_EXECUTOR} because a
+     * thread blocked in {@code read()} cannot limit itself, and the shell on the other end is not
+     * obliged to ever produce another byte.
+     *
+     * @throws TimeoutException if the scan did not finish in time. The caller is then expected to
+     *                          destroy the process, which closes its streams and is what actually
+     *                          releases the worker still sitting on the read.
+     */
+    public static Set<String> parseRunningPackages(InputStream inputStream, long timeoutMs)
+            throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        Future<Set<String>> reading =
+                SHELL_IO_EXECUTOR.submit(() -> parseRunningPackages(inputStream));
+        try {
+            return reading.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            reading.cancel(true);
+            throw e;
+        } catch (InterruptedException e) {
+            reading.cancel(true);
+            Thread.currentThread().interrupt();
+            throw e;
+        }
+    }
+
     public static Set<String> getRootRunningPackages() {
         Set<String> packages = new HashSet<>();
         Process process = null;
         DataOutputStream outputStream = null;
+        Future<?> errorStream = null;
         try {
             process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
             outputStream = new DataOutputStream(process.getOutputStream());
@@ -123,9 +182,25 @@ public final class ProcessUtils {
             outputStream.writeBytes("exit\n");
             outputStream.flush();
 
-            packages = parseRunningPackages(process.getInputStream());
+            // Nothing wants what the shell says on stderr, but it has to be taken away: su and the
+            // utilities it runs write there, and once the OS pipe buffer is full their next write
+            // blocks. A blocked shell produces no stdout either, so the scan would sit waiting on a
+            // process that is waiting on us — a deadlock the stdout deadline alone cannot explain.
+            final Process session = process;
+            errorStream = SHELL_IO_EXECUTOR.submit(() -> {
+                discard(session.getErrorStream());
+                return null;
+            });
+
+            packages = parseRunningPackages(
+                    process.getInputStream(), ROOT_RUNNING_PACKAGES_TIMEOUT_MS);
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "getRootRunningPackages: packages=" + packages.size());
+            }
+        } catch (TimeoutException e) {
+            if (isDebugModeEnabled()) {
+                Log.e("DebugModeLogcat", "getRootRunningPackages gave up after "
+                        + ROOT_RUNNING_PACKAGES_TIMEOUT_MS + "ms");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,9 +208,28 @@ public final class ProcessUtils {
                 Log.e("DebugModeLogcat", "getRootRunningPackages failed: " + e);
             }
         } finally {
+            if (errorStream != null) {
+                errorStream.cancel(true);
+            }
             destroyProcess(outputStream, process);
         }
         return packages;
+    }
+
+    /**
+     * Empties a stream whose content nobody wants, so that whoever is writing to it can go on.
+     */
+    private static void discard(InputStream stream) {
+        if (stream == null) return;
+        byte[] buffer = new byte[4096];
+        try {
+            while (stream.read(buffer) != -1) {
+                // read for the draining, not for the bytes
+            }
+        } catch (IOException ignored) {
+            // Destroying the process closes this stream from under the reader, and that is the
+            // normal end of a drain rather than a failure of it.
+        }
     }
 
     /**
