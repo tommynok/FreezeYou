@@ -654,7 +654,7 @@
         <service
             android:name=".OneKeyFreezeQSTileService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_shortcut_logo"
             android:label="@string/oneKeyFreeze"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -664,7 +664,7 @@
         <service
             android:name=".OneKeyUFQSTileService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_shortcut_logo"
             android:label="@string/oneKeyUF"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -674,7 +674,7 @@
         <service
             android:name=".OneKeyScreenLockQSTileService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_shortcut_logo"
             android:label="@string/oneKeyLockScreen"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -684,7 +684,7 @@
         <service
             android:name=".LaunchFreezeYouQSTileService"
             android:exported="true"
-            android:icon="@drawable/ic_notification"
+            android:icon="@drawable/ic_shortcut_logo"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

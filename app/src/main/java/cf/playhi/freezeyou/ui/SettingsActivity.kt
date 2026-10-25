@@ -19,6 +19,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsAutomationFragment
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsFragment
 import cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities
@@ -123,6 +124,11 @@ class SettingsActivity : FreezeYouBaseActivity(),
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
+        if (languagePref.name == s) {
+            // The launcher keeps showing the labels this process published last, so the dynamic
+            // shortcuts are republished in the new language right away, before the recreate below.
+            ShortcutTokenUtils.initDynamicShortcuts(applicationContext)
+        }
         if (languagePref.name == s
             || uiStyleSelection.name == s
             || themeOfAutoSwitchDarkMode.name == s
