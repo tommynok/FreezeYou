@@ -746,28 +746,36 @@ object FUFUtils {
                 false
             )
             else -> if (pkgNameList != null) {
+                // FreezeYou never acts on itself: a self entry (a restored backup, a hand-edited
+                // OneKEY list) used to slip through the precedence of the old condition, collect
+                // the -11 rejection in processAction and land in the failure toast. runRootBatch
+                // has always skipped self silently; this is the same rule for the other modes.
+                val targets = batchTargetsWithoutSelf(context.packageName, pkgNameList)
+                // A list of nothing but self is an empty batch: it must not report success.
+                if (targets.isEmpty()) return
                 val failedPkgNames = mutableListOf<String>()
                 val succeededPkgNames = mutableListOf<String>()
                 val isBatch = pkgNameList.size > 1
                 val combineBatchNoti = !freeze && DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
                 val skipNoti = isBatch || combineBatchNoti
-                for (aPkgName in pkgNameList) {
+                for (aPkgName in targets) {
                     try {
+                        // An app the DPM already froze is skipped instead of committed again.
                         @Suppress("DEPRECATION")
-                        if (context.packageName != aPkgName &&
-                            apiMode != FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO &&
-                            apiMode != FUFSinglePackage.API_FREEZEYOU_MROOT_DPM ||
-                            !freeze || !checkMRootFrozen(context, aPkgName)
+                        if ((apiMode == FUFSinglePackage.API_FREEZEYOU_LEGACY_AUTO ||
+                                    apiMode == FUFSinglePackage.API_FREEZEYOU_MROOT_DPM) &&
+                            freeze && checkMRootFrozen(context, aPkgName)
                         ) {
-                            if (!processAction(
-                                    context, aPkgName, apiMode, !freeze, false,
-                                    skipQuickNotification = skipNoti
-                                )
-                            ) {
-                                failedPkgNames.add(aPkgName)
-                            } else {
-                                succeededPkgNames.add(aPkgName)
-                            }
+                            continue
+                        }
+                        if (!processAction(
+                                context, aPkgName, apiMode, !freeze, false,
+                                skipQuickNotification = skipNoti
+                            )
+                        ) {
+                            failedPkgNames.add(aPkgName)
+                        } else {
+                            succeededPkgNames.add(aPkgName)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -926,6 +934,10 @@ object FUFUtils {
         }
 
         val appContext = context.applicationContext
+        // The same rule as oneKeyAction and runRootBatch: self never reaches the action, so it
+        // can never reach the failed list and the toast that names it.
+        val targets = batchTargetsWithoutSelf(appContext.packageName, packages)
+        if (targets.isEmpty()) return
         val actionMode =
             if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE
 
@@ -934,7 +946,7 @@ object FUFUtils {
             val succeeded = mutableListOf<String>()
             val failed = mutableListOf<String>()
 
-            for (pkgName in packages) {
+            for (pkgName in targets) {
                 val result = executeActionQuietly(appContext, pkgName, apiMode, actionMode)
                 if (result == FUFSinglePackage.ERROR_NO_ERROR_SUCCESS ||
                     result == FUFSinglePackage.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
@@ -1017,6 +1029,16 @@ object FUFUtils {
                 .putExtra("freeze", freeze)
         )
     }
+
+    /**
+     * The batch target list with this build's own package taken out — one rule for every
+     * in-process batch path. Compared against the id this build runs as, never a hardcoded name:
+     * a fork ships under its own applicationId and has to recognise itself. Kept pure so a JVM
+     * test can hold the rule; the loops that use it sit behind MMKV and toasts.
+     */
+    fun batchTargetsWithoutSelf(
+        selfPackageName: String, packages: Array<String>
+    ): List<String> = packages.filterNot { it == selfPackageName }
 
     /**
      * The same guards [FreezeYouFUFSinglePackage] applies, without its per-application follow-up
