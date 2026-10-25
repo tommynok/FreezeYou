@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,6 +11,7 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The running-process scan of the "Running" filter, on the root path.
@@ -100,6 +102,45 @@ class ProcessUtilsTest {
         }
         val waitedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
         assertTrue("waited ${waitedMs}ms on a stream that never produced a byte", waitedMs < 5_000)
+    }
+
+    @Test
+    fun aReadThatIgnoresTheInterruptIsReleasedByTheStreamBeingClosed() {
+        val closed = AtomicBoolean(false)
+        val stillReading = AtomicBoolean(true)
+        val deaf = object : InputStream() {
+            override fun read(): Int {
+                // Stands in for a read wedged below the JVM, where an interrupt has nothing to
+                // land on. All it notices is that the stream was closed, which is the release the
+                // bounded overload adds: without it the worker outlives the scan it was started
+                // for, and every refresh of the filter leaves another one behind.
+                while (!closed.get()) {
+                    try {
+                        Thread.sleep(20)
+                    } catch (ignored: InterruptedException) {
+                    }
+                }
+                stillReading.set(false)
+                return -1
+            }
+
+            override fun close() {
+                closed.set(true)
+            }
+        }
+
+        assertThrows(TimeoutException::class.java) {
+            ProcessUtils.parseRunningPackages(deaf, 200L)
+        }
+
+        val deadline = System.currentTimeMillis() + 3_000
+        while (stillReading.get() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+        }
+        assertFalse(
+            "the worker was still reading a stream that had been closed under it",
+            stillReading.get()
+        )
     }
 
     @Test

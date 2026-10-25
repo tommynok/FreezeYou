@@ -8,6 +8,7 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,8 +17,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -26,12 +28,17 @@ import static cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled;
 public final class ProcessUtils {
 
     /**
-     * How long the running-process scan may take. The scan is built to be quick — it reads /proc
-     * with the shell's own "read" builtin instead of forking per PID — so this is not a budget for
-     * the work, it is a limit on how long a shell that stopped answering may hold the thread: an
-     * su approval prompt nobody taps, or a su wedged behind its own full stderr pipe. Expiring it
-     * costs an empty set, which is the answer an unavailable source already gives, and the list is
-     * scanned again on the next generation.
+     * The whole root scan's budget, shared by every stage of it: picking the su binary, starting
+     * the process, writing the commands and reading the answer. Each stage is charged what it
+     * spent against the same deadline, so a stage that runs long leaves the ones behind it less
+     * room instead of adding to the total, and the read is given whatever is left.
+     * <p>
+     * The scan itself is built to be quick — it reads /proc with the shell's own "read" builtin
+     * instead of forking per PID — so this is not a budget for the work, it is a limit on how long
+     * a shell that stopped answering may hold the thread: an su approval prompt nobody taps, or a
+     * su wedged behind its own full stderr pipe. Expiring it costs an empty set, which is the
+     * answer an unavailable source already gives, and the list is scanned again on the next
+     * generation.
      * <p>
      * Deliberately far below {@code PrivilegedShellUtils.ROOT_APPROVAL_TIMEOUT_MS}: that one guards
      * a freeze the user asked for and has to survive a slow tap on the prompt, this one guards a
@@ -40,12 +47,22 @@ public final class ProcessUtils {
     private static final long ROOT_RUNNING_PACKAGES_TIMEOUT_MS = 10_000L;
 
     /**
+     * Two workers per scan, one on each of the shell's output streams, and a couple of scans can
+     * overlap. Capped rather than cached-with-no-limit: a worker wedged on a read that neither the
+     * interrupt nor the closed stream releases would otherwise be replaced by a fresh thread on
+     * every refresh, forever. A saturated pool refuses the work instead, and the caller's existing
+     * failure path turns that into an empty set.
+     */
+    private static final int SHELL_IO_MAX_WORKERS = 8;
+
+    /**
      * Where the shell's streams are read and written, so that a shell which stops answering can be
      * abandoned rather than waited on — a thread blocked in {@code read()} cannot time itself out.
      * Daemon threads, because a read that never returns must not be able to hold the process open.
      */
-    private static final ExecutorService SHELL_IO_EXECUTOR =
-            Executors.newCachedThreadPool(r -> {
+    private static final ExecutorService SHELL_IO_EXECUTOR = new ThreadPoolExecutor(
+            0, SHELL_IO_MAX_WORKERS, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            r -> {
                 Thread t = new Thread(r, "process-utils-shell-io");
                 t.setDaemon(true);
                 return t;
@@ -147,10 +164,15 @@ public final class ProcessUtils {
      * The same scan under a deadline. It moves the read to {@link #SHELL_IO_EXECUTOR} because a
      * thread blocked in {@code read()} cannot limit itself, and the shell on the other end is not
      * obliged to ever produce another byte.
+     * <p>
+     * This overload takes ownership of the stream and closes it when the deadline expires.
+     * Interrupting the worker is not enough on its own: an interrupt reaches a thread, not a pipe,
+     * and a worker left sitting on a stream that is still open is a thread this method never gets
+     * back.
      *
      * @throws TimeoutException if the scan did not finish in time. The caller is then expected to
-     *                          destroy the process, which closes its streams and is what actually
-     *                          releases the worker still sitting on the read.
+     *                          destroy the process behind the stream, which is what stops the
+     *                          writer on the other end.
      */
     public static Set<String> parseRunningPackages(InputStream inputStream, long timeoutMs)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
@@ -159,13 +181,22 @@ public final class ProcessUtils {
         try {
             return reading.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            reading.cancel(true);
+            giveUpOn(reading, inputStream);
             throw e;
         } catch (InterruptedException e) {
-            reading.cancel(true);
+            giveUpOn(reading, inputStream);
             Thread.currentThread().interrupt();
             throw e;
         }
+    }
+
+    /**
+     * Lets go of a read that is not coming back. The stream goes first, because closing it is what
+     * ends the read; the interrupt follows, for a worker that happens to be elsewhere in the parse.
+     */
+    private static void giveUpOn(Future<?> reading, InputStream inputStream) {
+        closeQuietly(inputStream);
+        reading.cancel(true);
     }
 
     public static Set<String> getRootRunningPackages() {
@@ -173,8 +204,14 @@ public final class ProcessUtils {
         Process process = null;
         DataOutputStream outputStream = null;
         Future<?> errorStream = null;
+        long deadlineAtMs = System.currentTimeMillis() + ROOT_RUNNING_PACKAGES_TIMEOUT_MS;
         try {
-            process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
+            String suBinary = RootUtils.getSuBinary();
+            // Finding the binary probes candidates one by one and each probe carries its own
+            // several-second bound, so it can eat the budget before a shell is even started. What
+            // it ate is charged to the same deadline as everything after it.
+            long remainingMs = remainingBudget(deadlineAtMs, "choosing the su binary");
+            process = Runtime.getRuntime().exec(suBinary);
             outputStream = new DataOutputStream(process.getOutputStream());
             for (String command : RUNNING_PACKAGES_COMMANDS) {
                 outputStream.writeBytes(command + "\n");
@@ -192,16 +229,17 @@ public final class ProcessUtils {
                 return null;
             });
 
-            packages = parseRunningPackages(
-                    process.getInputStream(), ROOT_RUNNING_PACKAGES_TIMEOUT_MS);
+            remainingMs = remainingBudget(deadlineAtMs, "starting the root shell");
+            packages = parseRunningPackages(process.getInputStream(), remainingMs);
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "getRootRunningPackages: packages=" + packages.size());
             }
         } catch (TimeoutException e) {
-            if (isDebugModeEnabled()) {
-                Log.e("DebugModeLogcat", "getRootRunningPackages gave up after "
-                        + ROOT_RUNNING_PACKAGES_TIMEOUT_MS + "ms");
-            }
+            // Not behind the debug flag. An expired scan and a device with nothing running both
+            // come back as an empty set, so the list cannot tell them apart and this line is the
+            // only record that there is a difference to tell.
+            Log.w("FreezeYouDebug", "getRootRunningPackages: gave up on its "
+                    + ROOT_RUNNING_PACKAGES_TIMEOUT_MS + "ms budget: " + e);
         } catch (Exception e) {
             e.printStackTrace();
             if (isDebugModeEnabled()) {
@@ -212,8 +250,27 @@ public final class ProcessUtils {
                 errorStream.cancel(true);
             }
             destroyProcess(outputStream, process);
+            if (process != null) {
+                // destroy() closes the pipes on Android, but the workers above are holding this
+                // process's ends of them, and a reader lets go of a stream it was told is shut
+                // sooner than of one whose writer merely died.
+                closeQuietly(process.getInputStream());
+                closeQuietly(process.getErrorStream());
+            }
         }
         return packages;
+    }
+
+    /**
+     * What is left of the scan's budget, or a timeout naming the stage that finished it.
+     */
+    private static long remainingBudget(long deadlineAtMs, String stage) throws TimeoutException {
+        long remainingMs = deadlineAtMs - System.currentTimeMillis();
+        if (remainingMs <= 0) {
+            throw new TimeoutException(stage + " used up the "
+                    + ROOT_RUNNING_PACKAGES_TIMEOUT_MS + "ms budget");
+        }
+        return remainingMs;
     }
 
     /**
@@ -229,6 +286,14 @@ public final class ProcessUtils {
         } catch (IOException ignored) {
             // Destroying the process closes this stream from under the reader, and that is the
             // normal end of a drain rather than a failure of it.
+        }
+    }
+
+    private static void closeQuietly(Closeable closeable) {
+        if (closeable == null) return;
+        try {
+            closeable.close();
+        } catch (IOException ignored) {
         }
     }
 
