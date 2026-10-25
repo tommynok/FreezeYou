@@ -413,12 +413,17 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 setResult(RESULT_OK, intent);
                 finish();
             } else {
+                String shortcutId = lscaga_id_editText.getText().toString();
+                // An empty id makes ShortcutInfo.Builder throw; fall back to a time-based one.
+                if (shortcutId.trim().isEmpty()) {
+                    shortcutId = Long.toString(new java.util.Date().getTime());
+                }
                 createShortCut(
                         title,
                         pkgName,
                         finalDrawable,
                         targetSelfCls,
-                        lscaga_id_editText.getText().toString(),
+                        shortcutId,
                         context,
                         target,
                         tasks,

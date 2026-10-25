@@ -140,7 +140,10 @@ object LauncherShortcutUtils {
             )
             if (mShortcutManager != null) {
                 if (mShortcutManager.isRequestPinShortcutSupported) {
-                    val shortcutInfoBuilder = ShortcutInfo.Builder(context, id)
+                    // An empty id throws from ShortcutInfo.Builder; a generated one keeps the
+                    // request valid, and pin failures must not crash the caller.
+                    val shortcutId = id.ifBlank { java.util.UUID.randomUUID().toString() }
+                    val shortcutInfoBuilder = ShortcutInfo.Builder(context, shortcutId)
                         .setIcon(
                             Icon.createWithBitmap(
                                 bm ?: getBitmapFromDrawable(icon)
@@ -151,7 +154,11 @@ object LauncherShortcutUtils {
                         .setLongLabel(title.ifEmpty { " " })
 
                     val pinShortcutInfo = shortcutInfoBuilder.build()
-                    mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
+                    try {
+                        mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 } else {
                     requestCreateShortCutOldApi(title, intent, icon, context, bm)
                 }

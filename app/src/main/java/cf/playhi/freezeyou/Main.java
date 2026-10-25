@@ -2343,6 +2343,11 @@ public class Main extends FreezeYouBaseActivity {
             for (int i = 0; i < count; i++) {
                 Map<String, Object> hm = ((MainAppListSimpleAdapter) adapter).getStoredArrayList().get(i);
                 String pkgName = (String) hm.get("PackageName");
+                // The empty-list placeholder is not a package: skip it before the resume scan
+                // renames it "Uninstalled" and turns it into a clickable row.
+                if (getString(R.string.notAvailable).equals(pkgName)) {
+                    continue;
+                }
                 if (onlyPkgName != null && !onlyPkgName.equals(pkgName)) {
                     continue;
                 }

@@ -62,6 +62,12 @@ public final class Support {
             if (context.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
                 if (!freezeOnceQuit.getValue(null)) {
                     freezeOnceQuit.setValue(null, true);
+                    // The settings screen reads this checkbox from default SharedPreferences;
+                    // keep it in sync with MMKV when enabled from the main menu.
+                    android.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit()
+                            .putBoolean("freezeOnceQuit", true)
+                            .apply();
                 }
                 AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(context);
             }
