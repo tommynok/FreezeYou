@@ -19,6 +19,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
 
 import androidx.appcompat.app.AlertDialog;
@@ -26,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.fuf.FUFSinglePackage;
+import cf.playhi.freezeyou.utils.CriticalPackagesUtils;
 import cf.playhi.freezeyou.viewmodel.DialogData;
 import cf.playhi.freezeyou.viewmodel.FreezeActivityViewModel;
 import cf.playhi.freezeyou.viewmodel.PlayAnimatorData;
@@ -363,12 +366,55 @@ public class Freeze extends FreezeYouBaseActivity {
                 finishOrProcessNext();
             });
             builder.setNegativeButton(R.string.freeze, (dialogInterface, i) ->
-                    viewModel.fufAction(
-                            data.getPkgName(), data.getTarget(), data.getTasks(),
-                            false, false
-                    )
+                    confirmIfCriticalThenFreeze(data)
             );
         }
         mCurrentDialog = builder.show();
+    }
+
+    /**
+     * Freezing one application is as hard to undo as freezing it inside a bulk selection: the
+     * status bar, Settings or the keyboard go away the same way. The bulk path asks first, so
+     * this asks too, with the same warning and with "Cancel" leaving the application untouched.
+     */
+    private void confirmIfCriticalThenFreeze(DialogData data) {
+        final List<String> critical = CriticalPackagesUtils.findCriticalPackages(
+                this, Collections.singletonList(data.getPkgName()));
+        if (!needsCriticalFreezeConfirmation(data.getFrozen(), !critical.isEmpty())) {
+            runFreeze(data);
+            return;
+        }
+        dismissCurrentDialog();
+        mCurrentDialog = FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.caution)
+                .setMessage(getString(
+                        R.string.critical_package_freeze_warning_single,
+                        criticalPackageWarningLine(data.getPkgName())))
+                .setPositiveButton(R.string.okay, (dialogInterface, i) -> runFreeze(data))
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finishOrProcessNext())
+                .setOnCancelListener(dialogInterface -> finishOrProcessNext())
+                .show();
+    }
+
+    private void runFreeze(DialogData data) {
+        viewModel.fufAction(
+                data.getPkgName(), data.getTarget(), data.getTasks(),
+                false, false
+        );
+    }
+
+    /** The same "• Label (package)" line the bulk warning builds, so the two read identically. */
+    private String criticalPackageWarningLine(String pkgName) {
+        return "• " + getApplicationLabel(this, null, null, pkgName) + " (" + pkgName + ")";
+    }
+
+    /**
+     * Only a freeze is asked about. Unfreezing a critical package is the way back out of a device
+     * with no status bar or keyboard, so putting a confirmation in front of it — or, worse, in
+     * front of the launch shortcut that unfreezes first — could be the thing that keeps a user
+     * locked out.
+     */
+    static boolean needsCriticalFreezeConfirmation(boolean frozen, boolean hasCriticalPackage) {
+        return !frozen && hasCriticalPackage;
     }
 }

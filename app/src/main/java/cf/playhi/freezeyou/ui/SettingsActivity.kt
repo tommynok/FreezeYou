@@ -128,15 +128,20 @@ class SettingsActivity : FreezeYouBaseActivity(),
             // ShortcutManager IPC can take seconds, so the settings screen must not wait for the
             // republish; the shared worker keeps two quick language changes from racing.
             ShortcutTokenUtils.initDynamicShortcutsAsync(applicationContext)
-        }
-        if (languagePref.name == s
-            || uiStyleSelection.name == s
+            // Republishing the shortcuts also hands the new locale to LocaleManager, and on
+            // Android 13+ the system recreates every activity of the app itself when that
+            // happens. Recreating here as well ran the whole teardown twice: the screen went
+            // black between the two. Below 13 nothing else recreates them, so it stays our job.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                recreateAllActivities(this)
+            }
+        } else if (uiStyleSelection.name == s
             || themeOfAutoSwitchDarkMode.name == s
             || allowFollowSystemAutoSwitchDarkMode.name == s
             || mainActivityPattern.name == s
         ) {
             // Recreate every live activity, not just this one: the rest of the back stack
-            // used to keep the old theme/language until a full process restart.
+            // used to keep the old theme until a full process restart.
             recreateAllActivities(this)
         }
     }
