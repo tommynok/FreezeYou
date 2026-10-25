@@ -32,6 +32,26 @@ import static android.content.Context.MODE_PRIVATE;
 // Note: Backup/restore schema and process is complex. Version flag in backup format can be used to distinguish schemas.
 public final class BackupUtils {
 
+    /**
+     * The restore source travels to the chooser through this app-private cache file: a backup can
+     * be larger than the Binder transaction limit that caps Intent extras, and rejecting it would
+     * break restoring backups this very app exported.
+     */
+    public static final String RESTORE_CACHE_FILE_NAME = "restore-backup.json";
+
+    public static final int MAX_RESTORE_JSON_CHARS = 16 * 1024 * 1024;
+
+    /**
+     * Exported but never written back: the icons and the app lock are device-specific and are
+     * restored through their own flows, so they must not be counted as restorable either.
+     */
+    private static final String[] NON_RESTORABLE_BOOLEAN_KEYS = new String[]{
+            DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled.name(),
+            DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled.name(),
+            DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled.name(),
+            DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name()
+    };
+
     private static void importStringSharedPreference(
             Context context, Activity activity, JSONObject jsonObject,
             SharedPreferences sp, String key) {
@@ -262,17 +282,20 @@ public final class BackupUtils {
                 } catch (IllegalArgumentException e) {
                     continue;
                 }
-                sawValidEntry = true;
                 // The two values come from a file someone can edit, and here they were pasted
                 // between quotes into SQL: a stray apostrophe ended the literal and the restore
                 // threw. Bound, they stay the data they are.
                 ContentValues values = new ContentValues();
                 values.put("packages", oneUserDefinedCategoriesJSONObject.getString("packages"));
+                boolean written;
                 if (existedLabels.contains(label)) {
-                    db.update("categories", values, "label = ?", new String[]{label});
+                    written = db.update("categories", values, "label = ?", new String[]{label}) > 0;
                 } else {
                     values.put("label", label);
-                    db.insert("categories", null, values);
+                    written = db.insert("categories", null, values) != -1;
+                }
+                if (written) {
+                    sawValidEntry = true;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -455,10 +478,7 @@ public final class BackupUtils {
 
             if (s == null) continue;
 
-            if (DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled.name().equals(s)
-                    || DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled.name().equals(s)
-                    || DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled.name().equals(s)
-                    || DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name().equals(s)) {
+            if (isNonRestorableBooleanKey(s)) {
                 continue;
             }
 
@@ -498,6 +518,168 @@ public final class BackupUtils {
         // write() is what tells :backgroundService that it changed.
         AutoAllowListUtils.write(context, listKey, jObj.optString("lists"));
         return true;
+    }
+
+    private static boolean isNonRestorableBooleanKey(String key) {
+        for (String skippedKey : NON_RESTORABLE_BOOLEAN_KEYS) {
+            if (skippedKey.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isImportableBooleanKey(String key) {
+        if (isNonRestorableBooleanKey(key)) {
+            return false;
+        }
+        try {
+            DefaultSharedPreferenceStorageBooleanKeys.valueOf(key);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            DefaultMultiProcessMMKVStorageBooleanKeys.valueOf(key);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+        }
+        return false;
+    }
+
+    private static boolean isImportableStringKey(String key) {
+        try {
+            DefaultSharedPreferenceStorageStringKeys.valueOf(key);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            DefaultMultiProcessMMKVStorageStringKeys.valueOf(key);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+        }
+        return false;
+    }
+
+    /**
+     * @return how many entries the importers would actually apply from the category, or -1 when
+     * the category is missing from the backup. The skip rules mirror importContents(), so a backup
+     * whose every entry would be skipped does not offer a restore that writes nothing.
+     */
+    public static int countImportableEntries(JSONObject jsonObject, String category) {
+        JSONArray array = jsonObject.optJSONArray(category);
+        if (array == null) {
+            return -1;
+        }
+        JSONObject firstObject = array.optJSONObject(0);
+        switch (category) {
+            case "generalSettings_boolean": {
+                if (firstObject == null) return 0;
+                int count = 0;
+                Iterator<String> it = firstObject.keys();
+                while (it.hasNext()) {
+                    if (isImportableBooleanKey(it.next())) count++;
+                }
+                return count;
+            }
+            case "generalSettings_string": {
+                if (firstObject == null) return 0;
+                int count = 0;
+                Iterator<String> it = firstObject.keys();
+                while (it.hasNext()) {
+                    if (isImportableStringKey(it.next())) count++;
+                }
+                return count;
+            }
+            case "generalSettings_int": {
+                if (firstObject == null) return 0;
+                int count = 0;
+                if (firstObject.has("onClickFunctionStatus")) count++;
+                if (firstObject.has("sortMethodStatus")) count++;
+                return count;
+            }
+            case "oneKeyList": {
+                if (firstObject == null) return 0;
+                int count = 0;
+                if (firstObject.has("okff")) count++;
+                if (firstObject.has("okuf")) count++;
+                if (firstObject.has("foq")) count++;
+                return count;
+            }
+            case "userTimeScheduledTasks":
+                return countImportableTimeTasks(array);
+            case "userTriggerScheduledTasks":
+                return countImportableTriggerTasks(array);
+            case "userDefinedCategories":
+                return countImportableCategories(array);
+            case "uriAutoAllowPkgs_allows":
+            case "installPkgs_autoAllowPkgs_allows":
+                return firstObject == null ? 0 : 1;
+            default:
+                return 0;
+        }
+    }
+
+    private static int countImportableTimeTasks(JSONArray array) {
+        int count = 0;
+        for (int i = 0; i < array.length(); ++i) {
+            JSONObject entry = array.optJSONObject(i);
+            if (entry == null || entry.optBoolean("doNotImport", false)) {
+                continue;
+            }
+            try {
+                int hour = entry.getInt("hour");
+                int minutes = entry.getInt("minutes");
+                String repeat = entry.getString("repeat");
+                int enabled = entry.getInt("enabled");
+                entry.getString("label"); // The importer rejects entries without a label.
+                String task = entry.getString("task");
+                if (TasksUtils.isValidImportedTimeTask(hour, minutes, repeat, task, enabled)) {
+                    count++;
+                }
+            } catch (JSONException ignored) {
+            }
+        }
+        return count;
+    }
+
+    private static int countImportableTriggerTasks(JSONArray array) {
+        int count = 0;
+        for (int i = 0; i < array.length(); ++i) {
+            JSONObject entry = array.optJSONObject(i);
+            if (entry == null || entry.optBoolean("doNotImport", false)) {
+                continue;
+            }
+            try {
+                String tg = entry.getString("tg");
+                entry.getString("tgextra"); // The importer rejects entries without tgextra.
+                int enabled = entry.getInt("enabled");
+                entry.getString("label"); // The importer rejects entries without a label.
+                String task = entry.getString("task");
+                if (TasksUtils.isValidImportedTriggerTask(tg, task, enabled)) {
+                    count++;
+                }
+            } catch (JSONException ignored) {
+            }
+        }
+        return count;
+    }
+
+    private static int countImportableCategories(JSONArray array) {
+        int count = 0;
+        for (int i = 0; i < array.length(); ++i) {
+            JSONObject entry = array.optJSONObject(i);
+            if (entry == null || entry.optBoolean("doNotImport", false)) {
+                continue;
+            }
+            try {
+                String label = entry.getString("label");
+                Base64.decode(label, Base64.DEFAULT);
+                entry.getString("packages");
+                count++;
+            } catch (JSONException | IllegalArgumentException ignored) {
+            }
+        }
+        return count;
     }
 
     /**

@@ -1,24 +1,29 @@
 package cf.playhi.freezeyou.ui;
 
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.ListView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.adapter.BackupImportChooserActivitySwitchSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys;
-import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys;
 import cf.playhi.freezeyou.utils.BackupUtils;
 import cf.playhi.freezeyou.utils.ToastUtils;
 
@@ -26,17 +31,6 @@ import static cf.playhi.freezeyou.utils.ThemeUtils.processActionBar;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 
 public class BackupImportChooserActivity extends FreezeYouBaseActivity {
-
-    /**
-     * Exported but never written back: the icons and the app lock are device-specific and are
-     * restored through their own flows, so counting them would overstate the restore.
-     */
-    private static final String[] NON_RESTORABLE_BOOLEAN_KEYS = new String[]{
-            DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled.name(),
-            DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled.name(),
-            DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled.name(),
-            DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name()
-    };
 
     /**
      * One switch per meaningful group of data instead of one per stored key: the previous screen
@@ -64,6 +58,12 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
                     "uriAutoAllowPkgs_allows", "installPkgs_autoAllowPkgs_allows")
     };
 
+    private final ExecutorService mLoadExecutor = Executors.newSingleThreadExecutor();
+    private ProgressDialog mProgressDialog;
+    private Button mFinishButton;
+    private Button mCancelButton;
+    private volatile boolean mImporting;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
@@ -71,53 +71,114 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         processActionBar(getSupportActionBar());
         setContentView(R.layout.bica_main);
 
-        onCreateInit();
+        mFinishButton = findViewById(R.id.bica_finish_button);
+        mCancelButton = findViewById(R.id.bica_cancel_button);
+        mFinishButton.setEnabled(false);
+        mCancelButton.setOnClickListener(v -> {
+            if (!mImporting) finish();
+        });
+        mFinishButton.setOnClickListener(v -> startImport());
+
+        loadBackupAsync();
     }
 
-    private void onCreateInit() {
+    @Override
+    protected void onDestroy() {
+        mLoadExecutor.shutdownNow();
+        dismissProgress();
+        if (isFinishing()) {
+            deleteRestoreCache();
+        }
+        super.onDestroy();
+    }
 
-        Intent intent = getIntent();
-        if (intent == null) {
-            finish();
+    /**
+     * The restore writes settings and databases in the background; leaving the screen would not
+     * stop it, so back and up are ignored until the import reports back.
+     */
+    @Override
+    public void onBackPressed() {
+        if (mImporting) {
             return;
         }
+        super.onBackPressed();
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (mImporting && item.getItemId() == android.R.id.home) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void loadBackupAsync() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        showProgress();
+        mLoadExecutor.execute(() -> {
+            JSONObject jsonObject = null;
+            boolean readFailed = false;
+            try {
+                String content = readRestoreCache();
+                if (content == null) {
+                    readFailed = true;
+                } else {
+                    jsonObject = new JSONObject(content);
+                }
+            } catch (Exception | OutOfMemoryError e) {
+                e.printStackTrace();
+                readFailed = true;
+            }
+            final JSONObject parsed = jsonObject;
+            final boolean failed = readFailed;
+            runOnUiThread(() -> {
+                dismissProgress();
+                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
+                if (failed) {
+                    showPlaceholder(getString(R.string.failed));
+                } else if (parsed == null) {
+                    showPlaceholder(getString(R.string.parseFailed));
+                } else {
+                    showContents(parsed);
+                }
+            });
+        });
+    }
+
+    private void showContents(JSONObject jsonObject) {
         final ListView mainListView = findViewById(R.id.bica_main_listView);
         final ArrayList<HashMap<String, String>> titleAndCategoriesArrayList = new ArrayList<>();
-
-        String jsonContentString = intent.getStringExtra("jsonObjectString");
-        JSONObject jsonObject = null;
-        boolean hasRestorableEntries = false;
-        if (jsonContentString == null) {
-            addPlaceholderRow(titleAndCategoriesArrayList, getString(R.string.failed));
-        } else {
-            try {
-                jsonObject = new JSONObject(jsonContentString);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            if (jsonObject == null) {
-                addPlaceholderRow(titleAndCategoriesArrayList, getString(R.string.parseFailed));
-            } else {
-                hasRestorableEntries = generateGroupList(jsonObject, titleAndCategoriesArrayList) > 0;
-                if (titleAndCategoriesArrayList.size() == 0) {
-                    addPlaceholderRow(titleAndCategoriesArrayList, getString(R.string.nothing));
-                }
-            }
+        final boolean hasRestorableEntries =
+                generateGroupList(jsonObject, titleAndCategoriesArrayList) > 0;
+        if (titleAndCategoriesArrayList.isEmpty()) {
+            addPlaceholderRow(titleAndCategoriesArrayList, getString(R.string.nothing));
         }
+        mainListView.setAdapter(new BackupImportChooserActivitySwitchSimpleAdapter(
+                this,
+                jsonObject,
+                titleAndCategoriesArrayList,
+                R.layout.bica_list_item,
+                new String[]{"title"},
+                new int[]{R.id.bica_list_item_switch}));
+        mFinishButton.setEnabled(hasRestorableEntries);
+    }
 
-        final BackupImportChooserActivitySwitchSimpleAdapter adapter =
+    private void showPlaceholder(String title) {
+        final ArrayList<HashMap<String, String>> rows = new ArrayList<>();
+        addPlaceholderRow(rows, title);
+        ((ListView) findViewById(R.id.bica_main_listView)).setAdapter(
                 new BackupImportChooserActivitySwitchSimpleAdapter(
                         this,
-                        jsonObject,
-                        titleAndCategoriesArrayList,
+                        null,
+                        rows,
                         R.layout.bica_list_item,
                         new String[]{"title"},
-                        new int[]{R.id.bica_list_item_switch});
-
-        mainListView.setAdapter(adapter);
-
-        processButtons(hasRestorableEntries);
+                        new int[]{R.id.bica_list_item_switch}));
+        mFinishButton.setEnabled(false);
     }
 
     private void addPlaceholderRow(ArrayList<HashMap<String, String>> list, String title) {
@@ -128,39 +189,81 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         list.add(keyValuePair);
     }
 
-    private void processButtons(boolean hasRestorableEntries) {
-        final Button bicaFinishButton = findViewById(R.id.bica_finish_button);
-        final Button bicaCancelButton = findViewById(R.id.bica_cancel_button);
-        bicaFinishButton.setEnabled(hasRestorableEntries);
-        bicaCancelButton.setOnClickListener(v -> finish());
-        bicaFinishButton.setOnClickListener(v -> {
-            final ListView mainListView = findViewById(R.id.bica_main_listView);
-            BackupImportChooserActivitySwitchSimpleAdapter adapter =
-                    (BackupImportChooserActivitySwitchSimpleAdapter) mainListView.getAdapter();
-            final JSONObject selectedContents = adapter.getFinalList();
-            final Context appContext = getApplicationContext();
-            bicaFinishButton.setEnabled(false);
-            bicaCancelButton.setEnabled(false);
-            new Thread(() -> {
-                final boolean imported =
-                        BackupUtils.importContents(appContext, this, selectedContents);
-                runOnUiThread(() -> {
-                    if (isFinishing()
-                            || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                        return;
-                    }
-                    ToastUtils.showToast(
-                            BackupImportChooserActivity.this,
-                            imported ? R.string.finish : R.string.failed);
-                    finish();
-                });
-            }, "backup-restore").start();
-        });
+    private void startImport() {
+        if (mImporting) {
+            return;
+        }
+        final ListView mainListView = findViewById(R.id.bica_main_listView);
+        final BackupImportChooserActivitySwitchSimpleAdapter adapter =
+                (BackupImportChooserActivitySwitchSimpleAdapter) mainListView.getAdapter();
+        if (adapter == null) {
+            return;
+        }
+        final JSONObject selectedContents = adapter.getFinalList();
+        final Context appContext = getApplicationContext();
+        mImporting = true;
+        mFinishButton.setEnabled(false);
+        mCancelButton.setEnabled(false);
+        new Thread(() -> {
+            final boolean imported =
+                    BackupUtils.importContents(appContext, this, selectedContents);
+            runOnUiThread(() -> {
+                if (isFinishing()
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
+                mImporting = false;
+                ToastUtils.showToast(
+                        BackupImportChooserActivity.this,
+                        imported ? R.string.finish : R.string.failed);
+                finish();
+            });
+        }, "backup-restore").start();
+    }
+
+    private String readRestoreCache() throws IOException {
+        File file = new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME);
+        if (!file.isFile()) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        try (InputStream inputStream = new FileInputStream(file)) {
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(inputStream, "UTF-8"));
+            char[] buffer = new char[8192];
+            int n;
+            while ((n = reader.read(buffer)) != -1) {
+                builder.append(buffer, 0, n);
+                if (builder.length() > BackupUtils.MAX_RESTORE_JSON_CHARS) {
+                    throw new IOException("Restore cache is too large");
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    private void deleteRestoreCache() {
+        new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME).delete();
+    }
+
+    private void showProgress() {
+        dismissProgress();
+        mProgressDialog = ProgressDialog.show(
+                this, getString(R.string.plsWait), getString(R.string.loading___));
+    }
+
+    private void dismissProgress() {
+        if (mProgressDialog != null) {
+            if (mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+            }
+            mProgressDialog = null;
+        }
     }
 
     /**
-     * @return the total number of entries listed across all groups; zero means there is nothing
-     * the backup can restore, even if every known category is present but empty.
+     * @return the total number of entries the importers would apply across all groups; zero means
+     * there is nothing to restore, even if every known category is present but unusable.
      */
     private int generateGroupList(JSONObject jsonObject, ArrayList<HashMap<String, String>> list) {
         int totalEntries = 0;
@@ -168,7 +271,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
             int itemCount = 0;
             StringBuilder presentCategories = new StringBuilder();
             for (String category : group.categories) {
-                int count = countEntries(jsonObject, category);
+                int count = BackupUtils.countImportableEntries(jsonObject, category);
                 if (count < 0) continue;
                 itemCount += count;
                 if (presentCategories.length() > 0) presentCategories.append(",");
@@ -188,42 +291,6 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
             list.add(keyValuePair);
         }
         return totalEntries;
-    }
-
-    /**
-     * @return how many restorable entries the category holds, or -1 when it isn't in the backup
-     * at all. Settings-style categories store one object whose keys are the entries; task and
-     * list categories store one array element per entry.
-     */
-    static int countEntries(JSONObject jsonObject, String category) {
-        JSONArray array = jsonObject.optJSONArray(category);
-        if (array == null) {
-            return -1;
-        }
-        switch (category) {
-            case "generalSettings_boolean": {
-                JSONObject jsonObj = array.optJSONObject(0);
-                if (jsonObj == null) {
-                    return -1;
-                }
-                int count = jsonObj.length();
-                for (String skippedKey : NON_RESTORABLE_BOOLEAN_KEYS) {
-                    if (jsonObj.has(skippedKey)) {
-                        count--;
-                    }
-                }
-                return Math.max(count, 0);
-            }
-            case "generalSettings_string":
-            case "generalSettings_int":
-            case "oneKeyList":
-            case "uriAutoAllowPkgs_allows":
-            case "installPkgs_autoAllowPkgs_allows":
-                JSONObject jsonObj = array.optJSONObject(0);
-                return jsonObj == null ? -1 : jsonObj.length();
-            default:
-                return array.length();
-        }
     }
 
 }

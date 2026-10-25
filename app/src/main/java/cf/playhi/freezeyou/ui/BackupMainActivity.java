@@ -14,6 +14,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +29,7 @@ import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.BackupUtils;
 import cf.playhi.freezeyou.utils.ClipboardUtils;
 import cf.playhi.freezeyou.utils.GZipUtils;
 import cf.playhi.freezeyou.utils.ToastUtils;
@@ -44,9 +47,6 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
     private static final String BACKUP_MIME_TYPE = "application/octet-stream";
 
     private static final int MAX_BACKUP_FILE_CHARS = 16 * 1024 * 1024;
-    // The decompressed JSON travels to the chooser as an Intent extra, and Binder rejects
-    // transactions around 1 MB. UTF-16 parcels two bytes per char, so 256K chars stay safe.
-    private static final int MAX_BACKUP_JSON_CHARS = 256 * 1024;
 
     private final ExecutorService mBackupExecutor = Executors.newSingleThreadExecutor();
     private ProgressDialog mProgressDialog;
@@ -225,7 +225,8 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
                 e.printStackTrace();
                 readFailed = true;
             }
-            final String decompressed = json;
+            final boolean stored = !readFailed && json != null && !json.isEmpty()
+                    && writeRestoreCache(json);
             final boolean failed = readFailed;
             runOnUiThread(() -> {
                 dismissProgress();
@@ -236,17 +237,25 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
                     ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
                     return;
                 }
-                if (decompressed == null || decompressed.isEmpty()
-                        || decompressed.length() > MAX_BACKUP_JSON_CHARS) {
+                if (!stored) {
                     ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
                     return;
                 }
-                startActivity(
-                        new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
-                                .putExtra("jsonObjectString", decompressed)
-                );
+                startActivity(new Intent(BackupMainActivity.this, BackupImportChooserActivity.class));
             });
         });
+    }
+
+    private boolean writeRestoreCache(String json) {
+        try (OutputStream outputStream = new FileOutputStream(
+                new File(getCacheDir(), BackupUtils.RESTORE_CACHE_FILE_NAME))) {
+            outputStream.write(json.getBytes("UTF-8"));
+            outputStream.flush();
+            return true;
+        } catch (Exception | OutOfMemoryError e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private void showProgress() {

@@ -203,7 +203,6 @@ object SettingsUtils {
                     else -> showToast(context, R.string.unknown)
                 }
             }
-            else -> if (!isRestoreMode) showToast(context, R.string.unknown)
         }
     }
 

@@ -21,6 +21,14 @@ class GZipUtilsTest {
     }
 
     @Test
+    fun backupsLargerThanThePreviousIntentLimitSurviveRoundTrip() {
+        // Restores are handed to the chooser through a cache file now; before that, anything past
+        // 256K chars was rejected even though the app itself can export backups that large.
+        val json = """{"oneKeyList":[{"okff":"${"x".repeat(300 * 1024)}"}]}"""
+        assertEquals(json, GZipUtils.gzipDecompress(GZipUtils.gzipCompress(json)))
+    }
+
+    @Test
     fun outputPastTheDecompressionLimitIsRejected() {
         // A tiny gzip of zeros inflates past any sane backup size; without the bound this is the
         // classic OutOfMemoryError from a wrong or crafted file.
