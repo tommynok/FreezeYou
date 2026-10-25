@@ -166,6 +166,7 @@ class ProcessUtilsTest {
         }
 
         override fun exitValue() = 0
+        override fun waitFor() = 0
         override fun getInputStream(): InputStream = ByteArrayInputStream(ByteArray(0))
         override fun getErrorStream(): InputStream = ByteArrayInputStream(ByteArray(0))
         override fun getOutputStream() = ByteArrayOutputStream()
