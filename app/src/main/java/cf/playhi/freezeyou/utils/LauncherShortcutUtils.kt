@@ -158,6 +158,7 @@ object LauncherShortcutUtils {
                         mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        showToast(context, context.getString(R.string.requestFailed) + e.message)
                     }
                 } else {
                     requestCreateShortCutOldApi(title, intent, icon, context, bm)
