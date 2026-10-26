@@ -73,6 +73,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 
@@ -205,9 +206,11 @@ public class Main extends FreezeYouBaseActivity {
     private int mUnprivilegedUninstallSuccessCount = 0;
 
     private final AtomicInteger mListGeneration = new AtomicInteger(0);
-    // A full status snapshot started before a freeze/unfreeze must not apply its older answer
-    // over the single-row patch that already reported the new status.
+    // A full status snapshot must not apply after a newer one, and must not overwrite the rows
+    // a single-package broadcast patched while it was still being computed.
     private final AtomicInteger mStatusRefreshGeneration = new AtomicInteger(0);
+    private final Set<String> mStatusPatchedDuringFullRefresh =
+            Collections.newSetFromMap(new ConcurrentHashMap<>());
     private TextWatcher mSearchTextWatcher = null;
     private ImageButton mMoreSettingsImageButton;
     private ImageButton mSelectionActionsImageButton;
@@ -2560,12 +2563,14 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private static final class FrozenStatusCheck {
+        final String packageName;
         final Map<String, Object> row;
         final boolean packageMissing;
         final boolean restorableSystemApp;
         final boolean frozen;
 
-        FrozenStatusCheck(Map<String, Object> row, boolean packageMissing, boolean restorableSystemApp, boolean frozen) {
+        FrozenStatusCheck(String packageName, Map<String, Object> row, boolean packageMissing, boolean restorableSystemApp, boolean frozen) {
+            this.packageName = packageName;
             this.row = row;
             this.packageMissing = packageMissing;
             this.restorableSystemApp = restorableSystemApp;
@@ -2610,13 +2615,13 @@ public class Main extends FreezeYouBaseActivity {
         appListAdapter.setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
 
         if (onlyPkgName != null) {
-            // Every single-row answer is newer than any full snapshot still being computed.
-            mStatusRefreshGeneration.incrementAndGet();
+            mStatusPatchedDuringFullRefresh.add(onlyPkgName);
             updateSingleRowFrozenStatus(appListAdapter, onlyPkgName);
             return;
         }
 
         final int generation = mListGeneration.get();
+        mStatusPatchedDuringFullRefresh.clear();
         final int statusGeneration = mStatusRefreshGeneration.incrementAndGet();
         final String notAvailable = getString(R.string.notAvailable);
         final ArrayList<Map<String, Object>> rows =
@@ -2631,10 +2636,11 @@ public class Main extends FreezeYouBaseActivity {
                 }
                 ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, Main.this);
                 if (applicationInfo == null) {
-                    checks.add(new FrozenStatusCheck(row, true, false, false));
+                    checks.add(new FrozenStatusCheck(pkgName, row, true, false, false));
                     continue;
                 }
                 checks.add(new FrozenStatusCheck(
+                        pkgName,
                         row,
                         false,
                         RestoreUtils.isRestorableSystemApp(applicationInfo),
@@ -2650,6 +2656,10 @@ public class Main extends FreezeYouBaseActivity {
                     return;
                 }
                 for (FrozenStatusCheck check : checks) {
+                    if (check.packageName != null
+                            && mStatusPatchedDuringFullRefresh.contains(check.packageName)) {
+                        continue;
+                    }
                     if (check.packageMissing) {
                         check.row.put("Name", getString(R.string.uninstalled));
                         continue;
