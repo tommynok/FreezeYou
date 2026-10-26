@@ -501,7 +501,10 @@ object FUFUtils {
         val foreground = ArrayList<String>()
         // The list arrives from Java callers that may hand over null, and an empty one has nothing to
         // walk: taking it as one non-null local keeps the decisions below free of both cases.
-        val targets = pkgNameList ?: emptyArray()
+        // batchTargetsWithoutSelf drops this build's own package and repeated entries, so the
+        // shell is asked about each package at most once.
+        val targets =
+            if (pkgNameList == null) emptyList() else batchTargetsWithoutSelf(context.packageName, pkgNameList)
         var currentPackage: String? = " "
         if (DefaultMultiProcessMMKVStorageBooleanKeys.avoidFreezeForegroundApplications.getValue()) {
             currentPackage = MainApplication.currentPackage
@@ -514,11 +517,6 @@ object FUFUtils {
             else -> "unhide"
         }
         for (pkgName in targets) {
-            // Compare against the id this build runs as, for the reason given in
-            // checkAndExecuteAction: a fork under another applicationId has to recognise itself.
-            if (context.packageName == pkgName) {
-                continue
-            }
             if (freeze) {
                 if (isAvoidFreezeNotifyingApplicationsEnabledAndAppStillNotifying(pkgName)) {
                     stillNotifying += pkgName
@@ -1031,14 +1029,16 @@ object FUFUtils {
     }
 
     /**
-     * The batch target list with this build's own package taken out — one rule for every
-     * in-process batch path. Compared against the id this build runs as, never a hardcoded name:
-     * a fork ships under its own applicationId and has to recognise itself. Kept pure so a JVM
-     * test can hold the rule; the loops that use it sit behind MMKV and toasts.
+     * The batch target list with this build's own package taken out and repeated entries collapsed
+     * — one rule for every in-process batch path. Compared against the id this build runs as, never
+     * a hardcoded name: a fork ships under its own applicationId and has to recognise itself.
+     * Deduplication keeps the order of first appearance, so the batch still walks the list as the
+     * user wrote it. Kept pure so a JVM test can hold the rule; the loops that use it sit behind
+     * MMKV and toasts.
      */
     fun batchTargetsWithoutSelf(
         selfPackageName: String, packages: Array<String>
-    ): List<String> = packages.filterNot { it == selfPackageName }
+    ): List<String> = packages.filterNot { it == selfPackageName }.distinct()
 
     /**
      * The same guards [FreezeYouFUFSinglePackage] applies, without its per-application follow-up

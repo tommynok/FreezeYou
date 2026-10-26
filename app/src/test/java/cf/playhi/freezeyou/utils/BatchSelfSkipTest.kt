@@ -7,9 +7,11 @@ import org.junit.Test
 /**
  * Every in-process batch path has to skip FreezeYou itself, silently: a self entry rides in from
  * a restored backup or a hand-edited OneKEY list, and acting on it only ever produces the -11
- * rejection and a failure toast naming FreezeYou. The loops that use the rule sit behind MMKV and
- * Android toasts, so the list decision is kept pure and tested here; runRootBatch has carried the
- * same rule inline since the root batch was introduced.
+ * rejection and a failure toast naming FreezeYou. The same helper collapses a package listed twice
+ * into one target — a task such as `ff com.example,@Category` where the category already holds
+ * that package would otherwise act on it twice, count it twice in the statistics and run its
+ * trigger tasks twice. The loops that use the rule sit behind MMKV and Android toasts, so the list
+ * decision is kept pure and tested here; runRootBatch has gone through this helper too.
  */
 class BatchSelfSkipTest {
 
@@ -33,8 +35,16 @@ class BatchSelfSkipTest {
     }
 
     @Test
-    fun `everything else keeps its order and its duplicates`() {
-        assertEquals(listOf("com.b", "com.a", "com.b"), targetsOf("com.b", "com.a", "com.b"))
+    fun `everything else keeps its order and deduplicates`() {
+        assertEquals(listOf("com.b", "com.a"), targetsOf("com.b", "com.a", "com.b"))
+    }
+
+    @Test
+    fun `multiple duplicates preserve order of first appearance`() {
+        assertEquals(
+            listOf("com.c", "com.a", "com.b"),
+            targetsOf("com.c", "com.a", "com.c", "com.b", "com.a", self)
+        )
     }
 
     @Test
