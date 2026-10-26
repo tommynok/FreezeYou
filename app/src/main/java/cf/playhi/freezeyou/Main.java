@@ -205,9 +205,15 @@ public class Main extends FreezeYouBaseActivity {
     private int mUnprivilegedUninstallSuccessCount = 0;
 
     private final AtomicInteger mListGeneration = new AtomicInteger(0);
+    // A full status snapshot started before a freeze/unfreeze must not apply its older answer
+    // over the single-row patch that already reported the new status.
+    private final AtomicInteger mStatusRefreshGeneration = new AtomicInteger(0);
     private TextWatcher mSearchTextWatcher = null;
     private ImageButton mMoreSettingsImageButton;
     private ImageButton mSelectionActionsImageButton;
+    // A popup left open when the activity pauses is restored with the window and then torn down
+    // on focus loss, which flashes the dimming layer on the way back into the app.
+    private PopupMenu mActivePopupMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -346,6 +352,9 @@ public class Main extends FreezeYouBaseActivity {
                 onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
                 popupMenu.setOnMenuItemClickListener(this::onMainOptionsItemSelected);
                 popupMenu.setOnDismissListener(menu -> {
+                    if (mActivePopupMenu == popupMenu) {
+                        mActivePopupMenu = null;
+                    }
                     RotateAnimation animation =
                             new RotateAnimation(45, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
                     animation.setDuration(300);
@@ -359,6 +368,7 @@ public class Main extends FreezeYouBaseActivity {
                 animation.setRepeatMode(RotateAnimation.REVERSE);
                 animation.setFillAfter(true);
                 mMoreSettingsImageButton.startAnimation(animation);
+                mActivePopupMenu = popupMenu;
                 popupMenu.show();
             });
         }
@@ -428,6 +438,18 @@ public class Main extends FreezeYouBaseActivity {
         }
         if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
             currentSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mActivePopupMenu != null) {
+            try {
+                mActivePopupMenu.dismiss();
+            } catch (Exception ignored) {
+            }
+            mActivePopupMenu = null;
         }
     }
 
@@ -1412,6 +1434,12 @@ public class Main extends FreezeYouBaseActivity {
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
                             currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
+                    popupMenu.setOnDismissListener(menu -> {
+                        if (mActivePopupMenu == popupMenu) {
+                            mActivePopupMenu = null;
+                        }
+                    });
+                    mActivePopupMenu = popupMenu;
                     popupMenu.show();
                 });
                 }
@@ -1660,12 +1688,11 @@ public class Main extends FreezeYouBaseActivity {
                                 intent.getIntExtra("batchCount", -1)
                         );
                     }
-                    if (intent.getBooleanExtra("refreshAppList", false)) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                    } else if (currentFilter != null && currentFilter.startsWith("RUN")) {
-                        // Freezing or force-stopping an app can remove it from the
-                        // Running list; a plain icon-status patch wouldn't drop it,
-                        // so re-run the filter to re-query the running package set.
+                    if (intent.getBooleanExtra("refreshAppList", false)
+                            || isStatusDependentFilter(currentFilter)) {
+                        // A status change can add or remove the row from a status-dependent list
+                        // (frozen, unfrozen, running), so the filter has to be re-run; patching
+                        // the dot in place would leave the app in a list it no longer matches.
                         new Thread(() -> generateList(currentFilter)).start();
                     } else {
                         // A single action names its package; re-checking every row costs two
@@ -2518,6 +2545,35 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
+     * Filters whose membership is decided by the package's current freeze state. A status
+     * broadcast can move an app in or out of them, so the list has to be rebuilt instead of
+     * patching the row's status dot.
+     */
+    public static boolean isStatusDependentFilter(String filter) {
+        if (filter == null) {
+            return false;
+        }
+        return filter.startsWith("RUN")
+                || "OF".equals(filter)
+                || "UF".equals(filter)
+                || "UFU".equals(filter);
+    }
+
+    private static final class FrozenStatusCheck {
+        final Map<String, Object> row;
+        final boolean packageMissing;
+        final boolean restorableSystemApp;
+        final boolean frozen;
+
+        FrozenStatusCheck(Map<String, Object> row, boolean packageMissing, boolean restorableSystemApp, boolean frozen) {
+            this.row = row;
+            this.packageMissing = packageMissing;
+            this.restorableSystemApp = restorableSystemApp;
+            this.frozen = frozen;
+        }
+    }
+
+    /**
      * Updates application freeze status indicators in-place across the visible list adapter.
      *
      * <p><b>Scroll Position Preservation Rationale:</b><br>
@@ -2532,72 +2588,133 @@ public class Main extends FreezeYouBaseActivity {
      * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), the loop terminates immediately
      * after updating the matching package in memory, minimizing CPU overhead and preventing UI stutter.
      *
+     * <p><b>Off-UI Evaluation:</b><br>
+     * A full re-check costs two or three synchronous binder calls per installed package. On a
+     * device with hundreds of apps it used to hold the UI thread for the whole resume, so only the
+     * single-package path stays synchronous; the full list is evaluated on a worker and applied
+     * back on the UI thread.
+     *
      * @param onlyPkgName target package name to refresh individually, or null to re-evaluate all rows (e.g. onResume)
      */
     private void updateFrozenStatus(String onlyPkgName) {
-
         if (mMainActivityAppListFragment == null) {
             return;
         }
 
         Adapter adapter = mMainActivityAppListFragment.getAppListAdapter();
-        if (adapter instanceof MainAppListSimpleAdapter) {
-            // Runs on every onResume, so coming back from the settings applies the switch at once.
-            ((MainAppListSimpleAdapter) adapter)
-                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
-            PackageManager pm = getPackageManager();
-            int count = adapter.getCount();
-            for (int i = 0; i < count; i++) {
-                Map<String, Object> hm = ((MainAppListSimpleAdapter) adapter).getStoredArrayList().get(i);
-                String pkgName = (String) hm.get("PackageName");
-                // The empty-list placeholder is not a package: skip it before the resume scan
-                // renames it "Uninstalled" and turns it into a clickable row.
-                if (getString(R.string.notAvailable).equals(pkgName)) {
-                    continue;
-                }
-                if (onlyPkgName != null && !onlyPkgName.equals(pkgName)) {
-                    continue;
-                }
-                ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
+        if (!(adapter instanceof MainAppListSimpleAdapter)) {
+            return;
+        }
+        final MainAppListSimpleAdapter appListAdapter = (MainAppListSimpleAdapter) adapter;
+        // Runs on every onResume, so coming back from the settings applies the switch at once.
+        appListAdapter.setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
 
-                // Check if uninstalled
+        if (onlyPkgName != null) {
+            // Every single-row answer is newer than any full snapshot still being computed.
+            mStatusRefreshGeneration.incrementAndGet();
+            updateSingleRowFrozenStatus(appListAdapter, onlyPkgName);
+            return;
+        }
+
+        final int generation = mListGeneration.get();
+        final int statusGeneration = mStatusRefreshGeneration.incrementAndGet();
+        final String notAvailable = getString(R.string.notAvailable);
+        final ArrayList<Map<String, Object>> rows =
+                new ArrayList<>(appListAdapter.getStoredArrayList());
+        new Thread(() -> {
+            final PackageManager pm = getPackageManager();
+            final ArrayList<FrozenStatusCheck> checks = new ArrayList<>(rows.size());
+            for (Map<String, Object> row : rows) {
+                String pkgName = (String) row.get("PackageName");
+                if (notAvailable.equals(pkgName)) {
+                    continue;
+                }
+                ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, Main.this);
                 if (applicationInfo == null) {
-                    hm.put("Name", getString(R.string.uninstalled));
+                    checks.add(new FrozenStatusCheck(row, true, false, false));
                     continue;
                 }
-
-                boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
-                boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
-                if (onlyPkgName != null && !mIsBatchUninstallRunning) {
-                    if (isUninstalled && !isRestoreFilter) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                        return;
+                checks.add(new FrozenStatusCheck(
+                        row,
+                        false,
+                        RestoreUtils.isRestorableSystemApp(applicationInfo),
+                        realGetFrozenStatus(Main.this, pkgName, pm)));
+            }
+            runOnUiThread(() -> {
+                if (isFinishing()
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())
+                        || generation != mListGeneration.get()
+                        || statusGeneration != mStatusRefreshGeneration.get()
+                        || mMainActivityAppListFragment == null
+                        || mMainActivityAppListFragment.getAppListAdapter() != appListAdapter) {
+                    return;
+                }
+                for (FrozenStatusCheck check : checks) {
+                    if (check.packageMissing) {
+                        check.row.put("Name", getString(R.string.uninstalled));
+                        continue;
                     }
-                    if (isRestoreFilter && !isUninstalled) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                        return;
-                    }
+                    check.row.put("RestorableSystemApp", check.restorableSystemApp);
+                    // A restorable system app can only be restored, so it keeps the frozen look
+                    // even when the frozen flag itself is off.
+                    boolean frozen = check.frozen || check.restorableSystemApp;
+                    check.row.put("isFrozen", frozen ? customThemeDisabledDot : customThemeEnabledDot);
+                    check.row.put("Frozen", frozen);
                 }
+                appListAdapter.notifyDataSetChanged();
+            });
+        }).start();
+    }
 
-                if (onlyPkgName != null) {
-                    hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
-                    hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
-                }
+    /**
+     * The single-package path is cheap by construction: it stops at the matching row and costs
+     * one package lookup plus the status binder calls, so it may stay on the calling thread.
+     */
+    private void updateSingleRowFrozenStatus(MainAppListSimpleAdapter appListAdapter, String onlyPkgName) {
+        PackageManager pm = getPackageManager();
+        for (Map<String, Object> hm : appListAdapter.getStoredArrayList()) {
+            String pkgName = (String) hm.get("PackageName");
+            // The empty-list placeholder is not a package: skip it before the resume scan
+            // renames it "Uninstalled" and turns it into a clickable row.
+            if (getString(R.string.notAvailable).equals(pkgName)
+                    || !onlyPkgName.equals(pkgName)) {
+                continue;
+            }
 
-                boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
-                hm.put("RestorableSystemApp", restorable);
-                // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
-                processFrozenStatus(hm, pkgName, pm);
-                if (restorable) {
-                    hm.put("isFrozen", customThemeDisabledDot);
-                    hm.put("Frozen", true);
+            ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
+            // Check if uninstalled
+            if (applicationInfo == null) {
+                hm.put("Name", getString(R.string.uninstalled));
+                break;
+            }
+
+            boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
+            boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
+            if (!mIsBatchUninstallRunning) {
+                if (isUninstalled && !isRestoreFilter) {
+                    new Thread(() -> generateList(currentFilter)).start();
+                    return;
                 }
-                if (onlyPkgName != null) {
-                    break;
+                if (isRestoreFilter && !isUninstalled) {
+                    new Thread(() -> generateList(currentFilter)).start();
+                    return;
                 }
             }
-            ((MainAppListSimpleAdapter) adapter).notifyDataSetChanged();
+
+            hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
+            hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
+
+            boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+            hm.put("RestorableSystemApp", restorable);
+            // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
+            processFrozenStatus(hm, pkgName, pm);
+            if (restorable) {
+                hm.put("isFrozen", customThemeDisabledDot);
+                hm.put("Frozen", true);
+            }
+            break;
         }
+        appListAdapter.notifyDataSetChanged();
     }
 
     private void saveOnClickFunctionStatus(int status) {
