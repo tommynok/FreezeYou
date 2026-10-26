@@ -19,6 +19,12 @@ public final class RootUtils {
 
     private static volatile String sCachedSuBinary = null;
 
+    /** How long a failed discovery stands before the candidates are probed again. */
+    private static final long FAILED_DISCOVERY_TTL_MS = 30_000L;
+
+    /** When the last full probe ended without a working su binary, or 0 after a success. */
+    private static volatile long sLastFailedDiscoveryTimeMs = 0L;
+
     /**
      * Returns a tested and functional su binary path, or "su" as fallback.
      */
@@ -27,12 +33,8 @@ public final class RootUtils {
         if (binary != null) {
             return binary;
         }
-        binary = findSuBinary();
-        if (binary != null) {
-            sCachedSuBinary = binary;
-            return binary;
-        }
-        return "su";
+        binary = findSuBinary(false);
+        return binary != null ? binary : "su";
     }
 
     /**
@@ -48,27 +50,52 @@ public final class RootUtils {
      */
     public static boolean checkRootPermission(boolean forceRefresh) {
         if (forceRefresh) {
-            sCachedSuBinary = null;
+            resetCache();
         }
-        String binary = findSuBinary();
-        if (binary != null) {
-            sCachedSuBinary = binary;
-            return true;
-        }
-        return false;
+        return findSuBinary(forceRefresh) != null;
     }
 
-    private static String findSuBinary() {
+    /** Forgets both the working binary and any recorded failure, so the next call probes again. */
+    public static void resetCache() {
+        sCachedSuBinary = null;
+        sLastFailedDiscoveryTimeMs = 0L;
+    }
+
+    /**
+     * Whether a failure recorded at {@code lastFailureMs} still stands at {@code currentTimeMs}.
+     * A timestamp of 0 means no failure was recorded; an elapsed time at or past the TTL, or a
+     * clock that moved backwards, allows a new probe.
+     */
+    public static boolean isNegativeCacheActive(long currentTimeMs, long lastFailureMs,
+                                                long ttlMs) {
+        return lastFailureMs > 0L
+                && currentTimeMs >= lastFailureMs
+                && currentTimeMs - lastFailureMs < ttlMs;
+    }
+
+    private static String findSuBinary(boolean forceRefresh) {
+        if (!forceRefresh
+                && isNegativeCacheActive(System.currentTimeMillis(),
+                sLastFailedDiscoveryTimeMs, FAILED_DISCOVERY_TTL_MS)) {
+            // Every candidate was just tried and none worked. Probing them again would block the
+            // caller for up to 35 s and raise the root prompt again on a device without root.
+            return null;
+        }
+
         String cached = sCachedSuBinary;
         if (cached != null && testSuBinary(cached)) {
+            sLastFailedDiscoveryTimeMs = 0L;
             return cached;
         }
 
         for (String candidate : SU_CANDIDATES) {
             if (testSuBinary(candidate)) {
+                sCachedSuBinary = candidate;
+                sLastFailedDiscoveryTimeMs = 0L;
                 return candidate;
             }
         }
+        sLastFailedDiscoveryTimeMs = System.currentTimeMillis();
         return null;
     }
 

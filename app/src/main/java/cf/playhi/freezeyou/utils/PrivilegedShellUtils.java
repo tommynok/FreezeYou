@@ -191,8 +191,20 @@ public final class PrivilegedShellUtils {
     /** Timeout for the user to respond to root authorization prompts (Magisk/KernelSU/SuperSU). */
     private static final long ROOT_APPROVAL_TIMEOUT_MS = 120_000L;
 
-    /** A session that has not finished executing commands in this long is taken as lost. */
-    private static final long BATCH_SESSION_TIMEOUT_MS = 60_000L;
+    /** Base time a session has to finish its chunk of commands before it is taken as lost. */
+    private static final long SESSION_TIMEOUT_BASE_MS = 30_000L;
+
+    /** Extra time a session gets for every command in its chunk. */
+    private static final long SESSION_TIMEOUT_PER_COMMAND_MS = 2_000L;
+
+    /**
+     * Time a chunk of {@code commandCount} commands has to finish before its session is taken as
+     * lost. A flat deadline that suits one command cuts a full chunk short on a slow device, where
+     * a cold {@code app_process} or {@code pm} start costs a second or two per command.
+     */
+    public static long computeSessionTimeoutMs(int commandCount) {
+        return SESSION_TIMEOUT_BASE_MS + commandCount * SESSION_TIMEOUT_PER_COMMAND_MS;
+    }
 
     /**
      * Runs the commands through as few privileged shell sessions as it can and reports each command
@@ -392,7 +404,7 @@ public final class PrivilegedShellUtils {
             batch.append("exit\n");
             writer.writeBytes(batch.toString());
             writer.flush();
-            reading.get(BATCH_SESSION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            reading.get(computeSessionTimeoutMs(commands.size()), TimeUnit.MILLISECONDS);
         } finally {
             ProcessUtils.destroyProcess(writer, process);
         }
