@@ -137,17 +137,19 @@ public final class DataStatisticsUtils {
 
     }
 
-    public static void resetTimes(Context context, String dbName) {
+    public static boolean resetTimes(Context context, String dbName) {
         SQLiteDatabase db = null;
         try {
             db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null);
             if (db == null) {
-                return;
+                return false;
             }
             createTableIfNeeded(db);
             db.execSQL("UPDATE TimesList SET times = '0';");
+            return true;
         } catch (SQLiteException e) {
             e.printStackTrace();
+            return false;
         } finally {
             if (db != null) {
                 db.close();

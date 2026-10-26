@@ -56,12 +56,19 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             val currentActivity = activity
             val appContext = context?.applicationContext
             if (appContext != null) {
+                // Both listings are taken here, before the worker starts, so the walk deletes what
+                // was cached at the moment of the click and nothing more. Anything staged afterwards
+                // — the backup the user is about to import, an APK handed to the installer — arrives
+                // in these same two folders and would otherwise be deleted under the screen that is
+                // already reading it.
+                val cacheEntries = appContext.cacheDir?.listFiles()
+                val externalCacheEntries = appContext.externalCacheDir?.listFiles()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         appContext.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                             .edit().clear().apply()
-                        deleteAllFiles(appContext.cacheDir, false)
-                        deleteAllFiles(appContext.externalCacheDir, false)
+                        deleteSnapshot(cacheEntries)
+                        deleteSnapshot(externalCacheEntries)
                         deleteAllFiles(
                             File(appContext.filesDir.toString() + "/icon"),
                             false
@@ -123,6 +130,18 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
         }
     }
 
+    /**
+     * Deletes exactly the entries the caller listed, folders taking their own contents with them.
+     * Handing `deleteAllFiles` the folder instead would re-list it on the worker and reach files
+     * that appeared after the press.
+     */
+    private fun deleteSnapshot(entries: Array<out File>?) {
+        entries ?: return
+        for (entry in entries) {
+            deleteAllFiles(entry, true)
+        }
+    }
+
     private fun askIfResetTimes(dbName: String) {
         val activity: Activity? = activity
         val appContext = context?.applicationContext
@@ -134,9 +153,9 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
                     CoroutineScope(Dispatchers.IO).launch {
                         // resetTimes opens the counters database and rewrites every TimesList row;
                         // on a long-used list that is real disk work, not something to wait for here.
-                        resetTimes(appContext, dbName)
+                        val success = resetTimes(appContext, dbName)
                         withContext(Dispatchers.Main) {
-                            showToast(activity, R.string.success)
+                            showToast(activity, if (success) R.string.success else R.string.failed)
                         }
                     }
                 }
