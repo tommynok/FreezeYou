@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 @Keep
 class SettingsManageSpaceFragment : CardPreferenceFragment() {
@@ -56,19 +57,18 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             val currentActivity = activity
             val appContext = context?.applicationContext
             if (appContext != null) {
-                // Both listings are taken here, before the worker starts, so the walk deletes what
-                // was cached at the moment of the click and nothing more. Anything staged afterwards
-                // — the backup the user is about to import, an APK handed to the installer — arrives
-                // in these same two folders and would otherwise be deleted under the screen that is
-                // already reading it.
-                val cacheEntries = appContext.cacheDir?.listFiles()
-                val externalCacheEntries = appContext.externalCacheDir?.listFiles()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         appContext.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                             .edit().clear().apply()
-                        deleteSnapshot(cacheEntries)
-                        deleteSnapshot(externalCacheEntries)
+                        // The two cache trees are listed first and only that listing is deleted,
+                        // deepest entry first. Anything staged during the walk — the backup the
+                        // chooser reads from the cache root, an APK handed to the installer — is not
+                        // in the listing, so it is never reached, and the folder that gained it is
+                        // still non-empty when the walk arrives there and stays.
+                        deleteSnapshot(
+                            cacheListing(appContext.cacheDir) + cacheListing(appContext.externalCacheDir)
+                        )
                         deleteAllFiles(
                             File(appContext.filesDir.toString() + "/icon"),
                             false
@@ -131,14 +131,30 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
     }
 
     /**
-     * Deletes exactly the entries the caller listed, folders taking their own contents with them.
-     * Handing `deleteAllFiles` the folder instead would re-list it on the worker and reach files
-     * that appeared after the press.
+     * Every entry of [dir] below the folder itself, deepest first, or nothing at all when the folder
+     * is absent. Reversing the top-down order puts each entry after all of its own children, so the
+     * caller can delete a folder only once it is empty.
      */
-    private fun deleteSnapshot(entries: Array<out File>?) {
-        entries ?: return
+    private fun cacheListing(dir: File?): List<File> {
+        if (dir == null) {
+            return emptyList()
+        }
+        return dir.walkTopDown().filter { it != dir }.toList().reversed()
+    }
+
+    /**
+     * Deletes exactly the entries of this listing. A file that refuses to go is an IOException and the
+     * screen reports the failure, the same way `deleteAllFiles` reports it; a folder is removed only
+     * while it is empty, which is how a file staged after the listing survives the walk.
+     */
+    private fun deleteSnapshot(entries: List<File>) {
         for (entry in entries) {
-            deleteAllFiles(entry, true)
+            if (entry.isFile && !entry.delete()) {
+                throw IOException("${entry.absolutePath} delete failed")
+            }
+            if (entry.isDirectory) {
+                entry.delete()
+            }
         }
     }
 
