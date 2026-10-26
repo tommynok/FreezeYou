@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
@@ -194,6 +195,7 @@ public class Main extends FreezeYouBaseActivity {
     private int mPendingShortcutIndex = 0;
 
     private boolean isGridMode = false;
+    private boolean restoreFilterFromSavedState = false;
 
     private MainActivityAppListFragment mMainActivityAppListFragment;
     private final Queue<String> mUnprivilegedUninstallQueue = new LinkedList<>();
@@ -212,7 +214,21 @@ public class Main extends FreezeYouBaseActivity {
             setTheme(R.style.AppTheme_Default_Main);
         }
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            // recreate() keeps the intent that started the activity, so a shortcut's filter would
+            // otherwise win over the filter the user had switched to before the grid/list toggle.
+            currentFilter = savedInstanceState.getString("currentFilter", currentFilter);
+            restoreFilterFromSavedState = savedInstanceState.containsKey("currentFilter");
+        }
         setContentView(R.layout.main);
+        if (savedInstanceState != null) {
+            EditText searchEditText = findViewById(R.id.search_editText);
+            String searchQuery = savedInstanceState.getString("searchQuery");
+            if (searchEditText != null && !TextUtils.isEmpty(searchQuery)) {
+                searchEditText.setText(searchQuery);
+                searchEditText.setSelection(searchQuery.length());
+            }
+        }
         applyOriginalLightMainBackground();
         setupFloatingButtons();
         setupBackNavigation();
@@ -221,6 +237,59 @@ public class Main extends FreezeYouBaseActivity {
         } catch (Exception e) {
             e.printStackTrace();
             checkIfNeedAskFirstTimeSetupAndShowDialog();
+        }
+    }
+
+    /**
+     * The manifest routes orientation and screen-size changes here instead of recreating the
+     * activity, so {@link #go()} runs only once per instance and would keep the layout it picked on
+     * launch. With the automatic pattern the list/grid choice has to follow the new configuration;
+     * an explicit grid/list choice is the user's decision and stays put.
+     */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // go() has not run yet while the first-run dialog is still up; it resolves the mode from
+        // the configuration it finds, so there is nothing to rebuild here.
+        if (mMainActivityAppListFragment == null) {
+            return;
+        }
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String mainPattern =
+                sharedPref.getString(mainActivityPattern.name(), mainActivityPattern.defaultValue());
+        if (!mainActivityPattern.defaultValue().equals(mainPattern)) {
+            return;
+        }
+
+        boolean newGridMode = resolveGridMode(
+                mainPattern,
+                newConfig.orientation,
+                newConfig.screenWidthDp,
+                newConfig.screenHeightDp
+        );
+        if (newGridMode == isGridMode) {
+            return;
+        }
+
+        isGridMode = newGridMode;
+        mMainActivityAppListFragment = new MainActivityAppListFragment();
+        mMainActivityAppListFragment.setUseGridMode(isGridMode);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment)
+                .commit();
+        new Thread(() -> generateList(currentFilter)).start();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("currentFilter", currentFilter);
+        EditText searchEditText = findViewById(R.id.search_editText);
+        if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
+            outState.putString("searchQuery", searchEditText.getText().toString());
         }
     }
 
@@ -1525,6 +1594,27 @@ public class Main extends FreezeYouBaseActivity {
         );
     }
 
+    /**
+     * Resolves the list/grid mode for the given pattern. The automatic pattern follows the
+     * orientation, and only falls back to the aspect ratio when the configuration has none
+     * (for example in freeform windows).
+     */
+    public static boolean resolveGridMode(String pattern, int orientation, int width, int height) {
+        if ("grid".equals(pattern)) {
+            return true;
+        }
+        if ("list".equals(pattern)) {
+            return false;
+        }
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return true;
+        }
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            return false;
+        }
+        return height > 0 && width > height * 1.2;
+    }
+
     private void go() {
         if (updateFrozenStatusBroadcastReceiver == null) {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
@@ -1598,27 +1688,30 @@ public class Main extends FreezeYouBaseActivity {
 
         String mainPattern =
                 sharedPref.getString(mainActivityPattern.name(), mainActivityPattern.defaultValue());
-        if (mainActivityPattern.defaultValue().equals(mainPattern)) {
-            isGridMode =
-                    getWindowManager().getDefaultDisplay().getWidth()
-                            > getWindowManager().getDefaultDisplay().getHeight() * 1.2;
-        } else {
-            isGridMode = "grid".equals(mainPattern);
-        }
-        if (mMainActivityAppListFragment == null) {
-            mMainActivityAppListFragment = new MainActivityAppListFragment();
-            mMainActivityAppListFragment.setUseGridMode(isGridMode);
-        }
+        isGridMode = resolveGridMode(
+                mainPattern,
+                getResources().getConfiguration().orientation,
+                getWindowManager().getDefaultDisplay().getWidth(),
+                getWindowManager().getDefaultDisplay().getHeight()
+        );
+        mMainActivityAppListFragment = new MainActivityAppListFragment();
+        mMainActivityAppListFragment.setUseGridMode(isGridMode);
 
+        // replace(), not add(): after recreate() the FragmentManager has already restored the
+        // previous list fragment into this container, and add() stacked a second one on top of it.
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment);
+        fragmentTransaction.replace(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment);
         fragmentTransaction.commit();
 
         Thread initThread;
         initThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                if (restoreFilterFromSavedState) {
+                    generateList(currentFilter);
+                    return;
+                }
                 String mode = getIntent().getStringExtra("pkgName");
                 if (mode == null) {
                     mode = launchMode.getValue(Main.this);
