@@ -2677,53 +2677,54 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * The single-package path is cheap by construction: it only looks up rows of the named package
-     * and costs one package lookup plus the status binder calls per matching row, so it may stay
-     * on the calling thread. Every duplicate row of the package is updated, because the full
-     * snapshot skips the whole package by name.
+     * The single-package path is cheap by construction: it evaluates the named package once and
+     * applies the result to every row that shows it, so it may stay on the calling thread. All
+     * duplicate rows are updated because the full snapshot skips the whole package by name.
      */
     private void updateSingleRowFrozenStatus(MainAppListSimpleAdapter appListAdapter, String onlyPkgName) {
-        PackageManager pm = getPackageManager();
+        final ArrayList<Map<String, Object>> rows = new ArrayList<>();
         for (Map<String, Object> hm : appListAdapter.getStoredArrayList()) {
-            String pkgName = (String) hm.get("PackageName");
-            // The empty-list placeholder is not a package: skip it before the resume scan
-            // renames it "Uninstalled" and turns it into a clickable row.
-            if (getString(R.string.notAvailable).equals(pkgName)
-                    || !onlyPkgName.equals(pkgName)) {
-                continue;
+            if (onlyPkgName.equals(hm.get("PackageName"))) {
+                rows.add(hm);
             }
+        }
+        if (rows.isEmpty()) {
+            return;
+        }
 
-            ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
-            // Check if uninstalled
-            if (applicationInfo == null) {
+        ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(onlyPkgName, this);
+        // Check if uninstalled
+        if (applicationInfo == null) {
+            for (Map<String, Object> hm : rows) {
                 hm.put("Name", getString(R.string.uninstalled));
-                continue;
             }
+            appListAdapter.notifyDataSetChanged();
+            return;
+        }
 
-            boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
-            boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
-            if (!mIsBatchUninstallRunning) {
-                if (isUninstalled && !isRestoreFilter) {
-                    new Thread(() -> generateList(currentFilter)).start();
-                    return;
-                }
-                if (isRestoreFilter && !isUninstalled) {
-                    new Thread(() -> generateList(currentFilter)).start();
-                    return;
-                }
-            }
+        boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
+        boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
+        if (!mIsBatchUninstallRunning
+                && ((isUninstalled && !isRestoreFilter) || (isRestoreFilter && !isUninstalled))) {
+            new Thread(() -> generateList(currentFilter)).start();
+            return;
+        }
 
-            hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
-            hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
+        PackageManager pm = getPackageManager();
+        String name = getApplicationLabel(Main.this, pm, applicationInfo, onlyPkgName);
+        Drawable icon = getApplicationIcon(Main.this, onlyPkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this));
+        boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+        // A restorable system app can only be restored, so it keeps the frozen look. The icon is
+        // not regenerated; the greyscale filter is applied by the adapter.
+        boolean frozen = realGetFrozenStatus(Main.this, onlyPkgName, pm) || restorable;
+        int dot = frozen ? customThemeDisabledDot : customThemeEnabledDot;
 
-            boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+        for (Map<String, Object> hm : rows) {
+            hm.put("Name", name);
+            hm.put("Img", icon);
             hm.put("RestorableSystemApp", restorable);
-            // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
-            processFrozenStatus(hm, pkgName, pm);
-            if (restorable) {
-                hm.put("isFrozen", customThemeDisabledDot);
-                hm.put("Frozen", true);
-            }
+            hm.put("isFrozen", dot);
+            hm.put("Frozen", frozen);
         }
         appListAdapter.notifyDataSetChanged();
     }
