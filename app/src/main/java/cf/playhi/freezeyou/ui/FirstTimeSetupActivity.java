@@ -22,15 +22,20 @@ public class FirstTimeSetupActivity extends FreezeYouBaseActivity {
         if (actionBar != null)
             actionBar.hide();
 
-        init();
+        init(savedInstanceState);
     }
 
-    private void init() {
+    private void init(Bundle savedInstanceState) {
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.first_time_setup_main_frameLayout, new FirstTimeSetupFragment())
-                .commit();
+        // Only on a first start. A theme or pattern change calls recreate(), and the fragment is
+        // restored with the activity — adding another one on top of the restored fragment left two
+        // setup lists drawn over each other.
+        if (savedInstanceState == null) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.first_time_setup_main_frameLayout, new FirstTimeSetupFragment())
+                    .commit();
+        }
 
         Button first_time_setup_main_next_button = findViewById(R.id.first_time_setup_main_next_button);
         first_time_setup_main_next_button.setOnClickListener(v -> finish());

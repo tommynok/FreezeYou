@@ -12,8 +12,13 @@ import androidx.preference.PreferenceManager;
 
 import cf.playhi.freezeyou.R;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection;
+import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData;
+import static cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities;
 
 public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -51,6 +56,17 @@ public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
                 getActivity().getApplicationContext(),
                 getActivity(), sharedPreferences, key
         );
+        if (uiStyleSelection.name().equals(key)
+                || themeOfAutoSwitchDarkMode.name().equals(key)
+                || allowFollowSystemAutoSwitchDarkMode.name().equals(key)
+                || mainActivityPattern.name().equals(key)) {
+            // Writing the choice to storage is not enough: this screen and Main behind it keep the
+            // old theme until recreated. The dark-mode keys are not on this screen but they decide
+            // the same theme, so a restore-in-progress change applies here too.
+            if (getActivity() != null) {
+                recreateAllActivities(getActivity());
+            }
+        }
     }
 
     @Override

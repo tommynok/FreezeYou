@@ -123,7 +123,7 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                             ActivityCompat.requestPermissions(
                                 this@AutoDiagnosisActivity,
                                 arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                                0
+                                REQUEST_CODE_BLUETOOTH_PERMISSION
                             )
                         }
                         "-8" -> try {
@@ -163,6 +163,22 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
         viewModel.refreshDiagnosisData()
     }
 
+    /**
+     * The permission dialog does not pause this activity, so a granted Bluetooth permission never
+     * reached onResume and the row kept reporting the stale warning. The result callback is the
+     * only place that sees the answer.
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSION) {
+            viewModel.refreshDiagnosisData()
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.autodiagnosis_menu, menu)
@@ -193,5 +209,10 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    companion object {
+        /** Matches the Bluetooth diagnosis row id, so the result is traceable to that row. */
+        private const val REQUEST_CODE_BLUETOOTH_PERMISSION = 7
     }
 }

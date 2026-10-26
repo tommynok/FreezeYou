@@ -15,6 +15,7 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity
+import cf.playhi.freezeyou.ui.ScheduledTasksManageActivity
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.UUID
@@ -39,11 +40,18 @@ object ShortcutTokenUtils {
     const val ACTION_LOCK_SCREEN = "lock_screen"
 
     /**
-     * Ids the launcher knows the two dynamic shortcuts by. They are literals on purpose: an id
+     * Ids the launcher knows the dynamic shortcuts by. They are literals on purpose: an id
      * built from a translated label would change with the language and leave the old pin behind.
      */
     const val SHORTCUT_ID_ONE_KEY_FREEZE = "onekeyFreeze"
     const val SHORTCUT_ID_ONE_KEY_UF = "onekeyUF"
+
+    /**
+     * Reuses the id of the shortcut block removed from res/xml/shortcuts.xml. A launcher reads a
+     * static label straight from the APK with the system locale, so it never followed the language
+     * picked inside the app; publishing it here, with a localized label, is what fixes that.
+     */
+    const val SHORTCUT_ID_SCHEDULED_TASKS = "scheduledTasks"
 
     @JvmStatic
     fun getOrCreateAuthToken(action: String): String {
@@ -164,7 +172,20 @@ object ShortcutTokenUtils {
                     .setIntent(ufIntent)
                     .build()
 
-                shortcutManager.dynamicShortcuts = listOf(freezeShortcut, ufShortcut)
+                val scheduledTasksIntent =
+                    Intent(context, ScheduledTasksManageActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                    }
+
+                val scheduledTasksShortcut = ShortcutInfo.Builder(context, SHORTCUT_ID_SCHEDULED_TASKS)
+                    .setShortLabel(localized.getString(R.string.scheduledTasks))
+                    .setLongLabel(localized.getString(R.string.scheduledTasks))
+                    .setIcon(Icon.createWithResource(localized, R.drawable.ic_shortcut_access_alarm))
+                    .setIntent(scheduledTasksIntent)
+                    .build()
+
+                shortcutManager.dynamicShortcuts =
+                    listOf(freezeShortcut, ufShortcut, scheduledTasksShortcut)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     val pinned = shortcutManager.pinnedShortcuts
