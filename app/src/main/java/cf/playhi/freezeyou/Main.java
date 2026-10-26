@@ -2590,8 +2590,8 @@ public class Main extends FreezeYouBaseActivity {
      *
      * <p><b>Granular Row Targeting:</b><br>
      * When invoked with a specific {@code onlyPkgName} (such as from {@link #updateFrozenStatusBroadcastReceiver}
-     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), the loop terminates immediately
-     * after updating the matching package in memory, minimizing CPU overhead and preventing UI stutter.
+     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), only the rows of that
+     * package are looked up and updated in memory, minimizing CPU overhead and preventing UI stutter.
      *
      * <p><b>Off-UI Evaluation:</b><br>
      * A full re-check costs two or three synchronous binder calls per installed package. On a
@@ -2677,8 +2677,10 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
-     * The single-package path is cheap by construction: it stops at the matching row and costs
-     * one package lookup plus the status binder calls, so it may stay on the calling thread.
+     * The single-package path is cheap by construction: it only looks up rows of the named package
+     * and costs one package lookup plus the status binder calls per matching row, so it may stay
+     * on the calling thread. Every duplicate row of the package is updated, because the full
+     * snapshot skips the whole package by name.
      */
     private void updateSingleRowFrozenStatus(MainAppListSimpleAdapter appListAdapter, String onlyPkgName) {
         PackageManager pm = getPackageManager();
@@ -2695,7 +2697,7 @@ public class Main extends FreezeYouBaseActivity {
             // Check if uninstalled
             if (applicationInfo == null) {
                 hm.put("Name", getString(R.string.uninstalled));
-                break;
+                continue;
             }
 
             boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
@@ -2722,7 +2724,6 @@ public class Main extends FreezeYouBaseActivity {
                 hm.put("isFrozen", customThemeDisabledDot);
                 hm.put("Frozen", true);
             }
-            break;
         }
         appListAdapter.notifyDataSetChanged();
     }
