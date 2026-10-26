@@ -32,10 +32,18 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             true
         }
         findPreference<Preference?>("clearIconCache")?.setOnPreferenceClickListener {
-            showToast(
-                activity,
-                if (clearIconCache(activity)) R.string.success else R.string.failed
-            )
+            val currentActivity = activity
+            val appContext = context?.applicationContext
+            if (appContext != null) {
+                // A long-used icon cache is a folder of many small files and the delete walks it
+                // recursively, so it does not belong on the thread that paints this screen.
+                CoroutineScope(Dispatchers.IO).launch {
+                    val success = clearIconCache(appContext)
+                    withContext(Dispatchers.Main) {
+                        showToast(currentActivity, if (success) R.string.success else R.string.failed)
+                    }
+                }
+            }
             true
         }
         findPreference<Preference?>("clearNameCache")?.setOnPreferenceClickListener {
@@ -45,19 +53,29 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             true
         }
         findPreference<Preference?>("clearAllCache")?.setOnPreferenceClickListener {
-            try {
-                requireContext().getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
-                    .edit().clear().apply()
-                deleteAllFiles(requireContext().cacheDir, false)
-                deleteAllFiles(requireContext().externalCacheDir, false)
-                deleteAllFiles(
-                    File(requireContext().filesDir.toString() + "/icon"),
-                    false
-                )
-                showToast(activity, R.string.success)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                showToast(activity, R.string.failed)
+            val currentActivity = activity
+            val appContext = context?.applicationContext
+            if (appContext != null) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        appContext.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
+                            .edit().clear().apply()
+                        deleteAllFiles(appContext.cacheDir, false)
+                        deleteAllFiles(appContext.externalCacheDir, false)
+                        deleteAllFiles(
+                            File(appContext.filesDir.toString() + "/icon"),
+                            false
+                        )
+                        withContext(Dispatchers.Main) {
+                            showToast(currentActivity, R.string.success)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            showToast(currentActivity, R.string.failed)
+                        }
+                    }
+                }
             }
             true
         }
@@ -107,14 +125,22 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
 
     private fun askIfResetTimes(dbName: String) {
         val activity: Activity? = activity
-        if (activity != null) {
+        val appContext = context?.applicationContext
+        if (activity != null && appContext != null) {
             buildAlertDialog(
                 activity, R.drawable.ic_warning, R.string.askIfDel, R.string.caution
             )
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    resetTimes(activity, dbName)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        // resetTimes opens the counters database and rewrites every TimesList row;
+                        // on a long-used list that is real disk work, not something to wait for here.
+                        resetTimes(appContext, dbName)
+                        withContext(Dispatchers.Main) {
+                            showToast(activity, R.string.success)
+                        }
+                    }
                 }
-                .setNegativeButton(R.string.no, null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
     }
