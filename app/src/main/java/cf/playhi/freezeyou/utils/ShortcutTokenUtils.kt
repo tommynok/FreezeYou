@@ -90,9 +90,9 @@ object ShortcutTokenUtils {
 
     /**
      * The device locale, taken from the system resources rather than from the process default:
-     * on Android 13+ the default already carries the per-app locale this very call may be about
-     * to clear, so Locale.getDefault() would publish "Default" labels in the language the user
-     * has just left.
+     * on Android 13+ the default already carries whatever per-app language the system has for this
+     * app, so Locale.getDefault() would publish "Default" labels in that language instead of the
+     * device one.
      */
     private fun deviceLocale(): Locale {
         val configuration = android.content.res.Resources.getSystem().configuration
@@ -124,29 +124,6 @@ object ShortcutTokenUtils {
         return context.createConfigurationContext(configuration)
     }
 
-    /**
-     * On Android 13+ the launcher also reads the *static* shortcuts of `res/xml/shortcuts.xml`
-     * in the per-app locale, which only the system's LocaleManager can tell it. "Default" means
-     * follow the device, which is what an empty locale list asks for. Setting the same locales
-     * again is a no-op on the service side, so this is safe to run on every app start.
-     */
-    private fun syncApplicationLocales(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return
-        }
-        val localeManager = context.getSystemService(android.app.LocaleManager::class.java)
-            ?: return
-        val localeTag = Support.getLocalString(context)
-        localeManager.applicationLocales =
-            if (DefaultMultiProcessMMKVStorageStringKeys.languagePref.defaultValue()
-                    .equals(localeTag, ignoreCase = true)
-            ) {
-                android.os.LocaleList.getEmptyLocaleList()
-            } else {
-                android.os.LocaleList.forLanguageTags(localeTag)
-            }
-    }
-
     @JvmStatic
     fun initDynamicShortcutsAsync(context: Context) {
         val applicationContext = context.applicationContext
@@ -155,22 +132,7 @@ object ShortcutTokenUtils {
 
     @JvmStatic
     fun initDynamicShortcuts(context: Context) {
-        // The shortcuts go out first: handing the new locale to the system can relaunch the
-        // process, and the published shortcuts have to survive that handover.
-        try {
-            publishDynamicShortcuts(context)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        // Last, and outside whatever the shortcuts did above: on Android 13+ this call is what
-        // makes the system recreate the open activities after a language change, because
-        // SettingsActivity no longer recreates them itself. A missing ShortcutManager or a
-        // publication that threw would otherwise save the language and apply it to nothing.
-        try {
-            syncApplicationLocales(context)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        publishDynamicShortcuts(context)
     }
 
     private fun publishDynamicShortcuts(context: Context) {

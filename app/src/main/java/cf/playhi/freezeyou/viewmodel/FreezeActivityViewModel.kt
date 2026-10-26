@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.utils.CriticalPackagesUtils
 import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
@@ -23,6 +24,16 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     companion object {
         private const val ANIMATION_DURATION_MILLIS = 50L
+
+        /**
+         * The shortcut tap can be set to freeze without asking, but that setting speaks about the
+         * applications one normally keeps on the list. Freezing the status bar, Settings or the
+         * keyboard leaves nothing on the screen to undo it with, so those are asked about whatever
+         * the setting says.
+         */
+        @JvmStatic
+        fun needsAutoFUFConfirmation(isCritical: Boolean, needConfirmSetting: Boolean): Boolean =
+            isCritical || needConfirmSetting
     }
 
     private lateinit var mStartedIntent: Intent
@@ -158,7 +169,17 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                         true
                     )
                 } else {
-                    if (needConfirmWhenFreezeUseShortcutAutoFUF.getValue()) {
+                    // The dialog this routes to asks once more before the freeze actually runs;
+                    // reaching it is the point, because a silent auto-freeze of one of these
+                    // packages is the mistake nobody can undo from the locked-out screen.
+                    val isCritical = CriticalPackagesUtils
+                        .findCriticalPackages(getApplication(), listOf(it))
+                        .isNotEmpty()
+                    if (needsAutoFUFConfirmation(
+                            isCritical,
+                            needConfirmWhenFreezeUseShortcutAutoFUF.getValue()
+                        )
+                    ) {
                         checkOpenAndUFImmediately(
                             it,
                             target,

@@ -1363,20 +1363,26 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_autoUFOrFreeze:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            // Unfreezing is the way back to a missing status bar or keyboard, so it
+                            // stays a single tap.
                             processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
                                     false, false, false);
                         } else {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         }
                         break;
                     case APPListViewOnClickMode_freezeImmediately:
                         if (!realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.freezeCompleted);
@@ -1413,9 +1419,11 @@ public class Main extends FreezeYouBaseActivity {
                                     Main.this, pkgName, null, null,
                                     false, true, false);
                         } else {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         }
                         break;
                     case APPListViewOnClickMode_addToOFList:
@@ -3177,8 +3185,17 @@ public class Main extends FreezeYouBaseActivity {
      * allowed — this only asks first, and only when such a package is actually in the selection.
      */
     private void confirmIfCriticalSelectedThenRun(boolean isUninstall, Runnable action) {
+        confirmIfCriticalPackagesThenRun(selectedPackages, isUninstall, action);
+    }
+
+    /**
+     * The same question for any set of packages, so that a single row tapped into one of the
+     * direct-freeze modes cannot slip past a safeguard the bulk path has: one application freezes
+     * just as hard as a selection of them.
+     */
+    private void confirmIfCriticalPackagesThenRun(List<String> packagesToCheck, boolean isUninstall, Runnable action) {
         final List<String> critical =
-                CriticalPackagesUtils.findCriticalPackages(this, selectedPackages);
+                CriticalPackagesUtils.findCriticalPackages(this, packagesToCheck);
         if (critical.isEmpty()) {
             action.run();
             return;
