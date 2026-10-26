@@ -1533,6 +1533,9 @@ public class Main extends FreezeYouBaseActivity {
                     if (intent == null) {
                         return;
                     }
+                    // An intent aimed at somebody else is not ours to answer. A missing target is
+                    // allowed on purpose: the senders outside Main do not name a package, and on
+                    // every Android version the registration above already keeps them to this app.
                     if (intent.getPackage() != null && !Main.this.getPackageName().equals(intent.getPackage())) {
                         return;
                     }
@@ -1560,14 +1563,15 @@ public class Main extends FreezeYouBaseActivity {
             IntentFilter filter = new IntentFilter("cf.playhi.freezeyou.action.packageStatusChanged");
             filter.addAction("cf.playhi.freezeyou.action.packageStatusChanged");
             // Everything this receiver reacts to is sent by this app. Exporting it let any local
-            // application rebuild the whole list or pop the uninstall-completed dialog.
+            // application rebuild the whole list or pop the uninstall-completed dialog. The flag
+            // is not version-gated: below Android 13 ContextCompat registers the receiver behind
+            // the app's own signature permission, so the sender restriction holds there too, while
+            // the broadcasts this app sends itself still arrive.
             ContextCompat.registerReceiver(
                     Main.this,
                     updateFrozenStatusBroadcastReceiver,
                     filter,
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                            ? ContextCompat.RECEIVER_NOT_EXPORTED
-                            : 0
+                    ContextCompat.RECEIVER_NOT_EXPORTED
             );
         }
 
