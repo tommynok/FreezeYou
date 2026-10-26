@@ -186,8 +186,12 @@ public class Main extends FreezeYouBaseActivity {
     private volatile int currentSortRule = SORT_BY_DEFAULT;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
-    private boolean shortcutsCompleted = true;
-    private int shortcutsCount;
+    // The launcher's pin dialog pauses this activity between two shortcuts, so a batch has to
+    // survive resumes. It used to walk selectedPackages itself, which crashed the screen as soon
+    // as the user left the selection mode while a dialog was still open; this is a snapshot taken
+    // when the batch starts and read forward from.
+    private List<String> mPendingShortcutPackages = null;
+    private int mPendingShortcutIndex = 0;
 
     private boolean isGridMode = false;
 
@@ -332,23 +336,8 @@ public class Main extends FreezeYouBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!shortcutsCompleted && shortcutsCount > 0) {
-            String pkgName;
-            shortcutsCount = shortcutsCount - 1;
-            pkgName = selectedPackages.get(shortcutsCount);
-            createShortCut(
-                    getApplicationLabel(Main.this, null, null, pkgName),
-                    pkgName,
-                    getApplicationIcon(
-                            Main.this,
-                            pkgName,
-                            getApplicationInfoFromPkgName(pkgName, this),
-                            false),
-                    Freeze.class,
-                    "FreezeYou! " + pkgName,
-                    Main.this
-            );
-            shortcutsCompleted = (shortcutsCount <= 0);
+        if (hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            requestNextPinShortcut();
         }
         updateFrozenStatus(null);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -402,6 +391,7 @@ public class Main extends FreezeYouBaseActivity {
                     if (mUnprivilegedUninstallSuccessCount > 0) {
                         showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
                         sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                .setPackage(getPackageName())
                                 .putExtra("refreshAppList", true));
                         new Thread(() -> generateList(currentFilter)).start();
                     }
@@ -1266,32 +1256,25 @@ public class Main extends FreezeYouBaseActivity {
                                         return true;
                                     }
                                     case R.id.list_menu_createDisEnableShortCut:
+                                        if (selectedPackages.isEmpty()) {
+                                            return true;
+                                        }
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                             ShortcutManager mShortcutManager =
                                                     Main.this.getSystemService(ShortcutManager.class);
                                             if (mShortcutManager != null && mShortcutManager.isRequestPinShortcutSupported()) {
-                                                shortcutsCount = selectedPackages.size() - 1;
-                                                if (shortcutsCount >= 0) {
-                                                    String pkgName = selectedPackages.get(shortcutsCount);
-                                                    createShortCut(
-                                                            getApplicationLabel(Main.this, null, null, pkgName),
-                                                            pkgName,
-                                                            getApplicationIcon(
-                                                                    Main.this,
-                                                                    pkgName,
-                                                                    getApplicationInfoFromPkgName(pkgName, Main.this),
-                                                                    false),
-                                                            Freeze.class,
-                                                            "FreezeYou! " + pkgName,
-                                                            Main.this
-                                                    );
-                                                }
-                                                shortcutsCompleted = (shortcutsCount <= 0);
+                                                // One system dialog per package, and each one takes
+                                                // this activity off screen, so the rest of the batch
+                                                // is continued from onResume against a snapshot the
+                                                // selection mode cannot clear.
+                                                mPendingShortcutPackages = new ArrayList<>(selectedPackages);
+                                                mPendingShortcutIndex = 0;
+                                                requestNextPinShortcut();
                                             } else {
-                                                createFUFShortcutsBatch();
+                                                createFUFShortcutsBatch(new ArrayList<>(selectedPackages));
                                             }
                                         } else {
-                                            createFUFShortcutsBatch();
+                                            createFUFShortcutsBatch(new ArrayList<>(selectedPackages));
                                         }
                                         return true;
                                     case R.id.list_menu_copyAfterBeingFormatted:
@@ -1315,6 +1298,10 @@ public class Main extends FreezeYouBaseActivity {
                     @Override
                     public void onDestroyActionMode(ActionMode actionMode) {
                         selectedPackages.clear();
+                        // Leaving the selection mode also cancels an unfinished shortcut batch: the
+                        // snapshot is dropped here, so the next resume finds nothing left to pin.
+                        mPendingShortcutPackages = null;
+                        mPendingShortcutIndex = 0;
                         currentSelectionActionMode = null;
                         mIsBatchUninstallChecking = false;
                         if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.GONE);
@@ -1543,6 +1530,12 @@ public class Main extends FreezeYouBaseActivity {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    if (intent == null) {
+                        return;
+                    }
+                    if (intent.getPackage() != null && !Main.this.getPackageName().equals(intent.getPackage())) {
+                        return;
+                    }
                     if (intent.getBooleanExtra("uninstallSuccess", false)) {
                         showUninstallCompletedDialog(
                                 intent.getStringExtra("appName"),
@@ -1566,7 +1559,16 @@ public class Main extends FreezeYouBaseActivity {
             };
             IntentFilter filter = new IntentFilter("cf.playhi.freezeyou.action.packageStatusChanged");
             filter.addAction("cf.playhi.freezeyou.action.packageStatusChanged");
-            this.registerReceiver(updateFrozenStatusBroadcastReceiver, filter);
+            // Everything this receiver reacts to is sent by this app. Exporting it let any local
+            // application rebuild the whole list or pop the uninstall-completed dialog.
+            ContextCompat.registerReceiver(
+                    Main.this,
+                    updateFrozenStatusBroadcastReceiver,
+                    filter,
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            ? ContextCompat.RECEIVER_NOT_EXPORTED
+                            : 0
+            );
         }
 
         TasksUtils.checkTimeTasks(this);
@@ -2126,6 +2128,7 @@ public class Main extends FreezeYouBaseActivity {
                         if (ok) {
                             successCount++;
                             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                    .setPackage(getPackageName())
                                     .putExtra("pkgName", item.packageName)
                                     .putExtra("refreshAppList", false));
                         }
@@ -2280,6 +2283,7 @@ public class Main extends FreezeYouBaseActivity {
             mIsBatchUninstallRunning = false;
             showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                    .setPackage(getPackageName())
                     .putExtra("refreshAppList", true));
             new Thread(() -> generateList(currentFilter)).start();
             return;
@@ -2490,11 +2494,14 @@ public class Main extends FreezeYouBaseActivity {
         }).start();
     }
 
-    private void createFUFShortcutsBatch() { // Android < 8.0
-        int sps = selectedPackages.size();
-        String pkgName;
-        for (int i = 0; i < sps; i++) {
-            pkgName = selectedPackages.get(i);
+    private void createFUFShortcutsBatch(List<String> targetPackages) { // Android < 8.0 and no pin support
+        if (targetPackages == null) {
+            return;
+        }
+        for (String pkgName : targetPackages) {
+            if (pkgName == null) {
+                continue;
+            }
             createShortCut(
                     getApplicationLabel(Main.this, null, null, pkgName),
                     pkgName,
@@ -2508,6 +2515,50 @@ public class Main extends FreezeYouBaseActivity {
                     Main.this
             );
         }
+    }
+
+    /**
+     * Pins the next package of the batch and steps the cursor forward. The system dialog this
+     * raises takes the activity off screen, so the call that matters is the one {@code onResume}
+     * makes when the user comes back, not the one running now.
+     */
+    private void requestNextPinShortcut() {
+        if (!hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            mPendingShortcutPackages = null;
+            mPendingShortcutIndex = 0;
+            return;
+        }
+        String pkgName = getNextPendingShortcutPackage(mPendingShortcutPackages, mPendingShortcutIndex);
+        mPendingShortcutIndex++;
+        if (pkgName != null) {
+            createShortCut(
+                    getApplicationLabel(Main.this, null, null, pkgName),
+                    pkgName,
+                    getApplicationIcon(
+                            Main.this,
+                            pkgName,
+                            getApplicationInfoFromPkgName(pkgName, Main.this),
+                            false),
+                    Freeze.class,
+                    "FreezeYou! " + pkgName,
+                    Main.this
+            );
+        }
+        if (!hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            mPendingShortcutPackages = null;
+            mPendingShortcutIndex = 0;
+        }
+    }
+
+    static boolean hasPendingShortcuts(List<String> snapshot, int currentIndex) {
+        return snapshot != null && currentIndex >= 0 && currentIndex < snapshot.size();
+    }
+
+    static String getNextPendingShortcutPackage(List<String> snapshot, int currentIndex) {
+        if (snapshot == null || currentIndex < 0 || currentIndex >= snapshot.size()) {
+            return null;
+        }
+        return snapshot.get(currentIndex);
     }
 
     private void setSortByDefault(ArrayList<Map<String, Object>> AppList) {
