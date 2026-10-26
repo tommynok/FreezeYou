@@ -25,6 +25,9 @@ public final class RootUtils {
     /** When the last full probe ended without a working su binary, or 0 after a success. */
     private static volatile long sLastFailedDiscoveryTimeMs = 0L;
 
+    /** Guards the pair above so a failing probe cannot undo a success found in parallel. */
+    private static final Object CACHE_LOCK = new Object();
+
     /**
      * Returns a tested and functional su binary path, or "su" as fallback.
      */
@@ -57,8 +60,10 @@ public final class RootUtils {
 
     /** Forgets both the working binary and any recorded failure, so the next call probes again. */
     public static void resetCache() {
-        sCachedSuBinary = null;
-        sLastFailedDiscoveryTimeMs = 0L;
+        synchronized (CACHE_LOCK) {
+            sCachedSuBinary = null;
+            sLastFailedDiscoveryTimeMs = 0L;
+        }
     }
 
     /**
@@ -77,9 +82,14 @@ public final class RootUtils {
         // A working cached binary outranks a recorded failure: a probe running in parallel may
         // have just found one, and denying it for the rest of the TTL is worse than one extra test.
         String cached = sCachedSuBinary;
-        if (cached != null && testSuBinary(cached)) {
-            sLastFailedDiscoveryTimeMs = 0L;
-            return cached;
+        if (cached != null) {
+            if (testSuBinary(cached)) {
+                cacheWorkingBinary(cached);
+                return cached;
+            }
+            // The cached path stopped answering. Forget it, so that this failure can be recorded
+            // and getSuBinary stops handing out a binary that no longer works.
+            invalidateCachedBinary(cached);
         }
 
         if (!forceRefresh
@@ -92,17 +102,38 @@ public final class RootUtils {
 
         for (String candidate : SU_CANDIDATES) {
             if (testSuBinary(candidate)) {
-                sCachedSuBinary = candidate;
-                sLastFailedDiscoveryTimeMs = 0L;
+                cacheWorkingBinary(candidate);
                 return candidate;
             }
         }
-        // A parallel probe may have cached a working binary while this one was failing; its
-        // success must not be overwritten by this failure.
-        if (sCachedSuBinary == null) {
-            sLastFailedDiscoveryTimeMs = System.currentTimeMillis();
-        }
+        recordFailedDiscovery();
         return null;
+    }
+
+    /** Records a working binary and clears any recorded failure, whichever thread found it. */
+    private static void cacheWorkingBinary(String binary) {
+        synchronized (CACHE_LOCK) {
+            sCachedSuBinary = binary;
+            sLastFailedDiscoveryTimeMs = 0L;
+        }
+    }
+
+    /** Drops the cached binary only while it is still the one whose test just failed. */
+    private static void invalidateCachedBinary(String failedBinary) {
+        synchronized (CACHE_LOCK) {
+            if (failedBinary.equals(sCachedSuBinary)) {
+                sCachedSuBinary = null;
+            }
+        }
+    }
+
+    /** Records the failure unless a parallel probe cached a working binary in the meantime. */
+    private static void recordFailedDiscovery() {
+        synchronized (CACHE_LOCK) {
+            if (sCachedSuBinary == null) {
+                sLastFailedDiscoveryTimeMs = System.currentTimeMillis();
+            }
+        }
     }
 
     private static boolean testSuBinary(final String candidate) {
