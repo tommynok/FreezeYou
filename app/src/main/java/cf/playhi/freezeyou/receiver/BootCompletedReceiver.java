@@ -12,17 +12,20 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.NotificationUtils;
 import cf.playhi.freezeyou.utils.PackageListUtils;
+import cf.playhi.freezeyou.utils.ProcessSharedState;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.VersionUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.onekeyFreezeWhenLockScreen;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkAndCreateFUFQuickNotification;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen;
@@ -42,6 +45,12 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             try {
                 switch (action) {
                     case Intent.ACTION_BOOT_COMPLETED:
+                        // The two watchers in :backgroundService leave what they last saw in MMKV, and
+                        // a reboot does not run their teardown: an application that was notifying or
+                        // in the foreground before the phone went off would keep refusing a freeze it
+                        // no longer deserves, until each watcher publishes its own next event.
+                        ProcessSharedState.setNotifyingPackages(Collections.emptyList());
+                        ProcessSharedState.clearForegroundPackage();
                         runBackgroundService(context);
                         checkAndReNotifyNotifications(context);
                         checkTasks(context);
@@ -100,6 +109,14 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     }
 
     private void reNotifyUnfrozen(Context context, List<String> pkgNames) {
+        // With quick notifications off nothing below is posted, so the stored list is all that is
+        // left of them, and the manage screen keeps naming applications that have no card. The
+        // entries are taken out rather than the cards cancelled: the system removed the cards with
+        // the reboot or the update that led here.
+        if (!createQuickFUFNotiAfterUnfrozen.getValue(null)) {
+            NotificationUtils.deleteNotifying(context, pkgNames);
+            return;
+        }
         PackageManager pm = context.getPackageManager();
         List<String> stillUnfrozen = new ArrayList<>();
         List<String> alreadyFrozen = new ArrayList<>();
