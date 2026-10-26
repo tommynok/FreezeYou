@@ -2720,13 +2720,23 @@ public class Main extends FreezeYouBaseActivity {
         int dot = frozen ? customThemeDisabledDot : customThemeEnabledDot;
 
         for (Map<String, Object> hm : rows) {
+            // Each row needs its own instance: binding one animated drawable to two ImageViews
+            // replaces its callback and stops the animation on the first one.
+            hm.put("Img", copyDrawable(icon));
             hm.put("Name", name);
-            hm.put("Img", icon);
             hm.put("RestorableSystemApp", restorable);
             hm.put("isFrozen", dot);
             hm.put("Frozen", frozen);
         }
         appListAdapter.notifyDataSetChanged();
+    }
+
+    private static Drawable copyDrawable(Drawable drawable) {
+        if (drawable == null) {
+            return null;
+        }
+        Drawable.ConstantState state = drawable.getConstantState();
+        return state == null ? drawable : state.newDrawable().mutate();
     }
 
     private void saveOnClickFunctionStatus(int status) {
