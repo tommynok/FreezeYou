@@ -5,8 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService;
+import cf.playhi.freezeyou.utils.AccessibilityUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.NotificationUtils;
 import cf.playhi.freezeyou.utils.PackageListUtils;
@@ -45,12 +48,18 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             try {
                 switch (action) {
                     case Intent.ACTION_BOOT_COMPLETED:
-                        // The two watchers in :backgroundService leave what they last saw in MMKV, and
-                        // a reboot does not run their teardown: an application that was notifying or
-                        // in the foreground before the phone went off would keep refusing a freeze it
-                        // no longer deserves, until each watcher publishes its own next event.
-                        ProcessSharedState.setNotifyingPackages(Collections.emptyList());
-                        ProcessSharedState.clearForegroundPackage();
+                        // A reboot runs neither watcher's teardown, so what it last saw is still in
+                        // MMKV. Only the state left by a watcher the user has since switched off needs
+                        // taking out: a watcher that stays on publishes what it sees, the notification
+                        // listener as soon as the system binds it again. Clearing that half instead
+                        // could erase a snapshot this boot already produced, and nothing would put it
+                        // back before the next notification or window event.
+                        if (!AccessibilityUtils.isAccessibilitySettingsOn(context)) {
+                            ProcessSharedState.clearForegroundPackage();
+                        }
+                        if (!isNotificationListenerEnabled(context)) {
+                            ProcessSharedState.setNotifyingPackages(Collections.emptyList());
+                        }
                         runBackgroundService(context);
                         checkAndReNotifyNotifications(context);
                         checkTasks(context);
@@ -147,6 +156,20 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
     private boolean checkFrozenStatus(Context context, String packageName, PackageManager pm) {
         return (checkRootFrozen(context, packageName, pm) || checkMRootFrozen(context, packageName));
+    }
+
+    /**
+     * Below API 21 nothing asks whether an application is notifying, so there is no guard to correct
+     * and the stored set is left alone. A setting that reads back null is taken the same way: not as
+     * a listener the user has switched off.
+     */
+    private boolean isNotificationListenerEnabled(Context context) {
+        if (Build.VERSION.SDK_INT < 21) {
+            return true;
+        }
+        String enabledListeners = Settings.Secure.getString(
+                context.getContentResolver(), "enabled_notification_listeners");
+        return enabledListeners == null || enabledListeners.contains(context.getPackageName());
     }
 
     private void checkTasks(Context context) {
