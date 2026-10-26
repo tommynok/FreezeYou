@@ -61,8 +61,8 @@ public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
                 || allowFollowSystemAutoSwitchDarkMode.name().equals(key)
                 || mainActivityPattern.name().equals(key)) {
             // Writing the choice to storage is not enough: this screen and Main behind it keep the
-            // old theme until recreated. The dark-mode keys are not on this screen but they decide
-            // the same theme, so a restore-in-progress change applies here too.
+            // old theme until recreated. The two dark-mode keys are not offered on this screen;
+            // their branch is kept as a safeguard, mirroring the rule of the settings screen.
             if (getActivity() != null) {
                 recreateAllActivities(getActivity());
             }
