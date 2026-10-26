@@ -184,6 +184,10 @@ public class Main extends FreezeYouBaseActivity {
     private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
+    private BroadcastReceiver mPackageChangeReceiver;
+    // The adapter only holds the rows the search shows; menu eligibility and force-stop targets
+    // must follow the whole selection, including packages the query hides.
+    private volatile List<Map<String, Object>> mCurrentUnfilteredAppList;
     private volatile String currentFilter = "all";
     private volatile int currentSortRule = SORT_BY_DEFAULT;
     private boolean needProcessOnItemCheckedStateChanged = true;
@@ -467,6 +471,13 @@ public class Main extends FreezeYouBaseActivity {
         }
         if (updateFrozenStatusBroadcastReceiver != null)
             unregisterReceiver(updateFrozenStatusBroadcastReceiver);
+        if (mPackageChangeReceiver != null) {
+            try {
+                unregisterReceiver(mPackageChangeReceiver);
+            } catch (Exception ignored) {
+            }
+            mPackageChangeReceiver = null;
+        }
     }
 
     @Override
@@ -1092,6 +1103,7 @@ public class Main extends FreezeYouBaseActivity {
                 currentFilter = filter;
                 currentSortRule = sortRule;
                 updateFilterTitle(filter);
+                mCurrentUnfilteredAppList = AppList;
 
                 final EditText search_editText = findViewById(R.id.search_editText);
                 final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
@@ -1123,6 +1135,9 @@ public class Main extends FreezeYouBaseActivity {
                                 adapter.replaceAllInFormerArrayList(AppList);
                             } else {
                                 adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
+                            }
+                            if (currentSelectionActionMode != null) {
+                                updateRestoreMenuVisibility(currentSelectionActionMode.getMenu());
                             }
                         }
 
@@ -1670,6 +1685,16 @@ public class Main extends FreezeYouBaseActivity {
         return height > 0 && width > height * 1.2;
     }
 
+    public static boolean isPackageChangeAction(String action) {
+        return Intent.ACTION_PACKAGE_ADDED.equals(action)
+                || Intent.ACTION_PACKAGE_REMOVED.equals(action)
+                || Intent.ACTION_PACKAGE_REPLACED.equals(action);
+    }
+
+    public static boolean shouldDropPackageFromSelectionOnRemoval(String action, boolean isReplacing) {
+        return Intent.ACTION_PACKAGE_REMOVED.equals(action) && !isReplacing;
+    }
+
     private void go() {
         if (updateFrozenStatusBroadcastReceiver == null) {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
@@ -1715,6 +1740,52 @@ public class Main extends FreezeYouBaseActivity {
                     Main.this,
                     updateFrozenStatusBroadcastReceiver,
                     filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            );
+        }
+
+        if (mPackageChangeReceiver == null) {
+            mPackageChangeReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null) {
+                        return;
+                    }
+                    String action = intent.getAction();
+                    if (!isPackageChangeAction(action)) {
+                        return;
+                    }
+                    if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+                        boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
+                        Uri data = intent.getData();
+                        String pkgName = data == null ? null : data.getSchemeSpecificPart();
+                        if (shouldDropPackageFromSelectionOnRemoval(action, replacing)
+                                && pkgName != null
+                                && selectedPackages.contains(pkgName)) {
+                            selectedPackages.remove(pkgName);
+                            if (currentSelectionActionMode != null) {
+                                currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
+                                Menu menu = currentSelectionActionMode.getMenu();
+                                if (menu != null) {
+                                    updateRestoreMenuVisibility(menu);
+                                }
+                            }
+                        }
+                    }
+                    // Installed, updated or removed outside this app: nothing has refreshed the
+                    // rows' membership, labels or icons yet.
+                    new Thread(() -> generateList(currentFilter)).start();
+                }
+            };
+            IntentFilter packageChangeFilter = new IntentFilter();
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+            packageChangeFilter.addDataScheme("package");
+            ContextCompat.registerReceiver(
+                    Main.this,
+                    mPackageChangeReceiver,
+                    packageChangeFilter,
                     ContextCompat.RECEIVER_NOT_EXPORTED
             );
         }
@@ -1935,6 +2006,49 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
+    public static boolean canForceStop(boolean installedAppActionsVisible, boolean hasUnfrozenSelection) {
+        return installedAppActionsVisible && hasUnfrozenSelection;
+    }
+
+    public static List<String> filterForceStopTargets(List<String> selectedPackages, Set<String> frozenPackageSet) {
+        List<String> targetPackages = new ArrayList<>();
+        if (selectedPackages == null) {
+            return targetPackages;
+        }
+        for (String pkg : selectedPackages) {
+            if (frozenPackageSet == null || !frozenPackageSet.contains(pkg)) {
+                targetPackages.add(pkg);
+            }
+        }
+        return targetPackages;
+    }
+
+    public static boolean hasUnfrozenPackage(Set<String> selectedPackages, List<Map<String, Object>> packageRows) {
+        if (selectedPackages == null || packageRows == null) {
+            return false;
+        }
+        for (Map<String, Object> row : packageRows) {
+            String packageName = (String) row.get("PackageName");
+            if (selectedPackages.contains(packageName) && !Boolean.TRUE.equals(row.get("Frozen"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasUninstalledSystemPackage(Set<String> selectedPackages, List<Map<String, Object>> packageRows) {
+        if (selectedPackages == null || packageRows == null) {
+            return false;
+        }
+        for (Map<String, Object> row : packageRows) {
+            String packageName = (String) row.get("PackageName");
+            if (selectedPackages.contains(packageName) && Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void updateRestoreMenuVisibility(Menu menu) {
         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
         if (restoreItem == null) return;
@@ -1945,33 +2059,27 @@ public class Main extends FreezeYouBaseActivity {
         restoreItem.setVisible(eligible);
 
         // Saved one-key/custom lists can retain an uninstalled system package, so inspect the
-        // selected rows' cached flags rather than relying on the current filter alone.
+        // selected rows' cached flags rather than relying on the current filter alone. The
+        // adapter carries only the rows the search shows, so a selected package the query hides
+        // would otherwise drop out of the calculation and hide or expose the wrong actions.
         Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
-        boolean hasUninstalledSystemSelection = false;
-        boolean hasUnfrozenSelection = false;
-        if (mMainActivityAppListFragment != null
+        List<Map<String, Object>> rows = mCurrentUnfilteredAppList;
+        if (rows == null
+                && mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedPackageSet.contains(packageName)) {
-                    if (Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
-                        hasUninstalledSystemSelection = true;
-                    }
-                    if (!Boolean.TRUE.equals(row.get("Frozen"))) {
-                        hasUnfrozenSelection = true;
-                    }
-                }
-            }
+            rows = ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList();
         }
+        boolean hasUninstalledSystemSelection = hasUninstalledSystemPackage(selectedPackageSet, rows);
+        boolean hasUnfrozenSelection = hasUnfrozenPackage(selectedPackageSet, rows);
         boolean installedAppActionsVisible = !uninstalledSystemFilter
                 && !hasUninstalledSystemSelection;
 
-        boolean canForceStop = installedAppActionsVisible && hasUnfrozenSelection;
+        boolean forceStopVisible = canForceStop(installedAppActionsVisible, hasUnfrozenSelection);
 
         menu.findItem(R.id.list_menu_freezeImmediately).setVisible(installedAppActionsVisible);
         menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
-        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(canForceStop);
+        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(forceStopVisible);
         menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
         MenuItem uninstallItem = menu.findItem(R.id.list_menu_uninstallImmediately);
         if (uninstallItem != null) {
@@ -1996,42 +2104,53 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
+        Set<String> selectedSet = new HashSet<>(selectedPackages);
+        applyFrozenStateToRows(mCurrentUnfilteredAppList, selectedSet, freeze);
         if (mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            Set<String> selectedSet = new HashSet<>(selectedPackages);
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedSet.contains(packageName)) {
-                    row.put("Frozen", freeze);
-                    row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
-                }
-            }
-            ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter()).notifyDataSetChanged();
+            MainAppListSimpleAdapter appListAdapter = (MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter();
+            applyFrozenStateToRows(appListAdapter.getStoredArrayList(), selectedSet, freeze);
+            appListAdapter.notifyDataSetChanged();
         }
         int size = selectedPackages.size();
         String[] pkgNameList = selectedPackages.toArray(new String[size]);
         FUFUtils.processBatchAction(Main.this, pkgNameList, freeze);
     }
 
+    /**
+     * The adapter holds only the rows the current search shows, so the unfiltered list is patched
+     * as well: clearing the query would otherwise bring the old status dots back.
+     */
+    private void applyFrozenStateToRows(List<Map<String, Object>> rows, Set<String> selectedSet, boolean freeze) {
+        if (rows == null) {
+            return;
+        }
+        for (Map<String, Object> row : rows) {
+            if (selectedSet.contains((String) row.get("PackageName"))) {
+                row.put("Frozen", freeze);
+                row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
+            }
+        }
+    }
+
     private void processForceStopImmediately() {
         Set<String> frozenPackageSet = new HashSet<>();
-        if (mMainActivityAppListFragment != null
+        List<Map<String, Object>> rows = mCurrentUnfilteredAppList;
+        if (rows == null
+                && mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
+            rows = ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList();
+        }
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
                 if (Boolean.TRUE.equals(row.get("Frozen"))) {
-                    frozenPackageSet.add(packageName);
+                    frozenPackageSet.add((String) row.get("PackageName"));
                 }
             }
         }
-        List<String> targetPackages = new ArrayList<>();
-        for (String pkg : selectedPackages) {
-            if (!frozenPackageSet.contains(pkg)) {
-                targetPackages.add(pkg);
-            }
-        }
+        List<String> targetPackages = filterForceStopTargets(selectedPackages, frozenPackageSet);
         if (targetPackages.isEmpty()) {
             return;
         }
