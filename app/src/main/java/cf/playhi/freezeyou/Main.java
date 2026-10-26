@@ -196,6 +196,8 @@ public class Main extends FreezeYouBaseActivity {
 
     private boolean isGridMode = false;
     private boolean restoreFilterFromSavedState = false;
+    private volatile boolean filterEstablished = false;
+    private boolean mRestoreSelectionAfterFragmentRebuild = false;
 
     private MainActivityAppListFragment mMainActivityAppListFragment;
     private final Queue<String> mUnprivilegedUninstallQueue = new LinkedList<>();
@@ -219,6 +221,7 @@ public class Main extends FreezeYouBaseActivity {
             // otherwise win over the filter the user had switched to before the grid/list toggle.
             currentFilter = savedInstanceState.getString("currentFilter", currentFilter);
             restoreFilterFromSavedState = savedInstanceState.containsKey("currentFilter");
+            filterEstablished = restoreFilterFromSavedState;
         }
         setContentView(R.layout.main);
         if (savedInstanceState != null) {
@@ -274,6 +277,12 @@ public class Main extends FreezeYouBaseActivity {
         }
 
         isGridMode = newGridMode;
+        // Swapping the widget destroys the old list's modal action mode, whose teardown normally
+        // clears the selection. A rotation is not the user cancelling it, so the selection has to
+        // survive the swap and be checked again on the new list.
+        mRestoreSelectionAfterFragmentRebuild =
+                (currentSelectionActionMode != null || mRestoreSelectionAfterFragmentRebuild)
+                        && !selectedPackages.isEmpty();
         mMainActivityAppListFragment = new MainActivityAppListFragment();
         mMainActivityAppListFragment.setUseGridMode(isGridMode);
         getSupportFragmentManager()
@@ -286,7 +295,11 @@ public class Main extends FreezeYouBaseActivity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString("currentFilter", currentFilter);
+        // Before the launch worker has run there is no filter choice to save yet; writing the
+        // initial "all" would then beat the shortcut's filter on the recreated instance.
+        if (filterEstablished) {
+            outState.putString("currentFilter", currentFilter);
+        }
         EditText searchEditText = findViewById(R.id.search_editText);
         if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
             outState.putString("searchQuery", searchEditText.getText().toString());
@@ -574,6 +587,7 @@ public class Main extends FreezeYouBaseActivity {
     private void generateList(String filter, int sortRule) {
         currentFilter = filter;
         currentSortRule = sortRule;
+        filterEstablished = true;
         final int generation = mListGeneration.incrementAndGet();
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
         final Context applicationContext = getApplicationContext();
@@ -1366,17 +1380,27 @@ public class Main extends FreezeYouBaseActivity {
 
                     @Override
                     public void onDestroyActionMode(ActionMode actionMode) {
-                        selectedPackages.clear();
-                        // Leaving the selection mode also cancels an unfinished shortcut batch: the
-                        // snapshot is dropped here, so the next resume finds nothing left to pin.
-                        mPendingShortcutPackages = null;
-                        mPendingShortcutIndex = 0;
+                        // A configuration swap tears the action mode down for its own reasons; the
+                        // selection was not cancelled by the user and is restored below.
+                        if (!mRestoreSelectionAfterFragmentRebuild) {
+                            selectedPackages.clear();
+                            // Leaving the selection mode also cancels an unfinished shortcut batch:
+                            // the snapshot is dropped here, so the next resume finds nothing left
+                            // to pin.
+                            mPendingShortcutPackages = null;
+                            mPendingShortcutIndex = 0;
+                            mIsBatchUninstallChecking = false;
+                        }
                         currentSelectionActionMode = null;
-                        mIsBatchUninstallChecking = false;
                         if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.GONE);
                     }
                 };
                 mMainActivityAppListFragment.setMultiChoiceModeListener(currentMultiChoiceModeListener);
+
+                if (mRestoreSelectionAfterFragmentRebuild) {
+                    mRestoreSelectionAfterFragmentRebuild = false;
+                    restoreCheckedSelection(adapter);
+                }
 
                 if (mSelectionActionsImageButton != null) {
                     mSelectionActionsImageButton.setOnClickListener(v -> {
@@ -1844,6 +1868,29 @@ public class Main extends FreezeYouBaseActivity {
     private void checkAndAddNotAvailablePair(List<Map<String, Object>> AppList) {
         if (AppList.size() == 0) {
             addNotAvailablePair(getApplicationContext(), AppList);
+        }
+    }
+
+    /**
+     * Re-checks the rows that were selected before a configuration swap rebuilt the list. Checking
+     * an item in a modal-choice list starts the selection action mode by itself, so the checked
+     * state and its controls come back together. The listener reports every check it receives;
+     * the membership is left alone because the selection is exactly what is being restored.
+     */
+    private void restoreCheckedSelection(MainAppListSimpleAdapter adapter) {
+        if (selectedPackages.isEmpty() || mMainActivityAppListFragment == null) {
+            return;
+        }
+        ArrayList<Map<String, Object>> rows = adapter.getStoredArrayList();
+        for (int i = 0; i < rows.size(); i++) {
+            if (selectedPackages.contains((String) rows.get(i).get("PackageName"))) {
+                needProcessOnItemCheckedStateChanged = false;
+                mMainActivityAppListFragment.setItemChecked(i, true);
+            }
+        }
+        if (currentSelectionActionMode != null) {
+            currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
+            updateRestoreMenuVisibility(currentSelectionActionMode.getMenu());
         }
     }
 
