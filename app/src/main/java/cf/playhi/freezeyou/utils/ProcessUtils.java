@@ -91,20 +91,23 @@ public final class ProcessUtils {
         }
     }
 
-    public static int fAURoot(String pkgName, Boolean enable, Boolean hideMode) throws Exception {
-        Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-        DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
+    /**
+     * Budget for a single-package root freeze/unfreeze command. Matches
+     * {@link PrivilegedShellUtils#ROOT_APPROVAL_TIMEOUT_MS} so a slow user tap on the
+     * root approval prompt does not fail, but an unanswered prompt still terminates.
+     */
+    private static final long ROOT_ACTION_TIMEOUT_MS = 120_000L;
+
+    public static PrivilegedShellUtils.CommandResult fAURoot(
+            String pkgName, Boolean enable, Boolean hideMode) throws Exception {
         String quotedPkg = PrivilegedShellUtils.shellQuote(pkgName);
+        String command;
         if (enable) {
-            outputStream.writeBytes("pm " + (hideMode ? "unhide " : "enable ") + quotedPkg + "\n");
+            command = "pm " + (hideMode ? "unhide " : "enable ") + quotedPkg;
         } else {
-            outputStream.writeBytes("pm " + (hideMode ? "hide " : "disable ") + quotedPkg + "\n");
+            command = "pm " + (hideMode ? "hide " : "disable ") + quotedPkg;
         }
-        outputStream.writeBytes("exit\n");
-        outputStream.flush();
-        int i = process.waitFor();
-        destroyProcess(outputStream, process);
-        return i;
+        return PrivilegedShellUtils.runRootCommand(command, ROOT_ACTION_TIMEOUT_MS);
     }
 
     private static final String PS_PRIMARY_MARKER = "---PS-PRIMARY---";

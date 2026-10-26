@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.utils.FUFUtils.checkMRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
+import cf.playhi.freezeyou.utils.PrivilegedShellUtils
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.ShizukuProvider
@@ -197,18 +198,15 @@ open class FUFSinglePackage(
         var returnValue = ERROR_OTHER
         val enable = actionMode == ACTION_MODE_UNFREEZE
         try {
-            val exitValue = fAURoot(singlePackageName, enable, hideMode)
-            returnValue = if (exitValue == 0) {
-                ERROR_NO_ERROR_SUCCESS
-            } else {
-                ERROR_OTHER
-            }
+            val result = fAURoot(singlePackageName, enable, hideMode)
+            returnValue = classifyRootResult(result.exitCode, result.output)
         } catch (e: Exception) {
             e.printStackTrace()
             val eMsg = e.message
             if (eMsg != null &&
                 (eMsg.contains("permission denied", true)
-                        || eMsg.contains("not found", true))
+                        || eMsg.contains("not found", true)
+                        || eMsg.contains("no such file", true))
             ) {
                 returnValue = ERROR_NO_ROOT_PERMISSION
             }
@@ -374,40 +372,16 @@ open class FUFSinglePackage(
             val binderReadyAt = System.currentTimeMillis()
 
             val freeze = actionMode == ACTION_MODE_FREEZE
-            // Android 14 PackageManagerService: shell uid (plain Shizuku) may only toggle a
-            // whole package between ENABLED, DISABLED_USER and DEFAULT - DISABLED and
-            // DISABLED_UNTIL_USED from shell are rejected with SecurityException. Root
-            // Shizuku (Sui) has no such limit, so under root the exact upstream states per
-            // mode are preserved (UNTIL_USED / USER / DISABLED); under shell everything
-            // lands on DISABLED_USER, the only shell-allowed frozen state.
-            val freezeState = if (resolveShizukuUid() == 0) {
-                when (apiMode) {
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                    else -> PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                }
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-            }
-            val newState = if (freeze) {
-                freezeState
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            }
 
             try {
-                invokeSetApplicationEnabledSetting(newState)
+                invokeSetApplicationEnabledSetting(resolveTargetState(freeze))
             } catch (e: InvocationTargetException) {
                 if (e.cause !is android.os.DeadObjectException) throw e
-                // The cached proxy pointed at a Shizuku service that has since restarted. The
-                // binder itself is alive again (ensureBinderAlive said so), so one fresh proxy
-                // is enough — no need to make the user tap twice.
+                // The cached proxy pointed at a Shizuku service that has since restarted.
+                // Invalidate the proxy and clear shizukuUidCache, then recompute the target
+                // state in case the backend switched between Sui (UID 0) and ADB shell (UID 2000).
                 invalidateCachedPackageManagerProxy()
-                invokeSetApplicationEnabledSetting(newState)
+                invokeSetApplicationEnabledSetting(resolveTargetState(freeze))
             }
             val calledAt = System.currentTimeMillis()
             // The binder call returns nothing, so "no exception" is not the same as "it took
@@ -437,6 +411,13 @@ open class FUFSinglePackage(
         }
         return ERROR_OTHER
     }
+
+    private fun resolveTargetState(freeze: Boolean): Int =
+        if (!freeze) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        } else {
+            resolveFreezeState(apiMode, resolveShizukuUid())
+        }
 
     private fun invokeSetApplicationEnabledSetting(newState: Int) {
         val (pm, method) = obtainCachedPackageManagerProxyAndMethod()
@@ -704,6 +685,50 @@ open class FUFSinglePackage(
          * to satisfy PMS security checks; preserved natively under Sui (UID 0).
          */
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE = 10
+
+        /**
+         * Classifies the raw shell outcome of a single-package root freeze/unfreeze command.
+         *
+         * <p>A non-zero exit code with empty output means the su binary or daemon refused the
+         * command before anything ran (pm always prints an error on failure), so both blank
+         * output and an explicit "permission denied" map to [ERROR_NO_ROOT_PERMISSION].
+         * [PrivilegedShellUtils.isSuccessful] ensures that a zero exit code carrying an
+         * Error: line is not falsely reported as success.
+         */
+        @JvmStatic
+        fun classifyRootResult(exitCode: Int, output: String?): Int {
+            val text = output.orEmpty()
+            return when {
+                PrivilegedShellUtils.isSuccessful(exitCode, output) -> ERROR_NO_ERROR_SUCCESS
+                text.isBlank() -> ERROR_NO_ROOT_PERMISSION
+                text.contains("permission denied", ignoreCase = true) -> ERROR_NO_ROOT_PERMISSION
+                else -> ERROR_OTHER
+            }
+        }
+
+        /**
+         * Maps an API mode and Shizuku backend UID to the target frozen component state.
+         *
+         * <p>Android 14 PackageManagerService: shell uid (plain Shizuku, UID 2000) may only
+         * toggle a whole package between ENABLED, DISABLED_USER and DEFAULT; DISABLED and
+         * DISABLED_UNTIL_USED from shell are rejected with SecurityException. Root Shizuku (Sui,
+         * UID 0) has no such limit, preserving the exact upstream mode states.
+         */
+        @JvmStatic
+        fun resolveFreezeState(apiMode: Int, shizukuUid: Int): Int =
+            if (shizukuUid == 0) {
+                when (apiMode) {
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    else -> PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                }
+            } else {
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+            }
 
     }
 }
