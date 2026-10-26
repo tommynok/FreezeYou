@@ -1882,6 +1882,17 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
         ArrayList<Map<String, Object>> rows = adapter.getStoredArrayList();
+        // The selection is carried by checked rows. An application the active search hides has no
+        // row to restore, and leaving it in the list would keep it in batch actions without
+        // anything on screen showing it is still selected.
+        Set<String> visiblePackages = new HashSet<>();
+        for (Map<String, Object> row : rows) {
+            visiblePackages.add((String) row.get("PackageName"));
+        }
+        selectedPackages.retainAll(visiblePackages);
+        if (selectedPackages.isEmpty()) {
+            return;
+        }
         for (int i = 0; i < rows.size(); i++) {
             if (selectedPackages.contains((String) rows.get(i).get("PackageName"))) {
                 needProcessOnItemCheckedStateChanged = false;
@@ -2043,7 +2054,6 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
 
-        final ActionMode actionModeSnapshot = currentSelectionActionMode;
         final List<String> selectedSnapshot = new ArrayList<>(selectedPackages);
 
         final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
@@ -2064,8 +2074,10 @@ public class Main extends FreezeYouBaseActivity {
                         if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
                             return;
                         }
+                        // The action mode is a new instance after a configuration swap restores
+                        // the selection, so identity cannot be compared here: the unchanged
+                        // package snapshot is the thing that says this result still applies.
                         if (currentSelectionActionMode == null
-                                || currentSelectionActionMode != actionModeSnapshot
                                 || !selectedPackages.equals(selectedSnapshot)) {
                             return;
                         }
