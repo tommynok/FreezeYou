@@ -74,18 +74,20 @@ public final class RootUtils {
     }
 
     private static String findSuBinary(boolean forceRefresh) {
+        // A working cached binary outranks a recorded failure: a probe running in parallel may
+        // have just found one, and denying it for the rest of the TTL is worse than one extra test.
+        String cached = sCachedSuBinary;
+        if (cached != null && testSuBinary(cached)) {
+            sLastFailedDiscoveryTimeMs = 0L;
+            return cached;
+        }
+
         if (!forceRefresh
                 && isNegativeCacheActive(System.currentTimeMillis(),
                 sLastFailedDiscoveryTimeMs, FAILED_DISCOVERY_TTL_MS)) {
             // Every candidate was just tried and none worked. Probing them again would block the
             // caller for up to 35 s and raise the root prompt again on a device without root.
             return null;
-        }
-
-        String cached = sCachedSuBinary;
-        if (cached != null && testSuBinary(cached)) {
-            sLastFailedDiscoveryTimeMs = 0L;
-            return cached;
         }
 
         for (String candidate : SU_CANDIDATES) {
@@ -95,7 +97,11 @@ public final class RootUtils {
                 return candidate;
             }
         }
-        sLastFailedDiscoveryTimeMs = System.currentTimeMillis();
+        // A parallel probe may have cached a working binary while this one was failing; its
+        // success must not be overwritten by this failure.
+        if (sCachedSuBinary == null) {
+            sLastFailedDiscoveryTimeMs = System.currentTimeMillis();
+        }
         return null;
     }
 
