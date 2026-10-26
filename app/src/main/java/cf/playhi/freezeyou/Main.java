@@ -69,6 +69,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1764,10 +1765,16 @@ public class Main extends FreezeYouBaseActivity {
                                 && selectedPackages.contains(pkgName)) {
                             selectedPackages.remove(pkgName);
                             if (currentSelectionActionMode != null) {
-                                currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
-                                Menu menu = currentSelectionActionMode.getMenu();
-                                if (menu != null) {
-                                    updateRestoreMenuVisibility(menu);
+                                if (selectedPackages.isEmpty()) {
+                                    // Nothing is left to act on, so an empty action bar would
+                                    // only offer actions against no packages.
+                                    currentSelectionActionMode.finish();
+                                } else {
+                                    currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
+                                    Menu menu = currentSelectionActionMode.getMenu();
+                                    if (menu != null) {
+                                        updateRestoreMenuVisibility(menu);
+                                    }
                                 }
                             }
                         }
@@ -2743,8 +2750,24 @@ public class Main extends FreezeYouBaseActivity {
         mStatusPatchedDuringFullRefresh.clear();
         final int statusGeneration = mStatusRefreshGeneration.incrementAndGet();
         final String notAvailable = getString(R.string.notAvailable);
-        final ArrayList<Map<String, Object>> rows =
-                new ArrayList<>(appListAdapter.getStoredArrayList());
+        // The adapter holds only the rows the search matches, while the selection menu and the
+        // force-stop batch read the flags from the unfiltered list behind it. Evaluating the
+        // hidden rows here too keeps both sources in step without waiting for a rebuild.
+        final Set<Map<String, Object>> seenRows =
+                Collections.newSetFromMap(new IdentityHashMap<>());
+        final ArrayList<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : appListAdapter.getStoredArrayList()) {
+            if (seenRows.add(row)) {
+                rows.add(row);
+            }
+        }
+        if (mCurrentUnfilteredAppList != null) {
+            for (Map<String, Object> row : mCurrentUnfilteredAppList) {
+                if (seenRows.add(row)) {
+                    rows.add(row);
+                }
+            }
+        }
         new Thread(() -> {
             final PackageManager pm = getPackageManager();
             final ArrayList<FrozenStatusCheck> checks = new ArrayList<>(rows.size());
@@ -2801,10 +2824,21 @@ public class Main extends FreezeYouBaseActivity {
      * duplicate rows are updated because the full snapshot skips the whole package by name.
      */
     private void updateSingleRowFrozenStatus(MainAppListSimpleAdapter appListAdapter, String onlyPkgName) {
+        final Set<Map<String, Object>> seenRows =
+                Collections.newSetFromMap(new IdentityHashMap<>());
         final ArrayList<Map<String, Object>> rows = new ArrayList<>();
         for (Map<String, Object> hm : appListAdapter.getStoredArrayList()) {
-            if (onlyPkgName.equals(hm.get("PackageName"))) {
+            if (onlyPkgName.equals(hm.get("PackageName")) && seenRows.add(hm)) {
                 rows.add(hm);
+            }
+        }
+        // A package the search hides has no adapter row, but its flags still drive the selection
+        // menu and the force-stop batch, so the unfiltered rows are patched as well.
+        if (mCurrentUnfilteredAppList != null) {
+            for (Map<String, Object> hm : mCurrentUnfilteredAppList) {
+                if (onlyPkgName.equals(hm.get("PackageName")) && seenRows.add(hm)) {
+                    rows.add(hm);
+                }
             }
         }
         if (rows.isEmpty()) {
