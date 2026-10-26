@@ -25,8 +25,11 @@ public final class RootUtils {
     /** When the last full probe ended without a working su binary, or 0 after a success. */
     private static volatile long sLastFailedDiscoveryTimeMs = 0L;
 
-    /** Guards the pair above so a failing probe cannot undo a success found in parallel. */
+    /** Guards the cache fields and the generation below. */
     private static final Object CACHE_LOCK = new Object();
+
+    /** Bumped on every reset or invalidation, so a probe started earlier cannot republish. */
+    private static long sCacheGeneration = 0L;
 
     /**
      * Returns a tested and functional su binary path, or "su" as fallback.
@@ -63,6 +66,7 @@ public final class RootUtils {
         synchronized (CACHE_LOCK) {
             sCachedSuBinary = null;
             sLastFailedDiscoveryTimeMs = 0L;
+            sCacheGeneration++;
         }
     }
 
@@ -83,8 +87,9 @@ public final class RootUtils {
         // have just found one, and denying it for the rest of the TTL is worse than one extra test.
         String cached = sCachedSuBinary;
         if (cached != null) {
+            long generation = currentCacheGeneration();
             if (testSuBinary(cached)) {
-                cacheWorkingBinary(cached);
+                cacheWorkingBinary(cached, generation);
                 return cached;
             }
             // The cached path stopped answering. Forget it, so that this failure can be recorded
@@ -100,9 +105,10 @@ public final class RootUtils {
             return null;
         }
 
+        long generation = currentCacheGeneration();
         for (String candidate : SU_CANDIDATES) {
             if (testSuBinary(candidate)) {
-                cacheWorkingBinary(candidate);
+                cacheWorkingBinary(candidate, generation);
                 return candidate;
             }
         }
@@ -110,10 +116,25 @@ public final class RootUtils {
         return null;
     }
 
-    /** Records a working binary and clears any recorded failure, whichever thread found it. */
-    private static void cacheWorkingBinary(String binary) {
+    private static long currentCacheGeneration() {
         synchronized (CACHE_LOCK) {
-            sCachedSuBinary = binary;
+            return sCacheGeneration;
+        }
+    }
+
+    /**
+     * Records a working binary and clears any recorded failure, unless a reset or an invalidation
+     * happened while the test ran: then this result is older than the current cache state. A
+     * working entry published by a parallel probe is kept rather than replaced by an older find.
+     */
+    private static void cacheWorkingBinary(String binary, long generation) {
+        synchronized (CACHE_LOCK) {
+            if (generation != sCacheGeneration) {
+                return;
+            }
+            if (sCachedSuBinary == null) {
+                sCachedSuBinary = binary;
+            }
             sLastFailedDiscoveryTimeMs = 0L;
         }
     }
@@ -123,6 +144,7 @@ public final class RootUtils {
         synchronized (CACHE_LOCK) {
             if (failedBinary.equals(sCachedSuBinary)) {
                 sCachedSuBinary = null;
+                sCacheGeneration++;
             }
         }
     }
