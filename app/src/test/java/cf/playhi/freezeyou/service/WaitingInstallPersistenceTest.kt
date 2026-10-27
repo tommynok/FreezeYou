@@ -154,7 +154,7 @@ class WaitingInstallPersistenceTest {
             rebuilt.getParcelableExtra<Uri>("packageUri")
         )
         assertFalse(rebuilt.getBooleanExtra("uninstall_updates_only", true))
-        assertFalse(rebuilt.getBooleanExtra("waitForLeaving", true))
+        assertFalse(rebuilt.hasExtra("waitForLeaving"))
     }
 
     @Test
