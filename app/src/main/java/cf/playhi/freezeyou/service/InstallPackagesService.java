@@ -362,25 +362,35 @@ public class InstallPackagesService extends FreezeYouBaseService {
     }
 
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
+        final String waitingPackageName = intent.getStringExtra("waitingPackageName");
+        String copiedApkFilePath = null;
         try {
             String apkFilePath = intent.getStringExtra("apkFilePath");
             if (apkFilePath == null || "".equals(apkFilePath) || !new File(apkFilePath).exists()) {
                 Uri packageUri = intent.getParcelableExtra("packageUri");
-                if (packageUri == null) return;
+                if (packageUri == null) {
+                    cancelWaitingCardOnFailure(waitingPackageName, null);
+                    return;
+                }
                 InputStream in = getContentResolver().openInputStream(packageUri);
                 if (in == null) {
+                    cancelWaitingCardOnFailure(waitingPackageName, null);
                     return;
                 }
 
                 String apkFileName = "package" + new Date().getTime() + "F.apk";
                 apkFilePath = getExternalCacheDir() + File.separator + "ZDF-" + apkFileName;
+                copiedApkFilePath = apkFilePath;
 
                 FileUtils.copyFile(in, apkFilePath);
             }
 
             PackageManager pm = getPackageManager();
             PackageInfo packageInfo = pm.getPackageArchiveInfo(apkFilePath, 0);
-            if (packageInfo == null) return;
+            if (packageInfo == null) {
+                cancelWaitingCardOnFailure(waitingPackageName, copiedApkFilePath);
+                return;
+            }
             String willBeInstalledPackageName = packageInfo.packageName;
             packageInfo.applicationInfo.sourceDir = apkFilePath;
             packageInfo.applicationInfo.publicSourceDir = apkFilePath;
@@ -466,6 +476,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
             }
         } catch (final Exception e) {
             e.printStackTrace();
+            cancelWaitingCardOnFailure(waitingPackageName, copiedApkFilePath);
             InstallPackagesUtils
                     .notifyFinishNotification(
                             this, notificationManager, builder,
@@ -484,6 +495,20 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
         }
 
+    }
+
+    /**
+     * A waiting request is cleared before its install runs, so a source that fails here must
+     * resolve the card itself; otherwise it would wait for an install that never comes.
+     */
+    private void cancelWaitingCardOnFailure(String waitingPackageName, String copiedApkFilePath) {
+        if (copiedApkFilePath != null) {
+            InstallPackagesUtils.deleteTempFile(this, copiedApkFilePath, false);
+        }
+        if (waitingPackageName != null) {
+            InstallPackagesUtils.cancelWaitingForLeavingToInstallApplicationNotification(
+                    this, waitingPackageName);
+        }
     }
 
     // Enqueue and drain share one monitor: a request cannot be queued after the worker decided to

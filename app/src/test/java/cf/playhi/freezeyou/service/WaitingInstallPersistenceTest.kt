@@ -147,6 +147,7 @@ class WaitingInstallPersistenceTest {
 
         assertEquals(InstallPackagesService::class.java.name, rebuilt.component?.className)
         assertTrue(rebuilt.getBooleanExtra("install", false))
+        assertEquals("com.example.target", rebuilt.getStringExtra("waitingPackageName"))
         assertEquals("/cache/ZDF-package1F.apk", rebuilt.getStringExtra("apkFilePath"))
         assertEquals(
             Uri.parse("content://provider/apk"),

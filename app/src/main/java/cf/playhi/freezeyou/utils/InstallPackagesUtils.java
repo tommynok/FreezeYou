@@ -299,8 +299,11 @@ public final class InstallPackagesUtils {
         }
 
         public Intent toIntent(Context context) {
+            // The service uses this to resolve the waiting card when the APK source fails after
+            // the request itself has already been cleared.
             Intent intent = new Intent(context, InstallPackagesService.class)
                     .putExtra("install", install)
+                    .putExtra("waitingPackageName", packageName)
                     .putExtra("uninstall_updates_only", uninstallUpdatesOnly);
             if (apkFilePath != null) {
                 intent.putExtra("apkFilePath", apkFilePath);
