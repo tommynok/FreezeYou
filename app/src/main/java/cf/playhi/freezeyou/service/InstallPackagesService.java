@@ -364,6 +364,9 @@ public class InstallPackagesService extends FreezeYouBaseService {
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
         final String waitingPackageName = intent.getStringExtra("waitingPackageName");
         String copiedApkFilePath = null;
+        String resolvedPackageName = null;
+        boolean progressPosted = false;
+        boolean resultPosted = false;
         try {
             String apkFilePath = intent.getStringExtra("apkFilePath");
             if (apkFilePath == null || "".equals(apkFilePath) || !new File(apkFilePath).exists()) {
@@ -392,6 +395,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 return;
             }
             String willBeInstalledPackageName = packageInfo.packageName;
+            resolvedPackageName = willBeInstalledPackageName;
             packageInfo.applicationInfo.sourceDir = apkFilePath;
             packageInfo.applicationInfo.publicSourceDir = apkFilePath;
             String willBeInstalledName = pm.getApplicationLabel(packageInfo.applicationInfo).toString();
@@ -404,6 +408,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     (willBeInstalledPackageName + "@InstallPackagesNotification").hashCode(),
                     builder.build()
             );
+            progressPosted = true;
 
             if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 PackageInstaller packageInstaller = pm.getPackageInstaller();
@@ -458,6 +463,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 willBeInstalledName),
                                         null,
                                         true);
+                        resultPosted = true;
                         if (tryDelApkAfterInstalled.getValue(null))
                             InstallPackagesUtils.deleteTempFile(this, apkFilePath, true);
                     } else {
@@ -471,20 +477,29 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 willBeInstalledName),
                                         String.format(getString(R.string.reason_colon), result),
                                         false);
+                        resultPosted = true;
                     }
                 }
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            cancelWaitingCardOnFailure(waitingPackageName, copiedApkFilePath);
-            InstallPackagesUtils
-                    .notifyFinishNotification(
-                            this, notificationManager, builder,
-                            true,
-                            null,
-                            getString(R.string.installFailed),
-                            e.getLocalizedMessage(),
-                            false);
+            if (copiedApkFilePath != null) {
+                InstallPackagesUtils.deleteTempFile(this, copiedApkFilePath, false);
+            }
+            if (!resultPosted) {
+                // The progress card replaced the waiting card; either way the failure has to
+                // replace the card that is currently visible under this package.
+                final String failurePackageName = progressPosted
+                        ? resolvedPackageName : waitingPackageName;
+                InstallPackagesUtils
+                        .notifyFinishNotification(
+                                this, notificationManager, builder,
+                                true,
+                                failurePackageName,
+                                getString(R.string.installFailed),
+                                e.getLocalizedMessage(),
+                                false);
+            }
             new Handler(Looper.getMainLooper()).post(() ->
                     showToast(
                             getApplicationContext(),
