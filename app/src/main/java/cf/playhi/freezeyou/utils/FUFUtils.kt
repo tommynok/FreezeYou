@@ -838,6 +838,42 @@ object FUFUtils {
     }
 
     /**
+     * Packages with an FUF operation already running. Two taps on the same row, a shortcut fired
+     * twice, or a shortcut and a list row racing each other used to start two operations for one
+     * application: both read the old state, both committed, the statistics and the trigger tasks
+     * counted two changes, and a shortcut could flip the state back and forth. The second request
+     * is now dropped instead of queued — it carries no different intent, and running it after the
+     * first would only repeat the work.
+     *
+     * A monitor rather than a java.util.concurrent collection: it guards a few set operations and
+     * has to work on every supported API level.
+     */
+    private val inFlightLock = Any()
+    private val inFlightPackages = HashSet<String>()
+
+    /** @return true when this caller acquired the package and must release it afterwards. */
+    @JvmStatic
+    fun tryAcquirePackage(pkgName: String): Boolean = synchronized(inFlightLock) {
+        inFlightPackages.add(pkgName)
+    }
+
+    @JvmStatic
+    fun releasePackage(pkgName: String) = synchronized(inFlightLock) {
+        inFlightPackages.remove(pkgName)
+    }
+
+    @JvmStatic
+    fun isPackageInFlight(pkgName: String): Boolean = synchronized(inFlightLock) {
+        inFlightPackages.contains(pkgName)
+    }
+
+    @VisibleForTesting
+    @JvmStatic
+    fun clearInFlightPackagesForTests() = synchronized(inFlightLock) {
+        inFlightPackages.clear()
+    }
+
+    /**
      * Single freeze/unfreeze without the FUFService detour. The service lives in its own
      * `:backgroundService` process, so a tap from the list used to mean: fork a process, put up a
      * foreground notification, fetch the Shizuku binder into that process over IPC, and only then
@@ -860,30 +896,35 @@ object FUFUtils {
     ) {
         // Application context: the activity may be gone by the time the toast is shown.
         val appContext = context.applicationContext
+        if (!tryAcquirePackage(pkgName)) return
         inProcessFUFScope.launch {
-            val startedAt = System.currentTimeMillis()
-            val fufSinglePackage = FreezeYouFUFSinglePackage(
-                appContext,
-                pkgName,
-                if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE,
-                needAskRun = askRun,
-                runImmediately = runImmediately,
-                tasks = tasks,
-                target = target
-            )
-            val result = fufSinglePackage.commit()
-            if (DebugModeUtils.isDebugModeEnabled()) {
-                Log.e(
-                    "DebugModeLogcat",
-                    "fuf $pkgName freeze=$freeze result=$result " +
-                            "took=${System.currentTimeMillis() - startedAt}ms"
+            try {
+                val startedAt = System.currentTimeMillis()
+                val fufSinglePackage = FreezeYouFUFSinglePackage(
+                    appContext,
+                    pkgName,
+                    if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE,
+                    needAskRun = askRun,
+                    runImmediately = runImmediately,
+                    tasks = tasks,
+                    target = target
                 )
-            }
-            withContext(Dispatchers.Main) {
-                // Starting the app / the ask-run dialog after an unfreeze belongs on the UI thread.
-                val finalResult = if (freeze) result
-                else fufSinglePackage.checkAndStartTaskAndTargetAndActivity(result)
-                ToastUtils.showToast(appContext, getFUFRelatedToastString(appContext, finalResult))
+                val result = fufSinglePackage.commit()
+                if (DebugModeUtils.isDebugModeEnabled()) {
+                    Log.e(
+                        "DebugModeLogcat",
+                        "fuf $pkgName freeze=$freeze result=$result " +
+                                "took=${System.currentTimeMillis() - startedAt}ms"
+                    )
+                }
+                withContext(Dispatchers.Main) {
+                    // Starting the app / the ask-run dialog after an unfreeze belongs on the UI thread.
+                    val finalResult = if (freeze) result
+                    else fufSinglePackage.checkAndStartTaskAndTargetAndActivity(result)
+                    ToastUtils.showToast(appContext, getFUFRelatedToastString(appContext, finalResult))
+                }
+            } finally {
+                releasePackage(pkgName)
             }
         }
     }
@@ -941,89 +982,102 @@ object FUFUtils {
         // can never reach the failed list and the toast that names it.
         val targets = batchTargetsWithoutSelf(appContext.packageName, packages)
         if (targets.isEmpty()) return
+        // A package with an operation already running is left to that operation and the batch
+        // takes the rest; when nothing is left, the request would only repeat work.
+        val acquiredPackages = mutableListOf<String>()
+        for (pkg in targets) {
+            if (tryAcquirePackage(pkg)) {
+                acquiredPackages.add(pkg)
+            }
+        }
+        if (acquiredPackages.isEmpty()) return
         val actionMode =
             if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE
 
         inProcessFUFScope.launch {
-            val startedAt = System.currentTimeMillis()
-            val succeeded = mutableListOf<String>()
-            val stillNotifying = mutableListOf<String>()
-            val foreground = mutableListOf<String>()
-            val failed = mutableListOf<String>()
+            try {
+                val startedAt = System.currentTimeMillis()
+                val succeeded = mutableListOf<String>()
+                val stillNotifying = mutableListOf<String>()
+                val foreground = mutableListOf<String>()
+                val failed = mutableListOf<String>()
 
-            for (pkgName in targets) {
-                categorizeBatchResult(
-                    executeActionQuietly(appContext, pkgName, apiMode, actionMode),
-                    pkgName, succeeded, stillNotifying, foreground, failed
-                )
-            }
-
-            // Split on purpose: the actions and the bookkeeping that follows them are different
-            // costs, and reading one number for both hid that the bookkeeping was the slower half.
-            val actionsDoneAt = System.currentTimeMillis()
-
-            if (succeeded.isNotEmpty()) {
-                if (freeze) {
-                    DataStatisticsUtils.addFreezeTimes(appContext, succeeded)
-                    NotificationUtils.deleteNotifications(appContext, succeeded)
-                } else {
-                    DataStatisticsUtils.addUFreezeTimes(appContext, succeeded)
-                    // The quick notifications are deliberately not here — see after the toast.
+                for (pkgName in acquiredPackages) {
+                    categorizeBatchResult(
+                        executeActionQuietly(appContext, pkgName, apiMode, actionMode),
+                        pkgName, succeeded, stillNotifying, foreground, failed
+                    )
                 }
-                sendStatusChangedBroadcast(appContext)
-                val triggered = TasksUtils.collectTriggeredTasks(
-                    appContext, succeeded,
-                    if (freeze) "onFApplications" else "onUFApplications"
-                )
-                if (triggered.isNotEmpty()) {
-                    withContext(Dispatchers.Main) { TasksUtils.runCollectedTasks(appContext, triggered) }
+
+                // Split on purpose: the actions and the bookkeeping that follows them are different
+                // costs, and reading one number for both hid that the bookkeeping was the slower half.
+                val actionsDoneAt = System.currentTimeMillis()
+
+                if (succeeded.isNotEmpty()) {
+                    if (freeze) {
+                        DataStatisticsUtils.addFreezeTimes(appContext, succeeded)
+                        NotificationUtils.deleteNotifications(appContext, succeeded)
+                    } else {
+                        DataStatisticsUtils.addUFreezeTimes(appContext, succeeded)
+                        // The quick notifications are deliberately not here — see after the toast.
+                    }
+                    sendStatusChangedBroadcast(appContext)
+                    val triggered = TasksUtils.collectTriggeredTasks(
+                        appContext, succeeded,
+                        if (freeze) "onFApplications" else "onUFApplications"
+                    )
+                    if (triggered.isNotEmpty()) {
+                        withContext(Dispatchers.Main) { TasksUtils.runCollectedTasks(appContext, triggered) }
+                    }
+                } else if (failed.isNotEmpty()) {
+                    sendStatusChangedBroadcast(appContext)
                 }
-            } else if (failed.isNotEmpty()) {
-                sendStatusChangedBroadcast(appContext)
-            }
 
-            val bookkeepingDoneAt = System.currentTimeMillis()
+                val bookkeepingDoneAt = System.currentTimeMillis()
 
-            withContext(Dispatchers.Main) {
-                stillNotifying.forEach { checkAndShowAppStillNotifyingToast(appContext, it) }
-                foreground.forEach { checkAndShowAppIsForegroundApplicationToast(appContext, it) }
-                if (failed.isNotEmpty()) {
-                    showFailedApplicationsToast(appContext, failed)
-                } else if (stillNotifying.isEmpty() && foreground.isEmpty()
-                    && !lesserToast.getValue()
-                ) {
-                    ToastUtils.showToast(appContext, R.string.executed)
+                withContext(Dispatchers.Main) {
+                    stillNotifying.forEach { checkAndShowAppStillNotifyingToast(appContext, it) }
+                    foreground.forEach { checkAndShowAppIsForegroundApplicationToast(appContext, it) }
+                    if (failed.isNotEmpty()) {
+                        showFailedApplicationsToast(appContext, failed)
+                    } else if (stillNotifying.isEmpty() && foreground.isEmpty()
+                        && !lesserToast.getValue()
+                    ) {
+                        ToastUtils.showToast(appContext, R.string.executed)
+                    }
                 }
-            }
 
-            // Last, and after the list has been told to refresh and the toast has been shown,
-            // because this is the slowest part of an unfreeze and nothing waits on its result.
-            // Each application gets a notification of its own, with its own icon: that is what the
-            // system stacks into a bundle, and the cost of it — a package manager lookup and an
-            // icon decoded — is the price of the stock behaviour. The single card for the batch is
-            // opt-in and cheaper, because it names the applications without decoding their icons.
-            if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
-                if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
-                    && succeeded.size > 1
-                ) {
-                    NotificationUtils.createBatchQuickNotification(appContext, succeeded)
-                } else {
-                    succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+                // Last, and after the list has been told to refresh and the toast has been shown,
+                // because this is the slowest part of an unfreeze and nothing waits on its result.
+                // Each application gets a notification of its own, with its own icon: that is what the
+                // system stacks into a bundle, and the cost of it — a package manager lookup and an
+                // icon decoded — is the price of the stock behaviour. The single card for the batch is
+                // opt-in and cheaper, because it names the applications without decoding their icons.
+                if (!freeze && DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
+                    if (DefaultMultiProcessMMKVStorageBooleanKeys.combineBatchQuickNotification.getValue()
+                        && succeeded.size > 1
+                    ) {
+                        NotificationUtils.createBatchQuickNotification(appContext, succeeded)
+                    } else {
+                        succeeded.forEach { checkAndCreateFUFQuickNotification(appContext, it) }
+                    }
                 }
-            }
 
-            if (DebugModeUtils.isDebugModeEnabled()) {
-                Log.e(
-                    "DebugModeLogcat",
-                    "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
-                            "failed=${failed.size} " +
-                            "stillNotifying=${stillNotifying.size} " +
-                            "foreground=${foreground.size} " +
-                            "actions=${actionsDoneAt - startedAt}ms " +
-                            "bookkeeping=${bookkeepingDoneAt - actionsDoneAt}ms " +
-                            "reportedAfter=${bookkeepingDoneAt - startedAt}ms " +
-                            "notifications=${System.currentTimeMillis() - bookkeepingDoneAt}ms"
-                )
+                if (DebugModeUtils.isDebugModeEnabled()) {
+                    Log.e(
+                        "DebugModeLogcat",
+                        "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
+                                "failed=${failed.size} " +
+                                "stillNotifying=${stillNotifying.size} " +
+                                "foreground=${foreground.size} " +
+                                "actions=${actionsDoneAt - startedAt}ms " +
+                                "bookkeeping=${bookkeepingDoneAt - actionsDoneAt}ms " +
+                                "reportedAfter=${bookkeepingDoneAt - startedAt}ms " +
+                                "notifications=${System.currentTimeMillis() - bookkeepingDoneAt}ms"
+                    )
+                }
+            } finally {
+                acquiredPackages.forEach { releasePackage(it) }
             }
         }
     }

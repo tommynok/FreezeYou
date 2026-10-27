@@ -8,6 +8,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils
+import cf.playhi.freezeyou.utils.FUFUtils
 import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
@@ -234,6 +235,12 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         runImmediately: Boolean,
         frozen: Boolean
     ) {
+        if (!FUFUtils.tryAcquirePackage(pkgName)) {
+            // The same package already has an operation running; a second one would repeat the
+            // very work it is doing, so this request is dropped.
+            mFinishMe.postValue(true)
+            return
+        }
         mPlayAnimator.value = PlayAnimatorData(pkgName, !frozen)
         viewModelScope.launch(Dispatchers.IO) {
             val freezeYouFUFSinglePackage = FreezeYouFUFSinglePackage(
@@ -250,6 +257,11 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 mExecuteResult.postValue(ExecuteResult(result, freezeYouFUFSinglePackage))
                 mFinishMe.postValue(true)
             }
+        }.invokeOnCompletion {
+            // Released on completion rather than in a finally: a ViewModel cleared between the
+            // tap and the dispatcher cancels the coroutine before its body runs, and then a
+            // finally would never execute and the package would stay blocked for the process.
+            FUFUtils.releasePackage(pkgName)
         }
     }
 
