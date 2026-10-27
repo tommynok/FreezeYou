@@ -49,6 +49,8 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 // Install and uninstall
 public class InstallPackagesService extends FreezeYouBaseService {
 
+    public static final String NOTIFICATION_CHANNEL_RESULTS = "InstallPackagesResults";
+
     private final ArrayList<Intent> intentArrayList = new ArrayList<>();
     private boolean processing = false;
 
@@ -88,11 +90,19 @@ public class InstallPackagesService extends FreezeYouBaseService {
         super.onCreate();
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null)
+            if (notificationManager != null) {
                 notificationManager.createNotificationChannel(
                         new NotificationChannel("InstallPackages",
                                 getString(R.string.installAndUninstall), NotificationManager.IMPORTANCE_NONE)
                 );
+                // Results and waiting cards are user-visible, and on API 26+ a notification on an
+                // IMPORTANCE_NONE channel is never displayed; only the service's own foreground
+                // card stays silent.
+                notificationManager.createNotificationChannel(
+                        new NotificationChannel(NOTIFICATION_CHANNEL_RESULTS,
+                                getString(R.string.installAndUninstall), NotificationManager.IMPORTANCE_LOW)
+                );
+            }
             Notification.Builder mBuilder =
                     new Notification.Builder(this, "InstallPackages");
             mBuilder.setSmallIcon(R.drawable.ic_notification);
@@ -115,7 +125,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
         processing = true;
 
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
-                new Notification.Builder(this, "InstallPackages") :
+                new Notification.Builder(this, NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(this);
         builder.setSmallIcon(R.drawable.ic_notification);
 

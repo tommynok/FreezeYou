@@ -2,6 +2,7 @@ package cf.playhi.freezeyou.utils
 
 import cf.playhi.freezeyou.fuf.FUFSinglePackage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,6 +25,9 @@ class FUFBatchRefusalFeedbackTest {
             result, pkgName, succeeded, stillNotifying, foreground, failed
         )
     }
+
+    private fun shouldRefresh() =
+        FUFUtils.shouldRefreshListAfterBatch(failed, stillNotifying, foreground)
 
     @Test
     fun `both success codes count as succeeded`() {
@@ -95,5 +99,53 @@ class FUFBatchRefusalFeedbackTest {
         assertEquals(listOf("com.example.notifying"), stillNotifying)
         assertEquals(listOf("com.example.foreground"), foreground)
         assertEquals(listOf("com.example.failed"), failed)
+    }
+
+    @Test
+    fun `a guard-only refusal still asks the list to refresh`() {
+        // Main paints the requested state onto the rows when the batch starts; a refusal that
+        // never reaches the failed list used to leave that optimistic patch in place.
+        classify(
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_NOTIFYING_APPLICATION,
+            "com.example.notifying"
+        )
+
+        assertTrue(shouldRefresh())
+    }
+
+    @Test
+    fun `a foreground-only refusal still asks the list to refresh`() {
+        classify(
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_FOREGROUND_APPLICATION,
+            "com.example.foreground"
+        )
+
+        assertTrue(shouldRefresh())
+    }
+
+    @Test
+    fun `a batch of both guard refusals asks the list to refresh`() {
+        classify(
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_NOTIFYING_APPLICATION,
+            "com.example.notifying"
+        )
+        classify(
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_FOREGROUND_APPLICATION,
+            "com.example.foreground"
+        )
+
+        assertTrue(shouldRefresh())
+    }
+
+    @Test
+    fun `a failure-only batch keeps asking the list to refresh`() {
+        classify(FUFSinglePackage.ERROR_OTHER, "com.example.failed")
+
+        assertTrue(shouldRefresh())
+    }
+
+    @Test
+    fun `nothing to report does not touch the list`() {
+        assertFalse(shouldRefresh())
     }
 }

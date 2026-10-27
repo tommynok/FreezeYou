@@ -1034,7 +1034,7 @@ object FUFUtils {
                     if (triggered.isNotEmpty()) {
                         withContext(Dispatchers.Main) { TasksUtils.runCollectedTasks(appContext, triggered) }
                     }
-                } else if (failed.isNotEmpty()) {
+                } else if (shouldRefreshListAfterBatch(failed, stillNotifying, foreground)) {
                     sendStatusChangedBroadcast(appContext)
                 }
 
@@ -1134,6 +1134,19 @@ object FUFUtils {
             else -> failed += pkgName
         }
     }
+
+    /**
+     * Whether the list has to read the batch rows back. The success branch reports its own change;
+     * a guard refusal changes nothing, yet the rows were painted with the state the request asked
+     * for when it started, so it must ask the list to refresh as well. Kept pure so a JVM test can
+     * hold the rule without an Android context.
+     */
+    @VisibleForTesting
+    internal fun shouldRefreshListAfterBatch(
+        failed: List<String>,
+        stillNotifying: List<String>,
+        foreground: List<String>
+    ): Boolean = failed.isNotEmpty() || stillNotifying.isNotEmpty() || foreground.isNotEmpty()
 
     /**
      * The same guards [FreezeYouFUFSinglePackage] applies, without its per-application follow-up

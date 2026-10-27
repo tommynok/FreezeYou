@@ -10,6 +10,7 @@ import android.content.pm.PackageInstaller;
 import android.os.Build;
 
 import cf.playhi.freezeyou.R;
+import cf.playhi.freezeyou.service.InstallPackagesService;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.tryDelApkAfterInstalled;
@@ -28,7 +29,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
         String name = intent.getStringExtra("name");
 
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
-                new Notification.Builder(context, "InstallPackages") :
+                new Notification.Builder(context, InstallPackagesService.NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(context);
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

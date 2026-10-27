@@ -12,6 +12,7 @@ import android.os.Build;
 import java.io.File;
 
 import cf.playhi.freezeyou.R;
+import cf.playhi.freezeyou.service.InstallPackagesService;
 import cf.playhi.freezeyou.ui.ShowSimpleDialogActivity;
 
 public final class InstallPackagesUtils {
@@ -138,7 +139,7 @@ public final class InstallPackagesUtils {
     public static void postWaitingForLeavingToInstallApplicationNotification(Context context, PackageInfo packageInfo) {
 
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
-                new Notification.Builder(context, "InstallPackages") :
+                new Notification.Builder(context, InstallPackagesService.NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(context);
         builder.setSmallIcon(R.drawable.ic_notification);
 
