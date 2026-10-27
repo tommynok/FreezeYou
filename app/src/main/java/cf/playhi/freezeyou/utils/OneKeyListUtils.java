@@ -10,7 +10,9 @@ import android.util.Base64;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -21,6 +23,23 @@ public final class OneKeyListUtils {
     private static final String CATEGORIES_TABLE = "categories";
     private static final String CREATE_CATEGORIES_TABLE =
             "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)";
+    // How many times each category has been edited in this process. Two edits of one category run
+    // in independent workers and may finish out of order; the revision they carry under the write
+    // order lets the UI discard a callback that an already-superseded edit posted late.
+    private static final Map<String, Long> CATEGORY_REVISIONS = new HashMap<>();
+
+    /**
+     * One category edit's new membership, with the place that edit holds in the category's order.
+     */
+    public static final class CategoryUpdate {
+        public final String packages;
+        public final long revision;
+
+        private CategoryUpdate(String packages, long revision) {
+            this.packages = packages;
+            this.revision = revision;
+        }
+    }
 
     public static boolean addToOneKeyList(Context context, String key, String pkgName) {
         if (pkgName == null || pkgName.trim().isEmpty()) {
@@ -405,12 +424,13 @@ public final class OneKeyListUtils {
      *
      * The selection menu and the per-app popup can edit the same category at once; reading and
      * rewriting the whole packages column under one lock keeps either change from erasing the
-     * other.
+     * other. The revision stamped under the same lock tells a caller which of two edits was
+     * committed last, so a late callback cannot repaint the category with an older membership.
      *
-     * @return the category's packages after the change, or {@code null} if the row was not
-     *         read or written.
+     * @return the category's packages after the change and the edit's revision, or {@code null}
+     *         if the row was not read or written.
      */
-    public static String updateUserDefinedCategory(
+    public static CategoryUpdate updateUserDefinedCategory(
             Context context, String encodedLabel, Collection<String> pkgNames, boolean remove) {
         if (encodedLabel == null || encodedLabel.isEmpty() || pkgNames == null) {
             return null;
@@ -449,9 +469,15 @@ public final class OneKeyListUtils {
                 }
                 ContentValues values = new ContentValues();
                 values.put("packages", packages);
-                return userDefinedDb.update(
+                if (userDefinedDb.update(
                         CATEGORIES_TABLE, values, "label = ?", new String[]{encodedLabel}
-                ) > 0 ? packages : null;
+                ) <= 0) {
+                    return null;
+                }
+                final Long previous = CATEGORY_REVISIONS.get(encodedLabel);
+                final long revision = previous == null ? 1 : previous + 1;
+                CATEGORY_REVISIONS.put(encodedLabel, revision);
+                return new CategoryUpdate(packages, revision);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -463,6 +489,23 @@ public final class OneKeyListUtils {
                     userDefinedDb.close();
                 }
             }
+        }
+    }
+
+    /**
+     * Whether an edit is still the last one committed to its category.
+     *
+     * A worker that finished earlier can post its UI refresh after a later edit already did;
+     * the revision written under the mutation lock is the only account of which membership the
+     * UI may show.
+     */
+    public static boolean isLatestCategoryUpdate(String encodedLabel, long revision) {
+        if (encodedLabel == null) {
+            return false;
+        }
+        synchronized (LIST_LOCK) {
+            final Long latest = CATEGORY_REVISIONS.get(encodedLabel);
+            return latest != null && latest == revision;
         }
     }
 

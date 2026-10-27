@@ -238,6 +238,9 @@ public class Main extends FreezeYouBaseActivity {
             // recreate() keeps the intent that started the activity, so a shortcut's filter would
             // otherwise win over the filter the user had switched to before the grid/list toggle.
             currentFilter = savedInstanceState.getString("currentFilter", currentFilter);
+            // The category the filter came from travels with it: without the label the recreated
+            // list is still the category's packages, but no edit can tell that it is on screen.
+            currentCategoryLabel = savedInstanceState.getString("currentCategoryLabel");
             restoreFilterFromSavedState = savedInstanceState.containsKey("currentFilter");
             filterEstablished = restoreFilterFromSavedState;
         }
@@ -317,6 +320,9 @@ public class Main extends FreezeYouBaseActivity {
         // initial "all" would then beat the shortcut's filter on the recreated instance.
         if (filterEstablished) {
             outState.putString("currentFilter", currentFilter);
+            if (currentCategoryLabel != null) {
+                outState.putString("currentCategoryLabel", currentCategoryLabel);
+            }
         }
         EditText searchEditText = findViewById(R.id.search_editText);
         if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
@@ -1817,7 +1823,7 @@ public class Main extends FreezeYouBaseActivity {
             @Override
             public void run() {
                 if (restoreFilterFromSavedState) {
-                    generateList(currentFilter);
+                    generateList(currentFilter, currentSortRule, currentCategoryLabel);
                     return;
                 }
                 String mode = getIntent().getStringExtra("pkgName");
@@ -2091,20 +2097,23 @@ public class Main extends FreezeYouBaseActivity {
         final String encodedTitle = Base64.encodeToString(title.getBytes(), Base64.DEFAULT);
         // The helper reads the category under the same lock the per-app popup takes, so the two
         // writers cannot overwrite each other's membership change with a stale copy.
-        final String updatedPackages = OneKeyListUtils.updateUserDefinedCategory(
+        final OneKeyListUtils.CategoryUpdate update = OneKeyListUtils.updateUserDefinedCategory(
                 context, encodedTitle, packages, remove);
-        if (updatedPackages == null) {
+        if (update == null) {
             return;
         }
         showToast(Main.this, remove ? R.string.removed : R.string.added);
         runOnUiThread(() -> {
             // The list may have been opened before this worker committed: refresh it with the
             // membership just written, but only while it still shows that category - the user
-            // may have opened another filter in the meantime.
-            if (isFinishing() || !encodedTitle.equals(currentCategoryLabel)) {
+            // may have opened another filter in the meantime. A later edit of the same category
+            // supersedes this one even if this callback happens to land after it.
+            if (isFinishing()
+                    || !encodedTitle.equals(currentCategoryLabel)
+                    || !OneKeyListUtils.isLatestCategoryUpdate(encodedTitle, update.revision)) {
                 return;
             }
-            generateList(updatedPackages, currentSortRule, encodedTitle);
+            generateList(update.packages, currentSortRule, encodedTitle);
         });
     }
 
