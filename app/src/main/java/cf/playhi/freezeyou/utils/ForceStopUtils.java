@@ -186,11 +186,10 @@ public final class ForceStopUtils {
                     || msg.contains("refused") || msg.contains("timed out")) {
                 showToast(context, R.string.mayUnrooted);
             }
-            return;
         }
         if (!outcomes.failed.isEmpty()) {
             showFailedApplicationsToast(context, outcomes.failed);
-        } else if (!lesserToast.getValue(null)) {
+        } else if (result.error == null && !lesserToast.getValue(null)) {
             showToast(context, R.string.executed);
         }
     }
