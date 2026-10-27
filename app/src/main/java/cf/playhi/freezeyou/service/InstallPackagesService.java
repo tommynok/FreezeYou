@@ -54,8 +54,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
     public static final long INSTALL_TIMEOUT_MS = 120_000L;
     public static final long UNINSTALL_TIMEOUT_MS = 60_000L;
 
-    private final ArrayList<Intent> intentArrayList = new ArrayList<>();
-    private boolean processing = false;
+    private final InstallRequestQueue installRequestQueue = new InstallRequestQueue();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -77,13 +76,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
             MainApplication.setWaitingForLeavingToInstallApplicationIntent(i);
             InstallPackagesUtils.
                     postWaitingForLeavingToInstallApplicationNotification(this, packageInfo);
-            if (!processing) stopSelf();
-        } else {
-            if (processing) {
-                intentArrayList.add(i);
-            } else {
-                new Thread(() -> installAndUninstall(i)).start();
-            }
+            int stopId = installRequestQueue.idleStopId(startId);
+            if (stopId >= 0) stopSelf(stopId);
+        } else if (installRequestQueue.enqueue(i, startId)) {
+            new Thread(this::processQueue).start();
         }
         return super.onStartCommand(i, flags, startId);
     }
@@ -124,9 +120,22 @@ public class InstallPackagesService extends FreezeYouBaseService {
         return null;
     }
 
-    private void installAndUninstall(Intent intent) {
-        processing = true;
+    private void processQueue() {
+        while (true) {
+            Intent next = installRequestQueue.takeNextOrNull();
+            if (next != null) {
+                installAndUninstall(next);
+                continue;
+            }
+            int stopId = installRequestQueue.markDrainedIfEmpty();
+            if (stopId >= 0) {
+                stopSelf(stopId);
+                return;
+            }
+        }
+    }
 
+    private void installAndUninstall(Intent intent) {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
                 new Notification.Builder(this, NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(this);
@@ -139,11 +148,6 @@ public class InstallPackagesService extends FreezeYouBaseService {
         } else {//Uninstall
             uninstall(intent, builder, notificationManager);
         }
-
-        // Remove completed intent
-        intentArrayList.remove(intent);
-
-        checkIfAllTaskDoneAndStopSelf();
     }
 
     private void uninstall(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
@@ -480,12 +484,39 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
     }
 
-    private void checkIfAllTaskDoneAndStopSelf() {
-        if (intentArrayList.isEmpty()) {
+    // Enqueue and drain share one monitor: a request cannot be queued after the worker decided to
+    // stop, and stopSelf always receives the newest startId so a newer command keeps the service.
+    static final class InstallRequestQueue {
+
+        private final ArrayList<Intent> pending = new ArrayList<>();
+        private boolean processing;
+        private int lastStartId = -1;
+
+        synchronized boolean enqueue(Intent intent, int startId) {
+            lastStartId = startId;
+            pending.add(intent);
+            if (processing) {
+                return false;
+            }
+            processing = true;
+            return true;
+        }
+
+        synchronized Intent takeNextOrNull() {
+            return pending.isEmpty() ? null : pending.remove(0);
+        }
+
+        synchronized int markDrainedIfEmpty() {
+            if (!pending.isEmpty()) {
+                return -1;
+            }
             processing = false;
-            stopSelf();
-        } else {
-            installAndUninstall(intentArrayList.get(0));
+            return lastStartId;
+        }
+
+        synchronized int idleStopId(int startId) {
+            lastStartId = startId;
+            return processing || !pending.isEmpty() ? -1 : lastStartId;
         }
     }
 
