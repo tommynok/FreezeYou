@@ -125,8 +125,11 @@ public final class PrivilegedShellUtils {
         }
     }
 
+    /** Deadline for a single privileged command that runs outside a batch. */
+    public static final long DEFAULT_COMMAND_TIMEOUT_MS = 60_000L;
+
     public static CommandResult runShizukuCommand(String command) throws Exception {
-        return runShizukuCommand(command, 0L);
+        return runShizukuCommand(command, DEFAULT_COMMAND_TIMEOUT_MS);
     }
 
     public static CommandResult runShizukuCommand(String command, long timeoutMs) throws Exception {
@@ -150,7 +153,7 @@ public final class PrivilegedShellUtils {
     }
 
     public static CommandResult runRootCommand(String command) throws Exception {
-        return runRootCommand(command, 0L);
+        return runRootCommand(command, DEFAULT_COMMAND_TIMEOUT_MS);
     }
 
     public static CommandResult runRootCommand(String command, long timeoutMs) throws Exception {

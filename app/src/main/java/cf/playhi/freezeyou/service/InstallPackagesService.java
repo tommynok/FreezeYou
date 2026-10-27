@@ -51,6 +51,9 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
     public static final String NOTIFICATION_CHANNEL_RESULTS = "InstallPackagesResults";
 
+    public static final long INSTALL_TIMEOUT_MS = 120_000L;
+    public static final long UNINSTALL_TIMEOUT_MS = 60_000L;
+
     private final ArrayList<Intent> intentArrayList = new ArrayList<>();
     private boolean processing = false;
 
@@ -242,7 +245,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     Log.d("FreezeYouDebug", "InstallPackagesService: falling back to Shizuku shell commands");
                 }
                 for (String command : commands) {
-                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runShizukuCommand(command);
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runShizukuCommand(command, UNINSTALL_TIMEOUT_MS);
                     if (!result.isSuccessful()) {
                         String details = result.output == null || result.output.isEmpty()
                                 ? "exit code " + result.exitCode : result.output;
@@ -258,7 +261,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 return;
             } else if (rootAvailable) {
                 for (String command : commands) {
-                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runRootCommand(command);
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runRootCommand(command, UNINSTALL_TIMEOUT_MS);
                     if (!result.isSuccessful()) {
                         String details = result.output == null || result.output.isEmpty()
                                 ? "exit code " + result.exitCode : result.output;
@@ -421,7 +424,8 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 String result = null;
                 try {
                     String cmd = "pm install -r " + PrivilegedShellUtils.shellQuote(apkFilePath);
-                    PrivilegedShellUtils.CommandResult cmdRes = PrivilegedShellUtils.runRootCommand(cmd);
+                    PrivilegedShellUtils.CommandResult cmdRes =
+                            PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
                     InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
                     result = cmdRes.output;
                 } finally {
