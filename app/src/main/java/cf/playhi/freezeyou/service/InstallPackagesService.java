@@ -77,9 +77,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
             // request behind, otherwise the user sees a waiting card for an install that can
             // never happen. The persisted record is the only copy; a static would not survive
             // the process and would race the executor that dispatches it.
-            InstallPackagesUtils.saveWaitingForLeavingRequest(i, packageInfo.packageName);
-            InstallPackagesUtils.
-                    postWaitingForLeavingToInstallApplicationNotification(this, packageInfo);
+            InstallPackagesUtils.saveAndPostWaitingForLeavingRequest(this, i, packageInfo);
             int stopId = installRequestQueue.idleStopId(startId);
             if (stopId >= 0) stopSelf(stopId);
         } else if (installRequestQueue.enqueue(i, startId)) {

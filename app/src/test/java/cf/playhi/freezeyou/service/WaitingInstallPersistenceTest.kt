@@ -21,7 +21,8 @@ import java.io.File
  * `:backgroundService` left the waiting card behind and the approved install never happened.
  * The request is now encoded into the multi-process store the accessibility service reads back
  * after the user leaves the target application. The record has to round-trip every field the
- * service needs, reject anything malformed, and refuse an install whose staged APK is gone.
+ * service needs, reject anything malformed, and refuse an install only when neither the staged
+ * APK nor a content URI can supply it.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
@@ -100,13 +101,19 @@ class WaitingInstallPersistenceTest {
     }
 
     @Test
-    fun `an install whose staged APK disappeared is not dispatched`() {
+    fun `an install without a staged file is dispatched only when a URI can supply it`() {
         val app = RuntimeEnvironment.getApplication()
         val present = File(app.cacheDir, "present.apk").apply { createNewFile() }
         val missing = File(app.cacheDir, "missing.apk")
 
         assertTrue(request(apkFilePath = present.absolutePath).isApkAvailable())
         assertFalse(request(apkFilePath = missing.absolutePath).isApkAvailable())
+        assertTrue(
+            request(
+                apkFilePath = missing.absolutePath,
+                packageUri = "content://provider/apk"
+            ).isApkAvailable()
+        )
     }
 
     @Test

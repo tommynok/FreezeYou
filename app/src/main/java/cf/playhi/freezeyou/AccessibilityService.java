@@ -319,9 +319,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void discardWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
-        if (!InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request)) return;
-        InstallPackagesUtils.cancelWaitingForLeavingToInstallApplicationNotification(
-                this, request.packageName);
+        if (!InstallPackagesUtils.discardWaitingForLeavingRequest(this, request)) return;
         if (request.apkFilePath != null) {
             InstallPackagesUtils.deleteTempFile(this, request.apkFilePath, false);
         }

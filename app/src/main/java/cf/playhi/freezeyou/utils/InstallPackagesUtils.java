@@ -204,10 +204,28 @@ public final class InstallPackagesUtils {
                 .sync();
     }
 
+    public static synchronized void saveAndPostWaitingForLeavingRequest(
+            Context context, Intent intent, PackageInfo packageInfo) {
+        if (packageInfo == null || packageInfo.packageName == null) return;
+        saveWaitingForLeavingRequest(intent, packageInfo.packageName);
+        postWaitingForLeavingToInstallApplicationNotification(context, packageInfo);
+    }
+
     public static synchronized WaitingInstallRequest getWaitingForLeavingRequest() {
         return WaitingInstallRequest.decode(
                 new DefaultMultiProcessMMKVStorage()
                         .getString(KEY_WAITING_FOR_LEAVING_REQUEST, null));
+    }
+
+    /**
+     * Drops the request and its card together. Save-and-post runs under the same lock, so a stale
+     * cleanup can never cancel the card of a newer request for the same package.
+     */
+    public static synchronized boolean discardWaitingForLeavingRequest(
+            Context context, WaitingInstallRequest expected) {
+        if (!clearWaitingForLeavingRequestIfMatches(expected)) return false;
+        cancelWaitingForLeavingToInstallApplicationNotification(context, expected.packageName);
+        return true;
     }
 
     /**
@@ -271,7 +289,9 @@ public final class InstallPackagesUtils {
             if (!install) return true;
             // A content-URI request has no staged path of its own: the service copies it again.
             if (apkFilePath == null || apkFilePath.isEmpty()) return true;
-            return new File(apkFilePath).exists();
+            if (new File(apkFilePath).exists()) return true;
+            // The staged copy is gone, but the service has its own URI-copy fallback.
+            return packageUri != null;
         }
 
         public boolean matches(WaitingInstallRequest other) {
