@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import cf.playhi.freezeyou.DeviceAdminReceiver
 import cf.playhi.freezeyou.MainApplication
 import cf.playhi.freezeyou.R
@@ -903,6 +904,10 @@ object FUFUtils {
      * instead of one process per application, driven on a background thread. The deprecated
      * automatic mode is dispatched through FUFService, which partitions packages between DPM/PO
      * and batched root execution.
+     *
+     * Applications the user's own guards refuse — still notifying, or in the foreground — are
+     * reported one by one with the specific toast the single-package path uses instead of joining
+     * the failure list, and the batch only says it executed when nothing was refused.
      */
     @JvmStatic
     fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
@@ -942,17 +947,15 @@ object FUFUtils {
         inProcessFUFScope.launch {
             val startedAt = System.currentTimeMillis()
             val succeeded = mutableListOf<String>()
+            val stillNotifying = mutableListOf<String>()
+            val foreground = mutableListOf<String>()
             val failed = mutableListOf<String>()
 
             for (pkgName in targets) {
-                val result = executeActionQuietly(appContext, pkgName, apiMode, actionMode)
-                if (result == FUFSinglePackage.ERROR_NO_ERROR_SUCCESS ||
-                    result == FUFSinglePackage.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
-                ) {
-                    succeeded += pkgName
-                } else {
-                    failed += pkgName
-                }
+                categorizeBatchResult(
+                    executeActionQuietly(appContext, pkgName, apiMode, actionMode),
+                    pkgName, succeeded, stillNotifying, foreground, failed
+                )
             }
 
             // Split on purpose: the actions and the bookkeeping that follows them are different
@@ -982,9 +985,13 @@ object FUFUtils {
             val bookkeepingDoneAt = System.currentTimeMillis()
 
             withContext(Dispatchers.Main) {
+                stillNotifying.forEach { checkAndShowAppStillNotifyingToast(appContext, it) }
+                foreground.forEach { checkAndShowAppIsForegroundApplicationToast(appContext, it) }
                 if (failed.isNotEmpty()) {
                     showFailedApplicationsToast(appContext, failed)
-                } else if (!lesserToast.getValue()) {
+                } else if (stillNotifying.isEmpty() && foreground.isEmpty()
+                    && !lesserToast.getValue()
+                ) {
                     ToastUtils.showToast(appContext, R.string.executed)
                 }
             }
@@ -1010,6 +1017,8 @@ object FUFUtils {
                     "DebugModeLogcat",
                     "fuf batch of ${packages.size} freeze=$freeze ok=${succeeded.size} " +
                             "failed=${failed.size} " +
+                            "stillNotifying=${stillNotifying.size} " +
+                            "foreground=${foreground.size} " +
                             "actions=${actionsDoneAt - startedAt}ms " +
                             "bookkeeping=${bookkeepingDoneAt - actionsDoneAt}ms " +
                             "reportedAfter=${bookkeepingDoneAt - startedAt}ms " +
@@ -1040,6 +1049,32 @@ object FUFUtils {
     fun batchTargetsWithoutSelf(
         selfPackageName: String, packages: Array<String>
     ): List<String> = packages.filterNot { it == selfPackageName }.distinct()
+
+    /**
+     * Puts one in-process batch result into the list it belongs to. The two guard codes are not
+     * failures: the application was left alone on purpose, and reporting it as a failure hides the
+     * reason the single-package path names. Kept out of the loop so a JVM test can hold the split
+     * without an Android context.
+     */
+    @VisibleForTesting
+    internal fun categorizeBatchResult(
+        result: Int,
+        pkgName: String,
+        succeeded: MutableList<String>,
+        stillNotifying: MutableList<String>,
+        foreground: MutableList<String>,
+        failed: MutableList<String>
+    ) {
+        when (result) {
+            FUFSinglePackage.ERROR_NO_ERROR_SUCCESS,
+            FUFSinglePackage.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT -> succeeded += pkgName
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_NOTIFYING_APPLICATION ->
+                stillNotifying += pkgName
+            FUFSinglePackage.ERROR_USER_SET_NOT_ALLOWED_TO_FREEZE_FOREGROUND_APPLICATION ->
+                foreground += pkgName
+            else -> failed += pkgName
+        }
+    }
 
     /**
      * The same guards [FreezeYouFUFSinglePackage] applies, without its per-application follow-up

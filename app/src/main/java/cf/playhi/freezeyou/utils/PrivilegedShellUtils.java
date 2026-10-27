@@ -43,7 +43,7 @@ public final class PrivilegedShellUtils {
         public final int exitCode;
         public final String output;
 
-        private CommandResult(int exitCode, String output) {
+        public CommandResult(int exitCode, String output) {
             this.exitCode = exitCode;
             this.output = output;
         }
@@ -423,7 +423,7 @@ public final class PrivilegedShellUtils {
      * session never answered is kept as an outcome that did not report, so the caller's list lines up
      * with the list it sent.
      */
-    private static List<CommandOutcome> toOutcomes(List<String> commands, int offset,
+    public static List<CommandOutcome> toOutcomes(List<String> commands, int offset,
                                                   Map<Integer, CommandResult> reported) {
         List<CommandOutcome> outcomes = new ArrayList<>(commands.size());
         for (int i = 0; i < commands.size(); i++) {
