@@ -75,6 +75,11 @@ public class Query extends ContentProvider {
         return 0;
     }
 
+    static boolean isDpmOwner(Context context) {
+        return DevicePolicyManagerUtils.isDeviceOwner(context)
+                || DevicePolicyManagerUtils.isProfileOwner(context);
+    }
+
     @Override
     public Bundle call(@NonNull String method, String arg, Bundle extras) {
         Context context = getContext();
@@ -85,7 +90,7 @@ public class Query extends ContentProvider {
         String queryPkg = extras.getString("packageName");
         switch (method) {
             case QUERY_MODE:
-                if (context != null && DevicePolicyManagerUtils.isDeviceOwner(context)) {
+                if (context != null && isDpmOwner(context)) {
                     bundle.putString("currentMode", "dpm");
                 } else if (FUFUtils.checkRootPermission()) {
                     bundle.putString("currentMode", "root");

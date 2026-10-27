@@ -67,20 +67,16 @@ class Freeze : ContentProvider() {
                 if (ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context) == null) {
                     bundle.putInt("result", 998)
                 } else {
-                    if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(
-                            context
-                        )
-                    ) {
+                    val dpmApiMode =
+                        if (Build.VERSION.SDK_INT >= 21) resolveAutoDpmApiMode(
+                            DevicePolicyManagerUtils.isDeviceOwner(context),
+                            DevicePolicyManagerUtils.isProfileOwner(context)
+                        ) else null
+                    if (dpmApiMode != null) {
                         if (FUFUtils.checkMRootFrozen(context, pkgName)) {
                             bundle.putInt("result", 999)
                         } else {
-                            if (FUFUtils.processMRootAction(
-                                    context, pkgName,
-                                    null, null, hidden = true,
-                                    askRun = false, runImmediately = false, activity = null,
-                                    finish = false, showUnnecessaryToast = false
-                                )
-                            ) {
+                            if (freezeThroughDpm(context, pkgName, dpmApiMode)) {
                                 bundle.putInt("result", 0)
                             } else {
                                 bundle.putInt("result", -3)
@@ -232,6 +228,14 @@ class Freeze : ContentProvider() {
         }
     }
 
+    private fun freezeThroughDpm(context: Context, pkgName: String, apiMode: Int): Boolean =
+        FUFUtils.processAction(
+            context, pkgName, apiMode,
+            enable = false, showUnnecessaryToast = false,
+            askRun = false, target = null, tasks = null,
+            runImmediately = false, activity = null, finish = false
+        )
+
     private fun doApiV2Action(context: Context, pkgName: String, apiMode: Int): Int {
         return runBlocking {
             var result = ERROR_OTHER
@@ -253,3 +257,11 @@ class Freeze : ContentProvider() {
     }
 
 }
+
+/** DPM mode for the v1 auto action, or null to fall back to root; device owner wins when both match. */
+internal fun resolveAutoDpmApiMode(deviceOwner: Boolean, profileOwner: Boolean): Int? =
+    when {
+        deviceOwner -> FUFSinglePackage.API_FREEZEYOU_MROOT_DPM
+        profileOwner -> FUFSinglePackage.API_FREEZEYOU_MROOT_PROFILE_OWNER
+        else -> null
+    }
