@@ -160,6 +160,42 @@ public final class OneKeyListUtils {
                 new DefaultMultiProcessMMKVStorage().getString(onekeyName, ""), pkgName);
     }
 
+    /**
+     * Flip one package on a stored OneKEY list and report what the flip did.
+     *
+     * The menu offering this used to decide add-or-remove from the list it read when it opened,
+     * so two quick taps on the same entry both added and the second could not undo the first.
+     * Reading and writing under the same lock as every other list mutation makes the second tap
+     * the removal the user asked for.
+     *
+     * @return {@link Boolean#TRUE} if the package was added, {@link Boolean#FALSE} if it was
+     *         removed, {@code null} if the list could not be written.
+     */
+    public static Boolean toggleInOneKeyList(Context context, String key, String pkgName) {
+        final String name = pkgName == null ? "" : pkgName.trim();
+        if (name.isEmpty()) {
+            return null;
+        }
+        synchronized (LIST_LOCK) {
+            final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+            storage.lock();
+            try {
+                final String currentPkgNames = storage.getString(key, "");
+                final boolean exists = existsInOneKeyList(currentPkgNames, name);
+                final String updatedPkgNames = exists
+                        ? removePkgFromPkgNames(currentPkgNames, name)
+                        : addPkgToPkgNames(currentPkgNames, name);
+                if (!storage.encode(key, updatedPkgNames)) {
+                    return null;
+                }
+                storage.sync();
+                return !exists;
+            } finally {
+                storage.unlock();
+            }
+        }
+    }
+
     public static boolean removeUninstalledFromOneKeyList(Context context, String oneKeyName) {
         String s = new DefaultMultiProcessMMKVStorage().getString(oneKeyName, "");
 
@@ -274,24 +310,207 @@ public final class OneKeyListUtils {
         if (name.isEmpty()) {
             return;
         }
-        SQLiteDatabase userDefinedDb = null;
-        try {
-            userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
-            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
-            for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
-                if (existsInOneKeyList(row.packages, name)) {
-                    writeUserDefinedCategory(
-                            userDefinedDb,
-                            row.id,
-                            removePkgFromPkgNames(row.packages, name)
-                    );
+        // An uninstall can land while a category is being edited from a menu; both rewrite the
+        // whole packages column, so they take the same lock or one change overwrites the other.
+        synchronized (LIST_LOCK) {
+            SQLiteDatabase userDefinedDb = null;
+            try {
+                userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+                userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+                for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
+                    if (existsInOneKeyList(row.packages, name)) {
+                        writeUserDefinedCategory(
+                                userDefinedDb,
+                                row.id,
+                                removePkgFromPkgNames(row.packages, name)
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (userDefinedDb != null) {
+                    userDefinedDb.close();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (userDefinedDb != null) {
-                userDefinedDb.close();
+        }
+    }
+
+    /**
+     * Flip one package's membership of a custom category and report what the flip did.
+     *
+     * The per-app popup used to work from the category it read when it opened, so two quick taps
+     * both added. The read and the write share one lock, which makes the second tap undo the
+     * first instead of repeating it.
+     *
+     * @return {@link Boolean#TRUE} if the package was added, {@link Boolean#FALSE} if it was
+     *         removed, {@code null} if the category could not be read or written.
+     */
+    public static Boolean togglePackageInUserDefinedCategory(
+            Context context, int id, String pkgName) {
+        final String name = pkgName == null ? "" : pkgName.trim();
+        if (name.isEmpty()) {
+            return null;
+        }
+        synchronized (LIST_LOCK) {
+            SQLiteDatabase userDefinedDb = null;
+            Cursor cursor = null;
+            try {
+                userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+                userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+                String packages = "";
+                boolean found = false;
+                cursor = userDefinedDb.query(
+                        CATEGORIES_TABLE, new String[]{"packages"}, "_id = ?",
+                        new String[]{String.valueOf(id)}, null, null, null
+                );
+                if (cursor.moveToFirst()) {
+                    found = true;
+                    packages = cursor.getString(cursor.getColumnIndexOrThrow("packages"));
+                    if (packages == null) {
+                        packages = "";
+                    }
+                }
+                cursor.close();
+                cursor = null;
+                if (!found) {
+                    return null;
+                }
+                final boolean exists = existsInOneKeyList(packages, name);
+                writeUserDefinedCategory(
+                        userDefinedDb,
+                        id,
+                        exists
+                                ? removePkgFromPkgNames(packages, name)
+                                : addPkgToPkgNames(packages, name)
+                );
+                return !exists;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (userDefinedDb != null) {
+                    userDefinedDb.close();
+                }
+            }
+        }
+    }
+
+    /**
+     * Apply a selection's additions or removals to one custom category and return its new
+     * membership.
+     *
+     * The selection menu and the per-app popup can edit the same category at once; reading and
+     * rewriting the whole packages column under one lock keeps either change from erasing the
+     * other.
+     *
+     * @return the category's packages after the change, or {@code null} if the row was not
+     *         read or written.
+     */
+    public static String updateUserDefinedCategory(
+            Context context, String encodedLabel, Collection<String> pkgNames, boolean remove) {
+        if (encodedLabel == null || encodedLabel.isEmpty() || pkgNames == null) {
+            return null;
+        }
+        synchronized (LIST_LOCK) {
+            SQLiteDatabase userDefinedDb = null;
+            Cursor cursor = null;
+            try {
+                userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+                userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+                String packages = null;
+                boolean found = false;
+                cursor = userDefinedDb.query(
+                        CATEGORIES_TABLE, new String[]{"packages"}, "label = ?",
+                        new String[]{encodedLabel}, null, null, null
+                );
+                if (cursor.moveToFirst()) {
+                    found = true;
+                    packages = cursor.getString(cursor.getColumnIndexOrThrow("packages"));
+                    if (packages == null) {
+                        packages = "";
+                    }
+                }
+                cursor.close();
+                cursor = null;
+                if (!found) {
+                    return null;
+                }
+                for (String pkgName : pkgNames) {
+                    if (pkgName == null || pkgName.trim().isEmpty()) {
+                        continue;
+                    }
+                    packages = remove
+                            ? removePkgFromPkgNames(packages, pkgName)
+                            : addPkgToPkgNames(packages, pkgName);
+                }
+                ContentValues values = new ContentValues();
+                values.put("packages", packages);
+                return userDefinedDb.update(
+                        CATEGORIES_TABLE, values, "label = ?", new String[]{encodedLabel}
+                ) > 0 ? packages : null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (userDefinedDb != null) {
+                    userDefinedDb.close();
+                }
+            }
+        }
+    }
+
+    /**
+     * Insert a custom category unless its label is already taken.
+     *
+     * The existence check and the insert used to run in independent workers, so two saves filed
+     * before either landed could both pass the check and file the same label twice. Both now run
+     * under the category lock, and a conflict is ignored rather than replacing a row.
+     *
+     * @return {@link Boolean#TRUE} if the category was inserted, {@link Boolean#FALSE} if the
+     *         label already exists, {@code null} if the database could not be written.
+     */
+    public static Boolean createUserDefinedCategory(Context context, String encodedLabel) {
+        if (encodedLabel == null || encodedLabel.isEmpty()) {
+            return null;
+        }
+        synchronized (LIST_LOCK) {
+            SQLiteDatabase userDefinedDb = null;
+            Cursor cursor = null;
+            try {
+                userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+                userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+                cursor = userDefinedDb.query(
+                        CATEGORIES_TABLE, new String[]{"_id"}, "label = ?",
+                        new String[]{encodedLabel}, null, null, null
+                );
+                if (cursor.moveToFirst()) {
+                    return false;
+                }
+                cursor.close();
+                cursor = null;
+                ContentValues values = new ContentValues();
+                values.put("label", encodedLabel);
+                values.put("packages", "");
+                return userDefinedDb.insertWithOnConflict(
+                        CATEGORIES_TABLE, null, values, SQLiteDatabase.CONFLICT_IGNORE
+                ) != -1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (userDefinedDb != null) {
+                    userDefinedDb.close();
+                }
             }
         }
     }
@@ -304,30 +523,33 @@ public final class OneKeyListUtils {
      *         reported to the caller rather than an exception thrown at the settings row.
      */
     public static boolean removeUninstalledFromUserDefinedCategories(Context context) {
-        SQLiteDatabase userDefinedDb = null;
-        try {
-            userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
-            userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
-            for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
-                String packages = row.packages;
-                // Parsed once, up front: the rebuilt string is shorter than the names it was made
-                // from, so walking it while removing would skip entries.
-                for (String pkgName : PackageListUtils.parse(packages)) {
-                    if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
-                        packages = removePkgFromPkgNames(packages, pkgName);
+        // Same lock as the menu writers: this pass rewrites every row from a snapshot of it.
+        synchronized (LIST_LOCK) {
+            SQLiteDatabase userDefinedDb = null;
+            try {
+                userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
+                userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
+                for (CategoryRow row : readUserDefinedCategories(userDefinedDb)) {
+                    String packages = row.packages;
+                    // Parsed once, up front: the rebuilt string is shorter than the names it was made
+                    // from, so walking it while removing would skip entries.
+                    for (String pkgName : PackageListUtils.parse(packages)) {
+                        if (!ApplicationInfoUtils.isAppInstalled(context, pkgName)) {
+                            packages = removePkgFromPkgNames(packages, pkgName);
+                        }
+                    }
+                    if (!packages.equals(row.packages)) {
+                        writeUserDefinedCategory(userDefinedDb, row.id, packages);
                     }
                 }
-                if (!packages.equals(row.packages)) {
-                    writeUserDefinedCategory(userDefinedDb, row.id, packages);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (userDefinedDb != null) {
+                    userDefinedDb.close();
                 }
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (userDefinedDb != null) {
-                userDefinedDb.close();
             }
         }
     }

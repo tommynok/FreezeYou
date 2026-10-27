@@ -190,6 +190,10 @@ public class Main extends FreezeYouBaseActivity {
     // must follow the whole selection, including packages the query hides.
     private volatile List<Map<String, Object>> mCurrentUnfilteredAppList;
     private volatile String currentFilter = "all";
+    // The base64 label of the custom category the list currently shows, or null for any other
+    // filter. A selection-menu edit has no other way to tell whether its category is still on
+    // screen when it finishes.
+    private volatile String currentCategoryLabel = null;
     private volatile int currentSortRule = SORT_BY_DEFAULT;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
@@ -622,7 +626,15 @@ public class Main extends FreezeYouBaseActivity {
      * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
+        // A refresh (and a sort change) re-renders the filter already on screen; keep tracking
+        // the category it came from so an edit started from the selection menu can still refresh
+        // this view. Any other filter starts a different list, with no category behind it.
+        generateList(filter, sortRule, filter.equals(currentFilter) ? currentCategoryLabel : null);
+    }
+
+    private void generateList(String filter, int sortRule, String categoryLabel) {
         currentFilter = filter;
+        currentCategoryLabel = categoryLabel;
         currentSortRule = sortRule;
         filterEstablished = true;
         final int generation = mListGeneration.incrementAndGet();
@@ -1102,6 +1114,7 @@ public class Main extends FreezeYouBaseActivity {
                 if (generation != mListGeneration.get() || isFinishing()) return;
 
                 currentFilter = filter;
+                currentCategoryLabel = categoryLabel;
                 currentSortRule = sortRule;
                 updateFilterTitle(filter);
                 mCurrentUnfilteredAppList = AppList;
@@ -2076,42 +2089,23 @@ public class Main extends FreezeYouBaseActivity {
     private void updateUserDefinedCategoryFromSelection(
             Context context, String title, ArrayList<String> packages, boolean remove) {
         final String encodedTitle = Base64.encodeToString(title.getBytes(), Base64.DEFAULT);
-        SQLiteDatabase userDefinedDb = null;
-        Cursor cursor = null;
-        try {
-            userDefinedDb = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-            userDefinedDb.execSQL(
-                    "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-            );
-            cursor = userDefinedDb.query(
-                    "categories", new String[]{"packages"}, "label = ?", new String[]{encodedTitle},
-                    null, null, null
-            );
-            String existsPkgs = "";
-            if (cursor.moveToFirst()) {
-                existsPkgs = cursor.getString(cursor.getColumnIndex("packages"));
-            }
-            cursor.close();
-            cursor = null;
-            for (String pkgName : packages) {
-                existsPkgs = remove
-                        ? OneKeyListUtils.removePkgFromPkgNames(existsPkgs, pkgName)
-                        : OneKeyListUtils.addPkgToPkgNames(existsPkgs, pkgName);
-            }
-            ContentValues values = new ContentValues();
-            values.put("packages", existsPkgs);
-            userDefinedDb.update("categories", values, "label = ?", new String[]{encodedTitle});
-            showToast(Main.this, remove ? R.string.removed : R.string.added);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-            if (userDefinedDb != null) {
-                userDefinedDb.close();
-            }
+        // The helper reads the category under the same lock the per-app popup takes, so the two
+        // writers cannot overwrite each other's membership change with a stale copy.
+        final String updatedPackages = OneKeyListUtils.updateUserDefinedCategory(
+                context, encodedTitle, packages, remove);
+        if (updatedPackages == null) {
+            return;
         }
+        showToast(Main.this, remove ? R.string.removed : R.string.added);
+        runOnUiThread(() -> {
+            // The list may have been opened before this worker committed: refresh it with the
+            // membership just written, but only while it still shows that category - the user
+            // may have opened another filter in the meantime.
+            if (isFinishing() || !encodedTitle.equals(currentCategoryLabel)) {
+                return;
+            }
+            generateList(updatedPackages, currentSortRule, encodedTitle);
+        });
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
@@ -3219,7 +3213,8 @@ public class Main extends FreezeYouBaseActivity {
                         null, null, null, null
                 );
         if (cursor.moveToFirst()) {
-            generateList(cursor.getString(cursor.getColumnIndex("packages")));
+            generateList(cursor.getString(cursor.getColumnIndex("packages")),
+                    currentSortRule, base64Label);
         } else {
             showToast(this, R.string.failed);
         }
