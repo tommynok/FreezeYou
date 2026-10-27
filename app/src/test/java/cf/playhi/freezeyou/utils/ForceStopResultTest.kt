@@ -2,6 +2,7 @@ package cf.playhi.freezeyou.utils
 
 import android.app.Application
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -11,6 +12,33 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
 class ForceStopResultTest {
+
+    @Test
+    fun resolveBackendPrefersConfiguredMode() {
+        // Shizuku mode prefers Shizuku when available
+        assertEquals(
+            PrivilegedShellUtils.Backend.SHIZUKU,
+            ForceStopUtils.resolveBackend(true, true, true)
+        )
+        // Shizuku mode falls back to root when Shizuku unavailable
+        assertEquals(
+            PrivilegedShellUtils.Backend.ROOT,
+            ForceStopUtils.resolveBackend(true, false, true)
+        )
+        // Root mode prefers root even if Shizuku is also available
+        assertEquals(
+            PrivilegedShellUtils.Backend.ROOT,
+            ForceStopUtils.resolveBackend(false, true, true)
+        )
+        // Root mode falls back to Shizuku if root is unavailable
+        assertEquals(
+            PrivilegedShellUtils.Backend.SHIZUKU,
+            ForceStopUtils.resolveBackend(false, true, false)
+        )
+        // Neither available returns null
+        assertNull(ForceStopUtils.resolveBackend(true, false, false))
+        assertNull(ForceStopUtils.resolveBackend(false, false, false))
+    }
 
     @Test
     fun buildCommandsQuotesPackageNames() {

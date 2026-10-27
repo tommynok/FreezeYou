@@ -32,6 +32,18 @@ public final class ForceStopUtils {
         return commands;
     }
 
+    public static PrivilegedShellUtils.Backend resolveBackend(
+            boolean shizukuMode, boolean shizukuAvailable, boolean rootAvailable) {
+        if (shizukuMode) {
+            if (shizukuAvailable) return PrivilegedShellUtils.Backend.SHIZUKU;
+            if (rootAvailable) return PrivilegedShellUtils.Backend.ROOT;
+        } else {
+            if (rootAvailable) return PrivilegedShellUtils.Backend.ROOT;
+            if (shizukuAvailable) return PrivilegedShellUtils.Backend.SHIZUKU;
+        }
+        return null;
+    }
+
     public static ForceStopOutcomes resolveOutcomes(
             List<String> targetPackages, PrivilegedShellUtils.BatchResult result) {
         if (result == null) {
@@ -111,12 +123,9 @@ public final class ForceStopUtils {
             shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
         }
 
-        PrivilegedShellUtils.Backend backend;
-        if (shizukuAvailable) {
-            backend = PrivilegedShellUtils.Backend.SHIZUKU;
-        } else if (RootUtils.checkRootPermission()) {
-            backend = PrivilegedShellUtils.Backend.ROOT;
-        } else {
+        boolean rootAvailable = RootUtils.checkRootPermission();
+        PrivilegedShellUtils.Backend backend = resolveBackend(shizukuMode, shizukuAvailable, rootAvailable);
+        if (backend == null) {
             showToast(context, R.string.mayUnrootedOrOtherEx);
             return;
         }
