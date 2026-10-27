@@ -25,10 +25,9 @@ class FreezeActivityViewModelScopeTest {
         var bookkeepingCompleted = false
         var exceptionThrown = false
 
-        // Cancel the parent job prior to / during execution
-        parentJob.cancel(CancellationException("ViewModel cleared / activity paused"))
-
         withContext(parentJob + Dispatchers.IO) {
+            // Cancel the parent job while inside the coroutine, simulating cancellation mid-flight
+            parentJob.cancel(CancellationException("ViewModel cleared / activity paused"))
             try {
                 withContext(NonCancellable) {
                     // Simulates FreezeYouFUFSinglePackage bookkeeping block
@@ -51,9 +50,9 @@ class FreezeActivityViewModelScopeTest {
         var bookkeepingCompleted = false
         var exceptionThrown = false
 
-        parentJob.cancel(CancellationException("ViewModel cleared"))
-
         withContext(parentJob + Dispatchers.IO) {
+            // Cancel the parent job while inside the coroutine
+            parentJob.cancel(CancellationException("ViewModel cleared"))
             try {
                 // Without NonCancellable, hopping to Main throws CancellationException
                 withContext(Dispatchers.Main) {
