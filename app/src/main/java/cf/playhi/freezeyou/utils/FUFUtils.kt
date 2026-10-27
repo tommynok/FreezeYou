@@ -990,7 +990,12 @@ object FUFUtils {
                 acquiredPackages.add(pkg)
             }
         }
-        if (acquiredPackages.isEmpty()) return
+        if (acquiredPackages.isEmpty()) {
+            // The list has already painted the requested state onto these rows; since this
+            // request will not change anything, tell it to read the real state back.
+            sendStatusChangedBroadcast(appContext)
+            return
+        }
         val actionMode =
             if (freeze) FUFSinglePackage.ACTION_MODE_FREEZE else FUFSinglePackage.ACTION_MODE_UNFREEZE
 
