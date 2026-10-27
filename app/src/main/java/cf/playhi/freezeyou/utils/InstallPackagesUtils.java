@@ -196,7 +196,7 @@ public final class InstallPackagesUtils {
     public static synchronized void saveWaitingForLeavingRequest(
             Intent intent, String targetPackageName) {
         if (intent == null || targetPackageName == null || targetPackageName.isEmpty()) return;
-        DefaultMultiProcessMMKVStorage()
+        new DefaultMultiProcessMMKVStorage()
                 .putString(
                         KEY_WAITING_FOR_LEAVING_REQUEST,
                         WaitingInstallRequest.fromIntent(intent, targetPackageName).encode())
@@ -205,12 +205,12 @@ public final class InstallPackagesUtils {
 
     public static synchronized WaitingInstallRequest getWaitingForLeavingRequest() {
         return WaitingInstallRequest.decode(
-                DefaultMultiProcessMMKVStorage()
+                new DefaultMultiProcessMMKVStorage()
                         .getString(KEY_WAITING_FOR_LEAVING_REQUEST, null));
     }
 
     public static synchronized void clearWaitingForLeavingRequest() {
-        DefaultMultiProcessMMKVStorage().remove(KEY_WAITING_FOR_LEAVING_REQUEST).sync();
+        new DefaultMultiProcessMMKVStorage().remove(KEY_WAITING_FOR_LEAVING_REQUEST).sync();
     }
 
     public static final class WaitingInstallRequest {

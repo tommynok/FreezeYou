@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteException;
 import android.os.Build;
 import android.os.Parcelable;
 import android.os.PowerManager;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.CallSuper;
@@ -341,10 +342,19 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         // time this worker runs. The install path re-reads everything from the APK anyway.
         intent.removeExtra("waitForLeaving");
         intent.removeExtra("packageInfo");
-        // Cleared before the start call: a later window event must not queue the same install.
+        try {
+            ServiceUtils.startService(this, intent);
+        } catch (RuntimeException e) {
+            // Keep the request and its waiting card: the next leave event can try again.
+            Log.w("FreezeYouDebug",
+                    "AccessibilityService: waiting install start failed: " + e.getMessage(), e);
+            return;
+        }
+        // Cleared only after the service accepted the request, so a failed start cannot burn it.
+        // Both this callback and the service run on the main thread, so nothing can save a
+        // newer request between the successful start and this clear.
         MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
         InstallPackagesUtils.clearWaitingForLeavingRequest();
-        ServiceUtils.startService(AccessibilityService.this, intent);
     }
 
     private void discardWaitingInstall(String targetPackage, String apkFilePath) {
