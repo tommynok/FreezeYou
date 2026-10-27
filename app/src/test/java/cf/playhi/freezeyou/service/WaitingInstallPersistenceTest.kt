@@ -47,7 +47,8 @@ class WaitingInstallPersistenceTest {
         val restored = InstallPackagesUtils.WaitingInstallRequest.decode(original.encode())
 
         assertTrue(restored != null)
-        assertEquals("com.example.target", restored!!.packageName)
+        assertEquals(original.requestId, restored!!.requestId)
+        assertEquals("com.example.target", restored.packageName)
         assertTrue(restored.install)
         assertEquals("/cache/ZDF-package1F.apk", restored.apkFilePath)
         assertEquals("content://provider/apk", restored.packageUri)
@@ -78,17 +79,22 @@ class WaitingInstallPersistenceTest {
         assertNull(InstallPackagesUtils.WaitingInstallRequest.decode("not a record"))
         assertNull(
             InstallPackagesUtils.WaitingInstallRequest.decode(
+                "3\u0000id\u0000com.example.target\u00001\u0000\u0000\u00000"
+            )
+        )
+        assertNull(
+            InstallPackagesUtils.WaitingInstallRequest.decode(
                 "2\u0000com.example.target\u00001\u0000\u0000\u00000"
             )
         )
         assertNull(
             InstallPackagesUtils.WaitingInstallRequest.decode(
-                "1\u0000com.example.target\u00001\u0000\u0000"
+                "2\u0000\u0000com.example.target\u00001\u0000\u0000\u00000"
             )
         )
         assertNull(
             InstallPackagesUtils.WaitingInstallRequest.decode(
-                "1\u0000\u00001\u0000\u0000\u00000"
+                "2\u0000id\u0000\u00001\u0000\u0000\u00000"
             )
         )
     }
@@ -141,6 +147,17 @@ class WaitingInstallPersistenceTest {
         )
         assertFalse(rebuilt.getBooleanExtra("uninstall_updates_only", true))
         assertFalse(rebuilt.getBooleanExtra("waitForLeaving", true))
+    }
+
+    @Test
+    fun `only the dispatched request is eligible for removal`() {
+        val stored = request(apkFilePath = "/cache/ZDF-package1F.apk")
+        val decoded = InstallPackagesUtils.WaitingInstallRequest.decode(stored.encode())
+        val another = request(apkFilePath = "/cache/ZDF-package1F.apk")
+
+        assertTrue(stored.matches(decoded))
+        assertFalse(stored.matches(another))
+        assertFalse(stored.matches(null))
     }
 
     @Test

@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 
 import java.io.File;
+import java.util.UUID;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.service.InstallPackagesService;
@@ -21,7 +22,7 @@ public final class InstallPackagesUtils {
 
     private static final String KEY_WAITING_FOR_LEAVING_REQUEST =
             "runtimeWaitingForLeavingInstallRequest";
-    private static final String WAITING_REQUEST_VERSION = "1";
+    private static final String WAITING_REQUEST_VERSION = "2";
     // A package name, a path and a URI cannot contain NUL, so it separates the fields without
     // an escaping layer of its own.
     private static final String WAITING_REQUEST_SEPARATOR = "\u0000";
@@ -209,12 +210,26 @@ public final class InstallPackagesUtils {
                         .getString(KEY_WAITING_FOR_LEAVING_REQUEST, null));
     }
 
-    public static synchronized void clearWaitingForLeavingRequest() {
-        new DefaultMultiProcessMMKVStorage().remove(KEY_WAITING_FOR_LEAVING_REQUEST).sync();
+    /**
+     * Removes the stored request only if it is still the one being dispatched. The install service
+     * may save a newer request between the start call and this clear; a blind remove would erase it
+     * while its waiting card stays on screen.
+     */
+    public static synchronized boolean clearWaitingForLeavingRequestIfMatches(
+            WaitingInstallRequest expected) {
+        if (expected == null) return false;
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        if (!expected.encode()
+                .equals(storage.getString(KEY_WAITING_FOR_LEAVING_REQUEST, null))) {
+            return false;
+        }
+        storage.remove(KEY_WAITING_FOR_LEAVING_REQUEST).sync();
+        return true;
     }
 
     public static final class WaitingInstallRequest {
 
+        public final String requestId;
         public final String packageName;
         public final boolean install;
         public final String apkFilePath;
@@ -225,6 +240,16 @@ public final class InstallPackagesUtils {
                 String packageName, boolean install,
                 String apkFilePath, String packageUri,
                 boolean uninstallUpdatesOnly) {
+            this(null, packageName, install, apkFilePath, packageUri, uninstallUpdatesOnly);
+        }
+
+        public WaitingInstallRequest(
+                String requestId,
+                String packageName, boolean install,
+                String apkFilePath, String packageUri,
+                boolean uninstallUpdatesOnly) {
+            this.requestId = requestId == null || requestId.isEmpty()
+                    ? UUID.randomUUID().toString() : requestId;
             this.packageName = packageName;
             this.install = install;
             this.apkFilePath = apkFilePath;
@@ -249,6 +274,10 @@ public final class InstallPackagesUtils {
             return new File(apkFilePath).exists();
         }
 
+        public boolean matches(WaitingInstallRequest other) {
+            return other != null && requestId.equals(other.requestId);
+        }
+
         public Intent toIntent(Context context) {
             Intent intent = new Intent(context, InstallPackagesService.class)
                     .putExtra("install", install)
@@ -264,6 +293,7 @@ public final class InstallPackagesUtils {
 
         public String encode() {
             return WAITING_REQUEST_VERSION + WAITING_REQUEST_SEPARATOR
+                    + requestId + WAITING_REQUEST_SEPARATOR
                     + packageName + WAITING_REQUEST_SEPARATOR
                     + (install ? "1" : "0") + WAITING_REQUEST_SEPARATOR
                     + (apkFilePath == null ? "" : apkFilePath) + WAITING_REQUEST_SEPARATOR
@@ -274,17 +304,19 @@ public final class InstallPackagesUtils {
         public static WaitingInstallRequest decode(String encoded) {
             if (encoded == null) return null;
             String[] fields = encoded.split(WAITING_REQUEST_SEPARATOR, -1);
-            if (fields.length != 6
+            if (fields.length != 7
                     || !WAITING_REQUEST_VERSION.equals(fields[0])
-                    || fields[1].isEmpty()) {
+                    || fields[1].isEmpty()
+                    || fields[2].isEmpty()) {
                 return null;
             }
             return new WaitingInstallRequest(
                     fields[1],
-                    "1".equals(fields[2]),
-                    fields[3].isEmpty() ? null : fields[3],
+                    fields[2],
+                    "1".equals(fields[3]),
                     fields[4].isEmpty() ? null : fields[4],
-                    "1".equals(fields[5]));
+                    fields[5].isEmpty() ? null : fields[5],
+                    "1".equals(fields[6]));
         }
     }
 

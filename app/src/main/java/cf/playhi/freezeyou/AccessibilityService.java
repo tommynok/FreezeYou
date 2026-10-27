@@ -2,20 +2,17 @@ package cf.playhi.freezeyou;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.Build;
-import android.os.Parcelable;
 import android.os.PowerManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.CallSuper;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -295,75 +292,38 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {
-        // The persisted record is the source of truth: it is the copy that survives the process,
-        // and reading it first keeps one leave event from dispatching the request twice when the
-        // in-memory copy is still around as well.
-        final InstallPackagesUtils.WaitingInstallRequest persisted =
+        // The persisted record is the only copy, so process death cannot drop the request.
+        final InstallPackagesUtils.WaitingInstallRequest request =
                 InstallPackagesUtils.getWaitingForLeavingRequest();
-        if (persisted != null && previousPkg.equals(persisted.packageName)) {
-            if (!persisted.isApkAvailable()) {
-                discardWaitingInstall(previousPkg, persisted.apkFilePath);
-                return;
-            }
-            dispatchWaitingInstall(persisted.toIntent(this));
+        if (request == null || !previousPkg.equals(request.packageName)) {
             return;
         }
-
-        final Intent intent = MainApplication.getWaitingForLeavingToInstallApplicationIntent();
-        if (intent == null || !previousPkg.equals(getWaitingInstallTargetPackage(intent))) {
+        if (!request.isApkAvailable()) {
+            discardWaitingInstall(request);
             return;
         }
-        final String apkFilePath = intent.getStringExtra("apkFilePath");
-        if (!isWaitingInstallApkAvailable(
-                intent.getBooleanExtra("install", true), apkFilePath)) {
-            discardWaitingInstall(previousPkg, apkFilePath);
-            return;
-        }
-        dispatchWaitingInstall(intent);
+        dispatchWaitingInstall(request);
     }
 
-    private static String getWaitingInstallTargetPackage(Intent intent) {
-        if (intent == null) return null;
-        final Parcelable packageInfoParcelable = intent.getParcelableExtra("packageInfo");
-        final PackageInfo packageInfo =
-                packageInfoParcelable instanceof PackageInfo
-                        ? (PackageInfo) packageInfoParcelable : null;
-        return packageInfo == null ? null : packageInfo.packageName;
-    }
-
-    private static boolean isWaitingInstallApkAvailable(boolean install, String apkFilePath) {
-        return !install || apkFilePath == null || apkFilePath.isEmpty()
-                || new File(apkFilePath).exists();
-    }
-
-    private void dispatchWaitingInstall(Intent intent) {
-        // The wait is over once the user has left; dropping the flag keeps the service from
-        // putting the request back into the waiting slot if the target is in front again by the
-        // time this worker runs. The install path re-reads everything from the APK anyway.
-        intent.removeExtra("waitForLeaving");
-        intent.removeExtra("packageInfo");
+    private void dispatchWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
         try {
-            ServiceUtils.startService(this, intent);
+            ServiceUtils.startService(this, request.toIntent(this));
         } catch (RuntimeException e) {
             // Keep the request and its waiting card: the next leave event can try again.
             Log.w("FreezeYouDebug",
                     "AccessibilityService: waiting install start failed: " + e.getMessage(), e);
             return;
         }
-        // Cleared only after the service accepted the request, so a failed start cannot burn it.
-        // Both this callback and the service run on the main thread, so nothing can save a
-        // newer request between the successful start and this clear.
-        MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
-        InstallPackagesUtils.clearWaitingForLeavingRequest();
+        // Compare and remove: the service may have saved a newer request in the meantime.
+        InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request);
     }
 
-    private void discardWaitingInstall(String targetPackage, String apkFilePath) {
-        MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
-        InstallPackagesUtils.clearWaitingForLeavingRequest();
+    private void discardWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
+        if (!InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request)) return;
         InstallPackagesUtils.cancelWaitingForLeavingToInstallApplicationNotification(
-                this, targetPackage);
-        if (apkFilePath != null) {
-            InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
+                this, request.packageName);
+        if (request.apkFilePath != null) {
+            InstallPackagesUtils.deleteTempFile(this, request.apkFilePath, false);
         }
     }
 }

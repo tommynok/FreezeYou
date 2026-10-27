@@ -483,19 +483,6 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         private var mCurrentPackage = " "
 
         @JvmStatic
-        var waitingForLeavingToInstallApplicationIntent: Intent? = null
-            /**
-             * @return Intent, or null if no pending request
-             */
-            get() = field
-            /**
-             * @param intent Intent (nullable)
-             */
-            set(intent) {
-                field = intent
-            }
-
-        @JvmStatic
         fun clearCurrentPackage() {
             mCurrentPackage = " "
             ProcessSharedState.clearForegroundPackage()
