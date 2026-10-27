@@ -1036,6 +1036,7 @@ object FUFUtils {
      * user wrote it. Kept pure so a JVM test can hold the rule; the loops that use it sit behind
      * MMKV and toasts.
      */
+    @JvmStatic
     fun batchTargetsWithoutSelf(
         selfPackageName: String, packages: Array<String>
     ): List<String> = packages.filterNot { it == selfPackageName }.distinct()
