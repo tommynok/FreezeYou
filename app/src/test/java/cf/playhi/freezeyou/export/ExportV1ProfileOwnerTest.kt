@@ -117,6 +117,6 @@ class ExportV1ProfileOwnerTest {
 
     private fun queryMode(): String? {
         val provider = Robolectric.buildContentProvider(Query::class.java).create().get()
-        return provider.call("QUERY_MODE", null, Bundle()).getString("currentMode")
+        return provider.call("QUERY_MODE", null, Bundle())?.getString("currentMode")
     }
 }
