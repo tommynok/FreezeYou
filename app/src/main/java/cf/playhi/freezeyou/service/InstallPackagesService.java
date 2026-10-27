@@ -426,9 +426,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     String cmd = "pm install -r " + PrivilegedShellUtils.shellQuote(apkFilePath);
                     PrivilegedShellUtils.CommandResult cmdRes =
                             PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
-                    InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
                     result = cmdRes.output;
                 } finally {
+                    // A command killed by its deadline never returns, so the staged ZDF- copy
+                    // has to be cleaned up here and not only after a normal return.
+                    InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
                     if (result != null && result.toLowerCase().contains("success")) {
                         InstallPackagesUtils
                                 .notifyFinishNotification(
