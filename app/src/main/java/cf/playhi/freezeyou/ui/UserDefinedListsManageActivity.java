@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
@@ -156,14 +157,28 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
         popup.show();
     }
 
-    private void deleteUserDefinedListById(int id) {
-        SQLiteDatabase userDefinedListsDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
-        userDefinedListsDb.execSQL(
-                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-        );
-        userDefinedListsDb.delete("categories", "_id = " + id, null);
-        userDefinedListsDb.close();
-
-        loadUserDefinedLists();
+    private void deleteUserDefinedListById(final int id) {
+        new Thread(() -> {
+            SQLiteDatabase userDefinedListsDb = null;
+            try {
+                userDefinedListsDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
+                userDefinedListsDb.execSQL(
+                        "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                );
+                userDefinedListsDb.delete("categories", "_id = ?", new String[]{String.valueOf(id)});
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (userDefinedListsDb != null) {
+                    userDefinedListsDb.close();
+                }
+            }
+            runOnUiThread(() -> {
+                if (!isFinishing()
+                        && (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 || !isDestroyed())) {
+                    loadUserDefinedLists();
+                }
+            });
+        }, "UserDefinedCategoryDelete").start();
     }
 }

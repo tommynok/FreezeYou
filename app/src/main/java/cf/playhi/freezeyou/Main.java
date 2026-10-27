@@ -1250,52 +1250,15 @@ public class Main extends FreezeYouBaseActivity {
                                         showAddNewUserDefinedClassificationDialog();
                                         return true;
                                     default:
-                                        boolean isInRemoveMode =
+                                        final boolean isInRemoveMode =
                                                 menuItem.getGroupId()
                                                         == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
-                                        String title = menuItem.getTitle().toString();
-                                        String existsPkgs = "";
-                                        SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                        userDefinedDb.execSQL(
-                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                        );
-                                        Cursor cursor =
-                                                userDefinedDb.query(
-                                                        "categories",
-                                                        new String[]{"packages"},
-                                                        "label = '" + Base64.encodeToString(title.getBytes(), Base64.DEFAULT) + "'",
-                                                        null, null, null, null
-                                                );
-
-                                        if (cursor.moveToFirst()) {
-                                            existsPkgs =
-                                                    cursor.getString(
-                                                            cursor.getColumnIndex("packages")
-                                                    );
-                                        }
-
-                                        int size = selectedPackages.size();
-                                        for (int i = 0; i < size; i++) {
-                                            if (isInRemoveMode) {
-                                                existsPkgs = OneKeyListUtils.removePkgFromPkgNames(
-                                                        existsPkgs, selectedPackages.get(i)
-                                                );
-                                            } else {
-                                                existsPkgs = OneKeyListUtils.addPkgToPkgNames(
-                                                        existsPkgs, selectedPackages.get(i)
-                                                );
-                                            }
-                                        }
-                                        userDefinedDb.execSQL(
-                                                "UPDATE categories SET packages = '"
-                                                        + existsPkgs
-                                                        + "' WHERE label = '"
-                                                        + Base64.encodeToString(title.getBytes(), Base64.DEFAULT)
-                                                        + "';"
-                                        );
-                                        cursor.close();
-                                        userDefinedDb.close();
-                                        showToast(Main.this, isInRemoveMode ? R.string.removed : R.string.added);
+                                        final String title = menuItem.getTitle().toString();
+                                        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+                                        final Context appContext = getApplicationContext();
+                                        new Thread(() -> updateUserDefinedCategoryFromSelection(
+                                                appContext, title, packages, isInRemoveMode),
+                                                "UserDefinedCategoryMutation").start();
                                         return true;
                                 }
                             default:
@@ -2094,19 +2057,60 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
-    private void processAddToOneKeyList(String string) {
-        if (addToOneKeyList(getApplicationContext(), string, selectedPackages)) {
-            showToast(Main.this, R.string.success);
-        } else {
-            showToast(Main.this, R.string.failed);
-        }
+    private void processAddToOneKeyList(final String string) {
+        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+        final Context appContext = getApplicationContext();
+        new Thread(() -> showToast(Main.this,
+                addToOneKeyList(appContext, string, packages) ? R.string.success : R.string.failed),
+                "OneKeyListMutation").start();
     }
 
-    private void processRemoveFromOneKeyList(String s) {
-        if (removeFromOneKeyList(getApplicationContext(), s, selectedPackages)) {
-            showToast(Main.this, R.string.success);
-        } else {
-            showToast(Main.this, R.string.failed);
+    private void processRemoveFromOneKeyList(final String string) {
+        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+        final Context appContext = getApplicationContext();
+        new Thread(() -> showToast(Main.this,
+                removeFromOneKeyList(appContext, string, packages) ? R.string.success : R.string.failed),
+                "OneKeyListMutation").start();
+    }
+
+    private void updateUserDefinedCategoryFromSelection(
+            Context context, String title, ArrayList<String> packages, boolean remove) {
+        final String encodedTitle = Base64.encodeToString(title.getBytes(), Base64.DEFAULT);
+        SQLiteDatabase userDefinedDb = null;
+        Cursor cursor = null;
+        try {
+            userDefinedDb = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
+            userDefinedDb.execSQL(
+                    "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+            );
+            cursor = userDefinedDb.query(
+                    "categories", new String[]{"packages"}, "label = ?", new String[]{encodedTitle},
+                    null, null, null
+            );
+            String existsPkgs = "";
+            if (cursor.moveToFirst()) {
+                existsPkgs = cursor.getString(cursor.getColumnIndex("packages"));
+            }
+            cursor.close();
+            cursor = null;
+            for (String pkgName : packages) {
+                existsPkgs = remove
+                        ? OneKeyListUtils.removePkgFromPkgNames(existsPkgs, pkgName)
+                        : OneKeyListUtils.addPkgToPkgNames(existsPkgs, pkgName);
+            }
+            ContentValues values = new ContentValues();
+            values.put("packages", existsPkgs);
+            userDefinedDb.update("categories", values, "label = ?", new String[]{encodedTitle});
+            showToast(Main.this, remove ? R.string.removed : R.string.added);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (userDefinedDb != null) {
+                userDefinedDb.close();
+            }
         }
     }
 

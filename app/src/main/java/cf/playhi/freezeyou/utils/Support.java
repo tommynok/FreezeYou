@@ -48,30 +48,36 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public final class Support {
 
-    public static void checkAddOrRemove(Context context, String pkgNames, String pkgName, String oneKeyName) {
-        if (existsInOneKeyList(pkgNames, pkgName)) {
-            showToast(context,
-                    removeFromOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.removed : R.string.removeFailed);
-        } else {
-            showToast(context,
-                    addToOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.added : R.string.addFailed);
-            if (context.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
-                if (!freezeOnceQuit.getValue(null)) {
-                    freezeOnceQuit.setValue(null, true);
-                    // The settings screen reads this checkbox from default SharedPreferences;
-                    // keep it in sync with MMKV when enabled from the main menu.
-                    android.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit()
-                            .putBoolean("freezeOnceQuit", true)
-                            .apply();
+    public static void checkAddOrRemove(final Context context, String pkgNames, final String pkgName, final String oneKeyName) {
+        final boolean exists = existsInOneKeyList(pkgNames, pkgName);
+        final Context appContext = context.getApplicationContext();
+        // The mutation takes the MMKV inter-process lock and syncs it to disk, which used to sit
+        // between the menu tap and the toast on the main thread.
+        new Thread(() -> {
+            if (exists) {
+                showToast(context,
+                        removeFromOneKeyList(appContext,
+                                oneKeyName,
+                                pkgName) ? R.string.removed : R.string.removeFailed);
+            } else {
+                showToast(context,
+                        addToOneKeyList(appContext,
+                                oneKeyName,
+                                pkgName) ? R.string.added : R.string.addFailed);
+                if (appContext.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
+                    if (!freezeOnceQuit.getValue(null)) {
+                        freezeOnceQuit.setValue(null, true);
+                        // The settings screen reads this checkbox from default SharedPreferences;
+                        // keep it in sync with MMKV when enabled from the main menu.
+                        android.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+                                .edit()
+                                .putBoolean("freezeOnceQuit", true)
+                                .apply();
+                    }
+                    AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(appContext);
                 }
-                AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(context);
             }
-        }
+        }, "OneKeyListMutation").start();
     }
 
     public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name) {
@@ -178,70 +184,90 @@ public final class Support {
                             vmUserDefinedNameAlertDialog.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    String label = Base64.encodeToString(vmUserDefinedNameAlertDialogEditText.getText().toString().getBytes(), Base64.DEFAULT);
+                                    final String label = Base64.encodeToString(vmUserDefinedNameAlertDialogEditText.getText().toString().getBytes(), Base64.DEFAULT);
                                     if ("".equals(label)) {
                                         showToast(activity, R.string.emptyNotAllowed);
-                                    } else {
+                                        return;
+                                    }
+                                    final Context appContext = context.getApplicationContext();
+                                    new Thread(() -> {
+                                        SQLiteDatabase vmUserDefinedDb1 = null;
+                                        Cursor cursor1 = null;
                                         boolean alreadyExists = false;
-                                        SQLiteDatabase vmUserDefinedDb1 = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                        vmUserDefinedDb1.execSQL(
-                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                        );
-                                        Cursor cursor1 = vmUserDefinedDb1.query("categories", new String[]{"label"}, null, null, null, null, null);
-                                        if (cursor1.moveToFirst()) {
-                                            for (int i = 0; i < cursor1.getCount(); i++) {
+                                        try {
+                                            vmUserDefinedDb1 = appContext.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
+                                            vmUserDefinedDb1.execSQL(
+                                                    "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                                            );
+                                            cursor1 = vmUserDefinedDb1.query("categories", new String[]{"label"}, null, null, null, null, null);
+                                            while (cursor1.moveToNext()) {
                                                 if (label.equals(cursor1.getString(cursor1.getColumnIndexOrThrow("label")))) {
                                                     alreadyExists = true;
                                                     break;
                                                 }
-                                                cursor1.moveToNext();
+                                            }
+                                            if (alreadyExists) {
+                                                showToast(activity, R.string.alreadyExist);
+                                            } else {
+                                                // Data, not SQL text: concatenating the value into a
+                                                // quoted literal let anything that looked like a quote
+                                                // end the literal and the statement throw.
+                                                ContentValues values = new ContentValues();
+                                                values.put("label", label);
+                                                values.put("packages", "");
+                                                vmUserDefinedDb1.insertWithOnConflict(
+                                                        "categories", null, values, SQLiteDatabase.CONFLICT_REPLACE
+                                                );
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        } finally {
+                                            if (cursor1 != null) {
+                                                cursor1.close();
+                                            }
+                                            if (vmUserDefinedDb1 != null) {
+                                                vmUserDefinedDb1.close();
                                             }
                                         }
-                                        cursor1.close();
-                                        if (alreadyExists) {
-                                            showToast(activity, R.string.alreadyExist);
-                                        } else {
-                                            // Data, not SQL text: concatenating the value into a
-                                            // quoted literal let anything that looked like a quote
-                                            // end the literal and the statement throw.
-                                            ContentValues values = new ContentValues();
-                                            values.put("label", label);
-                                            values.put("packages", "");
-                                            vmUserDefinedDb1.insertWithOnConflict(
-                                                    "categories", null, values, SQLiteDatabase.CONFLICT_REPLACE
-                                            );
-                                        }
-                                        vmUserDefinedDb1.close();
-                                    }
+                                    }, "UserDefinedCategoryInsert").start();
                                 }
                             });
                             vmUserDefinedNameAlertDialog.setNegativeButton(R.string.cancel, null);
                             vmUserDefinedNameAlertDialog.show();
                             break;
                         default:
-                            int itemId = item.getItemId();
+                            final int itemId = item.getItemId();
                             if (userDefinedCategoriesHashMap.containsKey(itemId)) {
-                                SQLiteDatabase vmUserDefinedDb1 = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                vmUserDefinedDb1.execSQL(
-                                        "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                );
-                                String pkgs = userDefinedCategoriesHashMap.get(itemId);
-                                if (pkgs == null) {
-                                    pkgs = "";
-                                }
-                                boolean existed = existsInOneKeyList(pkgs, pkgName);
-                                if (existed) {
-                                    pkgs = OneKeyListUtils.removePkgFromPkgNames(pkgs, pkgName);
-                                } else {
-                                    pkgs = OneKeyListUtils.addPkgToPkgNames(pkgs, pkgName);
-                                }
-                                ContentValues values = new ContentValues();
-                                values.put("packages", pkgs);
-                                vmUserDefinedDb1.update(
-                                        "categories", values, "_id = ?", new String[]{String.valueOf(itemId)}
-                                );
-                                vmUserDefinedDb1.close();
-                                showToast(activity, existed ? R.string.removed : R.string.added);
+                                final String currentPkgs = userDefinedCategoriesHashMap.get(itemId);
+                                final Context appContext = context.getApplicationContext();
+                                new Thread(() -> {
+                                    SQLiteDatabase vmUserDefinedDb1 = null;
+                                    try {
+                                        vmUserDefinedDb1 = appContext.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
+                                        vmUserDefinedDb1.execSQL(
+                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                                        );
+                                        String pkgs = currentPkgs == null ? "" : currentPkgs;
+                                        boolean existed = existsInOneKeyList(pkgs, pkgName);
+                                        if (existed) {
+                                            pkgs = OneKeyListUtils.removePkgFromPkgNames(pkgs, pkgName);
+                                        } else {
+                                            pkgs = OneKeyListUtils.addPkgToPkgNames(pkgs, pkgName);
+                                        }
+                                        ContentValues values = new ContentValues();
+                                        values.put("packages", pkgs);
+                                        vmUserDefinedDb1.update(
+                                                "categories", values, "_id = ?", new String[]{String.valueOf(itemId)}
+                                        );
+                                        showToast(activity, existed ? R.string.removed : R.string.added);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    } finally {
+                                        if (vmUserDefinedDb1 != null) {
+                                            vmUserDefinedDb1.close();
+                                        }
+                                    }
+                                }, "UserDefinedCategoryMutation").start();
                             }
                             break;
                     }
