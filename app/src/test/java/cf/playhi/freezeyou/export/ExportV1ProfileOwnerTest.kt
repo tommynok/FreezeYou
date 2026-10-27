@@ -24,7 +24,8 @@ import org.robolectric.annotation.Config
  * The v1 providers checked only isDeviceOwner. On a profile owner the legacy query reported the
  * mode as root or unavailable, and the legacy auto action fell through to root: with root present
  * it disabled an application the profile owner had already hidden, and without root it failed.
- * The v2 modes and the other v1 providers already treat both owner roles alike.
+ * The same check chose the device-owner-only API for an explicit DPM request, so a profile owner
+ * could not undo what it had hidden.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
@@ -87,6 +88,28 @@ class ExportV1ProfileOwnerTest {
     @Test
     fun `without an owner the legacy auto action falls back to root`() {
         assertNull(resolveAutoDpmApiMode(deviceOwner = false, profileOwner = false))
+    }
+
+    @Test
+    fun `a profile owner resolves to the profile owner api from a context`() {
+        shadowOf(devicePolicyManager()).setProfileOwner(admin)
+
+        assertEquals(
+            FUFSinglePackage.API_FREEZEYOU_MROOT_PROFILE_OWNER,
+            resolveOwnerApiMode(context)
+        )
+    }
+
+    @Test
+    fun `a device owner resolves to the dpm api from a context`() {
+        shadowOf(devicePolicyManager()).setDeviceOwner(admin)
+
+        assertEquals(FUFSinglePackage.API_FREEZEYOU_MROOT_DPM, resolveOwnerApiMode(context))
+    }
+
+    @Test
+    fun `an ownerless device has no owner api mode`() {
+        assertNull(resolveOwnerApiMode(context))
     }
 
     private fun devicePolicyManager(): DevicePolicyManager =
