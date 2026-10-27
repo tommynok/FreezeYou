@@ -123,8 +123,13 @@ public final class ForceStopUtils {
             shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
         }
 
-        boolean rootAvailable = RootUtils.checkRootPermission();
-        PrivilegedShellUtils.Backend backend = resolveBackend(shizukuMode, shizukuAvailable, rootAvailable);
+        PrivilegedShellUtils.Backend backend;
+        if (shizukuMode && shizukuAvailable) {
+            backend = PrivilegedShellUtils.Backend.SHIZUKU;
+        } else {
+            boolean rootAvailable = RootUtils.checkRootPermission();
+            backend = resolveBackend(shizukuMode, shizukuAvailable, rootAvailable);
+        }
         if (backend == null) {
             showToast(context, R.string.mayUnrootedOrOtherEx);
             return;
@@ -163,7 +168,8 @@ public final class ForceStopUtils {
         if (!result.sessionStarted) {
             showToast(context, R.string.mayUnrootedOrOtherEx);
             String msg = result.error != null ? result.error.toLowerCase() : "";
-            if (msg.contains("permission denied") || msg.contains("not found")) {
+            if (msg.contains("permission denied") || msg.contains("not found")
+                    || msg.contains("refused") || msg.contains("timed out")) {
                 showToast(context, R.string.mayUnrooted);
             }
             return;
@@ -172,6 +178,15 @@ public final class ForceStopUtils {
         ForceStopOutcomes outcomes = resolveOutcomes(executableTargets, result);
         if (!outcomes.succeeded.isEmpty()) {
             FUFUtils.sendStatusChangedBroadcast(context);
+        }
+        if (result.error != null && outcomes.succeeded.isEmpty()) {
+            showToast(context, R.string.mayUnrootedOrOtherEx);
+            String msg = result.error.toLowerCase();
+            if (msg.contains("permission denied") || msg.contains("not found")
+                    || msg.contains("refused") || msg.contains("timed out")) {
+                showToast(context, R.string.mayUnrooted);
+            }
+            return;
         }
         if (!outcomes.failed.isEmpty()) {
             showFailedApplicationsToast(context, outcomes.failed);

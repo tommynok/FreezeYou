@@ -361,7 +361,6 @@ public final class PrivilegedShellUtils {
         try {
             final Process session = startSession(backend, context);
             process = session;
-            sessionStarted.set(true);
             writer = new DataOutputStream(session.getOutputStream());
             final BufferedReader readyReader =
                     new BufferedReader(new InputStreamReader(session.getInputStream()));
@@ -389,6 +388,7 @@ public final class PrivilegedShellUtils {
             if (!ready) {
                 throw new IOException("Shell closed without handshake confirmation");
             }
+            sessionStarted.set(true);
 
             // Shell confirmed ready; now start background stream reader for batch outcomes
             Future<?> reading = COMMAND_EXECUTOR.submit(() -> {
