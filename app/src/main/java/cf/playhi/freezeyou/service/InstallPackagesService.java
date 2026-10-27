@@ -74,6 +74,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 && packageInfo.packageName != null
                 && packageInfo.packageName.equals(MainApplication.getCurrentPackage())) {
             MainApplication.setWaitingForLeavingToInstallApplicationIntent(i);
+            // Before the card is posted: a process killed after it appears must still leave a
+            // request behind, otherwise the user sees a waiting card for an install that can
+            // never happen.
+            InstallPackagesUtils.saveWaitingForLeavingRequest(i, packageInfo.packageName);
             InstallPackagesUtils.
                     postWaitingForLeavingToInstallApplicationNotification(this, packageInfo);
             int stopId = installRequestQueue.idleStopId(startId);

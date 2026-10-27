@@ -14,12 +14,14 @@ import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.CallSuper;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.utils.DataStatisticsUtils;
+import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.ProcessSharedState;
@@ -292,15 +294,66 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {
+        // The persisted record is the source of truth: it is the copy that survives the process,
+        // and reading it first keeps one leave event from dispatching the request twice when the
+        // in-memory copy is still around as well.
+        final InstallPackagesUtils.WaitingInstallRequest persisted =
+                InstallPackagesUtils.getWaitingForLeavingRequest();
+        if (persisted != null && previousPkg.equals(persisted.packageName)) {
+            if (!persisted.isApkAvailable()) {
+                discardWaitingInstall(previousPkg, persisted.apkFilePath);
+                return;
+            }
+            dispatchWaitingInstall(persisted.toIntent(this));
+            return;
+        }
+
         final Intent intent = MainApplication.getWaitingForLeavingToInstallApplicationIntent();
-        if (intent == null) return;
+        if (intent == null || !previousPkg.equals(getWaitingInstallTargetPackage(intent))) {
+            return;
+        }
+        final String apkFilePath = intent.getStringExtra("apkFilePath");
+        if (!isWaitingInstallApkAvailable(
+                intent.getBooleanExtra("install", true), apkFilePath)) {
+            discardWaitingInstall(previousPkg, apkFilePath);
+            return;
+        }
+        dispatchWaitingInstall(intent);
+    }
+
+    private static String getWaitingInstallTargetPackage(Intent intent) {
+        if (intent == null) return null;
         final Parcelable packageInfoParcelable = intent.getParcelableExtra("packageInfo");
         final PackageInfo packageInfo =
                 packageInfoParcelable instanceof PackageInfo
                         ? (PackageInfo) packageInfoParcelable : null;
-        if (packageInfo != null && previousPkg.equals(packageInfo.packageName)) {
-            ServiceUtils.startService(AccessibilityService.this, intent);
-            MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
+        return packageInfo == null ? null : packageInfo.packageName;
+    }
+
+    private static boolean isWaitingInstallApkAvailable(boolean install, String apkFilePath) {
+        return !install || apkFilePath == null || apkFilePath.isEmpty()
+                || new File(apkFilePath).exists();
+    }
+
+    private void dispatchWaitingInstall(Intent intent) {
+        // The wait is over once the user has left; dropping the flag keeps the service from
+        // putting the request back into the waiting slot if the target is in front again by the
+        // time this worker runs. The install path re-reads everything from the APK anyway.
+        intent.removeExtra("waitForLeaving");
+        intent.removeExtra("packageInfo");
+        // Cleared before the start call: a later window event must not queue the same install.
+        MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
+        InstallPackagesUtils.clearWaitingForLeavingRequest();
+        ServiceUtils.startService(AccessibilityService.this, intent);
+    }
+
+    private void discardWaitingInstall(String targetPackage, String apkFilePath) {
+        MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
+        InstallPackagesUtils.clearWaitingForLeavingRequest();
+        InstallPackagesUtils.cancelWaitingForLeavingToInstallApplicationNotification(
+                this, targetPackage);
+        if (apkFilePath != null) {
+            InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
         }
     }
 }

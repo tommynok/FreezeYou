@@ -7,15 +7,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 
 import java.io.File;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.service.InstallPackagesService;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.ShowSimpleDialogActivity;
 
 public final class InstallPackagesUtils {
+
+    private static final String KEY_WAITING_FOR_LEAVING_REQUEST =
+            "runtimeWaitingForLeavingInstallRequest";
+    private static final String WAITING_REQUEST_VERSION = "1";
+    // A package name, a path and a URI cannot contain NUL, so it separates the fields without
+    // an escaping layer of its own.
+    private static final String WAITING_REQUEST_SEPARATOR = "\u0000";
 
     public static void notifyFinishNotification(
             Context context, NotificationManager notificationManager,
@@ -167,6 +176,116 @@ public final class InstallPackagesUtils {
                 builder.build()
         );
 
+    }
+
+    public static void cancelWaitingForLeavingToInstallApplicationNotification(
+            Context context, String packageName) {
+        if (packageName == null) return;
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager != null) {
+            notificationManager.cancel(
+                    (packageName + "@InstallPackagesNotification").hashCode());
+        }
+    }
+
+    /**
+     * Keeps the pending request where it survives the process: the accessibility service reads it
+     * back when the user leaves the target application, possibly after the old process died.
+     */
+    public static synchronized void saveWaitingForLeavingRequest(
+            Intent intent, String targetPackageName) {
+        if (intent == null || targetPackageName == null || targetPackageName.isEmpty()) return;
+        DefaultMultiProcessMMKVStorage()
+                .putString(
+                        KEY_WAITING_FOR_LEAVING_REQUEST,
+                        WaitingInstallRequest.fromIntent(intent, targetPackageName).encode())
+                .sync();
+    }
+
+    public static synchronized WaitingInstallRequest getWaitingForLeavingRequest() {
+        return WaitingInstallRequest.decode(
+                DefaultMultiProcessMMKVStorage()
+                        .getString(KEY_WAITING_FOR_LEAVING_REQUEST, null));
+    }
+
+    public static synchronized void clearWaitingForLeavingRequest() {
+        DefaultMultiProcessMMKVStorage().remove(KEY_WAITING_FOR_LEAVING_REQUEST).sync();
+    }
+
+    public static final class WaitingInstallRequest {
+
+        public final String packageName;
+        public final boolean install;
+        public final String apkFilePath;
+        public final String packageUri;
+        public final boolean uninstallUpdatesOnly;
+
+        public WaitingInstallRequest(
+                String packageName, boolean install,
+                String apkFilePath, String packageUri,
+                boolean uninstallUpdatesOnly) {
+            this.packageName = packageName;
+            this.install = install;
+            this.apkFilePath = apkFilePath;
+            this.packageUri = packageUri;
+            this.uninstallUpdatesOnly = uninstallUpdatesOnly;
+        }
+
+        public static WaitingInstallRequest fromIntent(Intent intent, String targetPackageName) {
+            Uri packageUri = intent.getParcelableExtra("packageUri");
+            return new WaitingInstallRequest(
+                    targetPackageName,
+                    intent.getBooleanExtra("install", true),
+                    intent.getStringExtra("apkFilePath"),
+                    packageUri == null ? null : packageUri.toString(),
+                    intent.getBooleanExtra("uninstall_updates_only", false));
+        }
+
+        public boolean isApkAvailable() {
+            if (!install) return true;
+            // A content-URI request has no staged path of its own: the service copies it again.
+            if (apkFilePath == null || apkFilePath.isEmpty()) return true;
+            return new File(apkFilePath).exists();
+        }
+
+        public Intent toIntent(Context context) {
+            Intent intent = new Intent(context, InstallPackagesService.class)
+                    .putExtra("install", install)
+                    .putExtra("uninstall_updates_only", uninstallUpdatesOnly);
+            if (apkFilePath != null) {
+                intent.putExtra("apkFilePath", apkFilePath);
+            }
+            if (packageUri != null) {
+                intent.putExtra("packageUri", Uri.parse(packageUri));
+            }
+            return intent;
+        }
+
+        public String encode() {
+            return WAITING_REQUEST_VERSION + WAITING_REQUEST_SEPARATOR
+                    + packageName + WAITING_REQUEST_SEPARATOR
+                    + (install ? "1" : "0") + WAITING_REQUEST_SEPARATOR
+                    + (apkFilePath == null ? "" : apkFilePath) + WAITING_REQUEST_SEPARATOR
+                    + (packageUri == null ? "" : packageUri) + WAITING_REQUEST_SEPARATOR
+                    + (uninstallUpdatesOnly ? "1" : "0");
+        }
+
+        public static WaitingInstallRequest decode(String encoded) {
+            if (encoded == null) return null;
+            String[] fields = encoded.split(WAITING_REQUEST_SEPARATOR, -1);
+            if (fields.length != 6
+                    || !WAITING_REQUEST_VERSION.equals(fields[0])
+                    || fields[1].isEmpty()) {
+                return null;
+            }
+            return new WaitingInstallRequest(
+                    fields[1],
+                    "1".equals(fields[2]),
+                    fields[3].isEmpty() ? null : fields[3],
+                    fields[4].isEmpty() ? null : fields[4],
+                    "1".equals(fields[5]));
+        }
     }
 
 }
