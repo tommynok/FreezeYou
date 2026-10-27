@@ -18,7 +18,9 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FreezeActivityViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -243,9 +245,11 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 tasks = tasks,
                 target = target
             )
-            val result = freezeYouFUFSinglePackage.commit()
-            mExecuteResult.postValue(ExecuteResult(result, freezeYouFUFSinglePackage))
-            mFinishMe.postValue(true)
+            withContext(NonCancellable) {
+                val result = freezeYouFUFSinglePackage.commit()
+                mExecuteResult.postValue(ExecuteResult(result, freezeYouFUFSinglePackage))
+                mFinishMe.postValue(true)
+            }
         }
     }
 
