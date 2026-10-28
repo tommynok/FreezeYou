@@ -340,6 +340,7 @@ public final class OneKeyListUtils {
                         writeUserDefinedCategory(
                                 userDefinedDb,
                                 row.id,
+                                row.label,
                                 removePkgFromPkgNames(row.packages, name)
                         );
                     }
@@ -377,13 +378,15 @@ public final class OneKeyListUtils {
                 userDefinedDb = context.openOrCreateDatabase(USER_DEFINED_DB, Context.MODE_PRIVATE, null);
                 userDefinedDb.execSQL(CREATE_CATEGORIES_TABLE);
                 String packages = "";
+                String encodedLabel = null;
                 boolean found = false;
                 cursor = userDefinedDb.query(
-                        CATEGORIES_TABLE, new String[]{"packages"}, "_id = ?",
+                        CATEGORIES_TABLE, new String[]{"label", "packages"}, "_id = ?",
                         new String[]{String.valueOf(id)}, null, null, null
                 );
                 if (cursor.moveToFirst()) {
                     found = true;
+                    encodedLabel = cursor.getString(cursor.getColumnIndexOrThrow("label"));
                     packages = cursor.getString(cursor.getColumnIndexOrThrow("packages"));
                     if (packages == null) {
                         packages = "";
@@ -395,13 +398,16 @@ public final class OneKeyListUtils {
                     return null;
                 }
                 final boolean exists = existsInOneKeyList(packages, name);
-                writeUserDefinedCategory(
+                if (!writeUserDefinedCategory(
                         userDefinedDb,
                         id,
+                        encodedLabel,
                         exists
                                 ? removePkgFromPkgNames(packages, name)
                                 : addPkgToPkgNames(packages, name)
-                );
+                )) {
+                    return null;
+                }
                 return !exists;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -473,10 +479,7 @@ public final class OneKeyListUtils {
                 ) <= 0) {
                     return null;
                 }
-                final Long previous = CATEGORY_REVISIONS.get(encodedLabel);
-                final long revision = previous == null ? 1 : previous + 1;
-                CATEGORY_REVISIONS.put(encodedLabel, revision);
-                return new CategoryUpdate(packages, revision);
+                return new CategoryUpdate(packages, bumpCategoryRevision(encodedLabel));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -579,7 +582,7 @@ public final class OneKeyListUtils {
                         }
                     }
                     if (!packages.equals(row.packages)) {
-                        writeUserDefinedCategory(userDefinedDb, row.id, packages);
+                        writeUserDefinedCategory(userDefinedDb, row.id, row.label, packages);
                     }
                 }
                 return true;
@@ -599,12 +602,13 @@ public final class OneKeyListUtils {
         Cursor cursor = null;
         try {
             cursor = userDefinedDb.query(
-                    CATEGORIES_TABLE, new String[]{"_id", "packages"},
+                    CATEGORIES_TABLE, new String[]{"_id", "label", "packages"},
                     null, null, null, null, null
             );
             while (cursor.moveToNext()) {
                 rows.add(new CategoryRow(
                         cursor.getInt(cursor.getColumnIndexOrThrow("_id")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("label")),
                         cursor.getString(cursor.getColumnIndexOrThrow("packages"))
                 ));
             }
@@ -616,10 +620,25 @@ public final class OneKeyListUtils {
         return rows;
     }
 
-    private static void writeUserDefinedCategory(SQLiteDatabase userDefinedDb, int id, String packages) {
+    private static boolean writeUserDefinedCategory(
+            SQLiteDatabase userDefinedDb, int id, String encodedLabel, String packages) {
         ContentValues values = new ContentValues();
         values.put("packages", packages);
-        userDefinedDb.update(CATEGORIES_TABLE, values, "_id = ?", new String[]{String.valueOf(id)});
+        if (userDefinedDb.update(CATEGORIES_TABLE, values, "_id = ?", new String[]{String.valueOf(id)}) <= 0) {
+            return false;
+        }
+        if (encodedLabel != null) {
+            bumpCategoryRevision(encodedLabel);
+        }
+        return true;
+    }
+
+    // All callers hold LIST_LOCK, so publication follows the database write order.
+    private static long bumpCategoryRevision(String encodedLabel) {
+        final Long previous = CATEGORY_REVISIONS.get(encodedLabel);
+        final long revision = previous == null ? 1 : previous + 1;
+        CATEGORY_REVISIONS.put(encodedLabel, revision);
+        return revision;
     }
 
     /**
@@ -629,10 +648,12 @@ public final class OneKeyListUtils {
      */
     private static final class CategoryRow {
         final int id;
+        final String label;
         final String packages;
 
-        CategoryRow(int id, String packages) {
+        CategoryRow(int id, String label, String packages) {
             this.id = id;
+            this.label = label;
             this.packages = packages == null ? "" : packages;
         }
     }

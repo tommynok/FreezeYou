@@ -112,7 +112,7 @@ public class UriFreezeActivity extends FreezeYouBaseActivity {
                             getApplicationLabel(
                                     UriFreezeActivity.this,
                                     null,
-                                    ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, this),
+                                    ApplicationInfoUtils.getApplicationInfoFromPkgName(refererPackage, this),
                                     refererPackage
                             );
                     if (refererPackageLabel.equals(getString(R.string.uninstalled))) {

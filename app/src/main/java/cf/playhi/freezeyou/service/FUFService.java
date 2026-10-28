@@ -62,6 +62,10 @@ public class FUFService extends FreezeYouBaseService {
                                         context, pkgName, target, tasks, true, askRun,
                                         false, null, false,
                                         !lesserToast.getValue(null));
+                            } else if (Build.VERSION.SDK_INT >= 21 && isProfileOwner(context)) {
+                                processAction(context, pkgName, API_FREEZEYOU_MROOT_PROFILE_OWNER,
+                                        false, !lesserToast.getValue(null), askRun, target, tasks,
+                                        false, null, false);
                             } else {
                                 processRootAction(pkgName, target, tasks, context, false, askRun,
                                         false, null, false,
@@ -69,9 +73,12 @@ public class FUFService extends FreezeYouBaseService {
                             }
                         } else {
                             if (checkMRootFrozen(context, pkgName)) {
-                                processMRootAction(context, pkgName, target, tasks, false,
-                                        askRun, runImmediately, null, false,
-                                        !lesserToast.getValue(null));
+                                int dpmMode = isProfileOwner(context) && !isDeviceOwner(context)
+                                        ? API_FREEZEYOU_MROOT_PROFILE_OWNER
+                                        : API_FREEZEYOU_MROOT_DPM;
+                                processAction(context, pkgName, dpmMode,
+                                        true, !lesserToast.getValue(null), askRun, target, tasks,
+                                        runImmediately, null, false);
                             } else {
                                 processRootAction(pkgName, target, tasks, context, true, askRun,
                                         runImmediately, null, false,

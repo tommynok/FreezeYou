@@ -1,9 +1,17 @@
 package cf.playhi.freezeyou.utils
 
+import android.app.Application
+import android.content.Context
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 
 /**
  * A OneKEY list is one comma separated string in preferences, and these three functions decide
@@ -188,5 +196,68 @@ class OneKeyListTest {
         assertTrue(OneKeyListUtils.existsInOneKeyList(added, "com.b"))
         assertEquals("com.a,", OneKeyListUtils.removePkgFromPkgNames(added, "com.b"))
         assertEquals("com.b,", OneKeyListUtils.removePkgFromPkgNames(added, "com.a"))
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class)
+class CategoryRevisionTest {
+    private lateinit var context: Context
+    private val label = "cmV2aXNpb24=\n"
+    private val missingPackage = "com.example.missing.category.member"
+    private var categoryId = 0
+
+    @Before
+    fun createCategory() {
+        context = RuntimeEnvironment.getApplication()
+        context.deleteDatabase("userDefinedCategories")
+        assertEquals(true, OneKeyListUtils.createUserDefinedCategory(context, label))
+        context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null).use { db ->
+            db.rawQuery("SELECT _id FROM categories WHERE label = ?", arrayOf(label)).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                categoryId = cursor.getInt(0)
+            }
+        }
+    }
+
+    @After
+    fun deleteCategoryDatabase() {
+        context.deleteDatabase("userDefinedCategories")
+    }
+
+    @Test
+    fun `single item add and remove invalidate selection snapshots`() {
+        val beforeAdd = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, beforeAdd.revision))
+        assertEquals(true, OneKeyListUtils.togglePackageInUserDefinedCategory(context, categoryId, missingPackage))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, beforeAdd.revision))
+
+        val beforeRemove = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("$missingPackage,", beforeRemove.packages)
+        assertEquals(false, OneKeyListUtils.togglePackageInUserDefinedCategory(context, categoryId, missingPackage))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, beforeRemove.revision))
+    }
+
+    @Test
+    fun `package cleanup invalidates only changed category snapshots`() {
+        val before = OneKeyListUtils.updateUserDefinedCategory(context, label, listOf(missingPackage), false)!!
+        OneKeyListUtils.removePackageFromUserDefinedCategories(context, "com.example.not.a.member")
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        OneKeyListUtils.removePackageFromUserDefinedCategories(context, missingPackage)
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        val after = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("", after.packages)
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, after.revision))
+    }
+
+    @Test
+    fun `uninstalled cleanup invalidates selection snapshot only when membership changes`() {
+        val before = OneKeyListUtils.updateUserDefinedCategory(context, label, listOf(missingPackage), false)!!
+        assertTrue(OneKeyListUtils.removeUninstalledFromUserDefinedCategories(context))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        val after = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("", after.packages)
+        assertTrue(OneKeyListUtils.removeUninstalledFromUserDefinedCategories(context))
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, after.revision))
     }
 }

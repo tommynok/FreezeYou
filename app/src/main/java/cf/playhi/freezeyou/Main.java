@@ -2126,8 +2126,14 @@ public class Main extends FreezeYouBaseActivity {
                 return;
             }
             final int sortRule = currentSortRule;
-            new Thread(() -> generateList(update.packages, sortRule, encodedTitle),
-                    "UserDefinedCategoryRefresh").start();
+            new Thread(() -> {
+                if (isFinishing()
+                        || !encodedTitle.equals(currentCategoryLabel)
+                        || !OneKeyListUtils.isLatestCategoryUpdate(encodedTitle, update.revision)) {
+                    return;
+                }
+                generateList(update.packages, sortRule, encodedTitle);
+            }, "UserDefinedCategoryRefresh").start();
         });
     }
 
