@@ -38,7 +38,7 @@ class StagedInstallCommandTest {
         )
         assertTrue(
             cmd.endsWith(
-                "; rc=$?; rm -f '/data/local/tmp/freezeyou-1.apk'; exit $rc"
+                "; rc=$?; rm -f '/data/local/tmp/freezeyou-1.apk'; exit \$rc"
             )
         )
     }
@@ -60,7 +60,7 @@ class StagedInstallCommandTest {
             "cp '/a/b.apk' '/data/local/tmp/freezeyou'\\''1.apk'"
                     + " && chmod 644 '/data/local/tmp/freezeyou'\\''1.apk'"
                     + " && pm install -r '/data/local/tmp/freezeyou'\\''1.apk'"
-                    + "; rc=$?; rm -f '/data/local/tmp/freezeyou'\\''1.apk'; exit $rc",
+                    + "; rc=$?; rm -f '/data/local/tmp/freezeyou'\\''1.apk'; exit \$rc",
             cmd
         )
     }
