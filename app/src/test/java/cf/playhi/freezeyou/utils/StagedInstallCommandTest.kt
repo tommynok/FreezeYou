@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.utils
 
+import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,7 +15,7 @@ import org.robolectric.annotation.Config
  * copy readable, install from the staged path, keep the install exit code across the cleanup.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = Application::class)
 class StagedInstallCommandTest {
 
     @Test
