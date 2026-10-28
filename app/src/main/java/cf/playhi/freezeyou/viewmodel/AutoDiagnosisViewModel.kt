@@ -39,6 +39,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -86,16 +88,19 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     // silently no-op and the screen would stay empty until the activity restarts.
                     mutex.unlock("AutoDiagnosisViewModelRefreshingDiagnosisData")
                 }
+            } else {
+                // A skipped refresh was the invisible failure mode on the device: the screen
+                // stayed empty with no log line to explain why. Make it explicit.
+                Log.d("FreezeYouDebug", "AutoDiagnosis refresh skipped, another one is running")
             }
         }
     }
 
     private fun refreshDiagnosisDataLocked(localList: MutableList<Map<String, Any>>) {
         val startedAt = SystemClock.elapsedRealtime()
+        Log.d("FreezeYouDebug", "AutoDiagnosis refresh started")
         loadingProgress.postValue(-1)
 
-        // The list is published once at the end; check methods must never touch
-        // problemsList directly, or the UI thread can observe a half-updated list.
         val fufMode = selectFUFMode.getValue(getApplication())?.toIntOrNull()
             ?: API_FREEZEYOU_LEGACY_AUTO
         val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
@@ -110,41 +115,58 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         val systemAppRequired = fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
                 || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
                 || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
-        loadingProgress.postValue(5)
+        Log.d(
+            "FreezeYouDebug",
+            "AutoDiagnosis fufMode=" + fufMode
+                    + " dpmRequired=" + dpmRequired
+                    + " profileOwnerRequired=" + profileOwnerRequired
+                    + " rootRequired=" + rootRequired
+                    + " shizukuRequired=" + shizukuRequired
+                    + " systemAppRequired=" + systemAppRequired
+        )
+
+        fun publishSnapshot(percent: Int) {
+            loadingProgress.postValue(percent)
+            // Every phase publishes its own snapshot: the screen shows rows as they are
+            // collected, and a later phase that hangs or fails can never leave it empty.
+            problemsList.postValue(ArrayList(localList))
+        }
+
+        publishSnapshot(5)
 
         checkSystemVersion(localList)
-        loadingProgress.postValue(15)
+        publishSnapshot(15)
 
         checkAccessibilityService(localList)
-        loadingProgress.postValue(30)
+        publishSnapshot(30)
 
         checkNotificationListenerPermission(localList)
-        loadingProgress.postValue(45)
+        publishSnapshot(45)
 
         checkNotifyPermission(localList)
-        loadingProgress.postValue(55)
+        publishSnapshot(55)
 
         checkBlueToothPermission(localList)
-        loadingProgress.postValue(65)
+        publishSnapshot(65)
 
         checkIsDeviceOwner(localList, dpmRequired)
-        loadingProgress.postValue(75)
+        publishSnapshot(75)
 
         checkRootPermission(localList, rootRequired)
-        loadingProgress.postValue(85)
+        publishSnapshot(85)
 
         checkProfileOwner(localList, profileOwnerRequired)
         checkSystemAppMode(localList, systemAppRequired, fufMode)
         checkShizuku(localList, shizukuRequired)
 
         checkIsPowerSaveMode(localList)
-        loadingProgress.postValue(92)
+        publishSnapshot(92)
 
         checkIsIgnoringBatteryOptimizations(localList)
-        loadingProgress.postValue(97)
+        publishSnapshot(97)
 
         checkIfNoProblemFound(localList)
-        loadingProgress.postValue(99)
+        publishSnapshot(99)
 
         localList.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
             val i = (t0["level"] as Int).compareTo(
@@ -153,7 +175,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             if (i == 0) (t0["id"] as String).compareTo((t1["id"] as String)) else i
         }
 
-        problemsList.postValue(localList)
+        problemsList.postValue(ArrayList(localList))
 
         loadingProgress.postValue(100)
 
@@ -429,8 +451,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             if (!binderAlive) {
                 // The execution path repairs a missing binder by requesting it
                 // through ShizukuProvider; do the same before reporting Shizuku unavailable.
-                ShizukuProvider.requestBinderForNonProviderProcess(app)
-                binderAlive = Shizuku.pingBinder()
+                binderAlive = requestShizukuBinderBounded(app)
             }
             Log.d(
                 "FreezeYouDebug",
@@ -489,6 +510,33 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         }
+    }
+
+    /**
+     * The Shizuku provider query has no built-in timeout, so a wedged provider would hang the
+     * whole refresh on a thread that the mutex keeps occupied. Run the repair on a helper thread
+     * with a hard cap and report whatever the binder looks like afterwards.
+     */
+    private fun requestShizukuBinderBounded(app: Application): Boolean {
+        val done = CountDownLatch(1)
+        Thread(
+            {
+                try {
+                    ShizukuProvider.requestBinderForNonProviderProcess(app)
+                } catch (t: Throwable) {
+                    // The ping below simply reports the binder state after a failed repair.
+                } finally {
+                    done.countDown()
+                }
+            },
+            "AutoDiagnosisShizukuBinderRequest"
+        ).start()
+        try {
+            done.await(5, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        return Shizuku.pingBinder()
     }
 
     private fun checkIsIgnoringBatteryOptimizations(localList: MutableList<Map<String, Any>>) {

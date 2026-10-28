@@ -41,10 +41,27 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
         setContentView(binding.root)
         processActionBar(supportActionBar)
 
+        // The list, not the progress handshake, owns the adapter. The refresh publishes a
+        // snapshot after every phase, and LiveData replays the latest one to a late observer,
+        // so rows appear as soon as any snapshot exists - a lost or delayed progress update
+        // can no longer leave the screen empty until the refresh button is pressed.
+        viewModel.getProblemsList().observe(this) { list ->
+            binding.adgListView.adapter = SimpleAdapter(
+                this,
+                list,
+                R.layout.adg_list_item,
+                arrayOf("title", "sTitle", "status", "id"),
+                intArrayOf(
+                    R.id.adgli_title_textView,
+                    R.id.adgli_subTitle_textView,
+                    R.id.adgli_status_imageView
+                )
+            )
+        }
+
         viewModel.getLoadingProgress().observe(this) {
             binding.adgProgressBar.visibility = View.VISIBLE
             if (it == -1) {
-                binding.adgListView.adapter = null
                 binding.adgProgressBar.isIndeterminate = true
             } else {
                 binding.adgProgressBar.isIndeterminate = false
@@ -56,17 +73,6 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                 }
                 if (it == 100) {
                     binding.adgProgressBar.visibility = View.GONE
-                    binding.adgListView.adapter = SimpleAdapter(
-                        this,
-                        viewModel.getProblemsList().value,
-                        R.layout.adg_list_item,
-                        arrayOf("title", "sTitle", "status", "id"),
-                        intArrayOf(
-                            R.id.adgli_title_textView,
-                            R.id.adgli_subTitle_textView,
-                            R.id.adgli_status_imageView
-                        )
-                    )
                 }
             }
         }
