@@ -445,6 +445,19 @@ public final class PrivilegedShellUtils {
         return "'" + value.replace("'", "'\\''") + "'";
     }
 
+    /**
+     * Builds the install command for a privileged shell. {@code pm install} parses the APK inside
+     * system_server, which cannot read the app's external cache since Android 11, so the file is
+     * first copied into /data/local/tmp — writable by shell and root, readable by system_server —
+     * and installed from there. The exit code of the install is kept across the cleanup.
+     */
+    public static String buildStagedInstallCommand(String sourcePath, String stagedPath) {
+        String quotedStagedPath = shellQuote(stagedPath);
+        return "cp " + shellQuote(sourcePath) + " " + quotedStagedPath
+                + " && pm install -r " + quotedStagedPath
+                + "; rc=$?; rm -f " + quotedStagedPath + "; exit $rc";
+    }
+
     public static boolean isSuccessful(int exitCode, String output) {
         if (exitCode != 0) return false;
         if (output == null || output.isEmpty()) return true;

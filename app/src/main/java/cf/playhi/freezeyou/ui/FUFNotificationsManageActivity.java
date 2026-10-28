@@ -50,8 +50,8 @@ public class FUFNotificationsManageActivity extends FreezeYouBaseActivity {
                         null,
                         hashMap.get("Name") + System.getProperty("line.separator") + pkgName,
                         getString(R.string.askIfDel))
-                        .setNegativeButton(R.string.no, null)
-                        .setPositiveButton(R.string.yes, (dialog, which) -> {
+                        .setNegativeButton(R.string.cancel, null)
+                        .setPositiveButton(R.string.okay, (dialog, which) -> {
                             // deleteNotification cancels the notification and takes the package out
                             // of the stored "notifying" list itself; writing that string here too only
                             // raced it, with the substring replace that could cut a longer name.

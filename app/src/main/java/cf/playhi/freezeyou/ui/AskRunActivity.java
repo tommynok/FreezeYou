@@ -32,8 +32,8 @@ public class AskRunActivity extends FreezeYouBaseActivity {
                         true),
                 getResources().getString(R.string.unfreezedAndAskLaunch),
                 getResources().getString(R.string.notice))
-                .setNegativeButton(R.string.no, (dialogInterface, i) -> finish())
-                .setPositiveButton(R.string.yes, (dialogInterface, ii) -> {
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finish())
+                .setPositiveButton(R.string.okay, (dialogInterface, ii) -> {
                     checkAndStartApp(
                             AskRunActivity.this,
                             pkgName,

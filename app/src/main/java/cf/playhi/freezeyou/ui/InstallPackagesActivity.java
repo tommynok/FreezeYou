@@ -381,7 +381,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 tryToAvoidUpdateWhenUsing.getValue(null);
 
         installPackagesAlertDialog.setMessage(alertDialogMessage);
-        String positiveButtonText = getString(R.string.yes);
+        String positiveButtonText = getString(R.string.okay);
         if (install == 0) {
             if (isSystemApp && hasSystemUpdate) {
                 positiveButtonText = getString(R.string.uninstall_completely);
@@ -442,8 +442,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                         R.string.full_system_uninstall_requires_shell);
                                 return;
                             }
-                            if (deviceOwnerAvailable || rootAvailable
-                                    || (install == 0 && shizukuAvailable)) {
+                            // Shizuku's shell installs APKs too, so it is a valid install path
+                            // even when root is not granted.
+                            if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
                                 ServiceUtils.startService(
                                         InstallPackagesActivity.this,
                                         new Intent(InstallPackagesActivity.this,
@@ -601,7 +602,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         AlertDialog.Builder adbd = FreezeYouAlertDialogBuilder(InstallPackagesActivity.this);
         adbd.setMessage(R.string.installPerimisionCheckFailed_ifContinue);
         adbd.setTitle(R.string.notice);
-        adbd.setPositiveButton(R.string.yes, (dialog, which) -> {
+        adbd.setPositiveButton(R.string.okay, (dialog, which) -> {
             ServiceUtils.startService(
                     InstallPackagesActivity.this,
                     new Intent(InstallPackagesActivity.this,
@@ -613,7 +614,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
             finish();
         });
-        adbd.setNegativeButton(R.string.no, (dialog, which) -> finish());
+        adbd.setNegativeButton(R.string.cancel, (dialog, which) -> finish());
         adbd.setNeutralButton(R.string.jumpToSysInstaller, (dialog, which) -> {
             if (install == 0) {
                 InstallPackagesActivity.this.startActivity(

@@ -89,7 +89,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                         .buildAlertDialog(
                                 this, R.drawable.ic_warning, R.string.askIfDel, R.string.notice
                         )
-                        .setPositiveButton(R.string.yes, (dialog, which) -> {
+                        .setPositiveButton(R.string.okay, (dialog, which) -> {
                             setResult(RESULT_OK);
                             if (id != -5) {
                                 SQLiteDatabase db = openOrCreateDatabase(isTimeTask ? "scheduledTasks" : "scheduledTriggerTasks", MODE_PRIVATE, null);
@@ -104,7 +104,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                             }
                             finish();
                         })
-                        .setNegativeButton(R.string.no, null)
+                        .setNegativeButton(R.string.cancel, null)
                         .create().show();
                 return true;
             case R.id.menu_staa_share:
@@ -410,7 +410,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         }
 
         AlertDialogUtils.buildAlertDialog(this, R.mipmap.ic_launcher_new_round, R.string.askIfSave, R.string.notice)
-                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                .setPositiveButton(R.string.okay, (dialog, which) -> {
                     if (isTimeTask) {
                         if (saveTimeTaskData(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()), id)) {
                             finish();
@@ -421,8 +421,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                         }
                     }
                 })
-                .setNegativeButton(R.string.no, (dialog, which) -> finish())
-                .setNeutralButton(R.string.cancel, null)
+                .setNegativeButton(R.string.cancel, (dialog, which) -> finish())
                 .create().show();
     }
 

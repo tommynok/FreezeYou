@@ -144,9 +144,9 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
                     builder.setTitle(R.string.plsConfirm);
                     builder.setMessage(R.string.askIfDel);
                     builder.setPositiveButton(
-                            R.string.yes, (dialog, which) ->
+                            R.string.okay, (dialog, which) ->
                                     deleteUserDefinedListById((int) itemDataHashMap.get("id")));
-                    builder.setNegativeButton(R.string.no, null);
+                    builder.setNegativeButton(R.string.cancel, null);
                     builder.show();
                     break;
                 default:

@@ -149,7 +149,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                         ScheduledTasksManageActivity.this,
                                         R.drawable.ic_warning, R.string.askIfDel, R.string.notice
                                 )
-                                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                                .setPositiveButton(R.string.okay, (dialog, which) -> {
                                     for (int aSelectedTaskPosition : selectedTasksPositions) {
                                         boolean isTimeTask =
                                                 (boolean) (((ScheduledTasksManageSimpleAdapter) tasksListView.getAdapter())
@@ -165,7 +165,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                     TasksUtils.checkTriggerTasks(ScheduledTasksManageActivity.this);
                                     mode.finish();
                                 })
-                                .setNegativeButton(R.string.no, null)
+                                .setNegativeButton(R.string.cancel, null)
                                 .create().show();
                         return true;
                     case R.id.stma_menu_mc_selectAll:

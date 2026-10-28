@@ -61,8 +61,8 @@ public class UriAutoAllowManageActivity extends FreezeYouBaseActivity {
                                 null,
                                 hashMap.get("Name") + System.getProperty("line.separator") + pkgName,
                                 getString(R.string.askIfDel))
-                        .setNegativeButton(R.string.no, null)
-                        .setPositiveButton(R.string.yes, (dialog, which) -> {
+                        .setNegativeButton(R.string.cancel, null)
+                        .setPositiveButton(R.string.okay, (dialog, which) -> {
                             AutoAllowListUtils.remove(UriAutoAllowManageActivity.this, listKey, pkgName);
                             init();
                         })

@@ -441,17 +441,42 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 : PendingIntent.FLAG_UPDATE_CURRENT)
                                 .getIntentSender());
             } else {
-                // Root Mode
+                // system_server parses the APK itself, and since Android 11 it cannot read the
+                // app's external cache, so the file is staged into /data/local/tmp inside the
+                // same shell session and installed from there. Shizuku's granted shell is
+                // preferred; a failed attempt is retried through root when it is available.
+                final String stagedPath =
+                        "/data/local/tmp/freezeyou-" + System.currentTimeMillis() + ".apk";
+                final String cmd = PrivilegedShellUtils.buildStagedInstallCommand(apkFilePath, stagedPath);
                 String result = null;
                 try {
-                    String cmd = "pm install -r " + PrivilegedShellUtils.shellQuote(apkFilePath);
-                    PrivilegedShellUtils.CommandResult cmdRes =
-                            PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
+                    PrivilegedShellUtils.CommandResult cmdRes;
+                    if (PrivilegedShellUtils.isShizukuAvailable(this)) {
+                        cmdRes = PrivilegedShellUtils.runShizukuCommand(cmd, INSTALL_TIMEOUT_MS);
+                        if (!cmdRes.isSuccessful()
+                                && cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission()) {
+                            cmdRes = PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
+                        }
+                    } else {
+                        cmdRes = PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
+                    }
                     result = cmdRes.output;
                 } finally {
                     // A command killed by its deadline never returns, so the staged ZDF- copy
-                    // has to be cleaned up here and not only after a normal return.
+                    // has to be cleaned up here and not only after a normal return. The copy in
+                    // /data/local/tmp is removed by the command itself; only a killed command
+                    // leaves it behind, so it is removed once more on the exception path.
                     InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
+                    if (result == null) {
+                        try {
+                            String cleanup = "rm -f " + PrivilegedShellUtils.shellQuote(stagedPath);
+                            if (PrivilegedShellUtils.isShizukuAvailable(this)) {
+                                PrivilegedShellUtils.runShizukuCommand(cleanup, 10_000L);
+                            } else {
+                                PrivilegedShellUtils.runRootCommand(cleanup, 10_000L);
+                            }
+                        } catch (Exception ignored) {}
+                    }
                     if (result != null && result.toLowerCase().contains("success")) {
                         InstallPackagesUtils
                                 .notifyFinishNotification(
