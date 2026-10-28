@@ -167,6 +167,7 @@
     <string name="scheduledTasks">Запланированные задания</string>
     <string name="add">Добавить</string>
     <string name="save">Сохранить</string>
+    <string name="doNotSave">Не сохранять</string>
     <string name="time">Время</string>
     <string name="enable">Включить</string>
     <string name="repeat">Повтор</string>

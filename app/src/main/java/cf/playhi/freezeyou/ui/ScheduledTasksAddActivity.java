@@ -410,7 +410,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         }
 
         AlertDialogUtils.buildAlertDialog(this, R.mipmap.ic_launcher_new_round, R.string.askIfSave, R.string.notice)
-                .setPositiveButton(R.string.okay, (dialog, which) -> {
+                .setPositiveButton(R.string.save, (dialog, which) -> {
                     if (isTimeTask) {
                         if (saveTimeTaskData(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()), id)) {
                             finish();
@@ -421,7 +421,8 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                         }
                     }
                 })
-                .setNegativeButton(R.string.cancel, (dialog, which) -> finish())
+                .setNegativeButton(R.string.doNotSave, (dialog, which) -> finish())
+                .setNeutralButton(R.string.cancel, null)
                 .create().show();
     }
 

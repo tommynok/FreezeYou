@@ -167,6 +167,7 @@
     <string name="scheduledTasks">Заплановані завдання</string>
     <string name="add">Додати</string>
     <string name="save">Зберегти</string>
+    <string name="doNotSave">Не зберігати</string>
     <string name="time">Час</string>
     <string name="enable">Включити</string>
     <string name="repeat">Повтор</string>

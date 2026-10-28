@@ -10,8 +10,8 @@ import org.robolectric.annotation.Config
 /**
  * The privileged install command stages the APK into /data/local/tmp because system_server
  * cannot read the app's external cache since Android 11, and the staged copy must be removed
- * whether the install succeeded or not. The command shape is pinned here: copy first, install
- * from the staged path, keep the install exit code across the cleanup.
+ * whether the install succeeded or not. The command shape is pinned here: copy first, make the
+ * copy readable, install from the staged path, keep the install exit code across the cleanup.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -25,6 +25,7 @@ class StagedInstallCommandTest {
         assertTrue(
             cmd.startsWith(
                 "cp '/a/b.apk' '/data/local/tmp/freezeyou-1.apk'"
+                        + " && chmod 644 '/data/local/tmp/freezeyou-1.apk'"
                         + " && pm install -r '/data/local/tmp/freezeyou-1.apk'"
             )
         )
@@ -57,6 +58,7 @@ class StagedInstallCommandTest {
         )
         assertEquals(
             "cp '/a/b.apk' '/data/local/tmp/freezeyou'\\''1.apk'"
+                    + " && chmod 644 '/data/local/tmp/freezeyou'\\''1.apk'"
                     + " && pm install -r '/data/local/tmp/freezeyou'\\''1.apk'"
                     + "; rc=$?; rm -f '/data/local/tmp/freezeyou'\\''1.apk'; exit $rc",
             cmd
