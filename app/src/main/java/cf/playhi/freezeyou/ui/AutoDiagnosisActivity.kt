@@ -45,18 +45,25 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
         // snapshot after every phase, and LiveData replays the latest one to a late observer,
         // so rows appear as soon as any snapshot exists - a lost or delayed progress update
         // can no longer leave the screen empty until the refresh button is pressed.
-        viewModel.getProblemsList().observe(this) { list ->
-            binding.adgListView.adapter = SimpleAdapter(
-                this,
-                list,
-                R.layout.adg_list_item,
-                arrayOf("title", "sTitle", "status", "id"),
-                intArrayOf(
-                    R.id.adgli_title_textView,
-                    R.id.adgli_subTitle_textView,
-                    R.id.adgli_status_imageView
-                )
+        // The adapter is created once and snapshots are copied into its backing list:
+        // reinstalling the adapter on every snapshot would drop scroll and tap state while
+        // the checks are still running.
+        val diagnosisRows = ArrayList<Map<String, Any>>()
+        binding.adgListView.adapter = SimpleAdapter(
+            this,
+            diagnosisRows,
+            R.layout.adg_list_item,
+            arrayOf("title", "sTitle", "status", "id"),
+            intArrayOf(
+                R.id.adgli_title_textView,
+                R.id.adgli_subTitle_textView,
+                R.id.adgli_status_imageView
             )
+        )
+        viewModel.getProblemsList().observe(this) { list ->
+            diagnosisRows.clear()
+            diagnosisRows.addAll(list)
+            binding.adgListView.adapter?.notifyDataSetChanged()
         }
 
         viewModel.getLoadingProgress().observe(this) {

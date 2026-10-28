@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -515,10 +516,33 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     /**
      * The Shizuku provider query has no built-in timeout, so a wedged provider would hang the
      * whole refresh on a thread that the mutex keeps occupied. Run the repair on a helper thread
-     * with a hard cap and report whatever the binder looks like afterwards.
+     * with a hard cap and report whatever the binder looks like afterwards. Only one repair is
+     * ever in flight process-wide: a timed-out caller must not spawn a second provider request
+     * while the first is still blocked.
      */
     private fun requestShizukuBinderBounded(app: Application): Boolean {
+        val existing = shizukuBinderGate.get()
+        if (existing != null) {
+            // Single-flight: join the outstanding repair instead of starting another one.
+            try {
+                existing.await(5, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+            return Shizuku.pingBinder()
+        }
         val done = CountDownLatch(1)
+        if (!shizukuBinderGate.compareAndSet(null, done)) {
+            // Lost the race against another caller; join the winner's request.
+            shizukuBinderGate.get()?.let { winner ->
+                try {
+                    winner.await(5, TimeUnit.SECONDS)
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
+            }
+            return Shizuku.pingBinder()
+        }
         Thread(
             {
                 try {
@@ -527,6 +551,8 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     // The ping below simply reports the binder state after a failed repair.
                 } finally {
                     done.countDown()
+                    // Clear the gate even after a timeout so later refreshes can repair again.
+                    shizukuBinderGate.set(null)
                 }
             },
             "AutoDiagnosisShizukuBinderRequest"
@@ -628,6 +654,15 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 )
             )
         }
+    }
+
+    companion object {
+        /**
+         * At most one Shizuku provider request is allowed process-wide. The worker clears the
+         * gate itself when it finishes, even after a timeout, so a later refresh joins the
+         * blocked request instead of piling up more workers.
+         */
+        private val shizukuBinderGate = AtomicReference<CountDownLatch?>(null)
     }
 
 }
