@@ -52,7 +52,7 @@ public class ForceStopService extends FreezeYouBaseService {
                         )
                 );
             Notification.Builder mBuilder = new Notification.Builder(this, "ForceStop");
-            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
             mBuilder.setContentText(getString(R.string.forceStop));
             startForeground(6, mBuilder.build());
         } else {

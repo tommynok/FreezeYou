@@ -181,7 +181,7 @@ public class FUFService extends FreezeYouBaseService {
                 );
             Notification.Builder mBuilder =
                     new Notification.Builder(this, "FreezeAndUnfreeze");
-            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
             mBuilder.setContentText(getString(R.string.freezeAUF));
             startForeground(4, mBuilder.build());
         } else {

@@ -35,7 +35,7 @@ class OneKeyFreezeService : FreezeYouBaseService() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             notificationManager?.createNotificationChannel(channel)
             val mBuilder = Notification.Builder(this, "OneKeyFreeze")
-            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo)
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo)
             mBuilder.setContentText(getString(R.string.oneKeyFreeze))
             startForeground(2, mBuilder.build())
         } else {

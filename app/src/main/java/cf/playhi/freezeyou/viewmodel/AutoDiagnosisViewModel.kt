@@ -35,6 +35,7 @@ import cf.playhi.freezeyou.utils.FUFUtils
 import cf.playhi.freezeyou.utils.RootUtils
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -60,6 +61,14 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
             if (mutex.tryLock("AutoDiagnosisViewModelRefreshingDiagnosisData")) {
                 try {
                     refreshDiagnosisDataLocked()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Without a handler, an exception here would kill the process via the
+                    // coroutine's uncaught-exception path. Log it and finish the progress
+                    // so the screen shows the last completed result instead of dying.
+                    Log.e("FreezeYouDebug", "AutoDiagnosis refresh failed", e)
+                    loadingProgress.postValue(100)
                 } finally {
                     // A check that throws must not strand the mutex: the next refresh would
                     // silently no-op and the screen would stay empty until the activity restarts.

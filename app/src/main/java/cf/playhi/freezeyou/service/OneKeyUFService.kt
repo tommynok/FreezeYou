@@ -29,7 +29,7 @@ class OneKeyUFService : FreezeYouBaseService() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             notificationManager?.createNotificationChannel(channel)
             val mBuilder = Notification.Builder(this, "OneKeyUF")
-            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo)
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo)
             mBuilder.setContentText(getString(R.string.oneKeyUF))
             startForeground(3, mBuilder.build())
         } else {

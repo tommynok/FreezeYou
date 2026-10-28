@@ -37,7 +37,7 @@ public final class InstallPackagesUtils {
             return; // null package cannot produce notification tag hashcode
 
         // Small icon
-        builder.setSmallIcon(R.drawable.ic_shortcut_logo);
+        builder.setSmallIcon(R.drawable.ic_stat_logo);
 
         builder.setProgress(0, 0, false);
 
@@ -151,7 +151,7 @@ public final class InstallPackagesUtils {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
                 new Notification.Builder(context, InstallPackagesService.NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(context);
-        builder.setSmallIcon(R.drawable.ic_shortcut_logo);
+        builder.setSmallIcon(R.drawable.ic_stat_logo);
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

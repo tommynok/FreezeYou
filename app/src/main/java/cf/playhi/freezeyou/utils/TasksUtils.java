@@ -332,7 +332,7 @@ public final class TasksUtils {
         }
         builder.setContentTitle(title);
         builder.setContentText(text);
-        builder.setSmallIcon(R.drawable.ic_shortcut_logo);
+        builder.setSmallIcon(R.drawable.ic_stat_logo);
 
         int id = (new Date().getTime() + title + text).hashCode();
 
