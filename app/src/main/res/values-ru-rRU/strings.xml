@@ -168,6 +168,7 @@
     <string name="add">Добавить</string>
     <string name="save">Сохранить</string>
     <string name="doNotSave">Не сохранять</string>
+    <string name="diagnosisRefreshFailed">Диагностика прервана, часть проверок не выполнена</string>
     <string name="time">Время</string>
     <string name="enable">Включить</string>
     <string name="repeat">Повтор</string>

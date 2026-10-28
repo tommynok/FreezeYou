@@ -168,6 +168,7 @@
     <string name="add">Додати</string>
     <string name="save">Зберегти</string>
     <string name="doNotSave">Не зберігати</string>
+    <string name="diagnosisRefreshFailed">Діагностику перервано, частину перевірок не виконано</string>
     <string name="time">Час</string>
     <string name="enable">Включити</string>
     <string name="repeat">Повтор</string>

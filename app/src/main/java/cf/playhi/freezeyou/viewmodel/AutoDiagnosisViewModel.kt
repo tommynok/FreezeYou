@@ -59,15 +59,27 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     fun refreshDiagnosisData() {
         viewModelScope.launch(Dispatchers.IO) {
             if (mutex.tryLock("AutoDiagnosisViewModelRefreshingDiagnosisData")) {
+                val localList = ArrayList<Map<String, Any>>()
                 try {
-                    refreshDiagnosisDataLocked()
+                    refreshDiagnosisDataLocked(localList)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     // Without a handler, an exception here would kill the process via the
-                    // coroutine's uncaught-exception path. Log it and finish the progress
-                    // so the screen shows the last completed result instead of dying.
+                    // coroutine's uncaught-exception path. Log it and publish whatever the
+                    // refresh did collect, topped with an explicit marker so the screen
+                    // never shows a failed refresh as a full result.
                     Log.e("FreezeYouDebug", "AutoDiagnosis refresh failed", e)
+                    localList.add(
+                        0,
+                        generateHashMap(
+                            getApplication<Application>().getString(R.string.diagnosisRefreshFailed),
+                            "",
+                            "-98",
+                            R.drawable.ic_warning
+                        )
+                    )
+                    problemsList.postValue(localList)
                     loadingProgress.postValue(100)
                 } finally {
                     // A check that throws must not strand the mutex: the next refresh would
@@ -78,13 +90,12 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun refreshDiagnosisDataLocked() {
+    private fun refreshDiagnosisDataLocked(localList: MutableList<Map<String, Any>>) {
         val startedAt = SystemClock.elapsedRealtime()
         loadingProgress.postValue(-1)
 
         // The list is published once at the end; check methods must never touch
         // problemsList directly, or the UI thread can observe a half-updated list.
-        val localList = ArrayList<Map<String, Any>>()
         val fufMode = selectFUFMode.getValue(getApplication())?.toIntOrNull()
             ?: API_FREEZEYOU_LEGACY_AUTO
         val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
