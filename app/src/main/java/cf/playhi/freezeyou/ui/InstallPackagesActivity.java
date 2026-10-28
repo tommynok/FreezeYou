@@ -1,7 +1,6 @@
 package cf.playhi.freezeyou.ui;
 
 import android.Manifest;
-import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +12,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
 import android.view.Window;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -174,8 +174,16 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         if (isFinishing()) return;
 
-        final ProgressDialog progressDialog =
-                ProgressDialog.show(this, getString(R.string.plsWait), getString(R.string.loading___));
+        // Stock ProgressDialog draws a flat platform window; every other dialog in the app
+        // goes through the Material builder, which is what draws the rounded surface.
+        final AlertDialog progressDialog =
+                FreezeYouAlertDialogBuilder(this)
+                        .setTitle(R.string.plsWait)
+                        .setMessage(R.string.loading___)
+                        .setView(new ProgressBar(this))
+                        .setCancelable(false)
+                        .create();
+        progressDialog.show();
         final String nl = System.getProperty("line.separator");
         if (install) {
             new Thread(() -> {
@@ -323,11 +331,11 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     //install: 0-uninstall, 1-install, 2-failed.
-    private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
+    private void showInstallDialog(final AlertDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo) {
         showInstallDialog(progressDialog, install, alertDialogMessage, apkFilePath, packageUri, fromPkgLabel, fromPkgName, processedPackageInfo, false);
     }
 
-    private void showInstallDialog(final ProgressDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo, final boolean isCriticalApp) {
+    private void showInstallDialog(final AlertDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo, final boolean isCriticalApp) {
         final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null

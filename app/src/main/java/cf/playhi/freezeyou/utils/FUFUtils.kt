@@ -1373,7 +1373,7 @@ object FUFUtils {
     fun checkAndCreateFUFQuickNotification(context: Context?, pkgName: String?) {
         if (DefaultMultiProcessMMKVStorageBooleanKeys.createQuickFUFNotiAfterUnfrozen.getValue()) {
             NotificationUtils.createFUFQuickNotification(
-                context, pkgName, R.drawable.ic_notification,
+                context, pkgName, R.drawable.ic_shortcut_logo,
                 ApplicationIconUtils.getBitmapFromDrawable(
                     ApplicationIconUtils.getApplicationIcon(
                         context!!,

@@ -316,7 +316,7 @@ public final class NotificationUtils {
         } else {
             builder = new Notification.Builder(context);
         }
-        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setSmallIcon(R.drawable.ic_shortcut_logo);
         builder.setContentTitle(context.getString(R.string.app_name));
         builder.setContentText(content);
         builder.setAutoCancel(!notificationBarDisableClickDisappear.getValue(null));
@@ -353,7 +353,7 @@ public final class NotificationUtils {
         PendingIntent freezeAllPendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? PendingIntent.getForegroundService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags)
                 : PendingIntent.getService(context, BATCH_NOTIFICATION_ID, freezeAllIntent, pendingIntentFlags);
-        builder.addAction(R.drawable.ic_notification,
+        builder.addAction(R.drawable.ic_shortcut_logo,
                 context.getString(R.string.freezeAll), freezeAllPendingIntent);
 
         // Tapping the card opens FreezeYou, whichever way the single-application notifications

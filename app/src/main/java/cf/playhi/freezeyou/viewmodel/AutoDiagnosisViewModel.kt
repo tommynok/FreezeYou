@@ -7,7 +7,9 @@ import android.content.Context.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -56,75 +58,91 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     fun refreshDiagnosisData() {
         viewModelScope.launch(Dispatchers.IO) {
             if (mutex.tryLock("AutoDiagnosisViewModelRefreshingDiagnosisData")) {
-                loadingProgress.postValue(-1)
-
-                // The list is published once at the end; check methods must never touch
-                // problemsList directly, or the UI thread can observe a half-updated list.
-                val localList = ArrayList<Map<String, Any>>()
-                val fufMode = selectFUFMode.getValue(getApplication())?.toIntOrNull()
-                    ?: API_FREEZEYOU_LEGACY_AUTO
-                val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
-                        || fufMode == API_FREEZEYOU_MROOT_DPM
-                val profileOwnerRequired = fufMode == API_FREEZEYOU_MROOT_PROFILE_OWNER
-                val rootRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
-                        || fufMode == API_FREEZEYOU_ROOT_DISABLE_ENABLE
-                        || fufMode == API_FREEZEYOU_ROOT_UNHIDE_HIDE
-                val shizukuRequired = fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
-                        || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
-                        || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
-                val systemAppRequired = fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
-                        || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
-                        || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
-                loadingProgress.postValue(5)
-
-                checkSystemVersion(localList)
-                loadingProgress.postValue(15)
-
-                checkAccessibilityService(localList)
-                loadingProgress.postValue(30)
-
-                checkNotificationListenerPermission(localList)
-                loadingProgress.postValue(45)
-
-                checkNotifyPermission(localList)
-                loadingProgress.postValue(55)
-
-                checkBlueToothPermission(localList)
-                loadingProgress.postValue(65)
-
-                checkIsDeviceOwner(localList, dpmRequired)
-                loadingProgress.postValue(75)
-
-                checkRootPermission(localList, rootRequired)
-                loadingProgress.postValue(85)
-
-                checkProfileOwner(localList, profileOwnerRequired)
-                checkSystemAppMode(localList, systemAppRequired, fufMode)
-                checkShizuku(localList, shizukuRequired)
-
-                checkIsPowerSaveMode(localList)
-                loadingProgress.postValue(92)
-
-                checkIsIgnoringBatteryOptimizations(localList)
-                loadingProgress.postValue(97)
-
-                checkIfNoProblemFound(localList)
-                loadingProgress.postValue(99)
-
-                localList.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
-                    val i = (t0["level"] as Int).compareTo(
-                        (t1["level"] as Int)
-                    )
-                    if (i == 0) (t0["id"] as String).compareTo((t1["id"] as String)) else i
+                try {
+                    refreshDiagnosisDataLocked()
+                } finally {
+                    // A check that throws must not strand the mutex: the next refresh would
+                    // silently no-op and the screen would stay empty until the activity restarts.
+                    mutex.unlock("AutoDiagnosisViewModelRefreshingDiagnosisData")
                 }
-
-                problemsList.postValue(localList)
-
-                loadingProgress.postValue(100)
-
-                mutex.unlock("AutoDiagnosisViewModelRefreshingDiagnosisData")
             }
         }
+    }
+
+    private fun refreshDiagnosisDataLocked() {
+        val startedAt = SystemClock.elapsedRealtime()
+        loadingProgress.postValue(-1)
+
+        // The list is published once at the end; check methods must never touch
+        // problemsList directly, or the UI thread can observe a half-updated list.
+        val localList = ArrayList<Map<String, Any>>()
+        val fufMode = selectFUFMode.getValue(getApplication())?.toIntOrNull()
+            ?: API_FREEZEYOU_LEGACY_AUTO
+        val dpmRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
+                || fufMode == API_FREEZEYOU_MROOT_DPM
+        val profileOwnerRequired = fufMode == API_FREEZEYOU_MROOT_PROFILE_OWNER
+        val rootRequired = fufMode == API_FREEZEYOU_LEGACY_AUTO
+                || fufMode == API_FREEZEYOU_ROOT_DISABLE_ENABLE
+                || fufMode == API_FREEZEYOU_ROOT_UNHIDE_HIDE
+        val shizukuRequired = fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
+                || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+                || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
+        val systemAppRequired = fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
+                || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+                || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
+        loadingProgress.postValue(5)
+
+        checkSystemVersion(localList)
+        loadingProgress.postValue(15)
+
+        checkAccessibilityService(localList)
+        loadingProgress.postValue(30)
+
+        checkNotificationListenerPermission(localList)
+        loadingProgress.postValue(45)
+
+        checkNotifyPermission(localList)
+        loadingProgress.postValue(55)
+
+        checkBlueToothPermission(localList)
+        loadingProgress.postValue(65)
+
+        checkIsDeviceOwner(localList, dpmRequired)
+        loadingProgress.postValue(75)
+
+        checkRootPermission(localList, rootRequired)
+        loadingProgress.postValue(85)
+
+        checkProfileOwner(localList, profileOwnerRequired)
+        checkSystemAppMode(localList, systemAppRequired, fufMode)
+        checkShizuku(localList, shizukuRequired)
+
+        checkIsPowerSaveMode(localList)
+        loadingProgress.postValue(92)
+
+        checkIsIgnoringBatteryOptimizations(localList)
+        loadingProgress.postValue(97)
+
+        checkIfNoProblemFound(localList)
+        loadingProgress.postValue(99)
+
+        localList.sortWith { t0: Map<String, Any>, t1: Map<String, Any> ->
+            val i = (t0["level"] as Int).compareTo(
+                (t1["level"] as Int)
+            )
+            if (i == 0) (t0["id"] as String).compareTo((t1["id"] as String)) else i
+        }
+
+        problemsList.postValue(localList)
+
+        loadingProgress.postValue(100)
+
+        Log.d(
+            "FreezeYouDebug",
+            "AutoDiagnosis refresh finished in "
+                    + (SystemClock.elapsedRealtime() - startedAt)
+                    + " ms with " + localList.size + " rows"
+        )
     }
 
     private fun generateHashMap(
@@ -267,7 +285,19 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
     private fun checkRootPermission(
         localList: MutableList<Map<String, Any>>, rootRequired: Boolean
     ) {
-        if (!RootUtils.checkRootPermission(true)) {
+        val startedAt = SystemClock.elapsedRealtime()
+        // Probing every su candidate can take tens of seconds on some devices, so the full
+        // sweep runs only when the active FUF mode actually depends on root. For every other
+        // mode this reads the cached result: one quick retest of a known binary, or an
+        // instant negative answer inside the failure window.
+        val granted = RootUtils.checkRootPermission(rootRequired)
+        Log.d(
+            "FreezeYouDebug",
+            "AutoDiagnosis checkRootPermission took "
+                    + (SystemClock.elapsedRealtime() - startedAt)
+                    + " ms (required=" + rootRequired + ", granted=" + granted + ")"
+        )
+        if (!granted) {
             if (rootRequired) {
                 localList.add(
                     generateHashMap(
@@ -374,6 +404,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         if (!shizukuRequired) return
         val app = getApplication<Application>()
         try {
+            val startedAt = SystemClock.elapsedRealtime()
             var binderAlive = Shizuku.pingBinder()
             if (!binderAlive) {
                 // The execution path repairs a missing binder by requesting it
@@ -381,6 +412,12 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                 ShizukuProvider.requestBinderForNonProviderProcess(app)
                 binderAlive = Shizuku.pingBinder()
             }
+            Log.d(
+                "FreezeYouDebug",
+                "AutoDiagnosis checkShizuku took "
+                        + (SystemClock.elapsedRealtime() - startedAt)
+                        + " ms (binderAlive=" + binderAlive + ")"
+            )
             val authorized = binderAlive
                     && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
             val versionTooLow = binderAlive && Shizuku.isPreV11()

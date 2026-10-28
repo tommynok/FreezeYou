@@ -88,7 +88,7 @@ public class ScreenLockOneKeyFreezeService extends FreezeYouBaseService {
             mBuilder = new Notification.Builder(this);
         }
 
-        mBuilder.setSmallIcon(R.drawable.ic_notification);
+        mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
         mBuilder.setContentTitle(getString(R.string.screenLockFreezeNotiTitle));
         mBuilder.setContentText(getString(R.string.screenLockFreezeNotiText));
         mBuilder.setStyle(new Notification.BigTextStyle().bigText(getString(R.string.screenLockFreezeNotiText)));

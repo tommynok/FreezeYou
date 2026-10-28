@@ -106,12 +106,12 @@ public class InstallPackagesService extends FreezeYouBaseService {
             }
             Notification.Builder mBuilder =
                     new Notification.Builder(this, "InstallPackages");
-            mBuilder.setSmallIcon(R.drawable.ic_notification);
+            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
             mBuilder.setContentText(getString(R.string.installAndUninstall));
             startForeground(5, mBuilder.build());
         } else {
             Notification.Builder mBuilder = new Notification.Builder(this);
-            mBuilder.setSmallIcon(R.drawable.ic_notification);
+            mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
             mBuilder.setContentText(getString(R.string.installAndUninstall));
             startForeground(5, mBuilder.build());
         }
@@ -141,7 +141,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
                 new Notification.Builder(this, NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(this);
-        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setSmallIcon(R.drawable.ic_shortcut_logo);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 

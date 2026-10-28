@@ -51,7 +51,7 @@ public class TriggerTasksService extends FreezeYouBaseService {
                 }
                 Notification.Builder mBuilder =
                         new Notification.Builder(this, "BackgroundService");
-                mBuilder.setSmallIcon(R.drawable.ic_notification);
+                mBuilder.setSmallIcon(R.drawable.ic_shortcut_logo);
                 mBuilder.setContentText(getString(R.string.backgroundService));
                 Intent resultIntent = new Intent(getApplicationContext(), Main.class);
                 PendingIntent resultPendingIntent =
