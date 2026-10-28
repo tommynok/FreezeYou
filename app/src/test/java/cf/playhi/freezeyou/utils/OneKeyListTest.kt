@@ -12,6 +12,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
+import java.util.concurrent.Callable
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * A OneKEY list is one comma separated string in preferences, and these three functions decide
@@ -223,6 +228,84 @@ class CategoryRevisionTest {
     @After
     fun deleteCategoryDatabase() {
         context.deleteDatabase("userDefinedCategories")
+    }
+
+    @Test
+    fun `concurrent category writers publish every revision and readers reject superseded updates`() {
+        val workerCount = 4
+        val rounds = 20
+        val untouchedLabel = "dW50b3VjaGVk\n"
+        assertEquals(true, OneKeyListUtils.createUserDefinedCategory(context, untouchedLabel))
+        val untouched = OneKeyListUtils.updateUserDefinedCategory(context, untouchedLabel, emptyList(), false)!!
+        val initial = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        val barrier = CyclicBarrier(workerCount)
+        val executor = Executors.newFixedThreadPool(workerCount)
+        try {
+            val workers = (0 until workerCount).map { worker ->
+                executor.submit(Callable {
+                    val revisions = mutableListOf<Long>()
+                    repeat(rounds) { round ->
+                        barrier.await(10, TimeUnit.SECONDS)
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, initial.revision - 1))
+                        // Public mutations call bumpCategoryRevision while holding the database write lock.
+                        val update = OneKeyListUtils.updateUserDefinedCategory(
+                            context, label, listOf("com.example.worker$worker.round$round"), false
+                        )!!
+                        revisions.add(update.revision)
+                        barrier.await(10, TimeUnit.SECONDS)
+
+                        val latest = initial.revision + (round + 1) * workerCount
+                        assertEquals(update.revision == latest, OneKeyListUtils.isLatestCategoryUpdate(label, update.revision))
+                        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, latest))
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, initial.revision))
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, latest + 1))
+                        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(untouchedLabel, untouched.revision))
+                        barrier.await(10, TimeUnit.SECONDS)
+                    }
+                    revisions
+                })
+            }
+            val revisions = workers.flatMap { it.get(30, TimeUnit.SECONDS) }
+            val totalUpdates = workerCount * rounds
+            assertEquals(
+                (1..totalUpdates).map { initial.revision + it },
+                revisions.sorted()
+            )
+            context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null).use { db ->
+                db.rawQuery("SELECT packages FROM categories WHERE label = ?", arrayOf(label)).use { cursor ->
+                    assertTrue(cursor.moveToFirst())
+                    val packages = PackageListUtils.parse(cursor.getString(0)).toSet()
+                    val expected = (0 until workerCount).flatMap { worker ->
+                        (0 until rounds).map { round -> "com.example.worker$worker.round$round" }
+                    }.toSet()
+                    assertEquals(expected, packages)
+                }
+            }
+        } finally {
+            executor.shutdownNow()
+            assertTrue("Category workers did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+    }
+
+    @Test
+    fun `revision checks do not wait for the category database write lock`() {
+        val update = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        val writeLock = ReflectionHelpers.getStaticField<Any>(OneKeyListUtils::class.java, "LIST_LOCK")
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            synchronized(writeLock) {
+                val read = executor.submit(Callable {
+                    assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, update.revision))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, update.revision - 1))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate(null, update.revision))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate("missing-category", update.revision))
+                })
+                read.get(5, TimeUnit.SECONDS)
+            }
+        } finally {
+            executor.shutdownNow()
+            assertTrue("Revision reader did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
     }
 
     @Test
