@@ -10,11 +10,10 @@ import android.util.Base64;
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class OneKeyListUtils {
 
@@ -26,7 +25,7 @@ public final class OneKeyListUtils {
     // How many times each category has been edited in this process. Two edits of one category run
     // in independent workers and may finish out of order; the revision they carry under the write
     // order lets the UI discard a callback that an already-superseded edit posted late.
-    private static final Map<String, Long> CATEGORY_REVISIONS = new HashMap<>();
+    private static final ConcurrentHashMap<String, Long> CATEGORY_REVISIONS = new ConcurrentHashMap<>();
 
     /**
      * One category edit's new membership, with the place that edit holds in the category's order.
@@ -503,10 +502,8 @@ public final class OneKeyListUtils {
         if (encodedLabel == null) {
             return false;
         }
-        synchronized (LIST_LOCK) {
-            final Long latest = CATEGORY_REVISIONS.get(encodedLabel);
-            return latest != null && latest == revision;
-        }
+        final Long latest = CATEGORY_REVISIONS.get(encodedLabel);
+        return latest != null && latest == revision;
     }
 
     /**

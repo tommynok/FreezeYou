@@ -1536,22 +1536,34 @@ public class Main extends FreezeYouBaseActivity {
                         }
                         break;
                     case APPListViewOnClickMode_addToOFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromOFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_addToOUFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromOUFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_addToFOQList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromFOQList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_createFUFShortcut:
                         checkSettingsAndRequestCreateShortcut(
@@ -2113,7 +2125,9 @@ public class Main extends FreezeYouBaseActivity {
                     || !OneKeyListUtils.isLatestCategoryUpdate(encodedTitle, update.revision)) {
                 return;
             }
-            generateList(update.packages, currentSortRule, encodedTitle);
+            final int sortRule = currentSortRule;
+            new Thread(() -> generateList(update.packages, sortRule, encodedTitle),
+                    "UserDefinedCategoryRefresh").start();
         });
     }
 
