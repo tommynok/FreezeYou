@@ -49,7 +49,7 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
         // reinstalling the adapter on every snapshot would drop scroll and tap state while
         // the checks are still running.
         val diagnosisRows = ArrayList<Map<String, Any>>()
-        binding.adgListView.adapter = SimpleAdapter(
+        val diagnosisAdapter = SimpleAdapter(
             this,
             diagnosisRows,
             R.layout.adg_list_item,
@@ -60,10 +60,11 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                 R.id.adgli_status_imageView
             )
         )
+        binding.adgListView.adapter = diagnosisAdapter
         viewModel.getProblemsList().observe(this) { list ->
             diagnosisRows.clear()
             diagnosisRows.addAll(list)
-            binding.adgListView.adapter?.notifyDataSetChanged()
+            diagnosisAdapter.notifyDataSetChanged()
         }
 
         viewModel.getLoadingProgress().observe(this) {
