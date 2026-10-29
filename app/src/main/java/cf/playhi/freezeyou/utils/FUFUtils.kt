@@ -412,13 +412,16 @@ object FUFUtils {
      *
      * Database updates, notifications, and task collection remain on the background thread to keep
      * the UI fluid; only toasts, task execution, and [onComplete] are dispatched on the main thread.
+     * [skipped] packages were selected but held by a concurrent operation: each is reported with
+     * the operation-in-progress toast and the success toast is withheld.
      */
     @JvmStatic
     @JvmOverloads
     fun oneKeyActionRootAsync(
         context: Context, freeze: Boolean, pkgNameList: Array<String>?,
         disableModeTrueOrHideModeFalse: Boolean = true,
-        onComplete: Runnable? = null
+        onComplete: Runnable? = null,
+        skipped: List<String> = emptyList()
     ) {
         // Same reason as in oneKeyAction: an empty list must not end in the "executed" toast.
         if (pkgNameList.isNullOrEmpty()) {
@@ -447,7 +450,9 @@ object FUFUtils {
                     sendStatusChangedBroadcast(appContext)
                 }
                 withContext(Dispatchers.Main) {
-                    showRootBatchUI(appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+                    showRootBatchUI(
+                        appContext, batch, outcomes.succeeded, outcomes.failed, triggeredTasks, skipped
+                    )
                     if (bookkeepingException != null) {
                         bookkeepingException.printStackTrace()
                         ToastUtils.showToast(
@@ -618,16 +623,22 @@ object FUFUtils {
 
     /**
      * Dispatches user-facing toasts and task execution on the main Looper thread.
+     *
+     * [skipped] names the selected packages a concurrent operation already held, so they are not
+     * in the batch at all. Each gets the operation-in-progress toast, and the unqualified
+     * [R.string.executed] is withheld when any were omitted.
      */
     private fun showRootBatchUI(
         context: Context,
         batch: RootBatch,
         succeeded: List<String>,
         failed: List<String>,
-        triggeredTasks: ArrayList<String>
+        triggeredTasks: ArrayList<String>,
+        skipped: List<String>
     ) {
         batch.stillNotifying.forEach { checkAndShowAppStillNotifyingToast(context, it) }
         batch.foreground.forEach { checkAndShowAppIsForegroundApplicationToast(context, it) }
+        skipped.forEach { ToastUtils.showToast(context, R.string.operationAlreadyInProgress) }
 
         val shell = batch.shell
         if (shell != null && !shell.sessionStarted) {
@@ -644,7 +655,7 @@ object FUFUtils {
         }
         if (failed.isNotEmpty()) {
             showFailedApplicationsToast(context, failed)
-        } else if (!lesserToast.getValue()) {
+        } else if (skipped.isEmpty() && !lesserToast.getValue()) {
             ToastUtils.showToast(context, R.string.executed)
         }
     }
@@ -674,7 +685,7 @@ object FUFUtils {
         } finally {
             sendStatusChangedBroadcast(context)
         }
-        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks)
+        showRootBatchUI(context, batch, outcomes.succeeded, outcomes.failed, triggeredTasks, emptyList())
         if (bookkeepingException != null) {
             bookkeepingException.printStackTrace()
             ToastUtils.showToast(
@@ -953,7 +964,8 @@ object FUFUtils {
      *
      * Applications the user's own guards refuse — still notifying, or in the foreground — are
      * reported one by one with the specific toast the single-package path uses instead of joining
-     * the failure list, and the batch only says it executed when nothing was refused.
+     * the failure list, and the batch only says it executed when nothing was refused or already
+     * held by another operation.
      */
     @JvmStatic
     fun processBatchAction(context: Context, packages: Array<String>, freeze: Boolean) {
@@ -979,21 +991,28 @@ object FUFUtils {
             // committed concurrently and could silently undo or repeat a package change.
             val targets = batchTargetsWithoutSelf(context.packageName, packages)
             val acquiredPackages = mutableListOf<String>()
+            val skippedPackages = mutableListOf<String>()
             for (pkg in targets) {
                 if (tryAcquirePackage(pkg)) {
                     acquiredPackages.add(pkg)
+                } else {
+                    skippedPackages.add(pkg)
                 }
             }
             if (acquiredPackages.isEmpty()) {
+                // Nothing will run for these rows; the single-action path would say the same.
+                skippedPackages.forEach {
+                    ToastUtils.showToast(context.applicationContext, R.string.operationAlreadyInProgress)
+                }
                 sendStatusChangedBroadcast(context.applicationContext)
                 return
             }
             oneKeyActionRootAsync(
                 context, freeze, acquiredPackages.toTypedArray(),
-                apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE
-            ) {
-                acquiredPackages.forEach { releasePackage(it) }
-            }
+                apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE,
+                onComplete = { acquiredPackages.forEach { releasePackage(it) } },
+                skipped = skippedPackages
+            )
             return
         }
 
