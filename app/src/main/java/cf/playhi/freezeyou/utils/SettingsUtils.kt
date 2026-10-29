@@ -37,9 +37,11 @@ object SettingsUtils {
     /**
      * Show toast, check availability, sync to MMKV, etc.
      *
-     * `isRestoreMode` applies a backup without any interactive side effects: no settings screens,
-     * no permission or root probes and no toasts. Only the non-interactive writes (MMKV sync,
-     * service and component state) are kept, so a restore cannot freeze or redirect the user.
+     * `isRestoreMode` applies a backup with only the noise suppressed: permission requests,
+     * settings screens and root probes still run, because a restore must re-request exactly
+     * what a manual toggle requests - a silent restore left Shizuku mode enabled with no
+     * grant and freezing broken. Only the toasts stay off, since a restore writes many
+     * keys at once and a toast per key is meaningless.
      */
     @JvmStatic
     @JvmOverloads
@@ -76,8 +78,7 @@ object SettingsUtils {
             freezeOnceQuit,
             avoidFreezeForegroundApplications,
             tryToAvoidUpdateWhenUsing -> {
-                if (!isRestoreMode
-                    && abstractKey.getValue() as Boolean
+                if (abstractKey.getValue() as Boolean
                     && !AccessibilityUtils.isAccessibilitySettingsOn(context)
                 ) {
                     showToast(activity, R.string.needActiveAccessibilityService)
@@ -97,7 +98,7 @@ object SettingsUtils {
                     if (!isRestoreMode) showToast(context, R.string.failed)
                 }
             avoidFreezeNotifyingApplications -> {
-                if (!isRestoreMode && Build.VERSION.SDK_INT >= 21) {
+                if (Build.VERSION.SDK_INT >= 21) {
                     val enabledNotificationListeners = Settings.Secure.getString(
                         context.contentResolver, "enabled_notification_listeners"
                     )
@@ -129,7 +130,6 @@ object SettingsUtils {
                     )
                 }
             selectFUFMode -> {
-                if (isRestoreMode) return
                 when (selectFUFMode.getValue()?.toIntOrNull()) {
                     API_FREEZEYOU_MROOT_DPM ->
                         if (!DevicePolicyManagerUtils.isDeviceOwner(context)) {
