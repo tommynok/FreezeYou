@@ -128,9 +128,13 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
 
         fun publishSnapshot(percent: Int) {
             loadingProgress.postValue(percent)
-            // Every phase publishes its own snapshot: the screen shows rows as they are
-            // collected, and a later phase that hangs or fails can never leave it empty.
-            problemsList.postValue(ArrayList(localList))
+            // Intermediate snapshots only fill a fresh screen. On a refresh the displayed
+            // rows stay put until the final sorted list lands: republishing every phase
+            // replaced the whole list, so the screen collapsed and rebuilt row by row on
+            // each tap of the refresh button.
+            if (problemsList.value.isNullOrEmpty()) {
+                problemsList.postValue(ArrayList(localList))
+            }
         }
 
         publishSnapshot(5)
