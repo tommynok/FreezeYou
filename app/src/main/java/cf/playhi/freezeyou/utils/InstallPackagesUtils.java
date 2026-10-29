@@ -199,12 +199,10 @@ public final class InstallPackagesUtils {
         if (intent == null || targetPackageName == null || targetPackageName.isEmpty()) return;
         WaitingInstallRequest previous = getWaitingForLeavingRequest();
         WaitingInstallRequest next = WaitingInstallRequest.fromIntent(intent, targetPackageName);
-        new DefaultMultiProcessMMKVStorage()
-                .putString(
-                        KEY_WAITING_FOR_LEAVING_REQUEST,
-                        next.encode())
-                .sync();
-        if (previous != null && context != null && previous.apkFilePath != null
+        DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
+        boolean saved = storage.encode(KEY_WAITING_FOR_LEAVING_REQUEST, next.encode());
+        storage.sync();
+        if (saved && previous != null && context != null && previous.apkFilePath != null
                 && !previous.apkFilePath.equals(next.apkFilePath)) {
             deleteTempFile(context, previous.apkFilePath, false);
         }
