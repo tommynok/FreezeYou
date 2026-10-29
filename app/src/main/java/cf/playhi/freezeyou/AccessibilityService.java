@@ -306,16 +306,16 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void dispatchWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
+        // Clear record first so any concurrent replacement knows this request was already dispatched
+        InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request);
         try {
             ServiceUtils.startService(this, request.toIntent(this));
         } catch (RuntimeException e) {
-            // Keep the request and its waiting card: the next leave event can try again.
+            // Restore request if service start failed
+            InstallPackagesUtils.saveWaitingForLeavingRequest(this, request.toIntent(this), request.packageName);
             Log.w("FreezeYouDebug",
                     "AccessibilityService: waiting install start failed: " + e.getMessage(), e);
-            return;
         }
-        // Compare and remove: the service may have saved a newer request in the meantime.
-        InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request);
     }
 
     private void discardWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
