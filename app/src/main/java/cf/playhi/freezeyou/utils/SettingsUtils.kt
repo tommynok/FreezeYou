@@ -37,11 +37,11 @@ object SettingsUtils {
     /**
      * Show toast, check availability, sync to MMKV, etc.
      *
-     * `isRestoreMode` applies a backup with only the noise suppressed: permission requests,
-     * settings screens and root probes still run, because a restore must re-request exactly
-     * what a manual toggle requests - a silent restore left Shizuku mode enabled with no
-     * grant and freezing broken. Only the toasts stay off, since a restore writes many
-     * keys at once and a toast per key is meaningless.
+     * `isRestoreMode` applies a backup with only the organization-name failure toast
+     * suppressed. Permission requests, settings screens, root probes and the mode
+     * selection toasts still run: a restore must behave exactly like a manual toggle,
+     * because a silent restore left Shizuku mode enabled with no grant and freezing
+     * broken, and the mode toasts are the same feedback a manual selection gives.
      */
     @JvmStatic
     @JvmOverloads
