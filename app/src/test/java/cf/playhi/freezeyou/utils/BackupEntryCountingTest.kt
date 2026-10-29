@@ -5,9 +5,12 @@ import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -55,6 +58,58 @@ class BackupEntryCountingTest {
         val backup = JSONObject().put("generalSettings_string", JSONArray().put(settings))
 
         assertEquals(1, count(backup, "generalSettings_string"))
+    }
+
+    @Test
+    fun `a string setting is counted only when its value is one the app offers`() {
+        val usable = JSONObject()
+            .put("selectFUFMode", "2")
+            .put("shortcutClickAction", "toggle")
+        val unusable = JSONObject()
+            .put("selectFUFMode", "abc")
+            .put("shortcutClickAction", "")
+
+        assertEquals(2, count(stringBackup(usable), "generalSettings_string"))
+        // The empty shortcutClickAction is what a backup of an install that never chose carries;
+        // importing it would hand the device a value no reader can act on.
+        assertEquals(0, count(stringBackup(unusable), "generalSettings_string"))
+    }
+
+    @Test
+    fun `free text settings take the value they are given`() {
+        val settings = JSONObject().put("organizationName", "")
+
+        assertEquals(1, count(stringBackup(settings), "generalSettings_string"))
+    }
+
+    @Test
+    fun `a restore of appearance settings is reported as one`() {
+        assertTrue(
+            BackupUtils.importChangesAppearance(
+                app(), stringBackup(JSONObject().put("uiStyleSelection", "black"))
+            )
+        )
+        assertTrue(
+            BackupUtils.importChangesAppearance(
+                app(), booleanBackup(JSONObject().put("allowFollowSystemAutoSwitchDarkMode", true))
+            )
+        )
+    }
+
+    @Test
+    fun `a restore that carries no appearance setting is not reported as one`() {
+        assertFalse(
+            BackupUtils.importChangesAppearance(
+                app(),
+                stringBackup(JSONObject().put("selectFUFMode", "2").put("launchMode", "all"))
+            )
+        )
+        assertFalse(
+            BackupUtils.importChangesAppearance(
+                app(), stringBackup(JSONObject().put("uiStyleSelection", "magenta"))
+            )
+        )
+        assertFalse(BackupUtils.importChangesAppearance(app(), JSONObject()))
     }
 
     @Test
@@ -127,11 +182,18 @@ class BackupEntryCountingTest {
     }
 
     private fun count(backup: JSONObject, category: String): Int =
-        BackupUtils.countImportableEntries(backup, category)
+        BackupUtils.countImportableEntries(app(), backup, category)
 
     private fun countBooleanEntries(settings: JSONObject): Int =
-        count(JSONObject().put("generalSettings_boolean", JSONArray().put(settings)),
-            "generalSettings_boolean")
+        count(booleanBackup(settings), "generalSettings_boolean")
+
+    private fun stringBackup(settings: JSONObject): JSONObject =
+        JSONObject().put("generalSettings_string", JSONArray().put(settings))
+
+    private fun booleanBackup(settings: JSONObject): JSONObject =
+        JSONObject().put("generalSettings_boolean", JSONArray().put(settings))
+
+    private fun app(): Application = RuntimeEnvironment.getApplication()
 
     private fun timeTask(
         hour: Int, minutes: Int, repeat: String, task: String, enabled: Int,

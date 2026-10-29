@@ -17,7 +17,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.key.AbstractKey;
@@ -55,11 +57,93 @@ public final class BackupUtils {
             DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name()
     };
 
-    private static void importStringSharedPreference(
+    /**
+     * The settings that decide how the application looks and in which language it writes. A restore
+     * that applies one of them is not over until the live screens are recreated: the value is in
+     * storage, but a screen keeps the appearance it was created with.
+     */
+    private static final String[] APPEARANCE_STRING_KEYS = new String[]{
+            DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection.name(),
+            DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode.name(),
+            DefaultMultiProcessMMKVStorageStringKeys.languagePref.name(),
+            DefaultSharedPreferenceStorageStringKeys.mainActivityPattern.name()
+    };
+
+    private static final String[] APPEARANCE_BOOLEAN_KEYS = new String[]{
+            DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode.name()
+    };
+
+    /**
+     * The values this application offers for a stored setting, read from the very arrays its
+     * settings rows list as the choices. A key missing here holds free text, so any value it
+     * carries is the value it means.
+     */
+    private static final Map<String, Integer> OFFERED_VALUE_ARRAYS = new HashMap<>();
+
+    static {
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode.name(),
+                R.array.selectFUFModeSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction.name(),
+                R.array.shortcutClickActionSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.shortCutOneKeyFreezeAdditionalOptions.name(),
+                R.array.shortCutOneKeyFreezeAdditionalOptionsSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection.name(),
+                R.array.uiStyleSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode.name(),
+                R.array.themeOfAutoSwitchDarkModeEntryValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.languagePref.name(),
+                R.array.displayLanguageOptionsSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultSharedPreferenceStorageStringKeys.mainActivityPattern.name(),
+                R.array.mainActivityPatternSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
+                DefaultSharedPreferenceStorageStringKeys.launchMode.name(),
+                R.array.launchModeSelectionValues);
+    }
+
+    /**
+     * The one gate a value read out of a backup passes before it reaches storage.
+     *
+     * A backup is a file someone can edit, and the readers of these keys take the stored value as
+     * data: `selectFUFMode` goes into Integer.parseInt in a service start and into the freeze
+     * operation itself. Those readers each picked their own policy for a value that is not one the
+     * application offers — crash, a silent default, or reporting false — so the check belongs here,
+     * where a file becomes a setting, and not twelve times over downstream.
+     *
+     * @return whether this value may be stored under this key
+     */
+    public static boolean isValidImportedStringValue(
+            Context context, String key, String value) {
+        Integer valueArray = OFFERED_VALUE_ARRAYS.get(key);
+        if (valueArray == null) {
+            return true;
+        }
+        for (String offered : context.getResources().getStringArray(valueArray)) {
+            if (offered.equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean importStringSharedPreference(
             Context context, Activity activity, JSONObject jsonObject,
             SharedPreferences sp, String key) {
-        sp.edit().putString(key, jsonObject.optString(key, "")).apply();
+        String value = jsonObject.optString(key, "");
+        if (!isValidImportedStringValue(context, key, value)) {
+            // Refusing the write keeps whatever the device had, which is the last value for this
+            // key that meant something. The rest of the category is still imported.
+            return false;
+        }
+        sp.edit().putString(key, value).apply();
         SettingsUtils.checkPreferenceData(context, activity, sp, key, true);
+        return true;
     }
 
     private static void importBooleanSharedPreference(
@@ -449,9 +533,10 @@ public final class BackupUtils {
 
             if (key == null) continue;
 
-            importStringSharedPreference(
-                    context, activity, generalSettingsStringJSONObject, defSP, s);
-            importedAny = true;
+            if (importStringSharedPreference(
+                    context, activity, generalSettingsStringJSONObject, defSP, s)) {
+                importedAny = true;
+            }
         }
         return importedAny;
     }
@@ -567,12 +652,63 @@ public final class BackupUtils {
         return false;
     }
 
+    private static boolean isAmong(String[] keys, String key) {
+        for (String candidate : keys) {
+            if (candidate.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return whether a restore of this selection applies a setting that decides how the
+     * application looks or which language it writes in. The caller recreates the live screens when
+     * it does, and not when a backup carries no such setting at all. The skip rules are the
+     * importer's own, so a value this gate refuses does not ask for a refresh either.
+     */
+    public static boolean importChangesAppearance(
+            Context context, JSONObject jsonObject) {
+        JSONArray strings = jsonObject.optJSONArray("generalSettings_string");
+        JSONObject stringSettings = strings == null ? null : strings.optJSONObject(0);
+        if (stringSettings != null) {
+            Iterator<String> it = stringSettings.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                if (key == null || !isAmong(APPEARANCE_STRING_KEYS, key)) {
+                    continue;
+                }
+                if (isImportableStringKey(key)
+                        && isValidImportedStringValue(
+                        context, key, stringSettings.optString(key, ""))) {
+                    return true;
+                }
+            }
+        }
+
+        JSONArray booleans = jsonObject.optJSONArray("generalSettings_boolean");
+        JSONObject booleanSettings = booleans == null ? null : booleans.optJSONObject(0);
+        if (booleanSettings != null) {
+            Iterator<String> it = booleanSettings.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                if (key != null
+                        && isAmong(APPEARANCE_BOOLEAN_KEYS, key)
+                        && isImportableBooleanKey(key)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * @return how many entries the importers would actually apply from the category, or -1 when
      * the category is missing from the backup. The skip rules mirror importContents(), so a backup
      * whose every entry would be skipped does not offer a restore that writes nothing.
      */
-    public static int countImportableEntries(JSONObject jsonObject, String category) {
+    public static int countImportableEntries(
+            Context context, JSONObject jsonObject, String category) {
         JSONArray array = jsonObject.optJSONArray(category);
         if (array == null) {
             return -1;
@@ -593,7 +729,13 @@ public final class BackupUtils {
                 int count = 0;
                 Iterator<String> it = firstObject.keys();
                 while (it.hasNext()) {
-                    if (isImportableStringKey(it.next())) count++;
+                    String key = it.next();
+                    if (key != null
+                            && isImportableStringKey(key)
+                            && isValidImportedStringValue(
+                            context, key, firstObject.optString(key, ""))) {
+                        count++;
+                    }
                 }
                 return count;
             }

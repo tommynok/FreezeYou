@@ -31,6 +31,7 @@ import cf.playhi.freezeyou.utils.ToastUtils;
 
 import static cf.playhi.freezeyou.utils.ThemeUtils.processActionBar;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
+import static cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities;
 
 public class BackupImportChooserActivity extends FreezeYouBaseActivity {
 
@@ -235,6 +236,8 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         new Thread(() -> {
             final boolean imported =
                     BackupUtils.importContents(appContext, this, selectedContents);
+            final boolean changesAppearance = imported
+                    && BackupUtils.importChangesAppearance(appContext, selectedContents);
             runOnUiThread(() -> {
                 if (isFinishing()
                         || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
@@ -244,7 +247,16 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
                 ToastUtils.showToast(
                         BackupImportChooserActivity.this,
                         imported ? R.string.finish : R.string.failed);
+                // This screen reports its own result, so it finishes before anything is recreated:
+                // the helper below skips a finishing activity, and being recreated here would take
+                // the report away from the screen that just gave it.
                 finish();
+                if (changesAppearance) {
+                    // The restored theme and language are already in storage, but a live screen
+                    // keeps the appearance it was created with. Without this the user reads a
+                    // successful restore as one that did nothing until the app is restarted.
+                    recreateAllActivities(appContext);
+                }
             });
         }, "backup-restore").start();
     }
@@ -304,7 +316,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
             int itemCount = 0;
             StringBuilder presentCategories = new StringBuilder();
             for (String category : group.categories) {
-                int count = BackupUtils.countImportableEntries(jsonObject, category);
+                int count = BackupUtils.countImportableEntries(this, jsonObject, category);
                 if (count < 0) continue;
                 itemCount += count;
                 if (presentCategories.length() > 0) presentCategories.append(",");
