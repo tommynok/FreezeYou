@@ -352,6 +352,7 @@
     <string name="remove">Видалити</string>
     <string name="newFolder">Нова папка</string>
     <string name="alreadyExist">Вже існує</string>
+    <string name="operationAlreadyInProgress">Операція для цього додатка вже виконується</string>
     <string name="queryStatus">Статус запиту</string>
     <string name="newClassification">Нова категорія</string>
     <string name="displayLanguage">Мова додатку</string>

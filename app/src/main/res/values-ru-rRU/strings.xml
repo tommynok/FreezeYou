@@ -352,6 +352,7 @@
     <string name="remove">Удалить</string>
     <string name="newFolder">Новая папка</string>
     <string name="alreadyExist">Уже существует</string>
+    <string name="operationAlreadyInProgress">Операция для этого приложения уже выполняется</string>
     <string name="queryStatus">Статус запроса</string>
     <string name="newClassification">Новая категория</string>
     <string name="displayLanguage">Язык приложения</string>

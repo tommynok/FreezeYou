@@ -842,8 +842,9 @@ object FUFUtils {
      * twice, or a shortcut and a list row racing each other used to start two operations for one
      * application: both read the old state, both committed, the statistics and the trigger tasks
      * counted two changes, and a shortcut could flip the state back and forth. The second request
-     * is now dropped instead of queued — it carries no different intent, and running it after the
-     * first would only repeat the work.
+     * is now dropped instead of queued, with a toast so a tap held by a running batch does not
+     * vanish silently. A same-direction request would only repeat the work, and an
+     * opposite-direction one is safer refused than raced.
      *
      * A monitor rather than a java.util.concurrent collection: it guards a few set operations and
      * has to work on every supported API level.
@@ -896,7 +897,11 @@ object FUFUtils {
     ) {
         // Application context: the activity may be gone by the time the toast is shown.
         val appContext = context.applicationContext
-        if (!tryAcquirePackage(pkgName)) return
+        if (!tryAcquirePackage(pkgName)) {
+            // The guard is held for a whole batch, so a tap on one of its rows must not be silent.
+            ToastUtils.showToast(appContext, R.string.operationAlreadyInProgress)
+            return
+        }
         inProcessFUFScope.launch {
             try {
                 val startedAt = System.currentTimeMillis()
@@ -970,10 +975,25 @@ object FUFUtils {
         if (apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE ||
             apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_UNHIDE_HIDE
         ) {
+            // A root batch runs for seconds; without the guard a single tap on one of its rows
+            // committed concurrently and could silently undo or repeat a package change.
+            val targets = batchTargetsWithoutSelf(context.packageName, packages)
+            val acquiredPackages = mutableListOf<String>()
+            for (pkg in targets) {
+                if (tryAcquirePackage(pkg)) {
+                    acquiredPackages.add(pkg)
+                }
+            }
+            if (acquiredPackages.isEmpty()) {
+                sendStatusChangedBroadcast(context.applicationContext)
+                return
+            }
             oneKeyActionRootAsync(
-                context, freeze, packages,
+                context, freeze, acquiredPackages.toTypedArray(),
                 apiMode == FUFSinglePackage.API_FREEZEYOU_ROOT_DISABLE_ENABLE
-            )
+            ) {
+                acquiredPackages.forEach { releasePackage(it) }
+            }
             return
         }
 
