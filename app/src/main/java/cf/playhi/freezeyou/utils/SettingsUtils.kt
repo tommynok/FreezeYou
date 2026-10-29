@@ -25,6 +25,7 @@ import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.*
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.enableInstallPkgFunc
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.organizationName
@@ -33,6 +34,27 @@ import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import rikka.shizuku.Shizuku
 
 object SettingsUtils {
+
+    /**
+     * What a tap on an application shortcut does.
+     *
+     * The single-choice key answers as soon as the installation holds a choice. The two legacy
+     * booleans speak only for an installation that never made one, and nothing writes them any
+     * more: consulting them beside the choice, the way the screens used to each do in their own
+     * store, is how the settings screen and the first-run setup ended up showing opposite answers
+     * to the same question while the shortcut did a third thing.
+     *
+     * Read from storage rather than through `getValue()` — an unset key there returns the default,
+     * and "no choice stored yet" has to stay distinguishable from "the user chose to be asked".
+     */
+    @JvmStatic
+    fun resolveShortcutClickAction(): String {
+        val stored = DefaultMultiProcessMMKVStorage().getString(shortcutClickAction.name, null)
+        if (!stored.isNullOrEmpty()) return stored
+        if (shortcutAutoFUF.getValue()) return "toggle"
+        if (openAndUFImmediately.getValue()) return "open_and_uf"
+        return checkNotNull(shortcutClickAction.defaultValue())
+    }
 
     /**
      * Show toast, check availability, sync to MMKV, etc.
@@ -57,14 +79,6 @@ object SettingsUtils {
         syncMMKVDataToMMKVWhenSharedPreferenceDataChanged(context, sharedPreferences, abstractKey)
 
         when (abstractKey) {
-            openAndUFImmediately -> {
-                if (openAndUFImmediately.getValue()) {
-                    shortcutClickAction.setValue(value = "open_and_uf")
-                    shortcutAutoFUF.setValue(value = false)
-                } else if (shortcutClickAction.getValue() == "open_and_uf") {
-                    shortcutClickAction.setValue(value = "dialog")
-                }
-            }
             onekeyFreezeWhenLockScreen -> {
                 if (onekeyFreezeWhenLockScreen.getValue()) {
                     ServiceUtils.startService(

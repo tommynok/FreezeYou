@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
@@ -13,11 +14,13 @@ import androidx.preference.PreferenceManager;
 import cf.playhi.freezeyou.R;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection;
 import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData;
+import static cf.playhi.freezeyou.utils.SettingsUtils.resolveShortcutClickAction;
 import static cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities;
 
 public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
@@ -26,6 +29,14 @@ public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.first_time_setup_pr);
+
+        // This row used to be a checkbox on a boolean of its own, which the settings screen never
+        // wrote: it showed the opposite of what a shortcut tap did. It is the same single-choice
+        // row as in Настройки now, and it shows the answer the tap itself reads.
+        ListPreference shortcutAction = findPreference(shortcutClickAction.name());
+        if (shortcutAction != null) {
+            shortcutAction.setValue(resolveShortcutClickAction());
+        }
     }
 
     @Override

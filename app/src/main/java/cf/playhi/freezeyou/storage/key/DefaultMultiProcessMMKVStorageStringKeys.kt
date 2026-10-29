@@ -47,7 +47,10 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
     },
 
     shortcutClickAction {
-        override fun defaultValue() = ""
+        // The same default the settings row declares. An unset key must not travel into a backup as
+        // "nothing chosen": the exported value is read through this default, and a restore of it has
+        // to land on one of the three actions the row offers.
+        override fun defaultValue() = "dialog"
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.shortcutClickAction
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_FREEZE_AND_UNFREEZE

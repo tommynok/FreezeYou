@@ -10,13 +10,13 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.utils.CriticalPackagesUtils
 import cf.playhi.freezeyou.utils.FUFUtils
 import cf.playhi.freezeyou.utils.ShortcutTokenUtils
+import cf.playhi.freezeyou.utils.SettingsUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_SUCCESS
 import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -158,9 +158,9 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 }
                 return
             }
-            val clickAction = shortcutClickAction.getValue()
-            val isAutoFUF = if (!clickAction.isNullOrEmpty()) clickAction == "toggle" else shortcutAutoFUF.getValue()
-            val isOpenAndUF = if (!clickAction.isNullOrEmpty()) clickAction == "open_and_uf" else openAndUFImmediately.getValue()
+            val clickAction = SettingsUtils.resolveShortcutClickAction()
+            val isAutoFUF = clickAction == "toggle"
+            val isOpenAndUF = clickAction == "open_and_uf"
 
             if (mIsFromShortcut && isAutoFUF) {
                 if (frozen) {
@@ -214,7 +214,7 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         tasks: String?,
         frozen: Boolean,
         ignoreAutoRun: Boolean,
-        openAndUF: Boolean = openAndUFImmediately.getValue()
+        openAndUF: Boolean
     ) {
         if (!ignoreAutoRun && openAndUF) {
             if (frozen) {

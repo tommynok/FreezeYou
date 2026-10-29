@@ -2,6 +2,8 @@ package cf.playhi.freezeyou.utils
 
 import android.app.Application
 import android.util.Base64
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
+import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -80,6 +82,29 @@ class BackupEntryCountingTest {
         val settings = JSONObject().put("organizationName", "")
 
         assertEquals(1, count(stringBackup(settings), "generalSettings_string"))
+    }
+
+    @Test
+    fun `the default of a valued setting is a value that survives a restore`() {
+        // BackupUtils gates an imported value against the choices the settings screen offers, and
+        // the value a device hands to a backup when the user never picked is the key's default.
+        // The two have to agree, or a restore of a plain install silently loses the setting.
+        for (key in DefaultMultiProcessMMKVStorageStringKeys.values()) {
+            assertTrue(
+                key.name,
+                BackupUtils.isValidImportedStringValue(
+                    app(), key.name, key.defaultValue() ?: ""
+                )
+            )
+        }
+        for (key in DefaultSharedPreferenceStorageStringKeys.values()) {
+            assertTrue(
+                key.name,
+                BackupUtils.isValidImportedStringValue(
+                    app(), key.name, key.defaultValue() ?: ""
+                )
+            )
+        }
     }
 
     @Test

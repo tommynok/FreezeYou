@@ -14,6 +14,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.languagePref
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
 import cf.playhi.freezeyou.storage.legacy.LegacyPreferenceSource
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.utils.FUFUtils.checkAndEnableShizukuMultiProcessSupport
@@ -395,7 +396,11 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                     }
                 }
                 DefaultMultiProcessMMKVStorageStringKeys.values().forEach { key ->
-                    if (key != languagePref && key != selectFUFMode) {
+                    // shortcutClickAction is skipped with the two below: it has no legacy value,
+                    // and writing its own default here would look like a choice the user never
+                    // made, outvoting the legacy booleans that still decide this install's
+                    // shortcut until the settings screen is opened once.
+                    if (key != languagePref && key != selectFUFMode && key != shortcutClickAction) {
                         putString(key.name, legacy.getString(key.name, key.defaultValue()))
                     }
                 }

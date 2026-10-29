@@ -6,9 +6,8 @@ import androidx.annotation.Keep
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import cf.playhi.freezeyou.R
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.openAndUFImmediately
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.shortcutAutoFUF
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
+import cf.playhi.freezeyou.utils.SettingsUtils
 
 @Keep
 class SettingsFufFragment : CardPreferenceFragment() {
@@ -31,19 +30,11 @@ class SettingsFufFragment : CardPreferenceFragment() {
         val openImmediatelyPref = findPreference<Preference>("openImmediatelyAfterUnfreezeUseShortcutAutoFUF")
         val needConfirmPref = findPreference<Preference>("needConfirmWhenFreezeUseShortcutAutoFUF")
 
-        // Sync initial state from MMKV: migrate from legacy booleans if unset, and persist resolved choice
-        val savedAction = shortcutClickAction.getValue()
-        val currentAction = if (!savedAction.isNullOrEmpty()) {
-            savedAction
-        } else {
-            val resolved = when {
-                shortcutAutoFUF.getValue() -> "toggle"
-                openAndUFImmediately.getValue() -> "open_and_uf"
-                else -> "dialog"
-            }
-            shortcutClickAction.setValue(value = resolved)
-            resolved
-        }
+        // The same answer the shortcut itself acts on, so this screen cannot show one thing while
+        // the tap does another. Storing it here is what settles the legacy booleans the row used to
+        // read: from now on the single choice is the only copy that moves.
+        val currentAction = SettingsUtils.resolveShortcutClickAction()
+        shortcutClickAction.setValue(value = currentAction)
         shortcutActionPref.value = currentAction
 
         fun updateDependents(actionValue: String) {
@@ -56,23 +47,10 @@ class SettingsFufFragment : CardPreferenceFragment() {
 
         shortcutActionPref.onPreferenceChangeListener =
             Preference.OnPreferenceChangeListener { _, newValue ->
-                val strValue = newValue as? String ?: "dialog"
-                shortcutClickAction.setValue(value = strValue)
-                when (strValue) {
-                    "toggle" -> {
-                        shortcutAutoFUF.setValue(value = true)
-                        openAndUFImmediately.setValue(value = false)
-                    }
-                    "open_and_uf" -> {
-                        shortcutAutoFUF.setValue(value = false)
-                        openAndUFImmediately.setValue(value = true)
-                    }
-                    else -> { // "dialog"
-                        shortcutAutoFUF.setValue(value = false)
-                        openAndUFImmediately.setValue(value = false)
-                    }
+                if (newValue is String) {
+                    shortcutClickAction.setValue(value = newValue)
+                    updateDependents(newValue)
                 }
-                updateDependents(strValue)
                 true
             }
     }
