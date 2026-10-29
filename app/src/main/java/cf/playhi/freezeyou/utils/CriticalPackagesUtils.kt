@@ -94,7 +94,6 @@ object CriticalPackagesUtils {
                 Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_HOME)
                     .resolveActivity(context.packageManager)
-                    ?.activityInfo
                     ?.packageName
             } catch (e: Exception) {
                 e.printStackTrace()
