@@ -195,19 +195,30 @@ public final class InstallPackagesUtils {
      * back when the user leaves the target application, possibly after the old process died.
      */
     public static synchronized void saveWaitingForLeavingRequest(
-            Intent intent, String targetPackageName) {
+            Context context, Intent intent, String targetPackageName) {
         if (intent == null || targetPackageName == null || targetPackageName.isEmpty()) return;
+        WaitingInstallRequest previous = getWaitingForLeavingRequest();
+        WaitingInstallRequest next = WaitingInstallRequest.fromIntent(intent, targetPackageName);
+        if (previous != null && context != null && previous.apkFilePath != null
+                && !previous.apkFilePath.equals(next.apkFilePath)) {
+            deleteTempFile(context, previous.apkFilePath, false);
+        }
         new DefaultMultiProcessMMKVStorage()
                 .putString(
                         KEY_WAITING_FOR_LEAVING_REQUEST,
-                        WaitingInstallRequest.fromIntent(intent, targetPackageName).encode())
+                        next.encode())
                 .sync();
+    }
+
+    public static synchronized void saveWaitingForLeavingRequest(
+            Intent intent, String targetPackageName) {
+        saveWaitingForLeavingRequest(null, intent, targetPackageName);
     }
 
     public static synchronized void saveAndPostWaitingForLeavingRequest(
             Context context, Intent intent, PackageInfo packageInfo) {
         if (packageInfo == null || packageInfo.packageName == null) return;
-        saveWaitingForLeavingRequest(intent, packageInfo.packageName);
+        saveWaitingForLeavingRequest(context, intent, packageInfo.packageName);
         postWaitingForLeavingToInstallApplicationNotification(context, packageInfo);
     }
 

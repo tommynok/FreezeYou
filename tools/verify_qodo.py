@@ -361,11 +361,13 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None, ign
                 print("\n[WAIT] Qodo has not completed reviewing the latest commit yet. Run with --wait to wait automatically.")
             return 2
 
-        if time.time() - start_time > timeout:
+        elapsed = time.time() - start_time
+        if elapsed >= timeout:
             print(f"\n[TIMEOUT] Reached timeout of {timeout}s waiting for Qodo review on {head_short}.")
             return 3
 
-        time.sleep(poll_interval)
+        sleep_time = min(poll_interval, max(1, timeout - elapsed))
+        time.sleep(sleep_time)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Verify Qodo review status on a PR.")
