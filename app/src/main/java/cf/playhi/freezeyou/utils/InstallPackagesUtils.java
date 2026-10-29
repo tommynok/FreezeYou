@@ -277,7 +277,9 @@ public final class InstallPackagesUtils {
 
         public static WaitingInstallRequest fromIntent(Intent intent, String targetPackageName) {
             Uri packageUri = intent.getParcelableExtra("packageUri");
+            String reqId = intent.getStringExtra("installRequestId");
             return new WaitingInstallRequest(
+                    reqId,
                     targetPackageName,
                     intent.getBooleanExtra("install", true),
                     intent.getStringExtra("apkFilePath"),
@@ -304,6 +306,7 @@ public final class InstallPackagesUtils {
             Intent intent = new Intent(context, InstallPackagesService.class)
                     .putExtra("install", install)
                     .putExtra("waitingPackageName", packageName)
+                    .putExtra("installRequestId", requestId)
                     .putExtra("uninstall_updates_only", uninstallUpdatesOnly);
             if (apkFilePath != null) {
                 intent.putExtra("apkFilePath", apkFilePath);

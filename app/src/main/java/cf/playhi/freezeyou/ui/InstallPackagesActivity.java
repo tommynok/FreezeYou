@@ -67,6 +67,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     /** The window an install started from here reports through, from its spinner to its result. */
     private AlertDialog installProgressDialog;
     private ProgressBar installProgressView;
+    private AlertDialog prepareProgressDialog;
+    private AlertDialog currentConfirmationDialog;
+    private int currentInitGeneration = 0;
     private Handler installTimeoutHandler;
     private Runnable installTimeoutRunnable;
     private String trackedRequestId;
@@ -83,6 +86,25 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        currentInitGeneration++;
+        if (prepareProgressDialog != null) {
+            try {
+                if (prepareProgressDialog.isShowing()) {
+                    prepareProgressDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+            }
+            prepareProgressDialog = null;
+        }
+        if (currentConfirmationDialog != null) {
+            try {
+                if (currentConfirmationDialog.isShowing()) {
+                    currentConfirmationDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+            }
+            currentConfirmationDialog = null;
+        }
         unregisterInstallStatusReceiver();
         if (installProgressDialog != null) {
             try {
@@ -100,6 +122,25 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        currentInitGeneration++;
+        if (prepareProgressDialog != null) {
+            try {
+                if (prepareProgressDialog.isShowing()) {
+                    prepareProgressDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+            }
+            prepareProgressDialog = null;
+        }
+        if (currentConfirmationDialog != null) {
+            try {
+                if (currentConfirmationDialog.isShowing()) {
+                    currentConfirmationDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+            }
+            currentConfirmationDialog = null;
+        }
         unregisterInstallStatusReceiver();
         if (installProgressDialog != null) {
             try {
@@ -229,6 +270,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
         if (isFinishing()) return;
 
+        final int gen = currentInitGeneration;
         // Stock ProgressDialog draws a flat platform window; every other dialog in the app
         // goes through the Material builder, which is what draws the rounded surface.
         final AlertDialog progressDialog =
@@ -238,6 +280,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         .setView(new ProgressBar(this))
                         .setCancelable(false)
                         .create();
+        prepareProgressDialog = progressDialog;
         progressDialog.show();
         final String nl = System.getProperty("line.separator");
         if (install) {
@@ -277,6 +320,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         if (isFinishing()) return;
 
                         runOnUiThread(() -> {
+                            if (gen != currentInitGeneration || isFinishing()
+                                    || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                                return;
+                            }
                             if (progressDialog.isShowing())
                                 progressDialog.cancel();
                             finish();
@@ -320,13 +367,19 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     );
 
 
-                    if (isFinishing()) return;
+                    if (gen != currentInitGeneration || isFinishing()) return;
 
-                    runOnUiThread(() -> showInstallDialog(
-                            progressDialog, 1,
-                            alertDialogMessage, apkFilePath,
-                            packageUri, fromPkgLabel, fromPkgName, packageInfo
-                    ));
+                    runOnUiThread(() -> {
+                        if (gen != currentInitGeneration || isFinishing()
+                                || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            return;
+                        }
+                        showInstallDialog(
+                                progressDialog, 1,
+                                alertDialogMessage, apkFilePath,
+                                packageUri, fromPkgLabel, fromPkgName, packageInfo
+                        );
+                    });
                 } catch (Exception e) {
                     alertDialogMessage.append(
                             String.format(
@@ -335,13 +388,19 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             )
                     );
 
-                    if (isFinishing()) return;
+                    if (gen != currentInitGeneration || isFinishing()) return;
 
-                    runOnUiThread(() -> showInstallDialog(
-                            progressDialog, 2,
-                            alertDialogMessage, apkFilePath,
-                            packageUri, fromPkgLabel, fromPkgName, null
-                    ));
+                    runOnUiThread(() -> {
+                        if (gen != currentInitGeneration || isFinishing()
+                                || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            return;
+                        }
+                        showInstallDialog(
+                                progressDialog, 2,
+                                alertDialogMessage, apkFilePath,
+                                packageUri, fromPkgLabel, fromPkgName, null
+                        );
+                    });
                 }
             }).start();
         } else {
@@ -645,6 +704,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 if (neutralButton != null) neutralButton.setTextColor(accentColor);
             }
         });
+        currentConfirmationDialog = installPackagesAlertDialog;
         installPackagesAlertDialog.show();
         Window w = installPackagesAlertDialog.getWindow();
         if (w != null) {
@@ -685,10 +745,17 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
      */
     private boolean canTrackInstallInDialog(int install, PackageInfo packageInfo,
                                             boolean waitForLeaving) {
-        return install == 1
-                && packageInfo != null
-                && packageInfo.packageName != null
-                && !(waitForLeaving && packageInfo.packageName.equals(getPackageName()));
+        if (install != 1 || packageInfo == null || packageInfo.packageName == null) {
+            return false;
+        }
+        if (waitForLeaving) {
+            final String pkg = packageInfo.packageName;
+            if (pkg.equals(getPackageName())
+                    || pkg.equals(cf.playhi.freezeyou.MainApplication.getCurrentPackage())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -731,8 +798,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         installTimeoutRunnable = () -> {
             showInstallResult(appLabel, false, getString(R.string.failed));
         };
-        // Watchdog timeout: 90 seconds (install timeout in PrivilegedShellUtils is ~60s)
-        installTimeoutHandler.postDelayed(installTimeoutRunnable, 90_000);
+        // Watchdog timeout: service shell install timeout (120s) plus 15s margin
+        installTimeoutHandler.postDelayed(installTimeoutRunnable,
+                InstallPackagesService.INSTALL_TIMEOUT_MS + 15_000L);
 
         installStatusReceiver = new BroadcastReceiver() {
             @Override
