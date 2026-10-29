@@ -73,6 +73,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     private Handler installTimeoutHandler;
     private Runnable installTimeoutRunnable;
     private String trackedRequestId;
+    private String pendingStagedApkPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +105,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             } catch (Exception ignored) {
             }
             currentConfirmationDialog = null;
+        }
+        if (pendingStagedApkPath != null) {
+            clearTempFile(pendingStagedApkPath);
+            pendingStagedApkPath = null;
         }
         unregisterInstallStatusReceiver();
         if (installProgressDialog != null) {
@@ -140,6 +145,10 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             } catch (Exception ignored) {
             }
             currentConfirmationDialog = null;
+        }
+        if (pendingStagedApkPath != null) {
+            clearTempFile(pendingStagedApkPath);
+            pendingStagedApkPath = null;
         }
         unregisterInstallStatusReceiver();
         if (installProgressDialog != null) {
@@ -284,15 +293,29 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         progressDialog.show();
         final String nl = System.getProperty("line.separator");
         if (install) {
+            if (apkFilePath != null && apkFilePath.startsWith(getExternalCacheDir() + File.separator + "ZDF-")) {
+                if (pendingStagedApkPath != null && !pendingStagedApkPath.equals(apkFilePath)) {
+                    clearTempFile(pendingStagedApkPath);
+                }
+                pendingStagedApkPath = apkFilePath;
+            }
             new Thread(() -> {
                 try {
-                    if (apkFilePath.startsWith(getExternalCacheDir() + File.separator + "ZDF-")) {
+                    if (apkFilePath != null && apkFilePath.startsWith(getExternalCacheDir() + File.separator + "ZDF-")) {
                         InputStream in = getContentResolver().openInputStream(packageUri);
                         if (in == null) {
-                            finish();
+                            clearTempFile(apkFilePath);
+                            if (gen == currentInitGeneration && !isFinishing()) {
+                                finish();
+                            }
                             return;
                         }
                         FileUtils.copyFile(in, apkFilePath);
+                        if (gen != currentInitGeneration || isFinishing()
+                                || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            clearTempFile(apkFilePath);
+                            return;
+                        }
                     }
 
                     PackageManager pm = getPackageManager();
@@ -305,6 +328,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             && AutoAllowListUtils.allows(
                             AutoAllowListUtils.INSTALL_ALLOW, fromPkgName)) {
                         //Allow
+                        if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                            pendingStagedApkPath = null;
+                        }
                         ServiceUtils.startService(
                                 InstallPackagesActivity.this,
                                 new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
@@ -560,6 +586,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                         install, processedPackageInfo,
                                         preDefinedTryToAvoidUpdateWhenUsing);
                                 final String installRequestId = UUID.randomUUID().toString();
+                                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                                    pendingStagedApkPath = null;
+                                }
                                 if (trackInDialog) {
                                     beginInstallTracking(processedPackageInfo, installRequestId);
                                 }
@@ -598,7 +627,12 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     }
                 });
         installPackagesAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), (dialog, which) -> {
-            if (install != 0) clearTempFile(apkFilePath);
+            if (install != 0) {
+                clearTempFile(apkFilePath);
+                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                    pendingStagedApkPath = null;
+                }
+            }
             finish();
         });
         if (install == 0 && hasSystemUpdate) {
@@ -798,15 +832,12 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         installTimeoutRunnable = () -> {
             showInstallResult(appLabel, false, getString(R.string.failed));
         };
-        // Watchdog timeout: service shell install timeout (120s) plus 15s margin
-        installTimeoutHandler.postDelayed(installTimeoutRunnable,
-                InstallPackagesService.INSTALL_TIMEOUT_MS + 15_000L);
+        // Initial queue watchdog: generous timeout while waiting in service queue
+        installTimeoutHandler.postDelayed(installTimeoutRunnable, 10 * 60_000L);
 
         installStatusReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                // Every install the app runs reports on this action; only the one this window
-                // started is its business.
                 if (intent == null) {
                     return;
                 }
@@ -816,6 +847,15 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         return;
                     }
                 } else if (!pkgName.equals(intent.getStringExtra("pkgName"))) {
+                    return;
+                }
+                // When the service starts executing this request, reset watchdog to execution timeout
+                if (intent.getBooleanExtra("started", false)) {
+                    if (installTimeoutHandler != null && installTimeoutRunnable != null) {
+                        installTimeoutHandler.removeCallbacks(installTimeoutRunnable);
+                        installTimeoutHandler.postDelayed(installTimeoutRunnable,
+                                InstallPackagesService.INSTALL_TIMEOUT_MS + 15_000L);
+                    }
                     return;
                 }
                 showInstallResult(appLabel,

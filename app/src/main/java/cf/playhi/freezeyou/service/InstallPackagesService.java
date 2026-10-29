@@ -143,6 +143,22 @@ public class InstallPackagesService extends FreezeYouBaseService {
         broadcastInstallStatus(context, pkgName, null, success, statusMessage);
     }
 
+    public static void broadcastInstallStarted(
+            Context context, String pkgName, String installRequestId) {
+        if ((pkgName == null || pkgName.isEmpty())
+                && (installRequestId == null || installRequestId.isEmpty())) {
+            return;
+        }
+        Intent intent = new Intent(ACTION_INSTALL_STATUS_CHANGED)
+                .setPackage(context.getPackageName())
+                .putExtra("pkgName", pkgName)
+                .putExtra("started", true);
+        if (installRequestId != null) {
+            intent.putExtra("installRequestId", installRequestId);
+        }
+        context.sendBroadcast(intent);
+    }
+
     public static void broadcastInstallStatus(
             Context context, String pkgName, String installRequestId,
             boolean success, String statusMessage) {
@@ -410,6 +426,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
         String resolvedPackageName = null;
         boolean progressPosted = false;
         boolean resultPosted = false;
+        broadcastInstallStarted(this, fallbackPackageName, installRequestId);
         try {
             String apkFilePath = intent.getStringExtra("apkFilePath");
             if (apkFilePath == null || "".equals(apkFilePath) || !new File(apkFilePath).exists()) {
