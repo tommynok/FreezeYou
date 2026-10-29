@@ -48,6 +48,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
 
             // Delete Temp File
             InstallPackagesUtils.deleteTempFile(context, apkFilePath, false);
+            final String installRequestId = intent.getStringExtra("installRequestId");
 
             if (installStatus == PackageInstaller.STATUS_SUCCESS) {
                 InstallPackagesUtils
@@ -58,7 +59,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_installFinished), name),
                                 null,
                                 true);
-                InstallPackagesService.broadcastInstallStatus(context, pkgName, true, null);
+                InstallPackagesService.broadcastInstallStatus(context, pkgName, installRequestId, true, null);
 
                 if (tryDelApkAfterInstalled.getValue(null))
                     InstallPackagesUtils.deleteTempFile(context, apkFilePath, true);
@@ -72,7 +73,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_installFailed), name),
                                 message,
                                 false);
-                InstallPackagesService.broadcastInstallStatus(context, pkgName, false, message);
+                InstallPackagesService.broadcastInstallStatus(context, pkgName, installRequestId, false, message);
             }
         } else {
             if (installStatus == PackageInstaller.STATUS_SUCCESS) {

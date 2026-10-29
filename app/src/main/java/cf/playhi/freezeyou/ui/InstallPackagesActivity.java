@@ -12,6 +12,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
 import android.view.ViewParent;
@@ -29,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.UUID;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
@@ -64,12 +67,33 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     /** The window an install started from here reports through, from its spinner to its result. */
     private AlertDialog installProgressDialog;
     private ProgressBar installProgressView;
+    private Handler installTimeoutHandler;
+    private Runnable installTimeoutRunnable;
+    private String trackedRequestId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this, true);
         super.onCreate(savedInstanceState);
 
+        init();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        unregisterInstallStatusReceiver();
+        if (installProgressDialog != null) {
+            try {
+                if (installProgressDialog.isShowing()) {
+                    installProgressDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+            }
+            installProgressDialog = null;
+        }
+        installProgressView = null;
         init();
     }
 
@@ -476,8 +500,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 final boolean trackInDialog = canTrackInstallInDialog(
                                         install, processedPackageInfo,
                                         preDefinedTryToAvoidUpdateWhenUsing);
+                                final String installRequestId = UUID.randomUUID().toString();
                                 if (trackInDialog) {
-                                    beginInstallTracking(processedPackageInfo);
+                                    beginInstallTracking(processedPackageInfo, installRequestId);
                                 }
                                 ServiceUtils.startService(
                                         InstallPackagesActivity.this,
@@ -487,6 +512,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                                 .putExtra("packageUri", packageUri)
                                                 .putExtra("apkFilePath", apkFilePath)
                                                 .putExtra("packageInfo", processedPackageInfo)
+                                                .putExtra("installRequestId", installRequestId)
                                                 .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
                                 if (!trackInDialog) {
                                     finish();
@@ -675,7 +701,8 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
      * install runs: a dialog created without any has its whole button bar hidden, and adding a
      * button after show() does not bring that bar back. A failure replaces them instead.
      */
-    private void beginInstallTracking(final PackageInfo packageInfo) {
+    private void beginInstallTracking(final PackageInfo packageInfo, final String requestId) {
+        this.trackedRequestId = requestId;
         final String pkgName = packageInfo.packageName;
         final CharSequence appLabel = installAppLabel(packageInfo);
 
@@ -700,12 +727,27 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         installProgressDialog.setCanceledOnTouchOutside(false);
         setFinishOnTouchOutside(false);
 
+        installTimeoutHandler = new Handler(Looper.getMainLooper());
+        installTimeoutRunnable = () -> {
+            showInstallResult(appLabel, false, getString(R.string.failed));
+        };
+        // Watchdog timeout: 90 seconds (install timeout in PrivilegedShellUtils is ~60s)
+        installTimeoutHandler.postDelayed(installTimeoutRunnable, 90_000);
+
         installStatusReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 // Every install the app runs reports on this action; only the one this window
                 // started is its business.
-                if (intent == null || !pkgName.equals(intent.getStringExtra("pkgName"))) {
+                if (intent == null) {
+                    return;
+                }
+                final String incomingRequestId = intent.getStringExtra("installRequestId");
+                if (incomingRequestId != null) {
+                    if (!requestId.equals(incomingRequestId)) {
+                        return;
+                    }
+                } else if (!pkgName.equals(intent.getStringExtra("pkgName"))) {
                     return;
                 }
                 showInstallResult(appLabel,
@@ -749,11 +791,16 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             }
             dialog.setTitle(R.string.failed);
             dialog.setMessage(failed);
-            // Nothing to open and nothing left to choose between, so one button is the whole
-            // answer. The copy of the APK the service made is the service's to clean up.
-            dialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.okay),
-                    (d, w) -> finish());
-            setButtonVisible(dialog, DialogInterface.BUTTON_POSITIVE, true);
+            // Hide negative button so only one confirmation button remains.
+            // In AppCompat AlertDialog, setButton after show() only updates internal fields and
+            // does not change the already-created button's label; update the view directly.
+            setButtonVisible(dialog, DialogInterface.BUTTON_NEGATIVE, false);
+            final Button positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+            if (positiveBtn != null) {
+                positiveBtn.setText(R.string.okay);
+                positiveBtn.setOnClickListener(v -> finish());
+                positiveBtn.setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -795,6 +842,11 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     private void unregisterInstallStatusReceiver() {
+        if (installTimeoutHandler != null && installTimeoutRunnable != null) {
+            installTimeoutHandler.removeCallbacks(installTimeoutRunnable);
+            installTimeoutRunnable = null;
+        }
+        installTimeoutHandler = null;
         if (installStatusReceiver == null) return;
         try {
             unregisterReceiver(installStatusReceiver);

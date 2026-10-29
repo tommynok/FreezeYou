@@ -140,15 +140,25 @@ public class InstallPackagesService extends FreezeYouBaseService {
      */
     public static void broadcastInstallStatus(
             Context context, String pkgName, boolean success, String statusMessage) {
-        if (pkgName == null || pkgName.isEmpty()) {
+        broadcastInstallStatus(context, pkgName, null, success, statusMessage);
+    }
+
+    public static void broadcastInstallStatus(
+            Context context, String pkgName, String installRequestId,
+            boolean success, String statusMessage) {
+        if ((pkgName == null || pkgName.isEmpty())
+                && (installRequestId == null || installRequestId.isEmpty())) {
             return;
         }
-        context.sendBroadcast(
-                new Intent(ACTION_INSTALL_STATUS_CHANGED)
-                        .setPackage(context.getPackageName())
-                        .putExtra("pkgName", pkgName)
-                        .putExtra("success", success)
-                        .putExtra("statusMessage", statusMessage));
+        Intent intent = new Intent(ACTION_INSTALL_STATUS_CHANGED)
+                .setPackage(context.getPackageName())
+                .putExtra("pkgName", pkgName)
+                .putExtra("success", success)
+                .putExtra("statusMessage", statusMessage);
+        if (installRequestId != null) {
+            intent.putExtra("installRequestId", installRequestId);
+        }
+        context.sendBroadcast(intent);
     }
 
     private void processQueue() {
@@ -391,7 +401,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
     }
 
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
+        final String installRequestId = intent.getStringExtra("installRequestId");
         final String waitingPackageName = intent.getStringExtra("waitingPackageName");
+        final PackageInfo callerPackageInfo = intent.getParcelableExtra("packageInfo");
+        final String fallbackPackageName =
+                callerPackageInfo != null ? callerPackageInfo.packageName : waitingPackageName;
         String copiedApkFilePath = null;
         String resolvedPackageName = null;
         boolean progressPosted = false;
@@ -402,11 +416,21 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 Uri packageUri = intent.getParcelableExtra("packageUri");
                 if (packageUri == null) {
                     cancelWaitingCardOnFailure(waitingPackageName, null);
+                    if (!resultPosted) {
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, fallbackPackageName, installRequestId, false, "Invalid package URI");
+                    }
                     return;
                 }
                 InputStream in = getContentResolver().openInputStream(packageUri);
                 if (in == null) {
                     cancelWaitingCardOnFailure(waitingPackageName, null);
+                    if (!resultPosted) {
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, fallbackPackageName, installRequestId, false, "Cannot open package URI");
+                    }
                     return;
                 }
 
@@ -421,6 +445,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
             PackageInfo packageInfo = pm.getPackageArchiveInfo(apkFilePath, 0);
             if (packageInfo == null) {
                 cancelWaitingCardOnFailure(waitingPackageName, copiedApkFilePath);
+                if (!resultPosted) {
+                    resultPosted = true;
+                    broadcastInstallStatus(
+                            this, fallbackPackageName, installRequestId, false, "Cannot parse APK archive");
+                }
                 return;
             }
             String willBeInstalledPackageName = packageInfo.packageName;
@@ -464,7 +493,8 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 InstallPackagesFinishedReceiver.class)
                                                 .putExtra("name", willBeInstalledName)
                                                 .putExtra("pkgName", willBeInstalledPackageName)
-                                                .putExtra("apkFilePath", apkFilePath),
+                                                .putExtra("apkFilePath", apkFilePath)
+                                                .putExtra("installRequestId", installRequestId),
                                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                                                 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT)
@@ -519,7 +549,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                         true);
                         resultPosted = true;
                         broadcastInstallStatus(
-                                this, willBeInstalledPackageName, true, null);
+                                this, willBeInstalledPackageName, installRequestId, true, null);
                         if (tryDelApkAfterInstalled.getValue(null))
                             InstallPackagesUtils.deleteTempFile(this, apkFilePath, true);
                     } else {
@@ -537,7 +567,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                         false);
                         resultPosted = true;
                         broadcastInstallStatus(
-                                this, willBeInstalledPackageName, false, reason);
+                                this, willBeInstalledPackageName, installRequestId, false, reason);
                     }
                 }
             }
@@ -547,10 +577,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 InstallPackagesUtils.deleteTempFile(this, copiedApkFilePath, false);
             }
             if (!resultPosted) {
+                resultPosted = true;
                 // The progress card replaced the waiting card; either way the failure has to
                 // replace the card that is currently visible under this package.
                 final String failurePackageName = progressPosted
-                        ? resolvedPackageName : waitingPackageName;
+                        ? resolvedPackageName : fallbackPackageName;
                 InstallPackagesUtils
                         .notifyFinishNotification(
                                 this, notificationManager, builder,
@@ -560,7 +591,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                 e.getLocalizedMessage(),
                                 false);
                 broadcastInstallStatus(
-                        this, failurePackageName, false, e.getLocalizedMessage());
+                        this, failurePackageName, installRequestId, false, e.getLocalizedMessage());
             }
             new Handler(Looper.getMainLooper()).post(() ->
                     showToast(
