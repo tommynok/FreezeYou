@@ -694,7 +694,12 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                                     fromPkgName, processedPackageInfo, isCriticalApp)
                                     )
                                     .setNegativeButton(R.string.cancel, (dialog15, which14) -> {
-                                        if (install != 0) clearTempFile(apkFilePath);
+                                        if (install != 0) {
+                                            clearTempFile(apkFilePath);
+                                            if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                                                pendingStagedApkPath = null;
+                                            }
+                                        }
                                         finish();
                                     })
                                     .create().show();
@@ -702,7 +707,13 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
                             if (install == 2) {
                                 clearTempFile(apkFilePath);
+                                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                                    pendingStagedApkPath = null;
+                                }
                             } else {
+                                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                                    pendingStagedApkPath = null;
+                                }
                                 ServiceUtils.startService(
                                         InstallPackagesActivity.this,
                                         new Intent(InstallPackagesActivity.this,
@@ -972,6 +983,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         adbd.setMessage(R.string.installPerimisionCheckFailed_ifContinue);
         adbd.setTitle(R.string.notice);
         adbd.setPositiveButton(R.string.okay, (dialog, which) -> {
+            if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                pendingStagedApkPath = null;
+            }
             ServiceUtils.startService(
                     InstallPackagesActivity.this,
                     new Intent(InstallPackagesActivity.this,
@@ -983,7 +997,15 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
             finish();
         });
-        adbd.setNegativeButton(R.string.cancel, (dialog, which) -> finish());
+        adbd.setNegativeButton(R.string.cancel, (dialog, which) -> {
+            if (install != 0) {
+                clearTempFile(apkFilePath);
+                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                    pendingStagedApkPath = null;
+                }
+            }
+            finish();
+        });
         adbd.setNeutralButton(R.string.jumpToSysInstaller, (dialog, which) -> {
             if (install == 0) {
                 InstallPackagesActivity.this.startActivity(
