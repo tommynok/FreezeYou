@@ -132,6 +132,23 @@ public final class BackupUtils {
         return false;
     }
 
+    /**
+     * The value a backup carries for one of the multi-process string settings.
+     *
+     * For a single key this is not what storage holds: the shortcut action is what
+     * {@link SettingsUtils#resolveShortcutClickAction()} answers, and that reads the stored choice
+     * or, for an installation that never made one, the legacy booleans behind it. Exporting the
+     * key's own default instead would send "ask for action" out of a device that toggles, and the
+     * restore would write that as an explicit choice over the action the install actually runs.
+     */
+    private static String exportedStringValue(
+            Context context, DefaultMultiProcessMMKVStorageStringKeys key) {
+        if (key == DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction) {
+            return SettingsUtils.resolveShortcutClickAction();
+        }
+        return key.getValue(context);
+    }
+
     private static boolean importStringSharedPreference(
             Context context, Activity activity, JSONObject jsonObject,
             SharedPreferences sp, String key) {
@@ -943,7 +960,8 @@ public final class BackupUtils {
             }
             for (DefaultMultiProcessMMKVStorageStringKeys key
                     : DefaultMultiProcessMMKVStorageStringKeys.values()) {
-                generalSettingsStringJSONObject.put(key.name(), key.getValue(context));
+                generalSettingsStringJSONObject.put(
+                        key.name(), exportedStringValue(context, key));
             }
 
             generalSettingsStringJSONArray.put(generalSettingsStringJSONObject);

@@ -47,9 +47,10 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
     },
 
     shortcutClickAction {
-        // The same default the settings row declares. An unset key must not travel into a backup as
-        // "nothing chosen": the exported value is read through this default, and a restore of it has
-        // to land on one of the three actions the row offers.
+        // The same default the settings row declares, so an unset key never offers "nothing
+        // chosen" as an answer. A backup does not export through this default: BackupUtils asks
+        // the resolver, because an installation that inherited its action from the legacy
+        // booleans stores nothing here and would otherwise be sent out as "ask for action".
         override fun defaultValue() = "dialog"
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.shortcutClickAction
