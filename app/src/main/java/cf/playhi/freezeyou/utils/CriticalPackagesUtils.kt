@@ -7,10 +7,11 @@ import android.view.inputmethod.InputMethodManager
 
 /**
  * Packages whose freezing leaves the device hard to recover from: no status bar or navigation,
- * no Settings to undo it with, no keyboard to type with, or no system core at all. Freezing them
- * is still the user's call — these are only used to ask for confirmation before a bulk action,
- * not to forbid anything. The launcher is deliberately not here: alternative launchers are a
- * normal thing to freeze, and that choice belongs to the user.
+ * no Settings to undo it with, no keyboard to type with, no home screen to return to, or no system
+ * core at all. Freezing them is still the user's call — these are only used to ask for confirmation
+ * before a bulk action, not to forbid anything. Only the launcher that is currently the default
+ * home is here: freezing it leaves the device with nowhere to go back to, while the alternative
+ * launchers installed beside it stay the user's to freeze without a question.
  */
 object CriticalPackagesUtils {
 
@@ -45,11 +46,29 @@ object CriticalPackagesUtils {
     }
 
     private fun buildCriticalSet(context: Context): Set<String> {
+        // Resolved rather than hardcoded: OEM builds ship Settings, the keyboard and the launcher
+        // under their own package names, and a stale hardcoded list would silently protect nothing.
+        return buildCriticalSet(
+            resolveSettingsPackage(context),
+            resolveInputMethodPackages(context),
+            resolveDefaultHomePackage(context)
+        )
+    }
+
+    /**
+     * The set itself, with the three device-dependent roles passed in rather than resolved, for the
+     * same reason as [findCriticalPackages]: a plain JVM test can check the decision without a
+     * device to resolve them from.
+     */
+    internal fun buildCriticalSet(
+        settingsPackage: String?,
+        inputMethodPackages: Set<String>,
+        homePackage: String?
+    ): Set<String> {
         val critical = alwaysCriticalPackages().toMutableSet()
-        // Resolved rather than hardcoded: OEM builds ship Settings and the keyboard under their
-        // own package names, and a stale hardcoded list would silently protect nothing.
-        resolveSettingsPackage(context)?.let { critical.add(it) }
-        critical.addAll(resolveInputMethodPackages(context))
+        settingsPackage?.let { critical.add(it) }
+        critical.addAll(inputMethodPackages)
+        homePackage?.let { critical.add(it) }
         return critical
     }
 
@@ -62,6 +81,35 @@ object CriticalPackagesUtils {
             e.printStackTrace()
             null
         } ?: AOSP_SETTINGS
+    }
+
+    /**
+     * The launcher the home button currently goes to. Resolved on every call rather than cached:
+     * the user can pick a different default at any time, and protecting the one they just left
+     * would leave the new one freezable without a question.
+     */
+    internal fun resolveDefaultHomePackage(context: Context): String? {
+        return sanitizeHomePackage(
+            try {
+                Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_HOME)
+                    .resolveActivity(context.packageManager)
+                    ?.activityInfo
+                    ?.packageName
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        )
+    }
+
+    /**
+     * "android" answers the home query on a device with no launcher left to answer it, and it is
+     * already critical under its own name; anything blank is no launcher at all.
+     */
+    internal fun sanitizeHomePackage(raw: String?): String? {
+        val pkg = raw?.trim()
+        return if (pkg.isNullOrEmpty() || pkg == ANDROID_SYSTEM) null else pkg
     }
 
     internal fun resolveInputMethodPackages(context: Context): Set<String> {

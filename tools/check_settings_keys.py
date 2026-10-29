@@ -34,7 +34,15 @@ VALUE_TAGS = {
 }
 
 ENUM_GLOB = "app/src/main/java/cf/playhi/freezeyou/storage/key/Default*Keys.kt"
-XML_GLOB = "app/src/main/res/xml/spr*.xml"
+
+# The screens whose rows write into the storage enums. `stma_add_pr.xml` and
+# `stma_add_trigger_pr.xml` are left out on purpose: their `app:key`s name the fields of a trigger
+# form that is read back out of the database, not storage enums, so every one of them would be
+# reported as unwired.
+XML_FILES = sorted(
+    glob.glob("app/src/main/res/xml/spr*.xml")
+    + glob.glob("app/src/main/res/xml/first_time_setup_pr.xml")
+)
 
 
 def storage_key_names():
@@ -53,7 +61,7 @@ def main():
 
     checked = 0
     bad = []
-    for path in sorted(glob.glob(XML_GLOB)):
+    for path in XML_FILES:
         for element in ET.parse(path).iter():
             if element.tag.split("}")[-1] not in VALUE_TAGS:
                 continue

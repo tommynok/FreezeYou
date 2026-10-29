@@ -58,6 +58,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_installFinished), name),
                                 null,
                                 true);
+                InstallPackagesService.broadcastInstallStatus(context, pkgName, true, null);
 
                 if (tryDelApkAfterInstalled.getValue(null))
                     InstallPackagesUtils.deleteTempFile(context, apkFilePath, true);
@@ -71,6 +72,7 @@ public class InstallPackagesFinishedReceiver extends BroadcastReceiver {
                                 String.format(context.getString(R.string.app_installFailed), name),
                                 message,
                                 false);
+                InstallPackagesService.broadcastInstallStatus(context, pkgName, false, message);
             }
         } else {
             if (installStatus == PackageInstaller.STATUS_SUCCESS) {

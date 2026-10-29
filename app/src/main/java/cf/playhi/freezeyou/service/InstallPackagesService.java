@@ -51,6 +51,14 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
     public static final String NOTIFICATION_CHANNEL_RESULTS = "InstallPackagesResults";
 
+    /**
+     * Internal to this application: the installer dialog stays open through the install and shows
+     * the result itself, so it needs the outcome from the process the service runs in. Always sent
+     * with {@code setPackage} and received behind {@code RECEIVER_NOT_EXPORTED}.
+     */
+    public static final String ACTION_INSTALL_STATUS_CHANGED =
+            "cf.playhi.freezeyou.action.installStatusChanged";
+
     public static final long INSTALL_TIMEOUT_MS = 120_000L;
     public static final long UNINSTALL_TIMEOUT_MS = 60_000L;
 
@@ -120,6 +128,27 @@ public class InstallPackagesService extends FreezeYouBaseService {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    /**
+     * Tells a listening installer dialog how one install ended. The dialog lives in the
+     * {@code :installAndUninstall} process and the install runs here or in the finished receiver,
+     * so the package name is what ties a result back to the dialog that asked for it; a result for
+     * any other package is dropped by the listener.
+     *
+     * @param statusMessage the reason on failure, null on success
+     */
+    public static void broadcastInstallStatus(
+            Context context, String pkgName, boolean success, String statusMessage) {
+        if (pkgName == null || pkgName.isEmpty()) {
+            return;
+        }
+        context.sendBroadcast(
+                new Intent(ACTION_INSTALL_STATUS_CHANGED)
+                        .setPackage(context.getPackageName())
+                        .putExtra("pkgName", pkgName)
+                        .putExtra("success", success)
+                        .putExtra("statusMessage", statusMessage));
     }
 
     private void processQueue() {
@@ -489,9 +518,13 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                         null,
                                         true);
                         resultPosted = true;
+                        broadcastInstallStatus(
+                                this, willBeInstalledPackageName, true, null);
                         if (tryDelApkAfterInstalled.getValue(null))
                             InstallPackagesUtils.deleteTempFile(this, apkFilePath, true);
                     } else {
+                        final String reason =
+                                String.format(getString(R.string.reason_colon), result);
                         InstallPackagesUtils
                                 .notifyFinishNotification(
                                         this, notificationManager, builder,
@@ -500,9 +533,11 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                         String.format(
                                                 getString(R.string.app_installFailed),
                                                 willBeInstalledName),
-                                        String.format(getString(R.string.reason_colon), result),
+                                        reason,
                                         false);
                         resultPosted = true;
+                        broadcastInstallStatus(
+                                this, willBeInstalledPackageName, false, reason);
                     }
                 }
             }
@@ -524,6 +559,8 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                 getString(R.string.installFailed),
                                 e.getLocalizedMessage(),
                                 false);
+                broadcastInstallStatus(
+                        this, failurePackageName, false, e.getLocalizedMessage());
             }
             new Handler(Looper.getMainLooper()).post(() ->
                     showToast(

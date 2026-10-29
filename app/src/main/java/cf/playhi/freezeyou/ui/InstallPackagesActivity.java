@@ -1,9 +1,12 @@
 package cf.playhi.freezeyou.ui;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -11,11 +14,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.ViewParent;
 import android.view.Window;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -51,12 +58,36 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 public class InstallPackagesActivity extends FreezeYouBaseActivity {
     private static final String ILLEGALPKGNAME = "Fy^&IllegalPN*@!128`+=：:,.[";
 
+    /** Set while an install started from here is running and this window is waiting for its result. */
+    private BroadcastReceiver installStatusReceiver;
+
+    /** The window an install started from here reports through, from its spinner to its result. */
+    private AlertDialog installProgressDialog;
+    private ProgressBar installProgressView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this, true);
         super.onCreate(savedInstanceState);
 
         init();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterInstallStatusReceiver();
+        if (installProgressDialog != null) {
+            try {
+                if (installProgressDialog.isShowing()) {
+                    installProgressDialog.dismiss();
+                }
+            } catch (Exception ignored) {
+                // The window is going with the activity anyway.
+            }
+            installProgressDialog = null;
+        }
+        installProgressView = null;
     }
 
     private void clearTempFile(String filePath) {
@@ -362,21 +393,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 }
                 break;
             case 1:
-                CharSequence appLabel = getString(R.string.install); // fallback
-                if (processedPackageInfo != null && processedPackageInfo.applicationInfo != null) {
-                    try {
-                        CharSequence label = getPackageManager().getApplicationLabel(processedPackageInfo.applicationInfo);
-                        if (label != null) {
-                            appLabel = label;
-                        } else {
-                            label = processedPackageInfo.applicationInfo.loadLabel(getPackageManager());
-                            if (label != null) appLabel = label;
-                        }
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                }
-                installPackagesAlertDialog.setTitle(appLabel);
+                installPackagesAlertDialog.setTitle(installAppLabel(processedPackageInfo));
                 break;
             case 2:
                 installPackagesAlertDialog.setTitle(R.string.failed);
@@ -453,6 +470,15 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                             // Shizuku's shell installs APKs too, so it is a valid install path
                             // even when root is not granted.
                             if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
+                                // Listening before the service starts: an install that fails at
+                                // once would broadcast its result before a later registration
+                                // could hear it, and the window would wait for nothing.
+                                final boolean trackInDialog = canTrackInstallInDialog(
+                                        install, processedPackageInfo,
+                                        preDefinedTryToAvoidUpdateWhenUsing);
+                                if (trackInDialog) {
+                                    beginInstallTracking(processedPackageInfo);
+                                }
                                 ServiceUtils.startService(
                                         InstallPackagesActivity.this,
                                         new Intent(InstallPackagesActivity.this,
@@ -462,7 +488,9 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                                 .putExtra("apkFilePath", apkFilePath)
                                                 .putExtra("packageInfo", processedPackageInfo)
                                                 .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
-                                finish();
+                                if (!trackInDialog) {
+                                    finish();
+                                }
                             } else if (install == 0) {
                                 if (isSystemApp) {
                                     showToast(InstallPackagesActivity.this,
@@ -601,6 +629,179 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                     p.setMinimumHeight(0);
             }
         }
+    }
+
+    /**
+     * The name the install dialogs and the result message show, resolved from the APK's own
+     * application info: the package is not installed yet, so the package manager cannot be asked
+     * for it the way an already installed one can.
+     */
+    private CharSequence installAppLabel(PackageInfo packageInfo) {
+        if (packageInfo == null || packageInfo.applicationInfo == null) {
+            return getString(R.string.install);
+        }
+        try {
+            CharSequence label = getPackageManager().getApplicationLabel(packageInfo.applicationInfo);
+            if (label != null) return label;
+            label = packageInfo.applicationInfo.loadLabel(getPackageManager());
+            if (label != null) return label;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return getString(R.string.install);
+    }
+
+    /**
+     * Whether this window can stay up and report the install itself. Only an install has a result
+     * to wait for, and one the service defers until FreezeYou has left — a self-update with
+     * "avoid updating while in use" on — is excluded: the user would watch a spinner that cannot
+     * finish while the window that has to go is still up.
+     */
+    private boolean canTrackInstallInDialog(int install, PackageInfo packageInfo,
+                                            boolean waitForLeaving) {
+        return install == 1
+                && packageInfo != null
+                && packageInfo.packageName != null
+                && !(waitForLeaving && packageInfo.packageName.equals(getPackageName()));
+    }
+
+    /**
+     * Opens the window that carries the install through to its result. The confirmation the user
+     * just accepted dismisses itself — every AppCompat dialog button does — so finishing along with
+     * it left the launcher on screen with nothing at all to look at for the seconds the install
+     * takes, and the only sign of it a card in the notification shade.
+     *
+     * <p>The buttons carry the actions of a success from the start and are only hidden while the
+     * install runs: a dialog created without any has its whole button bar hidden, and adding a
+     * button after show() does not bring that bar back. A failure replaces them instead.
+     */
+    private void beginInstallTracking(final PackageInfo packageInfo) {
+        final String pkgName = packageInfo.packageName;
+        final CharSequence appLabel = installAppLabel(packageInfo);
+
+        installProgressView = new ProgressBar(this);
+        installProgressDialog = FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.plsWait)
+                .setMessage(R.string.loading___)
+                .setView(installProgressView)
+                .setPositiveButton(R.string.launch, (d, w) -> {
+                    launchInstalledApp(pkgName);
+                    finish();
+                })
+                .setNegativeButton(R.string.finish, (d, w) -> finish())
+                .setOnCancelListener(d -> finish())
+                .create();
+        installProgressDialog.show();
+        clearCustomPanelMinimumHeight(installProgressView);
+        setButtonVisible(installProgressDialog, DialogInterface.BUTTON_POSITIVE, false);
+        setButtonVisible(installProgressDialog, DialogInterface.BUTTON_NEGATIVE, false);
+        // An outside tap must not drop the window while the install runs. Back still finishes it:
+        // the service is a started foreground service and carries on without this activity.
+        installProgressDialog.setCanceledOnTouchOutside(false);
+        setFinishOnTouchOutside(false);
+
+        installStatusReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // Every install the app runs reports on this action; only the one this window
+                // started is its business.
+                if (intent == null || !pkgName.equals(intent.getStringExtra("pkgName"))) {
+                    return;
+                }
+                showInstallResult(appLabel,
+                        intent.getBooleanExtra("success", false),
+                        intent.getStringExtra("statusMessage"));
+            }
+        };
+        ContextCompat.registerReceiver(
+                this,
+                installStatusReceiver,
+                new IntentFilter(InstallPackagesService.ACTION_INSTALL_STATUS_CHANGED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
+    private void showInstallResult(final CharSequence appLabel, final boolean success,
+                                   final String statusMessage) {
+        // One install, one result: the listener has nothing left to wait for either way.
+        unregisterInstallStatusReceiver();
+        final AlertDialog dialog = installProgressDialog;
+        if (dialog == null
+                || isFinishing()
+                || (Build.VERSION.SDK_INT >= 17 && isDestroyed())
+                || !dialog.isShowing()) {
+            return;
+        }
+
+        if (installProgressView != null) {
+            installProgressView.setVisibility(View.GONE);
+        }
+        if (success) {
+            dialog.setTitle(R.string.success);
+            dialog.setMessage(String.format(getString(R.string.app_installFinished), appLabel));
+            setButtonVisible(dialog, DialogInterface.BUTTON_POSITIVE, true);
+            setButtonVisible(dialog, DialogInterface.BUTTON_NEGATIVE, true);
+        } else {
+            final StringBuilder failed = new StringBuilder(
+                    String.format(getString(R.string.app_installFailed), appLabel));
+            if (statusMessage != null && !statusMessage.isEmpty()) {
+                failed.append(System.getProperty("line.separator")).append(statusMessage);
+            }
+            dialog.setTitle(R.string.failed);
+            dialog.setMessage(failed);
+            // Nothing to open and nothing left to choose between, so one button is the whole
+            // answer. The copy of the APK the service made is the service's to clean up.
+            dialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.okay),
+                    (d, w) -> finish());
+            setButtonVisible(dialog, DialogInterface.BUTTON_POSITIVE, true);
+        }
+    }
+
+    /**
+     * The panel a custom view is added to reserves 48dp whether or not the view is showing, which
+     * would leave an empty strip under the message once the spinner is gone. Walked up from the
+     * view that was added rather than looked up by id: the panel's id belongs to the AppCompat
+     * resources, so an android.R.id lookup cannot be relied on to reach it.
+     */
+    private static void clearCustomPanelMinimumHeight(View customView) {
+        for (ViewParent panel = customView.getParent();
+             panel instanceof FrameLayout;
+             panel = panel.getParent()) {
+            ((FrameLayout) panel).setMinimumHeight(0);
+        }
+    }
+
+    /** A dialog button keeps the visibility it was given once the dialog is shown. */
+    private static void setButtonVisible(AlertDialog dialog, int whichButton, boolean visible) {
+        Button button = dialog.getButton(whichButton);
+        if (button != null) {
+            button.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void launchInstalledApp(String pkgName) {
+        try {
+            Intent launch = getPackageManager().getLaunchIntentForPackage(pkgName);
+            if (launch == null) {
+                showToast(this, R.string.failed);
+                return;
+            }
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(launch);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showToast(this, R.string.failed);
+        }
+    }
+
+    private void unregisterInstallStatusReceiver() {
+        if (installStatusReceiver == null) return;
+        try {
+            unregisterReceiver(installStatusReceiver);
+        } catch (Exception ignored) {
+            // Already gone: the window was torn down while the install was running.
+        }
+        installStatusReceiver = null;
     }
 
     private void showInstallPermissionCheckFailedDialog(final int install, final String apkFilePath,

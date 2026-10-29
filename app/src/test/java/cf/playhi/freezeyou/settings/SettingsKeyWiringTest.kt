@@ -70,11 +70,18 @@ class SettingsKeyWiringTest {
         return names
     }
 
-    /** Every value-holding row across the settings screens, as file name to `app:key`. */
+    /**
+     * Every value-holding row across the settings screens, as file name to `app:key`.
+     *
+     * The `stma_add_*` screens are left out on purpose: their keys name the fields of a trigger
+     * form that is read back out of the database, not storage enums. Keep this in step with
+     * `tools/check_settings_keys.py`, which scans the same screens in CI.
+     */
     private fun settingsRows(module: File): List<Pair<String, String?>> {
         val xmlDir = File(module, "src/main/res/xml")
         val files = (xmlDir.listFiles { file: File ->
-            file.name.startsWith("spr") && file.name.endsWith(".xml")
+            (file.name.startsWith("spr") || file.name == "first_time_setup_pr.xml")
+                    && file.name.endsWith(".xml")
         } ?: emptyArray()).sortedBy { it.name }
         val factory = DocumentBuilderFactory.newInstance()
         factory.isNamespaceAware = true
