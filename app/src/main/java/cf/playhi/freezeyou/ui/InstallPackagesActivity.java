@@ -381,7 +381,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 return;
                             }
                             if (progressDialog.isShowing())
-                                progressDialog.cancel();
+                                progressDialog.dismiss();
                             finish();
                         });
                         return;
