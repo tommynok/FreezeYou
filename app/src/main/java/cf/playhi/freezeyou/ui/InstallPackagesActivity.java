@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.Window;
@@ -66,13 +67,14 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
 
     /** The window an install started from here reports through, from its spinner to its result. */
     private AlertDialog installProgressDialog;
-    private ProgressBar installProgressView;
+    private View installProgressView;
     private AlertDialog prepareProgressDialog;
     private AlertDialog currentConfirmationDialog;
     private int currentInitGeneration = 0;
     private Handler installTimeoutHandler;
     private Runnable installTimeoutRunnable;
     private String trackedRequestId;
+    private String trackedPackageName;
     private String pendingStagedApkPath;
 
     @Override
@@ -274,25 +276,53 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         prepareInstallDialog(install, packageUri, apkFilePath, fromPkgLabel, fromPkgName);
     }
 
+    private View createProgressSpinnerView() {
+        FrameLayout container = new FrameLayout(this);
+        ProgressBar progressBar = new ProgressBar(this);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+        );
+        int padVertical = (int) (16 * getResources().getDisplayMetrics().density);
+        container.setPadding(0, padVertical, 0, padVertical);
+        container.addView(progressBar, lp);
+        return container;
+    }
+
     private void prepareInstallDialog(final boolean install, final Uri packageUri, final String apkFilePath, final String fromPkgLabel, final String fromPkgName) {
         final StringBuilder alertDialogMessage = new StringBuilder();
 
         if (isFinishing()) return;
 
         final int gen = currentInitGeneration;
-        // Stock ProgressDialog draws a flat platform window; every other dialog in the app
-        // goes through the Material builder, which is what draws the rounded surface.
-        final AlertDialog progressDialog =
-                FreezeYouAlertDialogBuilder(this)
-                        .setTitle(R.string.plsWait)
-                        .setMessage(R.string.loading___)
-                        .setView(new ProgressBar(this))
-                        .setCancelable(false)
-                        .create();
-        prepareProgressDialog = progressDialog;
-        progressDialog.show();
         final String nl = System.getProperty("line.separator");
         if (install) {
+            final ObsdAlertDialog progressDialog = new ObsdAlertDialog(this);
+            progressDialog.setTitle(R.string.plsWait);
+            progressDialog.setMessage(getString(R.string.loading___));
+            final View spinnerView = createProgressSpinnerView();
+            progressDialog.setView(spinnerView);
+            progressDialog.setCancelable(true);
+            progressDialog.setCanceledOnTouchOutside(false);
+            setFinishOnTouchOutside(false);
+            progressDialog.setOnCancelListener(d -> {
+                clearTempFile(apkFilePath);
+                finish();
+            });
+            progressDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.okay), (d, w) -> {});
+            progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), (d, w) -> {});
+            progressDialog.setButton(DialogInterface.BUTTON_NEUTRAL, getString(R.string.installWhenNotUsing), (d, w) -> {});
+            prepareProgressDialog = progressDialog;
+            currentConfirmationDialog = progressDialog;
+            installProgressDialog = progressDialog;
+            installProgressView = spinnerView;
+            progressDialog.show();
+            clearCustomPanelMinimumHeight(spinnerView);
+            setButtonVisible(progressDialog, DialogInterface.BUTTON_POSITIVE, false);
+            setButtonVisible(progressDialog, DialogInterface.BUTTON_NEGATIVE, false);
+            setButtonVisible(progressDialog, DialogInterface.BUTTON_NEUTRAL, false);
+
             if (apkFilePath != null && apkFilePath.startsWith(getExternalCacheDir() + File.separator + "ZDF-")) {
                 if (pendingStagedApkPath != null && !pendingStagedApkPath.equals(apkFilePath)) {
                     clearTempFile(pendingStagedApkPath);
@@ -354,6 +384,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                                 progressDialog.cancel();
                             finish();
                         });
+                        return;
                     }
 
                     alertDialogMessage.append(
@@ -371,11 +402,11 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                         alertDialogMessage.append(nl);
                         alertDialogMessage.append(
                                 String.format(
-                                        getString(R.string.existed_colon_vN_longVC),
-                                        pi.versionName,
-                                        Build.VERSION.SDK_INT < 28 ?
-                                                Integer.toString(pi.versionCode) :
-                                                Long.toString(pi.getLongVersionCode())
+                                    getString(R.string.existed_colon_vN_longVC),
+                                    pi.versionName,
+                                    Build.VERSION.SDK_INT < 28 ?
+                                            Integer.toString(pi.versionCode) :
+                                            Long.toString(pi.getLongVersionCode())
                                 )
                         );
                     } catch (Exception e) {
@@ -463,7 +494,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             );
             alertDialogMessage.append(nl);
             showInstallDialog(
-                    progressDialog, 0,
+                    null, 0,
                     alertDialogMessage, apkFilePath,
                     packageUri, fromPkgLabel, fromPkgName, uninstalledPackageInfo, isCritical
             );
@@ -476,7 +507,14 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     private void showInstallDialog(final AlertDialog progressDialog, final int install, final CharSequence alertDialogMessage, final String apkFilePath, final Uri packageUri, final String fromPkgLabel, final String fromPkgName, final PackageInfo processedPackageInfo, final boolean isCriticalApp) {
-        final ObsdAlertDialog installPackagesAlertDialog = new ObsdAlertDialog(this);
+        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+            return;
+        }
+
+        final boolean isExistingDialog = (progressDialog instanceof ObsdAlertDialog && progressDialog.isShowing());
+        final ObsdAlertDialog installPackagesAlertDialog = isExistingDialog
+                ? (ObsdAlertDialog) progressDialog
+                : new ObsdAlertDialog(this);
 
         final boolean isSystemApp = install == 0 && processedPackageInfo != null
                 && processedPackageInfo.applicationInfo != null
@@ -486,8 +524,6 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 && processedPackageInfo.applicationInfo != null
                 && (processedPackageInfo.applicationInfo.flags
                 & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
-
-        final String uninstallPkg = packageUri == null ? "" : packageUri.getEncodedSchemeSpecificPart();
 
         switch (install) {
             case 0:
@@ -515,6 +551,11 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 tryToAvoidUpdateWhenUsing.getValue(null);
 
         installPackagesAlertDialog.setMessage(alertDialogMessage);
+
+        if (isExistingDialog && installProgressView != null) {
+            installProgressView.setVisibility(View.GONE);
+        }
+
         String positiveButtonText = getString(R.string.okay);
         if (install == 0) {
             if (isSystemApp && hasSystemUpdate) {
@@ -523,242 +564,326 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 positiveButtonText = getString(R.string.uninstall);
             }
         }
-        installPackagesAlertDialog.setButton(
-                DialogInterface.BUTTON_POSITIVE,
-                positiveButtonText,
-                (dialog, which) -> {
-                    if (notAllowInstallWhenIsObsd.getValue(null)
-                            && installPackagesAlertDialog.isObsd()) {
-                        AlertDialogUtils.buildAlertDialog(
-                                        InstallPackagesActivity.this,
-                                        R.drawable.ic_warning,
-                                        R.string.alert_isObsd,
-                                        R.string.dangerous)
-                                .setPositiveButton(R.string.retry, (dialog1, which1) ->
-                                        showInstallDialog(
-                                                progressDialog, install,
-                                                alertDialogMessage, apkFilePath, packageUri,
-                                                fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
-                                )
-                                .setNegativeButton(R.string.cancel, (dialog12, which12) -> {
-                                    if (install != 0) clearTempFile(apkFilePath);
-                                    finish();
-                                })
-                                .setOnCancelListener(dialog13 ->
-                                        showInstallDialog(progressDialog, install,
-                                                alertDialogMessage, apkFilePath, packageUri,
-                                                fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
-                                )
-                                .create().show();
-                    } else {
 
-                        if (install == 2) {
+        if (isExistingDialog) {
+            Button positiveButton = installPackagesAlertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+            if (positiveButton != null) {
+                positiveButton.setText(positiveButtonText);
+                positiveButton.setVisibility(View.VISIBLE);
+                positiveButton.setOnClickListener(v -> handlePositiveAction(
+                        installPackagesAlertDialog, install, alertDialogMessage, apkFilePath,
+                        packageUri, fromPkgLabel, fromPkgName, processedPackageInfo,
+                        isCriticalApp, isSystemApp, preDefinedTryToAvoidUpdateWhenUsing
+                ));
+            }
+
+            Button negativeButton = installPackagesAlertDialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+            if (negativeButton != null) {
+                if (install == 2) {
+                    negativeButton.setVisibility(View.GONE);
+                } else {
+                    negativeButton.setText(R.string.cancel);
+                    negativeButton.setVisibility(View.VISIBLE);
+                    negativeButton.setOnClickListener(v -> {
+                        if (install != 0) {
                             clearTempFile(apkFilePath);
-                            finish();
-                        } else {
-                            boolean shizukuAvailable = false;
-                            try {
-                                shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                            } catch (Throwable ignored) {}
-                            boolean deviceOwnerAvailable = DevicePolicyManagerUtils
-                                    .isDeviceOwner(InstallPackagesActivity.this);
-                            boolean fullUninstallNeedsShell = install == 0
-                                    && UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(
-                                    isSystemApp, false);
-                            boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
-                                    deviceOwnerAvailable, fullUninstallNeedsShell);
-                            boolean rootAvailable = !shizukuAvailable && rootCheckRequired
-                                    && FUFUtils.checkRootPermission();
-                            boolean privilegedShellAvailable = rootAvailable || shizukuAvailable;
-                            if (deviceOwnerAvailable && fullUninstallNeedsShell
-                                    && !privilegedShellAvailable) {
-                                showToast(InstallPackagesActivity.this,
-                                        R.string.full_system_uninstall_requires_shell);
-                                return;
-                            }
-                            // Shizuku's shell installs APKs too, so it is a valid install path
-                            // even when root is not granted.
-                            if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
-                                // Listening before the service starts: an install that fails at
-                                // once would broadcast its result before a later registration
-                                // could hear it, and the window would wait for nothing.
-                                final boolean trackInDialog = canTrackInstallInDialog(
-                                        install, processedPackageInfo,
-                                        preDefinedTryToAvoidUpdateWhenUsing);
-                                final String installRequestId = UUID.randomUUID().toString();
-                                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
-                                    pendingStagedApkPath = null;
-                                }
-                                if (trackInDialog) {
-                                    beginInstallTracking(processedPackageInfo, installRequestId);
-                                }
-                                ServiceUtils.startService(
-                                        InstallPackagesActivity.this,
-                                        new Intent(InstallPackagesActivity.this,
-                                                InstallPackagesService.class)
-                                                .putExtra("install", install == 1)
-                                                .putExtra("packageUri", packageUri)
-                                                .putExtra("apkFilePath", apkFilePath)
-                                                .putExtra("packageInfo", processedPackageInfo)
-                                                .putExtra("installRequestId", installRequestId)
-                                                .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
-                                if (!trackInDialog) {
-                                    finish();
-                                }
-                            } else if (install == 0) {
-                                if (isSystemApp) {
-                                    showToast(InstallPackagesActivity.this,
-                                            R.string.full_system_uninstall_requires_shell);
-                                } else {
-                                    startActivity(
-                                            new Intent(
-                                                    Intent.ACTION_DELETE,
-                                                    Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
-                                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    );
-                                    finish();
-                                }
-                            } else {
-                                showInstallPermissionCheckFailedDialog(
-                                        install, apkFilePath, packageUri,
-                                        processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
+                            if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                                pendingStagedApkPath = null;
                             }
                         }
-                    }
-                });
-        installPackagesAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), (dialog, which) -> {
-            if (install != 0) {
-                clearTempFile(apkFilePath);
-                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
-                    pendingStagedApkPath = null;
+                        installPackagesAlertDialog.dismiss();
+                        finish();
+                    });
                 }
             }
-            finish();
-        });
-        if (install == 0 && hasSystemUpdate) {
-            installPackagesAlertDialog.setButton(
-                    DialogInterface.BUTTON_NEUTRAL,
-                    getString(R.string.uninstall_updates_only),
-                    (dialog, which) -> {
-                        boolean shizukuAvailable = false;
-                        try {
-                            shizukuAvailable = rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                        } catch (Throwable ignored) {}
-                        boolean deviceOwnerAvailable = DevicePolicyManagerUtils
-                                .isDeviceOwner(InstallPackagesActivity.this);
-                        boolean rootAvailable = !shizukuAvailable
-                                && UninstallPolicyUtils.shouldCheckRootPermission(
-                                deviceOwnerAvailable, false)
-                                && FUFUtils.checkRootPermission();
-                        if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
-                            ServiceUtils.startService(
-                                    InstallPackagesActivity.this,
-                                    new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
-                                            .putExtra("install", false)
-                                            .putExtra("packageUri", packageUri)
-                                            .putExtra("uninstall_updates_only", true)
-                                            .putExtra("packageInfo", processedPackageInfo)
-                                            .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
-                            finish();
-                        } else {
-                            startActivity(
-                                    new Intent(
-                                            Intent.ACTION_DELETE,
-                                            Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
-                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            );
-                            finish();
-                        }
-                    });
-        }
-        if (install == 1
-                && !preDefinedTryToAvoidUpdateWhenUsing
-                && processedPackageInfo != null
-                && AccessibilityUtils.isAccessibilitySettingsOn(this)) {
-            installPackagesAlertDialog.setButton(
-                    DialogInterface.BUTTON_NEUTRAL,
-                    getString(R.string.installWhenNotUsing),
-                    (dialog, which) -> {
-                        if (notAllowInstallWhenIsObsd.getValue(null)
-                                && installPackagesAlertDialog.isObsd()) {
-                            AlertDialogUtils.buildAlertDialog(
-                                            InstallPackagesActivity.this,
-                                            R.drawable.ic_warning,
-                                            R.string.alert_isObsd,
-                                            R.string.dangerous)
-                                    .setPositiveButton(R.string.retry, (dialog14, which13) ->
-                                            showInstallDialog(
-                                                    progressDialog, install,
-                                                    alertDialogMessage, apkFilePath,
-                                                    packageUri, fromPkgLabel,
-                                                    fromPkgName, processedPackageInfo, isCriticalApp)
-                                    )
-                                    .setNegativeButton(R.string.cancel, (dialog15, which14) -> {
-                                        if (install != 0) {
-                                            clearTempFile(apkFilePath);
-                                            if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
-                                                pendingStagedApkPath = null;
-                                            }
-                                        }
-                                        finish();
-                                    })
-                                    .create().show();
-                        } else {
 
-                            if (install == 2) {
+            Button neutralButton = installPackagesAlertDialog.getButton(DialogInterface.BUTTON_NEUTRAL);
+            if (neutralButton != null) {
+                if (install == 0 && hasSystemUpdate) {
+                    neutralButton.setText(R.string.uninstall_updates_only);
+                    neutralButton.setVisibility(View.VISIBLE);
+                    neutralButton.setOnClickListener(v -> handleUninstallUpdatesOnly(
+                            installPackagesAlertDialog, packageUri, processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing
+                    ));
+                } else if (install == 1
+                        && !preDefinedTryToAvoidUpdateWhenUsing
+                        && processedPackageInfo != null
+                        && AccessibilityUtils.isAccessibilitySettingsOn(this)) {
+                    neutralButton.setText(R.string.installWhenNotUsing);
+                    neutralButton.setVisibility(View.VISIBLE);
+                    neutralButton.setOnClickListener(v -> handleInstallWhenNotUsing(
+                            installPackagesAlertDialog, alertDialogMessage, apkFilePath,
+                            packageUri, fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp
+                    ));
+                } else {
+                    neutralButton.setVisibility(View.GONE);
+                }
+            }
+
+            installPackagesAlertDialog.setOnCancelListener(dialog -> {
+                if (install != 0) clearTempFile(apkFilePath);
+                finish();
+            });
+
+            currentConfirmationDialog = installPackagesAlertDialog;
+            applyButtonAccentColor(installPackagesAlertDialog);
+        } else {
+            installPackagesAlertDialog.setButton(
+                    DialogInterface.BUTTON_POSITIVE,
+                    positiveButtonText,
+                    (dialog, which) -> handlePositiveAction(
+                            installPackagesAlertDialog, install, alertDialogMessage, apkFilePath,
+                            packageUri, fromPkgLabel, fromPkgName, processedPackageInfo,
+                            isCriticalApp, isSystemApp, preDefinedTryToAvoidUpdateWhenUsing
+                    )
+            );
+            if (install != 2) {
+                installPackagesAlertDialog.setButton(
+                        DialogInterface.BUTTON_NEGATIVE,
+                        getString(R.string.cancel),
+                        (dialog, which) -> {
+                            if (install != 0) {
                                 clearTempFile(apkFilePath);
                                 if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
                                     pendingStagedApkPath = null;
                                 }
-                            } else {
-                                if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
-                                    pendingStagedApkPath = null;
-                                }
-                                ServiceUtils.startService(
-                                        InstallPackagesActivity.this,
-                                        new Intent(InstallPackagesActivity.this,
-                                                InstallPackagesService.class)
-                                                .putExtra("install", install == 1)
-                                                .putExtra("packageUri", packageUri)
-                                                .putExtra("apkFilePath", apkFilePath)
-                                                .putExtra("packageInfo", processedPackageInfo)
-                                                .putExtra("waitForLeaving", true));
                             }
                             finish();
                         }
-                    });
+                );
+            }
+            if (install == 0 && hasSystemUpdate) {
+                installPackagesAlertDialog.setButton(
+                        DialogInterface.BUTTON_NEUTRAL,
+                        getString(R.string.uninstall_updates_only),
+                        (dialog, which) -> handleUninstallUpdatesOnly(
+                                installPackagesAlertDialog, packageUri, processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing
+                        )
+                );
+            } else if (install == 1
+                    && !preDefinedTryToAvoidUpdateWhenUsing
+                    && processedPackageInfo != null
+                    && AccessibilityUtils.isAccessibilitySettingsOn(this)) {
+                installPackagesAlertDialog.setButton(
+                        DialogInterface.BUTTON_NEUTRAL,
+                        getString(R.string.installWhenNotUsing),
+                        (dialog, which) -> handleInstallWhenNotUsing(
+                                installPackagesAlertDialog, alertDialogMessage, apkFilePath,
+                                packageUri, fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp
+                        )
+                );
+            }
+            installPackagesAlertDialog.setOnCancelListener(dialog -> {
+                if (install != 0) clearTempFile(apkFilePath);
+                finish();
+            });
+
+            currentConfirmationDialog = installPackagesAlertDialog;
+            installPackagesAlertDialog.show();
+            applyButtonAccentColor(installPackagesAlertDialog);
+
+            Window w = installPackagesAlertDialog.getWindow();
+            if (w != null) {
+                View v = (View) w.findViewById(android.R.id.custom);
+                if (v != null) {
+                    View p = (View) v.getParent();
+                    if (p != null)
+                        p.setMinimumHeight(0);
+                }
+            }
         }
-        installPackagesAlertDialog.setOnCancelListener(dialog -> {
-            if (install != 0) clearTempFile(apkFilePath);
+    }
+
+    private void handlePositiveAction(final ObsdAlertDialog dialog, final int install,
+                                      final CharSequence alertDialogMessage, final String apkFilePath,
+                                      final Uri packageUri, final String fromPkgLabel,
+                                      final String fromPkgName, final PackageInfo processedPackageInfo,
+                                      final boolean isCriticalApp, final boolean isSystemApp,
+                                      final boolean preDefinedTryToAvoidUpdateWhenUsing) {
+        if (notAllowInstallWhenIsObsd.getValue(null) && dialog.isObsd()) {
+            AlertDialogUtils.buildAlertDialog(
+                            InstallPackagesActivity.this,
+                            R.drawable.ic_warning,
+                            R.string.alert_isObsd,
+                            R.string.dangerous)
+                    .setPositiveButton(R.string.retry, (dialog1, which1) ->
+                            showInstallDialog(
+                                    dialog, install,
+                                    alertDialogMessage, apkFilePath, packageUri,
+                                    fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
+                    )
+                    .setNegativeButton(R.string.cancel, (dialog12, which12) -> {
+                        if (install != 0) clearTempFile(apkFilePath);
+                        dialog.dismiss();
+                        finish();
+                    })
+                    .setOnCancelListener(dialog13 ->
+                            showInstallDialog(dialog, install,
+                                    alertDialogMessage, apkFilePath, packageUri,
+                                    fromPkgLabel, fromPkgName, processedPackageInfo, isCriticalApp)
+                    )
+                    .create().show();
+            return;
+        }
+
+        if (install == 2) {
+            clearTempFile(apkFilePath);
+            dialog.dismiss();
             finish();
-        });
-
-        if (progressDialog.isShowing()) {
-            progressDialog.cancel();
+            return;
         }
 
-        if (isFinishing()) return;
-        installPackagesAlertDialog.setOnShowListener(dialog -> {
-            if (cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme(InstallPackagesActivity.this)) {
-                int accentColor = androidx.core.content.ContextCompat.getColor(InstallPackagesActivity.this, R.color.appAccent);
-                android.widget.Button positiveButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
-                if (positiveButton != null) positiveButton.setTextColor(accentColor);
-                android.widget.Button negativeButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
-                if (negativeButton != null) negativeButton.setTextColor(accentColor);
-                android.widget.Button neutralButton = installPackagesAlertDialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL);
-                if (neutralButton != null) neutralButton.setTextColor(accentColor);
+        boolean shizukuAvailable = false;
+        try {
+            shizukuAvailable = rikka.shizuku.Shizuku.pingBinder()
+                    && rikka.shizuku.Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED;
+        } catch (Throwable ignored) {}
+        boolean deviceOwnerAvailable = DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this);
+        boolean fullUninstallNeedsShell = install == 0
+                && UninstallPolicyUtils.requiresPrivilegedShellForFullUninstall(isSystemApp, false);
+        boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
+                deviceOwnerAvailable, fullUninstallNeedsShell);
+        boolean rootAvailable = !shizukuAvailable && rootCheckRequired && FUFUtils.checkRootPermission();
+        boolean privilegedShellAvailable = rootAvailable || shizukuAvailable;
+
+        if (deviceOwnerAvailable && fullUninstallNeedsShell && !privilegedShellAvailable) {
+            showToast(InstallPackagesActivity.this, R.string.full_system_uninstall_requires_shell);
+            return;
+        }
+
+        if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
+            final boolean trackInDialog = canTrackInstallInDialog(
+                    install, processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
+            final String installRequestId = UUID.randomUUID().toString();
+            if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                pendingStagedApkPath = null;
             }
-        });
-        currentConfirmationDialog = installPackagesAlertDialog;
-        installPackagesAlertDialog.show();
-        Window w = installPackagesAlertDialog.getWindow();
-        if (w != null) {
-            View v = (View) w.findViewById(android.R.id.custom);
-            if (v != null) {
-                View p = (View) v.getParent();
-                if (p != null)
-                    p.setMinimumHeight(0);
+            if (trackInDialog) {
+                beginInstallTracking(dialog, processedPackageInfo, installRequestId);
             }
+            ServiceUtils.startService(
+                    InstallPackagesActivity.this,
+                    new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
+                            .putExtra("install", install == 1)
+                            .putExtra("packageUri", packageUri)
+                            .putExtra("apkFilePath", apkFilePath)
+                            .putExtra("packageInfo", processedPackageInfo)
+                            .putExtra("installRequestId", installRequestId)
+                            .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
+            if (!trackInDialog) {
+                dialog.dismiss();
+                finish();
+            }
+        } else if (install == 0) {
+            if (isSystemApp) {
+                showToast(InstallPackagesActivity.this, R.string.full_system_uninstall_requires_shell);
+            } else {
+                startActivity(
+                        new Intent(
+                                Intent.ACTION_DELETE,
+                                Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
+                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                );
+                dialog.dismiss();
+                finish();
+            }
+        } else {
+            dialog.dismiss();
+            showInstallPermissionCheckFailedDialog(
+                    install, apkFilePath, packageUri,
+                    processedPackageInfo, preDefinedTryToAvoidUpdateWhenUsing);
+        }
+    }
+
+    private void handleUninstallUpdatesOnly(final AlertDialog dialog, final Uri packageUri,
+                                           final PackageInfo processedPackageInfo,
+                                           final boolean preDefinedTryToAvoidUpdateWhenUsing) {
+        boolean shizukuAvailable = false;
+        try {
+            shizukuAvailable = rikka.shizuku.Shizuku.pingBinder()
+                    && rikka.shizuku.Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED;
+        } catch (Throwable ignored) {}
+        boolean deviceOwnerAvailable = DevicePolicyManagerUtils.isDeviceOwner(InstallPackagesActivity.this);
+        boolean rootAvailable = !shizukuAvailable
+                && UninstallPolicyUtils.shouldCheckRootPermission(deviceOwnerAvailable, false)
+                && FUFUtils.checkRootPermission();
+        if (deviceOwnerAvailable || rootAvailable || shizukuAvailable) {
+            ServiceUtils.startService(
+                    InstallPackagesActivity.this,
+                    new Intent(InstallPackagesActivity.this, InstallPackagesService.class)
+                            .putExtra("install", false)
+                            .putExtra("packageUri", packageUri)
+                            .putExtra("uninstall_updates_only", true)
+                            .putExtra("packageInfo", processedPackageInfo)
+                            .putExtra("waitForLeaving", preDefinedTryToAvoidUpdateWhenUsing));
+        } else {
+            startActivity(
+                    new Intent(
+                            Intent.ACTION_DELETE,
+                            Uri.parse("package:" + packageUri.getEncodedSchemeSpecificPart())
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            );
+        }
+        if (dialog != null) dialog.dismiss();
+        finish();
+    }
+
+    private void handleInstallWhenNotUsing(final ObsdAlertDialog dialog,
+                                          final CharSequence alertDialogMessage, final String apkFilePath,
+                                          final Uri packageUri, final String fromPkgLabel,
+                                          final String fromPkgName, final PackageInfo processedPackageInfo,
+                                          final boolean isCriticalApp) {
+        if (notAllowInstallWhenIsObsd.getValue(null) && dialog.isObsd()) {
+            AlertDialogUtils.buildAlertDialog(
+                            InstallPackagesActivity.this,
+                            R.drawable.ic_warning,
+                            R.string.alert_isObsd,
+                            R.string.dangerous)
+                    .setPositiveButton(R.string.retry, (dialog14, which13) ->
+                            showInstallDialog(
+                                    dialog, 1,
+                                    alertDialogMessage, apkFilePath,
+                                    packageUri, fromPkgLabel,
+                                    fromPkgName, processedPackageInfo, isCriticalApp)
+                    )
+                    .setNegativeButton(R.string.cancel, (dialog15, which14) -> {
+                        clearTempFile(apkFilePath);
+                        if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+                            pendingStagedApkPath = null;
+                        }
+                        if (dialog != null) dialog.dismiss();
+                        finish();
+                    })
+                    .create().show();
+            return;
+        }
+
+        if (pendingStagedApkPath != null && pendingStagedApkPath.equals(apkFilePath)) {
+            pendingStagedApkPath = null;
+        }
+        ServiceUtils.startService(
+                InstallPackagesActivity.this,
+                new Intent(InstallPackagesActivity.this,
+                        InstallPackagesService.class)
+                        .putExtra("install", true)
+                        .putExtra("packageUri", packageUri)
+                        .putExtra("apkFilePath", apkFilePath)
+                        .putExtra("packageInfo", processedPackageInfo)
+                        .putExtra("waitForLeaving", true));
+        if (dialog != null) dialog.dismiss();
+        finish();
+    }
+
+    private void applyButtonAccentColor(AlertDialog dialog) {
+        if (dialog == null) return;
+        if (cf.playhi.freezeyou.utils.ThemeUtils.isLightUiTheme(this)) {
+            int accentColor = androidx.core.content.ContextCompat.getColor(this, R.color.appAccent);
+            Button positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+            if (positiveButton != null) positiveButton.setTextColor(accentColor);
+            Button negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+            if (negativeButton != null) negativeButton.setTextColor(accentColor);
+            Button neutralButton = dialog.getButton(DialogInterface.BUTTON_NEUTRAL);
+            if (neutralButton != null) neutralButton.setTextColor(accentColor);
         }
     }
 
@@ -804,39 +929,27 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
     }
 
     /**
-     * Opens the window that carries the install through to its result. The confirmation the user
-     * just accepted dismisses itself — every AppCompat dialog button does — so finishing along with
-     * it left the launcher on screen with nothing at all to look at for the seconds the install
-     * takes, and the only sign of it a card in the notification shade.
-     *
-     * <p>The buttons carry the actions of a success from the start and are only hidden while the
-     * install runs: a dialog created without any has its whole button bar hidden, and adding a
-     * button after show() does not bring that bar back. A failure replaces them instead.
+     * Updates the existing dialog to carry the install through to its result in place.
      */
-    private void beginInstallTracking(final PackageInfo packageInfo, final String requestId) {
+    private void beginInstallTracking(final AlertDialog dialog, final PackageInfo packageInfo, final String requestId) {
         this.trackedRequestId = requestId;
+        this.trackedPackageName = packageInfo.packageName;
         final String pkgName = packageInfo.packageName;
         final CharSequence appLabel = installAppLabel(packageInfo);
 
-        installProgressView = new ProgressBar(this);
-        installProgressDialog = FreezeYouAlertDialogBuilder(this)
-                .setTitle(R.string.plsWait)
-                .setMessage(R.string.loading___)
-                .setView(installProgressView)
-                .setPositiveButton(R.string.launch, (d, w) -> {
-                    launchInstalledApp(pkgName);
-                    finish();
-                })
-                .setNegativeButton(R.string.finish, (d, w) -> finish())
-                .setOnCancelListener(d -> finish())
-                .create();
-        installProgressDialog.show();
-        clearCustomPanelMinimumHeight(installProgressView);
-        setButtonVisible(installProgressDialog, DialogInterface.BUTTON_POSITIVE, false);
-        setButtonVisible(installProgressDialog, DialogInterface.BUTTON_NEGATIVE, false);
-        // An outside tap must not drop the window while the install runs. Back still finishes it:
-        // the service is a started foreground service and carries on without this activity.
-        installProgressDialog.setCanceledOnTouchOutside(false);
+        installProgressDialog = dialog;
+
+        dialog.setTitle(R.string.plsWait);
+        dialog.setMessage(getString(R.string.loading___));
+        if (installProgressView != null) {
+            installProgressView.setVisibility(View.VISIBLE);
+        }
+        setButtonVisible(dialog, DialogInterface.BUTTON_POSITIVE, false);
+        setButtonVisible(dialog, DialogInterface.BUTTON_NEGATIVE, false);
+        setButtonVisible(dialog, DialogInterface.BUTTON_NEUTRAL, false);
+
+        dialog.setOnCancelListener(d -> finish());
+        dialog.setCanceledOnTouchOutside(false);
         setFinishOnTouchOutside(false);
 
         installTimeoutHandler = new Handler(Looper.getMainLooper());
@@ -900,8 +1013,30 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         if (success) {
             dialog.setTitle(R.string.success);
             dialog.setMessage(String.format(getString(R.string.app_installFinished), appLabel));
-            setButtonVisible(dialog, DialogInterface.BUTTON_POSITIVE, true);
-            setButtonVisible(dialog, DialogInterface.BUTTON_NEGATIVE, true);
+
+            final Button positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+            if (positiveBtn != null) {
+                positiveBtn.setText(R.string.launch);
+                positiveBtn.setVisibility(View.VISIBLE);
+                positiveBtn.setOnClickListener(v -> {
+                    if (trackedPackageName != null) {
+                        launchInstalledApp(trackedPackageName);
+                    }
+                    dialog.dismiss();
+                    finish();
+                });
+            }
+            final Button negativeBtn = dialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+            if (negativeBtn != null) {
+                negativeBtn.setText(R.string.finish);
+                negativeBtn.setVisibility(View.VISIBLE);
+                negativeBtn.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    finish();
+                });
+            }
+            setButtonVisible(dialog, DialogInterface.BUTTON_NEUTRAL, false);
+            applyButtonAccentColor(dialog);
         } else {
             final StringBuilder failed = new StringBuilder(
                     String.format(getString(R.string.app_installFailed), appLabel));
@@ -910,25 +1045,21 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             }
             dialog.setTitle(R.string.failed);
             dialog.setMessage(failed);
-            // Hide negative button so only one confirmation button remains.
-            // In AppCompat AlertDialog, setButton after show() only updates internal fields and
-            // does not change the already-created button's label; update the view directly.
             setButtonVisible(dialog, DialogInterface.BUTTON_NEGATIVE, false);
+            setButtonVisible(dialog, DialogInterface.BUTTON_NEUTRAL, false);
             final Button positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
             if (positiveBtn != null) {
                 positiveBtn.setText(R.string.okay);
-                positiveBtn.setOnClickListener(v -> finish());
                 positiveBtn.setVisibility(View.VISIBLE);
+                positiveBtn.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    finish();
+                });
             }
+            applyButtonAccentColor(dialog);
         }
     }
 
-    /**
-     * The panel a custom view is added to reserves 48dp whether or not the view is showing, which
-     * would leave an empty strip under the message once the spinner is gone. Walked up from the
-     * view that was added rather than looked up by id: the panel's id belongs to the AppCompat
-     * resources, so an android.R.id lookup cannot be relied on to reach it.
-     */
     private static void clearCustomPanelMinimumHeight(View customView) {
         for (ViewParent panel = customView.getParent();
              panel instanceof FrameLayout;

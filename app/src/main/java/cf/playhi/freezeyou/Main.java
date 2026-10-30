@@ -3055,7 +3055,6 @@ public class Main extends FreezeYouBaseActivity {
         AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this);
         builder.setIcon(R.mipmap.ic_launcher_new_round);
         builder.setTitle(String.format(getString(R.string.welcomeToUseAppName), getString(R.string.app_name)));
-        builder.setMessage(String.format(getString(R.string.welcomeToUseAppName), getString(R.string.app_name)));
         builder.setPositiveButton(R.string.quickSetup, (dialogInterface, i) -> {
             startActivity(
                     new Intent(getApplicationContext(), FirstTimeSetupActivity.class)
