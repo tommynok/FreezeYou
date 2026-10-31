@@ -3,8 +3,11 @@ package cf.playhi.freezeyou.ui.fragment.settings
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.Keep
-import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
+import androidx.preference.ListPreference
+import androidx.preference.Preference
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction
+import cf.playhi.freezeyou.utils.SettingsUtils
 
 @Keep
 class SettingsFufFragment : CardPreferenceFragment() {
@@ -18,6 +21,38 @@ class SettingsFufFragment : CardPreferenceFragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             preferenceScreen?.removePreferenceRecursively("useForegroundService")
         }
+
+        setupShortcutPreferences()
+    }
+
+    private fun setupShortcutPreferences() {
+        val shortcutActionPref = findPreference<ListPreference>("shortcutClickAction") ?: return
+        val openImmediatelyPref = findPreference<Preference>("openImmediatelyAfterUnfreezeUseShortcutAutoFUF")
+        val needConfirmPref = findPreference<Preference>("needConfirmWhenFreezeUseShortcutAutoFUF")
+
+        // The same answer the shortcut itself acts on, so this screen cannot show one thing while
+        // the tap does another. Storing it here is what settles the legacy booleans the row used to
+        // read: from now on the single choice is the only copy that moves.
+        val currentAction = SettingsUtils.resolveShortcutClickAction()
+        shortcutClickAction.setValue(value = currentAction)
+        shortcutActionPref.value = currentAction
+
+        fun updateDependents(actionValue: String) {
+            val isToggle = actionValue == "toggle"
+            openImmediatelyPref?.isVisible = isToggle
+            needConfirmPref?.isVisible = isToggle
+        }
+
+        updateDependents(currentAction)
+
+        shortcutActionPref.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _, newValue ->
+                if (newValue is String) {
+                    shortcutClickAction.setValue(value = newValue)
+                    updateDependents(newValue)
+                }
+                true
+            }
     }
 
     override fun onResume() {

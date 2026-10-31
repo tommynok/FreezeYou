@@ -15,7 +15,12 @@ import cf.playhi.freezeyou.utils.FileUtils.deleteAllFiles
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromOneKeyList
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromUserDefinedCategories
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 @Keep
 class SettingsManageSpaceFragment : CardPreferenceFragment() {
@@ -28,10 +33,18 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             true
         }
         findPreference<Preference?>("clearIconCache")?.setOnPreferenceClickListener {
-            showToast(
-                activity,
-                if (clearIconCache(activity)) R.string.success else R.string.failed
-            )
+            val currentActivity = activity
+            val appContext = context?.applicationContext
+            if (appContext != null) {
+                // A long-used icon cache is a folder of many small files and the delete walks it
+                // recursively, so it does not belong on the thread that paints this screen.
+                CoroutineScope(Dispatchers.IO).launch {
+                    val success = clearIconCache(appContext)
+                    withContext(Dispatchers.Main) {
+                        showToast(currentActivity, if (success) R.string.success else R.string.failed)
+                    }
+                }
+            }
             true
         }
         findPreference<Preference?>("clearNameCache")?.setOnPreferenceClickListener {
@@ -41,19 +54,35 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             true
         }
         findPreference<Preference?>("clearAllCache")?.setOnPreferenceClickListener {
-            try {
-                requireContext().getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
-                    .edit().clear().apply()
-                deleteAllFiles(requireContext().cacheDir, false)
-                deleteAllFiles(requireContext().externalCacheDir, false)
-                deleteAllFiles(
-                    File(requireContext().filesDir.toString() + "/icon"),
-                    false
-                )
-                showToast(activity, R.string.success)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                showToast(activity, R.string.failed)
+            val currentActivity = activity
+            val appContext = context?.applicationContext
+            if (appContext != null) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        appContext.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
+                            .edit().clear().apply()
+                        // The two cache trees are listed first and only that listing is deleted,
+                        // deepest entry first. Anything staged during the walk — the backup the
+                        // chooser reads from the cache root, an APK handed to the installer — is not
+                        // in the listing, so it is never reached, and the folder that gained it is
+                        // still non-empty when the walk arrives there and stays.
+                        deleteSnapshot(
+                            cacheListing(appContext.cacheDir) + cacheListing(appContext.externalCacheDir)
+                        )
+                        deleteAllFiles(
+                            File(appContext.filesDir.toString() + "/icon"),
+                            false
+                        )
+                        withContext(Dispatchers.Main) {
+                            showToast(currentActivity, R.string.success)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            showToast(currentActivity, R.string.failed)
+                        }
+                    }
+                }
             }
             true
         }
@@ -83,28 +112,70 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
      * others.
      */
     private fun clearUninstalledPkgsInAllLists() {
-        var success = removeUninstalledFromUserDefinedCategories(requireContext())
-        for (listKeyName in listOf(
-            getString(R.string.sAutoFreezeApplicationList),
-            getString(R.string.sOneKeyUFApplicationList),
-            getString(R.string.sFreezeOnceQuit)
-        )) {
-            success = removeUninstalledFromOneKeyList(requireContext(), listKeyName) && success
+        val appContext = context?.applicationContext ?: return
+        val currentActivity = activity
+        CoroutineScope(Dispatchers.IO).launch {
+            var success = removeUninstalledFromUserDefinedCategories(appContext)
+            for (listKeyName in listOf(
+                appContext.getString(R.string.sAutoFreezeApplicationList),
+                appContext.getString(R.string.sOneKeyUFApplicationList),
+                appContext.getString(R.string.sFreezeOnceQuit)
+            )) {
+                success = removeUninstalledFromOneKeyList(appContext, listKeyName) && success
+            }
+            success = purgeUninstalledPackageTimes(appContext) && success
+            withContext(Dispatchers.Main) {
+                showToast(currentActivity, if (success) R.string.success else R.string.failed)
+            }
         }
-        success = purgeUninstalledPackageTimes(requireContext()) && success
-        showToast(activity, if (success) R.string.success else R.string.failed)
+    }
+
+    /**
+     * Every entry of [dir] below the folder itself, deepest first, or nothing at all when the folder
+     * is absent. Reversing the top-down order puts each entry after all of its own children, so the
+     * caller can delete a folder only once it is empty.
+     */
+    private fun cacheListing(dir: File?): List<File> {
+        if (dir == null) {
+            return emptyList()
+        }
+        return dir.walkTopDown().filter { it != dir }.toList().reversed()
+    }
+
+    /**
+     * Deletes exactly the entries of this listing. A file that refuses to go is an IOException and the
+     * screen reports the failure, the same way `deleteAllFiles` reports it; a folder is removed only
+     * while it is empty, which is how a file staged after the listing survives the walk.
+     */
+    private fun deleteSnapshot(entries: List<File>) {
+        for (entry in entries) {
+            if (entry.isFile && !entry.delete()) {
+                throw IOException("${entry.absolutePath} delete failed")
+            }
+            if (entry.isDirectory) {
+                entry.delete()
+            }
+        }
     }
 
     private fun askIfResetTimes(dbName: String) {
         val activity: Activity? = activity
-        if (activity != null) {
+        val appContext = context?.applicationContext
+        if (activity != null && appContext != null) {
             buildAlertDialog(
                 activity, R.drawable.ic_warning, R.string.askIfDel, R.string.caution
             )
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    resetTimes(activity, dbName)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        // resetTimes opens the counters database and rewrites every TimesList row;
+                        // on a long-used list that is real disk work, not something to wait for here.
+                        val success = resetTimes(appContext, dbName)
+                        withContext(Dispatchers.Main) {
+                            showToast(activity, if (success) R.string.success else R.string.failed)
+                        }
+                    }
                 }
-                .setNegativeButton(R.string.no, null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
     }

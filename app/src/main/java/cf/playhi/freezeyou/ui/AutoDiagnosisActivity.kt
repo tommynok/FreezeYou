@@ -26,6 +26,9 @@ import cf.playhi.freezeyou.databinding.AutodiagnosisBinding
 import cf.playhi.freezeyou.utils.AccessibilityUtils.openAccessibilitySettings
 import cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite
 import cf.playhi.freezeyou.utils.NotificationUtils.startAppNotificationSettingsSystemActivity
+import cf.playhi.freezeyou.utils.ToastUtils.showToast
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 
 class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     private lateinit var binding: AutodiagnosisBinding
@@ -38,10 +41,35 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
         setContentView(binding.root)
         processActionBar(supportActionBar)
 
+        // The list, not the progress handshake, owns the adapter. The refresh publishes a
+        // snapshot after every phase, and LiveData replays the latest one to a late observer,
+        // so rows appear as soon as any snapshot exists - a lost or delayed progress update
+        // can no longer leave the screen empty until the refresh button is pressed.
+        // The adapter is created once and snapshots are copied into its backing list:
+        // reinstalling the adapter on every snapshot would drop scroll and tap state while
+        // the checks are still running.
+        val diagnosisRows = ArrayList<Map<String, Any>>()
+        val diagnosisAdapter = SimpleAdapter(
+            this,
+            diagnosisRows,
+            R.layout.adg_list_item,
+            arrayOf("title", "sTitle", "status", "id"),
+            intArrayOf(
+                R.id.adgli_title_textView,
+                R.id.adgli_subTitle_textView,
+                R.id.adgli_status_imageView
+            )
+        )
+        binding.adgListView.adapter = diagnosisAdapter
+        viewModel.getProblemsList().observe(this) { list ->
+            diagnosisRows.clear()
+            diagnosisRows.addAll(list)
+            diagnosisAdapter.notifyDataSetChanged()
+        }
+
         viewModel.getLoadingProgress().observe(this) {
             binding.adgProgressBar.visibility = View.VISIBLE
             if (it == -1) {
-                binding.adgListView.adapter = null
                 binding.adgProgressBar.isIndeterminate = true
             } else {
                 binding.adgProgressBar.isIndeterminate = false
@@ -53,17 +81,6 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                 }
                 if (it == 100) {
                     binding.adgProgressBar.visibility = View.GONE
-                    binding.adgListView.adapter = SimpleAdapter(
-                        this,
-                        viewModel.getProblemsList().value,
-                        R.layout.adg_list_item,
-                        arrayOf("title", "sTitle", "status", "id"),
-                        intArrayOf(
-                            R.id.adgli_title_textView,
-                            R.id.adgli_subTitle_textView,
-                            R.id.adgli_status_imageView
-                        )
-                    )
                 }
             }
         }
@@ -120,7 +137,34 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
                             ActivityCompat.requestPermissions(
                                 this@AutoDiagnosisActivity,
                                 arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                                0
+                                REQUEST_CODE_BLUETOOTH_PERMISSION
+                            )
+                        }
+                        "-8" -> try {
+                            if (!Shizuku.pingBinder()) {
+                                // The execution path requests the binder itself through
+                                // ShizukuProvider; attempt the same repair before reporting failure.
+                                ShizukuProvider.requestBinderForNonProviderProcess(applicationContext)
+                            }
+                            if (!Shizuku.pingBinder()) {
+                                showToast(
+                                    this@AutoDiagnosisActivity,
+                                    R.string.shizukuIsNotInstalledOrOtherExceptions
+                                )
+                            } else if (Shizuku.isPreV11()) {
+                                showToast(
+                                    this@AutoDiagnosisActivity,
+                                    R.string.shizukuVersionIsTooLow
+                                )
+                            } else if (Shizuku.checkSelfPermission()
+                                != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                Shizuku.requestPermission(0)
+                            }
+                        } catch (e: Exception) {
+                            showToast(
+                                this@AutoDiagnosisActivity,
+                                R.string.shizukuIsNotInstalledOrOtherExceptions
                             )
                         }
                     }
@@ -131,6 +175,22 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshDiagnosisData()
+    }
+
+    /**
+     * The permission dialog does not pause this activity, so a granted Bluetooth permission never
+     * reached onResume and the row kept reporting the stale warning. The result callback is the
+     * only place that sees the answer.
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSION) {
+            viewModel.refreshDiagnosisData()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -163,5 +223,10 @@ class AutoDiagnosisActivity : FreezeYouBaseActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    companion object {
+        /** Matches the Bluetooth diagnosis row id, so the result is traceable to that row. */
+        private const val REQUEST_CODE_BLUETOOTH_PERMISSION = 7
     }
 }

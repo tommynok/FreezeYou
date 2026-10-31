@@ -19,6 +19,7 @@ import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
 import cf.playhi.freezeyou.ui.AppLockActivity
 import cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable
 import cf.playhi.freezeyou.utils.SettingsUtils.changeIconEntryComponentState
+import cf.playhi.freezeyou.utils.ToastUtils
 
 /**
  * The lock and the ways into the application, which used to be a screen holding one checkbox and
@@ -60,16 +61,12 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 if (activity != null) {
                     if (true == newValue) {
                         if (isBiometricPromptPartAvailable(activity)) {
-                            if (enableAuthenticationActivityResultLauncher != null) {
-                                enableAuthenticationActivityResultLauncher
-                                    ?.launch(
-                                        Intent(activity, AppLockActivity::class.java)
-                                            .putExtra(
-                                                "ignoreCurrentUnlockStatus",
-                                                true
-                                            )
-                                    )
-                            }
+                            enableAuthenticationActivityResultLauncher?.launch(
+                                Intent(activity, AppLockActivity::class.java)
+                                    .putExtra("ignoreCurrentUnlockStatus", true)
+                            )
+                        } else {
+                            ToastUtils.showToast(activity, R.string.authenticationFailed)
                         }
                         return@OnPreferenceChangeListener false
                     } else {

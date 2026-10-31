@@ -56,7 +56,7 @@ class ShowLogcatActivity : FreezeYouBaseActivity() {
                 // What is on screen, not what the view model last loaded: the two are the same, and
                 // this way what gets shared is what was looked at.
                 val text = findViewById<EditText>(R.id.sla_log_editText).text?.toString()
-                if (text.isNullOrBlank()) {
+                if (text.isNullOrBlank() || text == getString(R.string.loading___)) {
                     showToast(this, R.string.failed)
                 } else {
                     LogSharingUtils.shareLog(

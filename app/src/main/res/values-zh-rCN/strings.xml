@@ -40,8 +40,10 @@
     <string name="mayUnrootedOrOtherEx">可能没有授予权限、目标已卸载或发生了其它异常</string>
     <string name="nApplicationsFailedColonList">%1$d 个应用失败：%2$s</string>
     <string name="andNMoreApplications">，以及另外 %1$d 个</string>
+    <string name="andMoreApplications">……等另 %1$d 个应用</string>
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
+    <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
     <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
@@ -134,6 +136,8 @@
     <string name="notificationBar">通知栏</string>
     <string name="disableSlideOut">禁止滑动移除</string>
     <string name="disableClickDisappear">禁止点击消失</string>
+    <string name="freezeAll">全部冻结</string>
+    <string name="quickFUFGroupSummaryContent">已解冻应用：%1$d</string>
     <string name="effectNextCreate">下次创建时生效</string>
     <string name="helpTranslate">协助翻译</string>
     <string name="thanksList">原项目贡献者</string>
@@ -157,6 +161,7 @@
     <string name="freezeOnceQuit">离开冻结</string>
     <string name="freezeOnceQuitSummary">“离开冻结”列表中的应用会在你离开后立即冻结。</string>
     <string name="needActiveAccessibilityService">需要启用无障碍服务</string>
+    <string name="needActiveDeviceAdmin">需要激活设备管理器权限</string>
     <string name="invalidArguments">参数错误</string>
     <string name="plsConfirm">请确认</string>
     <string name="removeNoRootCaution">真的要解除免ROOT吗？\n!为避免造成不必要的麻烦，解除前请先解冻所有已冻结的程序！</string>
@@ -168,6 +173,8 @@
     <string name="scheduledTasks">计划任务</string>
     <string name="add">添加</string>
     <string name="save">保存</string>
+    <string name="doNotSave">不保存</string>
+    <string name="diagnosisRefreshFailed">诊断中断，部分检查未执行</string>
     <string name="time">时间</string>
     <string name="enable">启用</string>
     <string name="repeat">重复</string>
@@ -252,7 +259,7 @@
     <string name="regenerateSomeCache">重建一些缓存</string>
     <string name="updateSomeData">更新一些数据</string>
     <string name="backupAndRestore">备份与恢复</string>
-    <string name="summary_backupAndRestore">将设置、列表、快捷方式和计划任务导出到文件，并可重新导入</string>
+    <string name="summary_backupAndRestore">将设置、列表和计划任务导出到文件，并可重新导入</string>
     <string name="status">状态</string>
     <string name="debugMode">调试模式</string>
     <string name="debugModeSummary">记录应用内部操作（冻结/解冻尝试、Shizuku/root 调用）以便诊断问题。可能会略微降低性能。</string>
@@ -351,6 +358,7 @@
     <string name="remove">移除</string>
     <string name="newFolder">新文件夹</string>
     <string name="alreadyExist">已存在</string>
+    <string name="operationAlreadyInProgress">此应用的操作正在进行中</string>
     <string name="queryStatus">查询状态</string>
     <string name="newClassification">新建分类</string>
     <string name="displayLanguage">显示语言</string>
@@ -382,6 +390,7 @@
     <string name="jumpToSysInstaller">转至系统安装器</string>
     <string name="appearance">外观</string>
     <string name="createQuickFUFNotiAfterUnfrozen">解冻后创建相应的快捷通知</string>
+    <string name="combineBatchQuickNotification">合并批量快捷通知</string>
     <string name="executionResult_colon_message">执行结果：%1$s</string>
     <string name="unknownResult_probablySuccess">结果未知（可能成功）</string>
     <string name="unknownError">未知错误</string>
@@ -428,6 +437,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">不允许对自冻执行此操作</string>
     <string name="shizukuVersionIsTooLow">Shizuku 的版本过低</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku 尚未安装或其他异常</string>
+    <string name="authorizationStatus_authorized">Shizuku 授权已获取</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku 权限未授予</string>
+    <string name="profileOwnerActive">配置文件所有者模式已激活</string>
+    <string name="systemAppModeActive">系统应用模式可用</string>
     <string name="includeFUFActivityInRecents">在最近任务中包括冻结与解冻活动</string>
     <string name="includeFUFActivityInRecentsSummary">同时在最近任务列表中单独显示冻结/解冻进度界面。</string>
     <string name="playFUFAnimations">播放冻结与解冻动画</string>
@@ -446,6 +459,12 @@
         <item>无</item>
         <item>询问并锁屏</item>
         <item>立即锁屏</item>
+    </string-array>
+    <string name="shortcutClickAction">点击应用快捷方式时的操作</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>询问操作（默认）</item>
+        <item>始终打开（解冻并运行）</item>
+        <item>开关切换（冻结/解冻）</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>默认</item>

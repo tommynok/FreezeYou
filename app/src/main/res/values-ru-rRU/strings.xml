@@ -34,8 +34,10 @@
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и еще %1$d</string>
+    <string name="andMoreApplications">… и еще %1$d</string>
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
+    <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
@@ -128,6 +130,8 @@
     <string name="notificationBar">Уведомления</string>
     <string name="disableSlideOut">Не исчезать при смахивании</string>
     <string name="disableClickDisappear">Не исчезать после нажатия</string>
+    <string name="freezeAll">Заморозить все</string>
+    <string name="quickFUFGroupSummaryContent">Разморожено приложений: %1$d</string>
     <string name="effectNextCreate">Вступит в силу в следующий раз</string>
     <string name="helpTranslate">Помогите перевести это приложение</string>
     <string name="thanksList">Благодарности участникам проекта</string>
@@ -151,6 +155,7 @@
     <string name="freezeOnceQuit">Заморозка после выхода</string>
     <string name="freezeOnceQuitSummary">Приложения из списка «Заморозка после выхода» замораживаются, как только вы из них вышли.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
+    <string name="needActiveDeviceAdmin">Нужно включить права администратора устройства</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="plsConfirm">Пожалуйста, подтвердите</string>
     <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-root? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
@@ -162,6 +167,8 @@
     <string name="scheduledTasks">Запланированные задания</string>
     <string name="add">Добавить</string>
     <string name="save">Сохранить</string>
+    <string name="doNotSave">Не сохранять</string>
+    <string name="diagnosisRefreshFailed">Диагностика прервана, часть проверок не выполнена</string>
     <string name="time">Время</string>
     <string name="enable">Включить</string>
     <string name="repeat">Повтор</string>
@@ -246,7 +253,7 @@
     <string name="regenerateSomeCache">Кэш приложений обновлен</string>
     <string name="updateSomeData">Названия и значки приложений актуализированы</string>
     <string name="backupAndRestore">Бекап и восстановление</string>
-    <string name="summary_backupAndRestore">Экспорт настроек, списков, ярлыков и заданий в файл и импорт обратно</string>
+    <string name="summary_backupAndRestore">Экспорт настроек, списков и заданий в файл и импорт обратно</string>
     <string name="status">Состояние</string>
     <string name="debugMode">Режим отладки</string>
     <string name="debugModeSummary">Записывает в журнал внутренние действия приложения (попытки заморозки/разморозки, вызовы Shizuku/root) для диагностики проблем. Может немного снизить производительность.</string>
@@ -345,6 +352,7 @@
     <string name="remove">Удалить</string>
     <string name="newFolder">Новая папка</string>
     <string name="alreadyExist">Уже существует</string>
+    <string name="operationAlreadyInProgress">Операция для этого приложения уже выполняется</string>
     <string name="queryStatus">Статус запроса</string>
     <string name="newClassification">Новая категория</string>
     <string name="displayLanguage">Язык приложения</string>
@@ -376,6 +384,7 @@
     <string name="jumpToSysInstaller">Перейти к системному установщику</string>
     <string name="appearance">Внешний вид</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Создать уведомление о быстрой заморозке после разморозки</string>
+    <string name="combineBatchQuickNotification">Объединять пакетные уведомления</string>
     <string name="executionResult_colon_message">Результат выполнения: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат неизвестен (вероятно успех)</string>
     <string name="unknownError">Неизвестная ошибка</string>
@@ -423,6 +432,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операции с FreezeYou запрещены</string>
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
+    <string name="authorizationStatus_authorized">Разрешение Shizuku предоставлено</string>
+    <string name="authorizationStatusNotAuthorized">Разрешение Shizuku не предоставлено</string>
+    <string name="profileOwnerActive">Режим владельца профиля активен</string>
+    <string name="systemAppModeActive">Доступен режим системного приложения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
     <string name="includeFUFActivityInRecentsSummary">Также отображает экран процесса заморозки/разморозки отдельным пунктом в списке недавних приложений.</string>
     <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>
@@ -441,6 +454,12 @@
         <item>Нет</item>
         <item>Запрашивать блокировку экрана</item>
         <item>Блокировать экран сразу</item>
+    </string-array>
+    <string name="shortcutClickAction">Действие при нажатии на ярлык приложения</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Спрашивать действие (по умолчанию)</item>
+        <item>Всегда открывать (разморозка и запуск)</item>
+        <item>Переключатель (заморозка / разморозка)</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>По умолчанию</item>

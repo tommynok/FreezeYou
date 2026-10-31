@@ -89,19 +89,22 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                         .buildAlertDialog(
                                 this, R.drawable.ic_warning, R.string.askIfDel, R.string.notice
                         )
-                        .setPositiveButton(R.string.yes, (dialog, which) -> {
+                        .setPositiveButton(R.string.okay, (dialog, which) -> {
                             setResult(RESULT_OK);
                             if (id != -5) {
                                 SQLiteDatabase db = openOrCreateDatabase(isTimeTask ? "scheduledTasks" : "scheduledTriggerTasks", MODE_PRIVATE, null);
                                 if (isTimeTask) {
-                                    TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+                                    TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, true);
                                 }
                                 db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                 db.close();
+                                if (!isTimeTask) {
+                                    TasksUtils.checkTriggerTasks(ScheduledTasksAddActivity.this);
+                                }
                             }
                             finish();
                         })
-                        .setNegativeButton(R.string.no, null)
+                        .setNegativeButton(R.string.cancel, null)
                         .create().show();
                 return true;
             case R.id.menu_staa_share:
@@ -259,6 +262,14 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                             + getString(R.string.hourShouldBetween));
             return false;
         }
+        if (hour < 0 || hour >= 24) {
+            showToast(this, R.string.hourShouldBetween);
+            return false;
+        }
+        if (minutes < 0 || minutes > 59) {
+            showToast(this, R.string.minutesShouldBetween);
+            return false;
+        }
         int enabled = defaultSharedPreferences.getBoolean("stma_add_enable", true) ? 1 : 0;
         StringBuilder repeatStringBuilder = new StringBuilder();
         Set<String> stringSet = defaultSharedPreferences.getStringSet("stma_add_repeat", null);
@@ -317,15 +328,23 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         values.put("task", task);
         values.put("column1", "");
         values.put("column2", "");
+        long newId = id;
         if (id == -5) {
-            db.insert("tasks", null, values);
+            newId = db.insert("tasks", null, values);
+            if (newId == -1) {
+                db.close();
+                showToast(this, R.string.failed);
+                return false;
+            }
         } else {
             db.update("tasks", values, "_id = ?", new String[]{String.valueOf(id)});
         }
         db.close();
-        TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id);
+        if (id != -5) {
+            TasksUtils.cancelTheTask(ScheduledTasksAddActivity.this, id, true);
+        }
         if (enabled == 1) {
-            publishTask(ScheduledTasksAddActivity.this, id, hour, minutes, repeat, task);
+            publishTask(ScheduledTasksAddActivity.this, (int) newId, hour, minutes, repeat, task);
         }
         setResult(RESULT_OK);
         return true;
@@ -364,22 +383,21 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         if (enabled == 1 && trigger != null) {
             switch (trigger) {
                 case "onScreenOn":
-                    ServiceUtils.startService(this,
-                            new Intent(this, TriggerTasksService.class)
-                                    .putExtra("OnScreenOn", true));
-                    break;
                 case "onScreenOff":
                     ServiceUtils.startService(this,
-                            new Intent(this, TriggerTasksService.class)
-                                    .putExtra("OnScreenOff", true));
+                            new Intent(this, TriggerTasksService.class));
                     break;
                 case "onApplicationsForeground":
                 case "onLeaveApplications":
                     AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
+                    TasksUtils.checkTriggerTasks(this);
                     break;
                 default:
+                    TasksUtils.checkTriggerTasks(this);
                     break;
             }
+        } else {
+            TasksUtils.checkTriggerTasks(this);
         }
         setResult(RESULT_OK);
         return true;
@@ -392,7 +410,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
         }
 
         AlertDialogUtils.buildAlertDialog(this, R.mipmap.ic_launcher_new_round, R.string.askIfSave, R.string.notice)
-                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                .setPositiveButton(R.string.save, (dialog, which) -> {
                     if (isTimeTask) {
                         if (saveTimeTaskData(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()), id)) {
                             finish();
@@ -403,7 +421,7 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                         }
                     }
                 })
-                .setNegativeButton(R.string.no, (dialog, which) -> finish())
+                .setNegativeButton(R.string.doNotSave, (dialog, which) -> finish())
                 .setNeutralButton(R.string.cancel, null)
                 .create().show();
     }
@@ -440,9 +458,11 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
 
                         if (hour < 0 || hour >= 24) {
                             showToast(this, R.string.hourShouldBetween);
+                            break;
                         }
                         if (minutes < 0 || minutes > 59) {
                             showToast(this, R.string.minutesShouldBetween);
+                            break;
                         }
                     } else {
                         showToast(this, R.string.mustContainColon);
@@ -451,8 +471,8 @@ public class ScheduledTasksAddActivity extends FreezeYouBaseActivity implements 
                 break;
             case "stma_add_trigger":
                 String stma_add_trigger = sharedPreferences.getString("stma_add_trigger", "");
-                if ("onApplicationsForeground".equals(stma_add_trigger)
-                        || "onLeaveApplications".equals(stma_add_trigger)
+                if (("onApplicationsForeground".equals(stma_add_trigger)
+                        || "onLeaveApplications".equals(stma_add_trigger))
                         && !isAccessibilitySettingsOn(this)) {
                     showToast(this, R.string.needActiveAccessibilityService);
                     openAccessibilitySettings(this);

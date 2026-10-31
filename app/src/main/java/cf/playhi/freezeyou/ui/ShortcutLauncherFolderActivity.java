@@ -50,7 +50,7 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
         super.onCreate(savedInstanceState);
 
         final String uuid = getIntent().getStringExtra("UUID");
-        if (uuid != null) {
+        if (uuid != null && uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
             final SharedPreferences uuidSp = getSharedPreferences(uuid, MODE_PRIVATE);
             uuidSp.registerOnSharedPreferenceChangeListener(this);
         }
@@ -58,6 +58,11 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
         if (Intent.ACTION_CREATE_SHORTCUT.equals(getIntent().getAction())) {
             doCreateShortCut();
         } else {
+            if (uuid == null || !uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
+                showToast(this, R.string.failed);
+                finish();
+                return;
+            }
             doShowFolder();
         }
     }
@@ -67,7 +72,7 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
         super.onNewIntent(intent);
 
         String uuid = getIntent().getStringExtra("UUID");
-        if (uuid != null) {
+        if (uuid != null && uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
             final SharedPreferences uuidSp = getSharedPreferences(uuid, MODE_PRIVATE);
             uuidSp.unregisterOnSharedPreferenceChangeListener(this);
         }
@@ -75,7 +80,7 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
         setIntent(intent);
 
         uuid = getIntent().getStringExtra("UUID");
-        if (uuid != null) {
+        if (uuid != null && uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
             final SharedPreferences uuidSp = getSharedPreferences(uuid, MODE_PRIVATE);
             uuidSp.registerOnSharedPreferenceChangeListener(this);
         }
@@ -105,7 +110,7 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
     @Override
     protected void onDestroy() {
         final String uuid = getIntent().getStringExtra("UUID");
-        if (uuid != null) {
+        if (uuid != null && uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
             final SharedPreferences uuidSp = getSharedPreferences(uuid, MODE_PRIVATE);
             uuidSp.unregisterOnSharedPreferenceChangeListener(this);
         }
@@ -167,7 +172,7 @@ public class ShortcutLauncherFolderActivity extends FreezeYouBaseActivity implem
 
     private void doShowFolderContent() {
         final String uuid = getIntent().getStringExtra("UUID");
-        if (uuid == null) {
+        if (uuid == null || !uuid.matches("^[a-zA-Z0-9_\\-]+$")) {
             showToast(this, R.string.failed);
             finish();
             return;

@@ -14,7 +14,11 @@ $files = @(
     "LESSONS_LEARNED.md",
     "HISTORY_ARCHIVE.md",
     "LOCALE_TITLES_CHECK.md",
-    "freezeyou_zh-CN_combined.md"
+    "freezeyou_zh-CN_combined.md",
+    "SHORTCUTS_EXPLAINED.md",
+    "DEVICE_VERIFICATION_CATALOG.md",
+    "ARCHITECT_WORKFLOW.md",
+    "CODER_HANDOFF.md"
 )
 
 if (-not (Test-Path $targetDir)) {
@@ -28,6 +32,23 @@ foreach ($file in $files) {
         Copy-Item -Path $src -Destination $targetDir -Force
         Write-Host "Copied $file"
     }
+}
+
+$auditSource = Join-Path $sourceDir ".agents\audit"
+$auditTarget = Join-Path $targetDir "audit"
+if (Test-Path $auditSource) {
+    New-Item -ItemType Directory -Force -Path $auditTarget | Out-Null
+    $targetLen = $auditTarget.Length
+    Get-ChildItem -Path $auditTarget -Recurse | Sort-Object -Property FullName -Descending | ForEach-Object {
+        $relPath = $_.FullName.Substring($targetLen).TrimStart('\', '/')
+        $srcPath = Join-Path $auditSource $relPath
+        if (-not (Test-Path $srcPath)) {
+            Remove-Item -Path $_.FullName -Recurse -Force
+            Write-Host "Removed obsolete audit file: $relPath"
+        }
+    }
+    Copy-Item -Path (Join-Path $auditSource "*") -Destination $auditTarget -Recurse -Force
+    Write-Host "Copied .agents/audit"
 }
 
 Push-Location $targetDir

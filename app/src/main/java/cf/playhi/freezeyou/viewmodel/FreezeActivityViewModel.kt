@@ -7,6 +7,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.utils.CriticalPackagesUtils
+import cf.playhi.freezeyou.utils.FUFUtils
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
+import cf.playhi.freezeyou.utils.SettingsUtils
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_FREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ACTION_MODE_UNFREEZE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.ERROR_NO_ERROR_CAUGHT_UNKNOWN_RESULT
@@ -15,12 +19,24 @@ import cf.playhi.freezeyou.fuf.FreezeYouFUFSinglePackage
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.utils.FUFUtils.realGetFrozenStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FreezeActivityViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        private const val ANIMATION_DURATION_MILLIS = 450L
+        private const val ANIMATION_DURATION_MILLIS = 50L
+
+        /**
+         * The shortcut tap can be set to freeze without asking, but that setting speaks about the
+         * applications one normally keeps on the list. Freezing the status bar, Settings or the
+         * keyboard leaves nothing on the screen to undo it with, so those are asked about whatever
+         * the setting says.
+         */
+        @JvmStatic
+        fun needsAutoFUFConfirmation(isCritical: Boolean, needConfirmSetting: Boolean): Boolean =
+            isCritical || needConfirmSetting
     }
 
     private lateinit var mStartedIntent: Intent
@@ -86,6 +102,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
 
     fun loadStartedIntentAndPkgName(startedIntent: Intent) {
         mStartedIntent = startedIntent
+        mPkgName.value = null
+        val hasValidToken = ShortcutTokenUtils.verifyToken(startedIntent, ShortcutTokenUtils.ACTION_FREEZE)
         if ("freezeyou" == mStartedIntent.scheme) {
             val dataUri = mStartedIntent.data
             dataUri?.run { getQueryParameter("pkgName")?.let { mPkgName.value = it } }
@@ -95,8 +113,14 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
             mIsFromShortcut = mStartedIntent.getBooleanExtra("fromShortcut", true)
         }
         mTarget = mStartedIntent.getStringExtra("target")
-        mTasks = mStartedIntent.getStringExtra("tasks")
-        mJustLaunch = mStartedIntent.getBooleanExtra("justLaunch", false)
+        // Privilege gating: arbitrary tasks and justLaunch require valid token authorization.
+        // Legacy/unauthenticated shortcuts fall back to user confirmation dialog.
+        mTasks = if (hasValidToken) mStartedIntent.getStringExtra("tasks") else null
+        mJustLaunch = if (hasValidToken) mStartedIntent.getBooleanExtra("justLaunch", false) else false
+        if (!hasValidToken) {
+            // Force user confirmation dialog: prevent silent automated actions from untrusted intents
+            mIsFromShortcut = false
+        }
     }
 
     fun go() {
@@ -134,7 +158,11 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 }
                 return
             }
-            if (mIsFromShortcut && shortcutAutoFUF.getValue()) {
+            val clickAction = SettingsUtils.resolveShortcutClickAction()
+            val isAutoFUF = clickAction == "toggle"
+            val isOpenAndUF = clickAction == "open_and_uf"
+
+            if (mIsFromShortcut && isAutoFUF) {
                 if (frozen) {
                     fufAction(
                         it,
@@ -144,13 +172,24 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                         true
                     )
                 } else {
-                    if (needConfirmWhenFreezeUseShortcutAutoFUF.getValue()) {
+                    // The dialog this routes to asks once more before the freeze actually runs;
+                    // reaching it is the point, because a silent auto-freeze of one of these
+                    // packages is the mistake nobody can undo from the locked-out screen.
+                    val isCritical = CriticalPackagesUtils
+                        .findCriticalPackages(getApplication(), listOf(it))
+                        .isNotEmpty()
+                    if (needsAutoFUFConfirmation(
+                            isCritical,
+                            needConfirmWhenFreezeUseShortcutAutoFUF.getValue()
+                        )
+                    ) {
                         checkOpenAndUFImmediately(
                             it,
                             target,
                             tasks,
                             frozen = false,
-                            ignoreAutoRun = true
+                            ignoreAutoRun = true,
+                            openAndUF = isOpenAndUF
                         )
                     } else {
                         fufAction(it, target, tasks, runImmediately = false, frozen = false)
@@ -162,7 +201,8 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                     target,
                     tasks,
                     frozen,
-                    !mIsFromShortcut
+                    !mIsFromShortcut,
+                    openAndUF = isOpenAndUF
                 )
             }
         }
@@ -173,9 +213,10 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         target: String?,
         tasks: String?,
         frozen: Boolean,
-        ignoreAutoRun: Boolean
+        ignoreAutoRun: Boolean,
+        openAndUF: Boolean
     ) {
-        if (!ignoreAutoRun && openAndUFImmediately.getValue()) {
+        if (!ignoreAutoRun && openAndUF) {
             if (frozen) {
                 fufAction(pkgName, target, tasks, runImmediately = true, frozen = true)
             } else {
@@ -194,6 +235,12 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         runImmediately: Boolean,
         frozen: Boolean
     ) {
+        if (!FUFUtils.tryAcquirePackage(pkgName)) {
+            // The same package already has an operation running; a second one would repeat the
+            // very work it is doing, so this request is dropped.
+            mFinishMe.postValue(true)
+            return
+        }
         mPlayAnimator.value = PlayAnimatorData(pkgName, !frozen)
         viewModelScope.launch(Dispatchers.IO) {
             val freezeYouFUFSinglePackage = FreezeYouFUFSinglePackage(
@@ -205,9 +252,16 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
                 tasks = tasks,
                 target = target
             )
-            val result = freezeYouFUFSinglePackage.commit()
-            mExecuteResult.postValue(ExecuteResult(result, freezeYouFUFSinglePackage))
-            mFinishMe.postValue(true)
+            withContext(NonCancellable) {
+                val result = freezeYouFUFSinglePackage.commit()
+                mExecuteResult.postValue(ExecuteResult(result, freezeYouFUFSinglePackage))
+                mFinishMe.postValue(true)
+            }
+        }.invokeOnCompletion {
+            // Released on completion rather than in a finally: a ViewModel cleared between the
+            // tap and the dispatcher cancels the coroutine before its body runs, and then a
+            // finally would never execute and the package would stay blocked for the process.
+            FUFUtils.releasePackage(pkgName)
         }
     }
 

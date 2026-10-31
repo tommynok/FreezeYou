@@ -2,7 +2,6 @@ package cf.playhi.freezeyou.utils;
 
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -25,8 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -34,6 +31,7 @@ import cf.playhi.freezeyou.ForceStop;
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.InstallPackagesActivity;
 import cf.playhi.freezeyou.ui.LauncherShortcutConfirmAndGenerateActivity;
 
@@ -42,31 +40,37 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ClipboardUtils.copyToClipboard;
 import static cf.playhi.freezeyou.utils.LauncherShortcutUtils.checkSettingsAndRequestCreateShortcut;
-import static cf.playhi.freezeyou.utils.OneKeyListUtils.addToOneKeyList;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
-import static cf.playhi.freezeyou.utils.OneKeyListUtils.removeFromOneKeyList;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public final class Support {
 
-    public static void checkAddOrRemove(Context context, String pkgNames, String pkgName, String oneKeyName) {
-        if (existsInOneKeyList(pkgNames, pkgName)) {
-            showToast(context,
-                    removeFromOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.removed : R.string.removeFailed);
-        } else {
-            showToast(context,
-                    addToOneKeyList(context,
-                            oneKeyName,
-                            pkgName) ? R.string.added : R.string.addFailed);
-            if (context.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
+    public static void checkAddOrRemove(final Context context, final String pkgName, final String oneKeyName) {
+        final Context appContext = context.getApplicationContext();
+        // The mutation takes the MMKV inter-process lock and syncs it to disk, which used to sit
+        // between the menu tap and the toast on the main thread. The add-or-remove decision moved
+        // into that same locked worker: deciding from the list the popup read made a second quick
+        // tap repeat the first instead of undoing it.
+        new Thread(() -> {
+            final Boolean added = OneKeyListUtils.toggleInOneKeyList(appContext, oneKeyName, pkgName);
+            if (added == null) {
+                showToast(context, R.string.failed);
+                return;
+            }
+            showToast(context, added ? R.string.added : R.string.removed);
+            if (added && appContext.getString(R.string.sFreezeOnceQuit).equals(oneKeyName)) {
                 if (!freezeOnceQuit.getValue(null)) {
                     freezeOnceQuit.setValue(null, true);
+                    // The settings screen reads this checkbox from default SharedPreferences;
+                    // keep it in sync with MMKV when enabled from the main menu.
+                    android.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+                            .edit()
+                            .putBoolean("freezeOnceQuit", true)
+                            .apply();
                 }
-                AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(context);
+                AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(appContext);
             }
-        }
+        }, "OneKeyListMutation").start();
     }
 
     public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name) {
@@ -106,26 +110,32 @@ public final class Support {
                 int id = cursor.getInt(cursor.getColumnIndexOrThrow("_id"));
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("label"));
                 userDefinedCategoriesHashMap.put(id, cursor.getString(cursor.getColumnIndexOrThrow("packages")));
-                vmUserDefinedSubMenu.add(R.id.main_sca_menu_userDefined_menuGroup, id, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                String decodedTitle;
+                try {
+                    decodedTitle = new String(Base64.decode(title, Base64.DEFAULT));
+                } catch (Exception e) {
+                    decodedTitle = title != null ? title : "";
+                }
+                vmUserDefinedSubMenu.add(R.id.main_sca_menu_userDefined_menuGroup, id, id, decodedTitle);
                 cursor.moveToNext();
             }
         }
         cursor.close();
         vmUserDefinedDb.close();
 
-        final AppPreferences sharedPreferences = new AppPreferences(context);
+        final DefaultMultiProcessMMKVStorage storage = new DefaultMultiProcessMMKVStorage();
 
-        final String pkgNames = sharedPreferences.getString(context.getString(R.string.sAutoFreezeApplicationList), "");
+        final String pkgNames = storage.getString(context.getString(R.string.sAutoFreezeApplicationList), "");
         if (existsInOneKeyList(pkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyList).setTitle(R.string.removeFromOneKeyList);
         }
 
-        final String FreezeOnceQuitPkgNames = sharedPreferences.getString(context.getString(R.string.sFreezeOnceQuit), "");
+        final String FreezeOnceQuitPkgNames = storage.getString(context.getString(R.string.sFreezeOnceQuit), "");
         if (existsInOneKeyList(FreezeOnceQuitPkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToFreezeOnceQuit).setTitle(R.string.removeFromFreezeOnceQuit);
         }
 
-        final String UFPkgNames = sharedPreferences.getString(context.getString(R.string.sOneKeyUFApplicationList), "");
+        final String UFPkgNames = storage.getString(context.getString(R.string.sOneKeyUFApplicationList), "");
         if (existsInOneKeyList(UFPkgNames, pkgName)) {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyUFList).setTitle(R.string.removeFromOneKeyUFList);
         }
@@ -167,70 +177,41 @@ public final class Support {
                             vmUserDefinedNameAlertDialog.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    String label = Base64.encodeToString(vmUserDefinedNameAlertDialogEditText.getText().toString().getBytes(), Base64.DEFAULT);
+                                    final String label = Base64.encodeToString(vmUserDefinedNameAlertDialogEditText.getText().toString().getBytes(), Base64.DEFAULT);
                                     if ("".equals(label)) {
                                         showToast(activity, R.string.emptyNotAllowed);
-                                    } else {
-                                        boolean alreadyExists = false;
-                                        SQLiteDatabase vmUserDefinedDb1 = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                        vmUserDefinedDb1.execSQL(
-                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                        );
-                                        Cursor cursor1 = vmUserDefinedDb1.query("categories", new String[]{"label"}, null, null, null, null, null);
-                                        if (cursor1.moveToFirst()) {
-                                            for (int i = 0; i < cursor1.getCount(); i++) {
-                                                if (label.equals(cursor1.getString(cursor1.getColumnIndexOrThrow("label")))) {
-                                                    alreadyExists = true;
-                                                    break;
-                                                }
-                                                cursor1.moveToNext();
-                                            }
-                                        }
-                                        cursor1.close();
-                                        if (alreadyExists) {
-                                            showToast(activity, R.string.alreadyExist);
-                                        } else {
-                                            // Data, not SQL text: concatenating the value into a
-                                            // quoted literal let anything that looked like a quote
-                                            // end the literal and the statement throw.
-                                            ContentValues values = new ContentValues();
-                                            values.put("label", label);
-                                            values.put("packages", "");
-                                            vmUserDefinedDb1.insertWithOnConflict(
-                                                    "categories", null, values, SQLiteDatabase.CONFLICT_REPLACE
-                                            );
-                                        }
-                                        vmUserDefinedDb1.close();
+                                        return;
                                     }
+                                    final Context appContext = context.getApplicationContext();
+                                    // The check and the insert share one lock, so two saves filed
+                                    // before either landed cannot both pass it.
+                                    new Thread(() -> {
+                                        final Boolean created = OneKeyListUtils.createUserDefinedCategory(
+                                                appContext, label);
+                                        if (Boolean.FALSE.equals(created)) {
+                                            showToast(activity, R.string.alreadyExist);
+                                        }
+                                    }, "UserDefinedCategoryInsert").start();
                                 }
                             });
                             vmUserDefinedNameAlertDialog.setNegativeButton(R.string.cancel, null);
                             vmUserDefinedNameAlertDialog.show();
                             break;
                         default:
-                            int itemId = item.getItemId();
+                            final int itemId = item.getItemId();
                             if (userDefinedCategoriesHashMap.containsKey(itemId)) {
-                                SQLiteDatabase vmUserDefinedDb1 = context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                vmUserDefinedDb1.execSQL(
-                                        "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                );
-                                String pkgs = userDefinedCategoriesHashMap.get(itemId);
-                                if (pkgs == null) {
-                                    pkgs = "";
-                                }
-                                boolean existed = existsInOneKeyList(pkgs, pkgName);
-                                if (existed) {
-                                    pkgs = OneKeyListUtils.removePkgFromPkgNames(pkgs, pkgName);
-                                } else {
-                                    pkgs = OneKeyListUtils.addPkgToPkgNames(pkgs, pkgName);
-                                }
-                                ContentValues values = new ContentValues();
-                                values.put("packages", pkgs);
-                                vmUserDefinedDb1.update(
-                                        "categories", values, "_id = ?", new String[]{String.valueOf(itemId)}
-                                );
-                                vmUserDefinedDb1.close();
-                                showToast(activity, existed ? R.string.removed : R.string.added);
+                                final Context appContext = context.getApplicationContext();
+                                // The helper reads the category under the same lock as the
+                                // selection-menu writer, so a stale snapshot from when the popup
+                                // opened cannot overwrite a change filed in between.
+                                new Thread(() -> {
+                                    final Boolean added =
+                                            OneKeyListUtils.togglePackageInUserDefinedCategory(
+                                                    appContext, itemId, pkgName);
+                                    if (added != null) {
+                                        showToast(activity, added ? R.string.added : R.string.removed);
+                                    }
+                                }, "UserDefinedCategoryMutation").start();
                             }
                             break;
                     }
@@ -238,24 +219,26 @@ public final class Support {
                     switch (item.getItemId()) {
                         case R.id.main_sca_menu_forceStop:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                context.startActivity(new Intent(context, ForceStop.class).putExtra("pkgName", pkgName));
+                                Intent forceStopIntent = new Intent(context, ForceStop.class).putExtra("pkgName", pkgName);
+                                ShortcutTokenUtils.attachToken(forceStopIntent, ShortcutTokenUtils.ACTION_FORCE_STOP);
+                                context.startActivity(forceStopIntent);
                             }
                             break;
                         case R.id.main_sca_menu_addToFreezeOnceQuit:
-                            Support.checkAddOrRemove(context, FreezeOnceQuitPkgNames, pkgName, context.getString(R.string.sFreezeOnceQuit));
+                            Support.checkAddOrRemove(context, pkgName, context.getString(R.string.sFreezeOnceQuit));
                             break;
                         case R.id.main_sca_menu_addToOneKeyList:
-                            Support.checkAddOrRemove(context, pkgNames, pkgName, context.getString(R.string.sAutoFreezeApplicationList));
+                            Support.checkAddOrRemove(context, pkgName, context.getString(R.string.sAutoFreezeApplicationList));
                             break;
                         case R.id.main_sca_menu_addToOneKeyUFList:
-                            Support.checkAddOrRemove(context, UFPkgNames, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
+                            Support.checkAddOrRemove(context, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
                             break;
                         case R.id.main_sca_menu_appDetail:
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Intent appDetailIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                             Uri uri = Uri.fromParts("package", pkgName, null);
-                            intent.setData(uri);
+                            appDetailIntent.setData(uri);
                             try {
-                                context.startActivity(intent);
+                                context.startActivity(appDetailIntent);
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 showToast(context, e.getLocalizedMessage());
@@ -266,7 +249,9 @@ public final class Support {
                             break;
                         case R.id.main_sca_menu_disableAEnable:
                             if (!(context.getString(R.string.notAvailable).equals(name))) {
-                                context.startActivity(new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false));
+                                Intent freezeIntent = new Intent(context, Freeze.class).putExtra("pkgName", pkgName).putExtra("fromShortcut", false);
+                                ShortcutTokenUtils.attachToken(freezeIntent, ShortcutTokenUtils.ACTION_FREEZE);
+                                context.startActivity(freezeIntent);
                             }
                             break;
                         case R.id.main_sca_menu_createDisEnableShortCut:

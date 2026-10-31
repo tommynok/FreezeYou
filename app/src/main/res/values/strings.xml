@@ -34,8 +34,10 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
+    <string name="andMoreApplications">… and %1$d more</string>
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
+    <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
@@ -128,12 +130,14 @@
     <string name="notificationBar">Notification</string>
     <string name="disableSlideOut">Do not disappear when slide out</string>
     <string name="disableClickDisappear">Do not disappear after clicked</string>
+    <string name="freezeAll">Freeze all</string>
+    <string name="quickFUFGroupSummaryContent">Unfrozen applications: %1$d</string>
     <string name="effectNextCreate">Take effects the next time created</string>
     <string name="helpTranslate">Help Translate</string>
     <string name="thanksList">Project contributors</string>
     <string name="automation">Automation</string>
     <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
-    <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
+    <string name="freezeAfterScreenLockSummary">Freezes the applications in the \"One-key freeze\" list every time the screen goes off.</string>
     <string name="screenLockFreezeNotiTitle">Freeze when the screen goes off</string>
     <string name="screenLockFreezeNotiText">Will freeze apps in the One-key freeze list</string>
     <string name="screenLockFreezeNotiTapHint">Tap to turn this off</string>
@@ -149,8 +153,9 @@
     <string name="accessibility_service_description">Listen to the foreground application changes. \nUsed to active the functions to avoid freezing foreground applications when automatic freezing, automatically freeze applications when they are not the foreground applications, etc.</string>
     <string name="configureAccessibilityService">Configure Accessibility Service</string>
     <string name="freezeOnceQuit">Leave Freeze</string>
-    <string name="freezeOnceQuitSummary">Applications in the "Freeze after leaving" list are frozen as soon as you leave them.</string>
+    <string name="freezeOnceQuitSummary">Applications in the \"Freeze after leaving\" list are frozen as soon as you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
+    <string name="needActiveDeviceAdmin">Need to activate Device Administrator</string>
     <string name="invalidArguments">Invalid parameters</string>
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>
@@ -162,6 +167,8 @@
     <string name="scheduledTasks">Scheduled tasks</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
+    <string name="doNotSave">Don\'t save</string>
+    <string name="diagnosisRefreshFailed">Diagnosis interrupted, some checks did not run</string>
     <string name="time">Time</string>
     <string name="enable">Enable</string>
     <string name="repeat">Repeat</string>
@@ -246,7 +253,7 @@
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
-    <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
+    <string name="summary_backupAndRestore">Export your settings, lists and scheduled tasks to a file, and import it back</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
@@ -346,6 +353,7 @@
     <string name="remove">Remove</string>
     <string name="newFolder">New Folder</string>
     <string name="alreadyExist">Already exists</string>
+    <string name="operationAlreadyInProgress">An operation for this app is already running</string>
     <string name="queryStatus">Query Status</string>
     <string name="newClassification">New category</string>
     <string name="displayLanguage">Display Language</string>
@@ -377,6 +385,7 @@
     <string name="jumpToSysInstaller">Go to system installer</string>
     <string name="appearance">Appearance</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Create quick freeze notification after unfrozen</string>
+    <string name="combineBatchQuickNotification">Combine batch notifications</string>
     <string name="executionResult_colon_message">Execution result: %1$s</string>
     <string name="unknownResult_probablySuccess">Unknown result (Probably success)</string>
     <string name="unknownError">Unknown error</string>
@@ -430,6 +439,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">Operation on FreezeYou is not allowed</string>
     <string name="shizukuVersionIsTooLow">Shizuku version is too low</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku is not installed or other exceptions</string>
+    <string name="authorizationStatus_authorized">Shizuku authorization granted</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku permission not granted</string>
+    <string name="profileOwnerActive">Profile owner mode active</string>
+    <string name="systemAppModeActive">System app mode available</string>
     <string name="includeFUFActivityInRecents">Include freeze and unfreeze activity in recents</string>
     <string name="includeFUFActivityInRecentsSummary">Also shows the freeze/unfreeze progress screen as a separate entry in recent apps.</string>
     <string name="playFUFAnimations">Play freeze and unfreeze animations</string>
@@ -466,6 +479,17 @@
         <item>nothing</item>
         <item>askLockScreen</item>
         <item>lockScreenImmediately</item>
+    </string-array>
+    <string name="shortcutClickAction">Action on application shortcut click</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Ask for action (default)</item>
+        <item>Always open (unfreeze and launch)</item>
+        <item>Toggle (freeze / unfreeze)</item>
+    </string-array>
+    <string-array name="shortcutClickActionSelectionValues" translatable="false">
+        <item>dialog</item>
+        <item>open_and_uf</item>
+        <item>toggle</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>Default</item>
@@ -605,7 +629,7 @@
     <string name="restore_failed">Failed to restore application</string>
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
     <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
-    <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
+    <string name="full_system_uninstall_requires_shell">Full removal of a system app requires root or Shizuku.</string>
     <string name="updateCheckUnlocked">Check for updates unlocked</string>
     <string name="apkInstallation">APK Installation</string>
     <string name="batch_uninstall">Uninstall selected</string>

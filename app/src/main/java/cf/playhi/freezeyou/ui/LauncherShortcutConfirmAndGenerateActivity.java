@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,11 +21,13 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Date;
 
 import cf.playhi.freezeyou.Freeze;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.utils.FUFUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 import cf.playhi.freezeyou.utils.ThemeUtils;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 
@@ -70,12 +73,17 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
         // list would throw it away.
         openTargetPickerOnNextInit = activityShortcutMode && savedInstanceState == null;
 
-        targetSelfCls =
-                requestFromLauncher
-                        ?
-                        Freeze.class
-                        :
-                        ((Class<?>) intent.getSerializableExtra("class"));
+        Class<?> targetCls = null;
+        if (!requestFromLauncher) {
+            try {
+                Serializable s = intent.getSerializableExtra("class");
+                if (s instanceof Class && Activity.class.isAssignableFrom((Class<?>) s)) {
+                    targetCls = (Class<?>) s;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        targetSelfCls = requestFromLauncher ? Freeze.class : (targetCls != null ? targetCls : Freeze.class);
 
         init();
     }
@@ -215,7 +223,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
 
         processCancelButton(lscaga_cancel_button);
 
-        processSimulateButton(lscaga_package_editText, lscaga_target_editText, lscaga_task_editText, lscaga_simulate_button);
+        processSimulateButton(pkgName, lscaga_package_editText, lscaga_target_editText, lscaga_task_editText, lscaga_simulate_button);
 
         processGenerateButton(lscaga_generate_button, lscaga_package_editText, lscaga_displayName_editText, lscaga_target_editText, lscaga_id_editText, lscaga_task_editText);
 
@@ -404,6 +412,7 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 shortcutIntent.putExtra("target", target);
                 shortcutIntent.putExtra("tasks", tasks);
                 shortcutIntent.putExtra("justLaunch", activityShortcutMode);
+                ShortcutTokenUtils.attachToken(shortcutIntent, ShortcutTokenUtils.ACTION_FREEZE);
                 Intent intent = new Intent();
                 intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
                 intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
@@ -411,12 +420,17 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
                 setResult(RESULT_OK, intent);
                 finish();
             } else {
+                String shortcutId = lscaga_id_editText.getText().toString();
+                // An empty id makes ShortcutInfo.Builder throw; fall back to a time-based one.
+                if (shortcutId.trim().isEmpty()) {
+                    shortcutId = Long.toString(new java.util.Date().getTime());
+                }
                 createShortCut(
                         title,
                         pkgName,
                         finalDrawable,
                         targetSelfCls,
-                        lscaga_id_editText.getText().toString(),
+                        shortcutId,
                         context,
                         target,
                         tasks,
@@ -431,19 +445,57 @@ public class LauncherShortcutConfirmAndGenerateActivity extends FreezeYouBaseAct
         lscaga_cancel_button.setOnClickListener(v -> finish());
     }
 
-    private void processSimulateButton(final EditText lscaga_package_editText, final EditText lscaga_target_editText, final EditText lscaga_task_editText, final Button lscaga_simulate_button) {
+    private boolean isBatchOrSystemShortcut(String pkgName) {
+        if (targetSelfCls != null && !Freeze.class.equals(targetSelfCls)) {
+            return true;
+        }
+        if (pkgName == null) {
+            return false;
+        }
+        switch (pkgName) {
+            case "cf.playhi.freezeyou.extra.fuf":
+            case "cf.playhi.freezeyou.extra.oklock":
+            case "OF":
+            case "UF":
+            case "OO":
+            case "OOU":
+            case "FOQ":
+            case "OS":
+            case "OU":
+            case "UFU":
+                return true;
+            default:
+                return pkgName.startsWith("CATEGORY") || pkgName.startsWith("FORCESTOPCATEGORY");
+        }
+    }
+
+    private void processSimulateButton(
+            final String pkgName,
+            final EditText lscaga_package_editText,
+            final EditText lscaga_target_editText,
+            final EditText lscaga_task_editText,
+            final Button lscaga_simulate_button
+    ) {
+        if (pkgName == null || pkgName.trim().isEmpty() || pkgName.equals(getString(R.string.plsSelect)) || isBatchOrSystemShortcut(pkgName)) {
+            lscaga_simulate_button.setVisibility(View.GONE);
+            return;
+        }
+        lscaga_simulate_button.setVisibility(View.VISIBLE);
         lscaga_simulate_button.setOnClickListener(v -> {
-            String pkgName = lscaga_package_editText.getText().toString();
+            String currentPkgName = lscaga_package_editText.getText().toString();
+            if (currentPkgName.isEmpty() || currentPkgName.equals(getString(R.string.plsSelect))) {
+                return;
+            }
             String target = lscaga_target_editText.getText().toString();
             String tasks = lscaga_task_editText.getText().toString();
             target = FUFUtils.normalizeSelectedTarget(this, target);
-            startActivity(
-                    new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class)
-                            .putExtra("pkgName", pkgName)
-                            .putExtra("target", target)
-                            .putExtra("tasks", tasks)
-                            .putExtra("justLaunch", activityShortcutMode)
-            );
+            Intent simIntent = new Intent(LauncherShortcutConfirmAndGenerateActivity.this, Freeze.class)
+                    .putExtra("pkgName", currentPkgName)
+                    .putExtra("target", target)
+                    .putExtra("tasks", tasks)
+                    .putExtra("justLaunch", activityShortcutMode);
+            ShortcutTokenUtils.attachToken(simIntent, ShortcutTokenUtils.ACTION_FREEZE);
+            startActivity(simIntent);
         });
     }
 

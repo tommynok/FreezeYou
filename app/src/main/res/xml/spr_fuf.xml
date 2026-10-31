@@ -84,37 +84,29 @@
             app:key="allowEditWhenCreateShortcut"
             app:singleLineTitle="false"
             app:title="@string/allowEditWhCreateShortcut" />
-        <CheckBoxPreference
-            app:defaultValue="false"
+        <ListPreference
+            app:defaultValue="dialog"
+            app:entries="@array/shortcutClickActionSelection"
+            app:entryValues="@array/shortcutClickActionSelectionValues"
             app:iconSpaceReserved="false"
-            app:key="openAndUFImmediately"
+            app:key="shortcutClickAction"
             app:singleLineTitle="false"
-            app:summary="@string/openAndUFImmediatelyEx"
-            app:title="@string/openAndUFImmediately" />
-        <CheckBoxPreference
-            app:defaultValue="false"
-            app:disableDependentsState="false"
-            app:iconSpaceReserved="false"
-            app:key="shortcutAutoFUF"
-            app:singleLineTitle="false"
-            app:summary="@string/shortcutAutoFUFEx"
-            app:title="@string/shortcutAutoFUF" />
-        <CheckBoxPreference
-            app:defaultValue="false"
-            app:dependency="shortcutAutoFUF"
-            app:iconSpaceReserved="false"
-            app:key="needConfirmWhenFreezeUseShortcutAutoFUF"
-            app:singleLineTitle="false"
-            app:summary="@string/needConfirmWhenFreezeUseShortcutAutoFUFSummary"
-            app:title="@string/needCfmWhenFreeze" />
+            app:title="@string/shortcutClickAction"
+            app:useSimpleSummaryProvider="true" />
         <CheckBoxPreference
             app:defaultValue="true"
-            app:dependency="shortcutAutoFUF"
             app:iconSpaceReserved="false"
             app:key="openImmediatelyAfterUnfreezeUseShortcutAutoFUF"
             app:singleLineTitle="false"
             app:summary="@string/openImmediatelyAfterUnfreezeUseShortcutAutoFUFSummary"
             app:title="@string/openImmediatelyAfterUF" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="needConfirmWhenFreezeUseShortcutAutoFUF"
+            app:singleLineTitle="false"
+            app:summary="@string/needConfirmWhenFreezeUseShortcutAutoFUFSummary"
+            app:title="@string/needCfmWhenFreeze" />
         <ListPreference
             app:defaultValue="nothing"
             app:entries="@array/shortCutOneKeyFreezeAdditionalOptionsSelection"

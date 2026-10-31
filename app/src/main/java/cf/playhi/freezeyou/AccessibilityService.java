@@ -2,21 +2,24 @@ package cf.playhi.freezeyou;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.os.Build;
-import android.os.Parcelable;
 import android.os.PowerManager;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.CallSuper;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.utils.DataStatisticsUtils;
+import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.ProcessSharedState;
@@ -79,6 +82,14 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         super.onCreate();
     }
 
+    private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+
+    @Override
+    public void onDestroy() {
+        mExecutor.shutdown();
+        super.onDestroy();
+    }
+
     /**
      * Intercepts window state transitions and identifies genuine application switches.
      *
@@ -105,23 +116,23 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 if (pkgName == null) return;
                 String pkgNameString = pkgName.toString();
 
-                addUpUseTimes(pkgNameString);
-
                 if ("".equals(pkgNameString)
                         || "android".equals(pkgNameString)
                         || "com.android.systemui".equals(pkgNameString)
                         || "com.android.packageinstaller".equals(pkgNameString) // Grant permissions, etc.
                         || "miui.systemui.plugin".equals(pkgNameString) // MIUI System UI plugin (popups, volume dialogs, etc.)
-
                 ) {
                     return;
                 }
 
-                String className = accessibilityEvent.getClassName().toString();
-                if ("android.inputmethodservice.SoftInputWindow".equals(className)
-                        || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(className) // MIUI volume panel
-                ) {
-                    return;
+                CharSequence className = accessibilityEvent.getClassName();
+                if (className != null) {
+                    String classNameString = className.toString();
+                    if ("android.inputmethodservice.SoftInputWindow".equals(classNameString)
+                            || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(classNameString) // MIUI volume panel
+                    ) {
+                        return;
+                    }
                 }
 
                 PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
@@ -130,9 +141,15 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
                 String previousPkg = MainApplication.getCurrentPackage();
 
+                if (pkgNameString.equals(previousPkg)) {
+                    return;
+                }
+
                 MainApplication.setCurrentPackage(pkgNameString);
-                if (!pkgNameString.equals(previousPkg)
-                        && freezeOnceQuit.getValue(null)
+
+                addUpUseTimes(pkgNameString);
+
+                if (freezeOnceQuit.getValue(null)
                         && existsInOneKeyList(getApplicationContext(), getString(R.string.sFreezeOnceQuit), previousPkg)) {
                     processFreezeAction(
                             getApplicationContext(), previousPkg, null, null,
@@ -140,9 +157,10 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     );
                 }
 
-                onLeaveApplications(previousPkg, pkgNameString);
-
-                onApplicationsForeground(previousPkg, pkgNameString);
+                mExecutor.execute(() -> {
+                    onLeaveApplications(previousPkg, pkgNameString);
+                    onApplicationsForeground(previousPkg, pkgNameString);
+                });
 
                 break;
             default:
@@ -163,7 +181,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      */
     @Override
     public boolean onUnbind(android.content.Intent intent) {
-        ProcessSharedState.clearForegroundPackage();
+        MainApplication.clearCurrentPackage();
         return super.onUnbind(intent);
     }
 
@@ -178,34 +196,42 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
         if (!pkgNameString.equals(previousPkg) && !getPackageName().equals(previousPkg)) {
             cancelAllUnexecutedDelayTasks(this, "OSA_" + previousPkg); // Cancel pending open-app delayed tasks
-            final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
-            db.execSQL(
-                    "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-            );
-            Cursor cursor = db.query("tasks", null, null, null, null, null, null);
-            if (cursor.moveToFirst()) {
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    String tgExtra = cursor.getString(cursor.getColumnIndex("tgextra"));
-                    if (tgExtra == null) {
-                        tgExtra = "";
-                    }
-                    String tg = cursor.getString(cursor.getColumnIndex("tg"));
-                    int enabled = cursor.getInt(cursor.getColumnIndex("enabled"));
-                    if (enabled == 1 && "onApplicationsForeground".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(this, tgExtra.split(","))).contains(pkgNameString))) {
-                        String task = cursor.getString(cursor.getColumnIndex("task"));
-                        if (task != null && !"".equals(task)) {
-                            TasksUtils.runTask(
-                                    task.replace("[ppkgn]", previousPkg).replace("[cpkgn]", pkgNameString),
-                                    this,
-                                    ("".equals(tgExtra) ? null : "OSA_" + pkgNameString)
-                            );
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
+            try {
+                db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
+                cursor = db.query("tasks", null, null, null, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        String tgExtra = cursor.getString(cursor.getColumnIndex("tgextra"));
+                        if (tgExtra == null) {
+                            tgExtra = "";
                         }
+                        String tg = cursor.getString(cursor.getColumnIndex("tg"));
+                        int enabled = cursor.getInt(cursor.getColumnIndex("enabled"));
+                        if (enabled == 1 && "onApplicationsForeground".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(this, tgExtra.split(","))).contains(pkgNameString))) {
+                            String task = cursor.getString(cursor.getColumnIndex("task"));
+                            if (task != null && !"".equals(task)) {
+                                TasksUtils.runTask(
+                                        task.replace("[ppkgn]", previousPkg).replace("[cpkgn]", pkgNameString),
+                                        this,
+                                        ("".equals(tgExtra) ? null : "OSA_" + pkgNameString)
+                                );
+                            }
+                        }
+                        cursor.moveToNext();
                     }
-                    cursor.moveToNext();
+                }
+            } catch (SQLiteException e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
                 }
             }
-            cursor.close();
-            db.close();
         }
     }
 
@@ -222,34 +248,42 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
         if (!pkgNameString.equals(previousPkg) && !getPackageName().equals(previousPkg)) {
             cancelAllUnexecutedDelayTasks(this, "OLA_" + pkgNameString); // Cancel pending leave-app delayed tasks
-            final SQLiteDatabase db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
-            db.execSQL(
-                    "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-            );
-            Cursor cursor = db.query("tasks", null, null, null, null, null, null);
-            if (cursor.moveToFirst()) {
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    String tg = cursor.getString(cursor.getColumnIndex("tg"));
-                    int enabled = cursor.getInt(cursor.getColumnIndex("enabled"));
-                    String tgExtra = cursor.getString(cursor.getColumnIndex("tgextra"));
-                    if (tgExtra == null) {
-                        tgExtra = "";
-                    }
-                    if (enabled == 1 && "onLeaveApplications".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(this, tgExtra.split(","))).contains(previousPkg))) {
-                        String task = cursor.getString(cursor.getColumnIndex("task"));
-                        if (task != null && !"".equals(task)) {
-                            TasksUtils.runTask(
-                                    task.replace("[ppkgn]", previousPkg).replace("[cpkgn]", pkgNameString),
-                                    this,
-                                    "".equals(tgExtra) ? null : "OLA_" + previousPkg
-                            );
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
+            try {
+                db = openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
+                cursor = db.query("tasks", null, null, null, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        String tg = cursor.getString(cursor.getColumnIndex("tg"));
+                        int enabled = cursor.getInt(cursor.getColumnIndex("enabled"));
+                        String tgExtra = cursor.getString(cursor.getColumnIndex("tgextra"));
+                        if (tgExtra == null) {
+                            tgExtra = "";
                         }
+                        if (enabled == 1 && "onLeaveApplications".equals(tg) && ("".equals(tgExtra) || Arrays.asList(OneKeyListUtils.decodeUserListsInPackageNames(this, tgExtra.split(","))).contains(previousPkg))) {
+                            String task = cursor.getString(cursor.getColumnIndex("task"));
+                            if (task != null && !"".equals(task)) {
+                                TasksUtils.runTask(
+                                        task.replace("[ppkgn]", previousPkg).replace("[cpkgn]", pkgNameString),
+                                        this,
+                                        "".equals(tgExtra) ? null : "OLA_" + previousPkg
+                                );
+                            }
+                        }
+                        cursor.moveToNext();
                     }
-                    cursor.moveToNext();
+                }
+            } catch (SQLiteException e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
                 }
             }
-            cursor.close();
-            db.close();
         }
     }
 
@@ -258,15 +292,36 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {
-        final Intent intent = MainApplication.getWaitingForLeavingToInstallApplicationIntent();
-        if (intent == null) return;
-        final Parcelable packageInfoParcelable = intent.getParcelableExtra("packageInfo");
-        final PackageInfo packageInfo =
-                packageInfoParcelable instanceof PackageInfo
-                        ? (PackageInfo) packageInfoParcelable : null;
-        if (packageInfo != null && previousPkg.equals(packageInfo.packageName)) {
-            ServiceUtils.startService(AccessibilityService.this, intent);
-            MainApplication.setWaitingForLeavingToInstallApplicationIntent(null);
+        // The persisted record is the only copy, so process death cannot drop the request.
+        final InstallPackagesUtils.WaitingInstallRequest request =
+                InstallPackagesUtils.getWaitingForLeavingRequest();
+        if (request == null || !previousPkg.equals(request.packageName)) {
+            return;
+        }
+        if (!request.isApkAvailable()) {
+            discardWaitingInstall(request);
+            return;
+        }
+        dispatchWaitingInstall(request);
+    }
+
+    private void dispatchWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
+        // Clear record first so any concurrent replacement knows this request was already dispatched
+        InstallPackagesUtils.clearWaitingForLeavingRequestIfMatches(request);
+        try {
+            ServiceUtils.startService(this, request.toIntent(this));
+        } catch (RuntimeException e) {
+            // Restore request if service start failed
+            InstallPackagesUtils.saveWaitingForLeavingRequest(this, request.toIntent(this), request.packageName);
+            Log.w("FreezeYouDebug",
+                    "AccessibilityService: waiting install start failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void discardWaitingInstall(InstallPackagesUtils.WaitingInstallRequest request) {
+        if (!InstallPackagesUtils.discardWaitingForLeavingRequest(this, request)) return;
+        if (request.apkFilePath != null) {
+            InstallPackagesUtils.deleteTempFile(this, request.apkFilePath, false);
         }
     }
 }

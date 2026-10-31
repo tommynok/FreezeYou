@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
@@ -53,6 +54,10 @@ public final class RestoreUtils {
      */
     private static final int FLAG_INSTALLED = 0x00800000;
 
+    private static boolean isActivityAlive(Activity activity) {
+        return activity != null && !activity.isFinishing() && (Build.VERSION.SDK_INT < 17 || !activity.isDestroyed());
+    }
+
     private RestoreUtils() {}
 
     /**
@@ -66,6 +71,9 @@ public final class RestoreUtils {
      * Checks if the package represented by {@code appInfo} is marked as uninstalled for the current user.
      */
     public static boolean isAppUninstalled(ApplicationInfo appInfo) {
+        if (Build.VERSION.SDK_INT < 17) {
+            return false;
+        }
         return appInfo != null && isAppUninstalledFlags(appInfo.flags);
     }
 
@@ -83,6 +91,9 @@ public final class RestoreUtils {
      * in {@code /data/app} are wiped upon uninstallation.
      */
     public static boolean isRestorableSystemApp(ApplicationInfo appInfo) {
+        if (Build.VERSION.SDK_INT < 26) {
+            return false;
+        }
         return appInfo != null && isRestorableSystemAppFlags(appInfo.flags);
     }
 
@@ -198,25 +209,39 @@ public final class RestoreUtils {
         }
 
         ProgressDialog progressDialog = null;
-        if (packages.size() > 1 && context instanceof Activity && !((Activity) context).isFinishing()) {
+        final Activity activity = context instanceof Activity ? (Activity) context : null;
+        if (packages.size() > 1 && isActivityAlive(activity)) {
             try {
-                progressDialog = new ProgressDialog(context);
-                progressDialog.setMessage(context.getString(R.string.batch_restoring));
+                progressDialog = new ProgressDialog(activity);
+                progressDialog.setMessage(activity.getString(R.string.batch_restoring));
                 progressDialog.setCancelable(false);
                 progressDialog.setCanceledOnTouchOutside(false);
                 progressDialog.show();
             } catch (Exception ignored) {}
         }
         final ProgressDialog finalProgressDialog = progressDialog;
+        final Context appContext = context.getApplicationContext();
 
         new Thread(() -> {
             final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
             final boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+            if (!shizukuAvailable && !rootAvailable) {
+                if (finalProgressDialog != null) {
+                    try {
+                        finalProgressDialog.dismiss();
+                    } catch (Exception ignored) {}
+                }
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    ToastUtils.showShortToast(context, R.string.insufficientPermission);
+                    if (onFinishedCallback != null) onFinishedCallback.run();
+                });
+                return;
+            }
             int restoredCount = 0;
 
             for (String packageName : packages) {
                 // Recheck just before running the command; the list/menu can be stale by now.
-                if (!isRestorableSystemPackage(context, packageName)) continue;
+                if (!isRestorableSystemPackage(appContext, packageName)) continue;
                 if (!shizukuAvailable && !rootAvailable) continue;
 
                 String quotedPackage = PrivilegedShellUtils.shellQuote(packageName);
@@ -239,15 +264,18 @@ public final class RestoreUtils {
                 }
             }
 
-            if (finalProgressDialog != null) {
-                try {
-                    if (finalProgressDialog.isShowing()) {
-                        finalProgressDialog.dismiss();
-                    }
-                } catch (Exception ignored) {}
-            }
+            final int finalRestoredCount = restoredCount;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (finalProgressDialog != null) {
+                    try {
+                        if (isActivityAlive(activity) && finalProgressDialog.isShowing()) {
+                            finalProgressDialog.dismiss();
+                        }
+                    } catch (Exception ignored) {}
+                }
 
-            postRestoreResult(context, restoredCount, packages.size(), appName, onFinishedCallback);
+                postRestoreResult(context, finalRestoredCount, packages.size(), appName, onFinishedCallback);
+            });
         }).start();
     }
 
@@ -279,7 +307,7 @@ public final class RestoreUtils {
             if (!stealth) {
                 if (restoredCount == 0) {
                     showShortToast(context, R.string.restore_failed);
-                } else if (context instanceof Activity && !((Activity) context).isFinishing()) {
+                } else if (context instanceof Activity && isActivityAlive((Activity) context)) {
                     showRestoreCompletedDialog((Activity) context, restoredCount, totalCount, appName);
                 } else {
                     if (restoredCount == totalCount) {
@@ -305,7 +333,7 @@ public final class RestoreUtils {
             final int restoredCount,
             final int totalCount,
             final String appName) {
-        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+        if (!isActivityAlive(activity)) {
             return;
         }
 

@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Quick Settings tiles are painted from the alpha channel only: SystemUI throws away every
+         colour in this file and fills the opaque pixels with its own theme colour. The launcher
+         shortcut icon was a solid blue disc, so as a tile it became a featureless white circle. -->
+    <path
+        android:pathData="M12,12L12,2 M12,12L20.66,7 M12,12L20.66,17 M12,12L12,22 M12,12L3.34,17 M12,12L3.34,7 M12,5.5L10,3.5 M12,5.5L14,3.5 M17.63,8.75L18.36,6.02 M17.63,8.75L20.36,9.48 M17.63,15.25L20.36,14.52 M17.63,15.25L18.36,17.98 M12,18.5L14,20.5 M12,18.5L10,20.5 M6.37,15.25L5.64,17.98 M6.37,15.25L3.64,14.52 M6.37,8.75L3.64,9.48 M6.37,8.75L5.64,6.02"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.6" />
+</vector>

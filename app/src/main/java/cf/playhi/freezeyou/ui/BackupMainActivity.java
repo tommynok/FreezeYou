@@ -1,5 +1,7 @@
 package cf.playhi.freezeyou.ui;
 
+import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -12,15 +14,23 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.BackupUtils;
 import cf.playhi.freezeyou.utils.ClipboardUtils;
 import cf.playhi.freezeyou.utils.GZipUtils;
 import cf.playhi.freezeyou.utils.ToastUtils;
@@ -37,6 +47,11 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
      */
     private static final String BACKUP_MIME_TYPE = "application/octet-stream";
 
+    private static final int MAX_BACKUP_FILE_CHARS = 16 * 1024 * 1024;
+
+    private final ExecutorService mBackupExecutor = Executors.newSingleThreadExecutor();
+    private ProgressDialog mProgressDialog;
+
     private ActivityResultLauncher<Intent> mSaveToFileLauncher;
     private ActivityResultLauncher<Intent> mRestoreFromFileLauncher;
 
@@ -49,6 +64,13 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
 
         registerFileLaunchers();
         initButtons();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mBackupExecutor.shutdownNow();
+        dismissProgress();
+        super.onDestroy();
     }
 
     private void registerFileLaunchers() {
@@ -160,15 +182,115 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
     }
 
     private void startImportChooser(String compressedContent) {
-        String decompressed = GZipUtils.gzipDecompress(compressedContent);
-        if ("".equals(decompressed)) {
+        if (compressedContent.isEmpty() || compressedContent.length() > MAX_BACKUP_FILE_CHARS) {
             ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
             return;
         }
-        startActivity(
-                new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
-                        .putExtra("jsonObjectString", decompressed)
-        );
+        processBackupAsync(() -> GZipUtils.gzipDecompress(compressedContent));
+    }
+
+    private void readBackupFromUri(Uri uri) {
+        final ContentResolver contentResolver = getContentResolver();
+        processBackupAsync(() -> {
+            StringBuilder builder = new StringBuilder();
+            try (InputStream inputStream = contentResolver.openInputStream(uri)) {
+                if (inputStream == null) {
+                    throw new IOException("Cannot open the selected backup file");
+                }
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(inputStream, "UTF-8"));
+                char[] buffer = new char[8192];
+                int n;
+                while ((n = reader.read(buffer)) != -1) {
+                    builder.append(buffer, 0, n);
+                    if (builder.length() > MAX_BACKUP_FILE_CHARS) {
+                        throw new IOException("Backup file is too large");
+                    }
+                }
+            }
+            return GZipUtils.gzipDecompress(builder.toString());
+        });
+    }
+
+    private void processBackupAsync(Callable<String> reader) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        showProgress();
+        mBackupExecutor.execute(() -> {
+            String json = null;
+            boolean readFailed = false;
+            try {
+                json = reader.call();
+            } catch (Exception | OutOfMemoryError e) {
+                e.printStackTrace();
+                readFailed = true;
+            }
+            final String cacheFileName = !readFailed && json != null
+                    ? writeRestoreCache(json) : null;
+            final boolean failed = readFailed;
+            runOnUiThread(() -> {
+                dismissProgress();
+                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    // No chooser will open to consume and delete this payload.
+                    if (cacheFileName != null) {
+                        new File(getCacheDir(), cacheFileName).delete();
+                    }
+                    return;
+                }
+                if (failed) {
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+                    return;
+                }
+                if (cacheFileName == null) {
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.parseFailed);
+                    return;
+                }
+                try {
+                    startActivity(
+                            new Intent(BackupMainActivity.this, BackupImportChooserActivity.class)
+                                    .putExtra(BackupUtils.EXTRA_RESTORE_CACHE_FILE, cacheFileName)
+                    );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    new File(getCacheDir(), cacheFileName).delete();
+                    ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
+                }
+            });
+        });
+    }
+
+    private String writeRestoreCache(String json) {
+        if (json.isEmpty()) {
+            return null;
+        }
+        final String fileName =
+                BackupUtils.RESTORE_CACHE_FILE_PREFIX + UUID.randomUUID() + ".json";
+        File file = new File(getCacheDir(), fileName);
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            outputStream.write(json.getBytes("UTF-8"));
+            outputStream.flush();
+            return fileName;
+        } catch (Exception | OutOfMemoryError e) {
+            e.printStackTrace();
+            file.delete();
+            return null;
+        }
+    }
+
+    private void showProgress() {
+        dismissProgress();
+        mProgressDialog = ProgressDialog.show(
+                this, getString(R.string.plsWait), getString(R.string.loading___));
+    }
+
+    private void dismissProgress() {
+        if (mProgressDialog != null) {
+            if (mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+            }
+            mProgressDialog = null;
+        }
     }
 
     private void writeBackupToUri(Uri uri) {
@@ -188,25 +310,5 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
         // Deliberately not mirrored into the text field: it sits in a wrap_content ScrollView,
         // so a large backup would be laid out in full at once and freeze the UI for seconds.
         ToastUtils.showToast(BackupMainActivity.this, R.string.success);
-    }
-
-    private void readBackupFromUri(Uri uri) {
-        StringBuilder builder = new StringBuilder();
-        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
-            if (inputStream == null) {
-                ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
-                return;
-            }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            ToastUtils.showToast(BackupMainActivity.this, R.string.failed);
-            return;
-        }
-        startImportChooser(builder.toString());
     }
 }

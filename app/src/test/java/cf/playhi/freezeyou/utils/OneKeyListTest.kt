@@ -1,9 +1,22 @@
 package cf.playhi.freezeyou.utils
 
+import android.app.Application
+import android.content.Context
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
+import java.util.concurrent.Callable
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * A OneKEY list is one comma separated string in preferences, and these three functions decide
@@ -15,9 +28,9 @@ import org.junit.Test
  * Removal used `String.replace(pkgName + ",")`, which left the last entry of a comma-less list in
  * place and matched substrings, so removing `com.a` from `"xcom.a,"` stored `x` as a package name.
  *
- * Only the string functions are covered here. The `Context` overloads read and write tray
- * preferences, and a unit test that needs a database or SharedPreferences proves less than the same
- * rules checked on a string.
+ * Only the string functions are covered here. The `Context` overloads read and write the
+ * multi-process store, and a unit test that needs a database or SharedPreferences proves less than
+ * the same rules checked on a string.
  */
 class OneKeyListTest {
 
@@ -188,5 +201,146 @@ class OneKeyListTest {
         assertTrue(OneKeyListUtils.existsInOneKeyList(added, "com.b"))
         assertEquals("com.a,", OneKeyListUtils.removePkgFromPkgNames(added, "com.b"))
         assertEquals("com.b,", OneKeyListUtils.removePkgFromPkgNames(added, "com.a"))
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class)
+class CategoryRevisionTest {
+    private lateinit var context: Context
+    private val label = "cmV2aXNpb24=\n"
+    private val missingPackage = "com.example.missing.category.member"
+    private var categoryId = 0
+
+    @Before
+    fun createCategory() {
+        context = RuntimeEnvironment.getApplication()
+        context.deleteDatabase("userDefinedCategories")
+        assertEquals(true, OneKeyListUtils.createUserDefinedCategory(context, label))
+        context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null).use { db ->
+            db.rawQuery("SELECT _id FROM categories WHERE label = ?", arrayOf(label)).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                categoryId = cursor.getInt(0)
+            }
+        }
+    }
+
+    @After
+    fun deleteCategoryDatabase() {
+        context.deleteDatabase("userDefinedCategories")
+    }
+
+    @Test
+    fun `concurrent category writers publish every revision and readers reject superseded updates`() {
+        val workerCount = 4
+        val rounds = 20
+        val untouchedLabel = "dW50b3VjaGVk\n"
+        assertEquals(true, OneKeyListUtils.createUserDefinedCategory(context, untouchedLabel))
+        val untouched = OneKeyListUtils.updateUserDefinedCategory(context, untouchedLabel, emptyList(), false)!!
+        val initial = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        val barrier = CyclicBarrier(workerCount)
+        val executor = Executors.newFixedThreadPool(workerCount)
+        try {
+            val workers = (0 until workerCount).map { worker ->
+                executor.submit(Callable {
+                    val revisions = mutableListOf<Long>()
+                    repeat(rounds) { round ->
+                        barrier.await(10, TimeUnit.SECONDS)
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, initial.revision - 1))
+                        // Public mutations call bumpCategoryRevision while holding the database write lock.
+                        val update = OneKeyListUtils.updateUserDefinedCategory(
+                            context, label, listOf("com.example.worker$worker.round$round"), false
+                        )!!
+                        revisions.add(update.revision)
+                        barrier.await(10, TimeUnit.SECONDS)
+
+                        val latest = initial.revision + (round + 1) * workerCount
+                        assertEquals(update.revision == latest, OneKeyListUtils.isLatestCategoryUpdate(label, update.revision))
+                        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, latest))
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, initial.revision))
+                        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, latest + 1))
+                        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(untouchedLabel, untouched.revision))
+                        barrier.await(10, TimeUnit.SECONDS)
+                    }
+                    revisions
+                })
+            }
+            val revisions = workers.flatMap { it.get(30, TimeUnit.SECONDS) }
+            val totalUpdates = workerCount * rounds
+            assertEquals(
+                (1..totalUpdates).map { initial.revision + it },
+                revisions.sorted()
+            )
+            context.openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null).use { db ->
+                db.rawQuery("SELECT packages FROM categories WHERE label = ?", arrayOf(label)).use { cursor ->
+                    assertTrue(cursor.moveToFirst())
+                    val packages = PackageListUtils.parse(cursor.getString(0)).toSet()
+                    val expected = (0 until workerCount).flatMap { worker ->
+                        (0 until rounds).map { round -> "com.example.worker$worker.round$round" }
+                    }.toSet()
+                    assertEquals(expected, packages)
+                }
+            }
+        } finally {
+            executor.shutdownNow()
+            assertTrue("Category workers did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+    }
+
+    @Test
+    fun `revision checks do not wait for the category database write lock`() {
+        val update = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        val writeLock = ReflectionHelpers.getStaticField<Any>(OneKeyListUtils::class.java, "LIST_LOCK")
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            synchronized(writeLock) {
+                val read = executor.submit(Callable {
+                    assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, update.revision))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, update.revision - 1))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate(null, update.revision))
+                    assertFalse(OneKeyListUtils.isLatestCategoryUpdate("missing-category", update.revision))
+                })
+                read.get(5, TimeUnit.SECONDS)
+            }
+        } finally {
+            executor.shutdownNow()
+            assertTrue("Revision reader did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+    }
+
+    @Test
+    fun `single item add and remove invalidate selection snapshots`() {
+        val beforeAdd = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, beforeAdd.revision))
+        assertEquals(true, OneKeyListUtils.togglePackageInUserDefinedCategory(context, categoryId, missingPackage))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, beforeAdd.revision))
+
+        val beforeRemove = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("$missingPackage,", beforeRemove.packages)
+        assertEquals(false, OneKeyListUtils.togglePackageInUserDefinedCategory(context, categoryId, missingPackage))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, beforeRemove.revision))
+    }
+
+    @Test
+    fun `package cleanup invalidates only changed category snapshots`() {
+        val before = OneKeyListUtils.updateUserDefinedCategory(context, label, listOf(missingPackage), false)!!
+        OneKeyListUtils.removePackageFromUserDefinedCategories(context, "com.example.not.a.member")
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        OneKeyListUtils.removePackageFromUserDefinedCategories(context, missingPackage)
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        val after = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("", after.packages)
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, after.revision))
+    }
+
+    @Test
+    fun `uninstalled cleanup invalidates selection snapshot only when membership changes`() {
+        val before = OneKeyListUtils.updateUserDefinedCategory(context, label, listOf(missingPackage), false)!!
+        assertTrue(OneKeyListUtils.removeUninstalledFromUserDefinedCategories(context))
+        assertFalse(OneKeyListUtils.isLatestCategoryUpdate(label, before.revision))
+        val after = OneKeyListUtils.updateUserDefinedCategory(context, label, emptyList(), false)!!
+        assertEquals("", after.packages)
+        assertTrue(OneKeyListUtils.removeUninstalledFromUserDefinedCategories(context))
+        assertTrue(OneKeyListUtils.isLatestCategoryUpdate(label, after.revision))
     }
 }

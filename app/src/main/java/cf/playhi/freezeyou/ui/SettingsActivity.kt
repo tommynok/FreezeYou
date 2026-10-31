@@ -19,6 +19,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsAutomationFragment
 import cf.playhi.freezeyou.ui.fragment.settings.SettingsFragment
 import cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils
 import cf.playhi.freezeyou.utils.ThemeUtils.processActionBar
 import cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme
 import cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities
@@ -123,6 +124,11 @@ class SettingsActivity : FreezeYouBaseActivity(),
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
         checkPreferenceData(applicationContext, this, sharedPreferences, s)
+        if (languagePref.name == s) {
+            // ShortcutManager IPC can take seconds, so the settings screen must not wait for the
+            // republish; the shared worker keeps two quick language changes from racing.
+            ShortcutTokenUtils.initDynamicShortcutsAsync(applicationContext)
+        }
         if (languagePref.name == s
             || uiStyleSelection.name == s
             || themeOfAutoSwitchDarkMode.name == s
@@ -130,7 +136,10 @@ class SettingsActivity : FreezeYouBaseActivity(),
             || mainActivityPattern.name == s
         ) {
             // Recreate every live activity, not just this one: the rest of the back stack
-            // used to keep the old theme/language until a full process restart.
+            // used to keep the old theme until a full process restart. The language is applied by
+            // this app itself, in attachBaseContext, so recreating in-process is what makes the
+            // switch instant — handing it to the system instead tore the window down and the
+            // screen went black between the two passes.
             recreateAllActivities(this)
         }
     }
