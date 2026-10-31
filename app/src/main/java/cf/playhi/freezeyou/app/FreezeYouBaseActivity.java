@@ -18,6 +18,7 @@ import java.util.Locale;
 
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.ui.AppLockActivity;
+import cf.playhi.freezeyou.utils.ProcessUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout;
@@ -39,6 +40,8 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     private static final long TIMEOUT_NEVER = -1L;
     private static final long TIMEOUT_IMMEDIATELY = 0L;
     private static final long TIMEOUT_DEFAULT_MS = 900000L;
+
+    private static volatile boolean sProcessUnlocked = false;
 
     private String mUnlockLogoPkgName;
     private boolean mHadBeenUnlocked = false;
@@ -192,8 +195,10 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
         long timeoutMs = readAppLockTimeoutMs();
 
-        if (lockOnScreenOff.getValue(null) && mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
-            return true;
+        if (lockOnScreenOff.getValue(null)) {
+            if (!sProcessUnlocked || mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
+                return true;
+            }
         }
         if (timeoutMs == TIMEOUT_NEVER) {
             return false;
@@ -224,6 +229,35 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         );
     }
 
+    public static void resetProcessStartedCount(Context context) {
+        getLockStore(context).encode("started_" + ProcessUtils.getProcessName(context), 0);
+    }
+
+    public static void onActivityStarted(Context context) {
+        String processKey = "started_" + ProcessUtils.getProcessName(context);
+        MMKV mmkv = getLockStore(context);
+        int count = mmkv.decodeInt(processKey, 0) + 1;
+        mmkv.encode(processKey, count);
+        mmkv.removeValueForKey(BACKGROUND_TIME_KEY);
+    }
+
+    public static void onActivityStopped(Context context, boolean isChangingConfigurations) {
+        String processKey = "started_" + ProcessUtils.getProcessName(context);
+        MMKV mmkv = getLockStore(context);
+        int count = Math.max(0, mmkv.decodeInt(processKey, 0) - 1);
+        mmkv.encode(processKey, count);
+
+        if (!isChangingConfigurations && !hasVisibleActivities(context, mmkv)) {
+            mmkv.encode(BACKGROUND_TIME_KEY, new Date().getTime());
+        }
+    }
+
+    private static boolean hasVisibleActivities(Context context, MMKV mmkv) {
+        String pkg = context.getPackageName();
+        return mmkv.decodeInt("started_" + pkg, 0) > 0
+                || mmkv.decodeInt("started_" + pkg + ":installAndUninstall", 0) > 0;
+    }
+
     /**
      * Called when the last started activity of the process stops. Only a real exit reaches this
      * point: on a switch between two screens of the app the next activity starts before the
@@ -236,11 +270,13 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
     /** Called by the screen-off receiver; the lock is raised even before the timeout expires. */
     public static void markLockedByScreenOff(Context context) {
+        sProcessUnlocked = false;
         getLockStore(context).encode(SCREEN_OFF_LOCK_KEY, true);
     }
 
     /** Called on a successful unlock: the wait time starts over and both lock triggers clear. */
     public static void resetLockState(Context context) {
+        sProcessUnlocked = true;
         MMKV mmkv = getLockStore(context);
         mmkv.encode(UNLOCK_TIME_KEY, new Date().getTime());
         mmkv.removeValueForKey(BACKGROUND_TIME_KEY);

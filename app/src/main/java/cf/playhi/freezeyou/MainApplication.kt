@@ -61,23 +61,15 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         liveActivities.removeAll { it.get() === activity || it.get() == null }
     }
 
-    // How many activities of this process are visible. A start that follows a stop back to zero is
-    // the app leaving the foreground, which is what the "immediately on exit" lock waits for; a
-    // switch between two screens of the app never reaches zero, because the next activity starts
-    // before the previous one stops.
-    private var startedActivityCount = 0
     private var screenOffReceiver: BroadcastReceiver? = null
 
     override fun onActivityStarted(activity: Activity) {
         registerScreenOffReceiver()
-        startedActivityCount++
+        FreezeYouBaseActivity.onActivityStarted(this)
     }
 
     override fun onActivityStopped(activity: Activity) {
-        if (startedActivityCount > 0) startedActivityCount--
-        if (startedActivityCount == 0 && !activity.isChangingConfigurations) {
-            FreezeYouBaseActivity.markAppMovedToBackground(this)
-        }
+        FreezeYouBaseActivity.onActivityStopped(this, activity.isChangingConfigurations)
     }
 
     /**
@@ -135,6 +127,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
                 libName
             )
         }
+        FreezeYouBaseActivity.resetProcessStartedCount(this)
         try {
             runMigrationsWithIpcLock()
         } catch (e: Exception) {
