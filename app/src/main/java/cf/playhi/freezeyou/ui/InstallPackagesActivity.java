@@ -973,7 +973,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
         installProgressDialog = dialog;
 
         dialog.setTitle(R.string.plsWait);
-        dialog.setMessage(getString(R.string.loading___));
+        dialog.setMessage(String.format(getString(R.string.installing_app), appLabel));
         if (installProgressView != null) {
             installProgressView.setVisibility(View.VISIBLE);
         }
