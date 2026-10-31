@@ -215,6 +215,18 @@ public class Main extends FreezeYouBaseActivity {
     private int mUnprivilegedUninstallSuccessCount = 0;
 
     private final AtomicInteger mListGeneration = new AtomicInteger(0);
+    // Every rebuild goes through one worker holding one queued request. Each caller used to start
+    // a thread of its own, and every thread pulled the whole installed-package list across
+    // binder: an install session fires PACKAGE_ADDED / REMOVED / REPLACED in quick succession, so
+    // several full scans ran at once. mListGeneration only discards the result of a superseded
+    // pass, the scan itself was paid for every time. Collapsing them keeps the last request, which
+    // is the one that would have won the generation check anyway.
+    private final Object listGenerationLock = new Object();
+    private boolean listGenerationRunning;
+    private boolean listGenerationQueued;
+    private String queuedFilter;
+    private int queuedSortRule;
+    private String queuedCategoryLabel;
     // A full status snapshot must not apply after a newer one, and must not overwrite the rows
     // a single-package broadcast patched while it was still being computed.
     private final AtomicInteger mStatusRefreshGeneration = new AtomicInteger(0);
@@ -643,6 +655,79 @@ public class Main extends FreezeYouBaseActivity {
         currentCategoryLabel = categoryLabel;
         currentSortRule = sortRule;
         filterEstablished = true;
+        scheduleListGeneration(filter, sortRule, categoryLabel);
+    }
+
+    private void scheduleListGeneration(String filter, int sortRule, String categoryLabel) {
+        synchronized (listGenerationLock) {
+            queuedFilter = filter;
+            queuedSortRule = sortRule;
+            queuedCategoryLabel = categoryLabel;
+            listGenerationQueued = true;
+            if (listGenerationRunning) {
+                return;
+            }
+            listGenerationRunning = true;
+        }
+        new Thread(() -> runQueuedListGenerations(), "AppListRefresh").start();
+    }
+
+    private void runQueuedListGenerations() {
+        while (true) {
+            final String filter;
+            final int sortRule;
+            final String categoryLabel;
+            synchronized (listGenerationLock) {
+                if (!listGenerationQueued) {
+                    listGenerationRunning = false;
+                    return;
+                }
+                filter = queuedFilter;
+                sortRule = queuedSortRule;
+                categoryLabel = queuedCategoryLabel;
+                listGenerationQueued = false;
+                queuedFilter = null;
+                queuedCategoryLabel = null;
+            }
+            try {
+                generateListNow(filter, sortRule, categoryLabel);
+            } catch (Exception e) {
+                // The package list and the icons behind it come from binder calls into
+                // system_server. While the system restarts they answer with DeadSystemException,
+                // and a list whose parcel stops half way arrives as "Failure retrieving array".
+                // This thread is bare, so anything thrown on it reaches the default handler, which
+                // writes a crash log and calls Process.killProcess - a system hiccup took the whole
+                // app down and offered to upload a log on the next launch. Drop the pass instead;
+                // the next broadcast or the next launch asks again. Errors stay fatal on purpose:
+                // an OutOfMemoryError building 556 rows is not something to carry on from.
+                e.printStackTrace();
+                restoreListAfterFailedGeneration();
+            }
+        }
+    }
+
+    /**
+     * A rebuild hides the list behind the progress bar before it starts, so a pass that dies has
+     * to put the screen back itself or the spinner turns forever over an empty container. No toast:
+     * showing one is a binder call too, and the system is the thing that just failed.
+     */
+    private void restoreListAfterFailedGeneration() {
+        if (isFinishing()) return;
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            final ProgressBar progressBar = findViewById(R.id.progressBar);
+            final TextView loadingProgressTextView = findViewById(R.id.main_loading_progress_textView);
+            final FrameLayout layout2 = findViewById(R.id.layout2);
+            final FrameLayout appListFragmentContainer =
+                    findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            if (loadingProgressTextView != null) loadingProgressTextView.setVisibility(View.GONE);
+            if (layout2 != null) layout2.setVisibility(View.GONE);
+            if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.VISIBLE);
+        });
+    }
+
+    private void generateListNow(String filter, int sortRule, String categoryLabel) {
         final int generation = mListGeneration.incrementAndGet();
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
         final Context applicationContext = getApplicationContext();
