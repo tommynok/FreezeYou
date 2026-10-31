@@ -39,6 +39,7 @@
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
+    <string name="summary_lockOnScreenOff">Require unlock after the device screen turns off</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
@@ -397,6 +398,8 @@
     <string name="unlock">Unlock</string>
     <string name="security">Security</string>
     <string name="enableAuthentication">Enable authentication</string>
+    <string name="appLockTimeout">Lock timeout</string>
+    <string name="lockOnScreenOff">Lock on screen off</string>
     <string name="authentication">Authentication</string>
     <string name="verifyToContinue">Verify to continue</string>
     <string name="authenticationFailed">Authentication failed</string>
@@ -584,6 +587,24 @@
         <item>10</item>
         <item>9</item>
         <item>8</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>Immediately on exit</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelectionValues" translatable="false">
+        <item>0</item>
+        <item>60000</item>
+        <item>120000</item>
+        <item>300000</item>
+        <item>600000</item>
+        <item>900000</item>
+        <item>-1</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>Default</item>

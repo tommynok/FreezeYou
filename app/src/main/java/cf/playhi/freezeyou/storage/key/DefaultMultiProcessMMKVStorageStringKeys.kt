@@ -6,6 +6,7 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_APPEARANCE
 import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_FREEZE_AND_UNFREEZE
+import cf.playhi.freezeyou.storage.key.KeyCategory.CATEGORY_SETTINGS_SECURITY
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.storage.mmkv.FreezeYouMMKVStorage
 
@@ -55,6 +56,16 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.shortcutClickAction
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_FREEZE_AND_UNFREEZE
+    },
+
+    appLockTimeout {
+        // Milliseconds, as the settings list stores them. "0" locks as soon as the app leaves the
+        // foreground and "-1" never locks by itself, so the readers must not treat these as times.
+        // "900000" is the timeout the lock had hardcoded before it became a setting.
+        override fun defaultValue() = "900000"
+        override fun valueStringId(): Int = -1
+        override fun titleTextStringId(): Int = R.string.appLockTimeout
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     };
 
     /**

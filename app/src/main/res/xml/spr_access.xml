@@ -16,6 +16,24 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_enableAuthentication"
             app:title="@string/enableAuthentication" />
+        <ListPreference
+            app:defaultValue="900000"
+            app:dependency="enableAuthentication"
+            app:entries="@array/appLockTimeoutSelection"
+            app:entryValues="@array/appLockTimeoutSelectionValues"
+            app:iconSpaceReserved="false"
+            app:key="appLockTimeout"
+            app:singleLineTitle="false"
+            app:title="@string/appLockTimeout"
+            app:useSimpleSummaryProvider="true" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="enableAuthentication"
+            app:iconSpaceReserved="false"
+            app:key="lockOnScreenOff"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_lockOnScreenOff"
+            app:title="@string/lockOnScreenOff" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:disableDependentsState="false"

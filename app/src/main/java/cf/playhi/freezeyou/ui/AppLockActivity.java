@@ -13,9 +13,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
-import com.tencent.mmkv.MMKV;
-
-import java.util.Date;
 import java.util.concurrent.Executor;
 
 import cf.playhi.freezeyou.R;
@@ -165,10 +162,9 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                             @NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
 
-                        MMKV.mmkvWithAshmemID(
-                                        getApplicationContext(), "AshmemKV",
-                                        32, MMKV.MULTI_PROCESS_MODE, null)
-                                .encode("unlockTime", new Date().getTime());
+                        // Clears the background and screen-off triggers too: the app is open again
+                        // from now, and an old stamp would lock it on the next resume.
+                        resetLockState(AppLockActivity.this);
 
                         finishImmediately(RESULT_OK);
                     }

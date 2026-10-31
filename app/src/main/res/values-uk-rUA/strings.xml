@@ -39,6 +39,7 @@
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
     <string name="summary_combineBatchQuickNotification">Показувати одну картку з кнопкою «Заморозити все» замість окремих сповіщень для кожного додатка</string>
     <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
+    <string name="summary_lockOnScreenOff">Вимагати розблокування після вимкнення екрана</string>
     <string name="summary_enableInstallPkgFunc">Дозволяє відкривати та встановлювати сторонні APK-файли через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Видаляє файл APK після успішного встановлення, щоб звільнити місце</string>
     <string name="summary_notAllowWhenIsObsd">Блокує встановлення/видалення, якщо екран перекрито вікном іншого додатку (захист від підміни натискань)</string>
@@ -396,6 +397,8 @@
     <string name="unlock">Розблокування</string>
     <string name="security">Безпека</string>
     <string name="enableAuthentication">Ввімкнути автентифікацію</string>
+    <string name="appLockTimeout">Час до блокування</string>
+    <string name="lockOnScreenOff">Блокувати при вимкненні екрана</string>
     <string name="authentication">Автентифікація</string>
     <string name="verifyToContinue">Підтвердити для продовження</string>
     <string name="authenticationFailed">Помилка автентифікації</string>
@@ -500,6 +503,15 @@
         <item>Shizuku (режим відключення)</item>
         <item>Shizuku (режим Disable_User)</item>
         <item>Shizuku (режим Disable_Until_Used)</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>Відразу при виході</item>
+        <item>1 хвилина</item>
+        <item>2 хвилини</item>
+        <item>5 хвилин</item>
+        <item>10 хвилин</item>
+        <item>15 хвилин</item>
+        <item>Ніколи</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>За замовчуванням</item>

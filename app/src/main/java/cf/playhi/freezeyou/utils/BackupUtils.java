@@ -100,6 +100,9 @@ public final class BackupUtils {
                 DefaultMultiProcessMMKVStorageStringKeys.languagePref.name(),
                 R.array.displayLanguageOptionsSelectionValues);
         OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout.name(),
+                R.array.appLockTimeoutSelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
                 DefaultSharedPreferenceStorageStringKeys.mainActivityPattern.name(),
                 R.array.mainActivityPatternSelectionValues);
         OFFERED_VALUE_ARRAYS.put(

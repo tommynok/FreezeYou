@@ -45,6 +45,7 @@
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
     <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
     <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
+    <string name="summary_lockOnScreenOff">设备息屏后需要重新解锁</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
     <string name="summary_notAllowWhenIsObsd">当屏幕被其他应用窗口遮挡时阻止安装/卸载确认（防点击劫持）</string>
@@ -402,6 +403,8 @@
     <string name="unlock">解锁</string>
     <string name="security">安全</string>
     <string name="enableAuthentication">启用身份验证</string>
+    <string name="appLockTimeout">锁定超时</string>
+    <string name="lockOnScreenOff">息屏时立即锁定</string>
     <string name="authentication">身份验证</string>
     <string name="verifyToContinue">验证以继续</string>
     <string name="authenticationFailed">验证失败</string>
@@ -505,6 +508,15 @@
         <item>Shizuku（停用模式）</item>
         <item>Shizuku（Disable_User 模式）</item>
         <item>Shizuku（Disable_Until_Used 模式）</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>退出时立即</item>
+        <item>1 分钟</item>
+        <item>2 分钟</item>
+        <item>5 分钟</item>
+        <item>10 分钟</item>
+        <item>15 分钟</item>
+        <item>从不</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>默认</item>

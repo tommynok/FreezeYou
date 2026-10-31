@@ -1,13 +1,18 @@
 package cf.playhi.freezeyou
 
+import android.app.Activity
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import androidx.annotation.NonNull
 import androidx.preference.PreferenceManager
+import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
@@ -26,8 +31,6 @@ import cf.playhi.freezeyou.utils.ServiceUtils
 import com.getkeepsafe.relinker.ReLinker
 import com.google.android.material.color.DynamicColors
 import com.tencent.mmkv.MMKV
-import android.app.Activity
-import android.os.Bundle
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -58,13 +61,48 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         liveActivities.removeAll { it.get() === activity || it.get() == null }
     }
 
-    override fun onActivityStarted(activity: Activity) {}
+    // How many activities of this process are visible. A start that follows a stop back to zero is
+    // the app leaving the foreground, which is what the "immediately on exit" lock waits for; a
+    // switch between two screens of the app never reaches zero, because the next activity starts
+    // before the previous one stops.
+    private var startedActivityCount = 0
+    private var screenOffReceiver: BroadcastReceiver? = null
+
+    override fun onActivityStarted(activity: Activity) {
+        registerScreenOffReceiver()
+        startedActivityCount++
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        if (startedActivityCount > 0) startedActivityCount--
+        if (startedActivityCount == 0 && !activity.isChangingConfigurations) {
+            FreezeYouBaseActivity.markAppMovedToBackground(this)
+        }
+    }
+
+    /**
+     * Registered on the first screen the user opens and never unregistered. Unregistering on the
+     * way out would stop hearing the broadcast exactly while the app is away, and a hand-over
+     * between two of its own screens races the broadcast on the same thread. The price is a lock
+     * stamp left by a screen-off that happened while the app was already in the background — the
+     * safer of the two mistakes.
+     */
+    private fun registerScreenOffReceiver() {
+        if (screenOffReceiver != null) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (Intent.ACTION_SCREEN_OFF == intent.action && lockOnScreenOff.getValue(null)) {
+                    FreezeYouBaseActivity.markLockedByScreenOff(context)
+                }
+            }
+        }
+        registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        screenOffReceiver = receiver
+    }
 
     override fun onActivityResumed(activity: Activity) {}
 
     override fun onActivityPaused(activity: Activity) {}
-
-    override fun onActivityStopped(activity: Activity) {}
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 

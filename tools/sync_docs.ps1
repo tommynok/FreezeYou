@@ -18,7 +18,8 @@ $files = @(
     "SHORTCUTS_EXPLAINED.md",
     "DEVICE_VERIFICATION_CATALOG.md",
     "ARCHITECT_WORKFLOW.md",
-    "CODER_HANDOFF.md"
+    "CODER_HANDOFF.md",
+    "NEW_CHAT_HANDOFF.md"
 )
 
 if (-not (Test-Path $targetDir)) {

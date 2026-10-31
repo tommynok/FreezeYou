@@ -19,6 +19,8 @@ import java.util.Locale;
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.ui.AppLockActivity;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.Support.checkLanguage;
@@ -26,6 +28,17 @@ import static cf.playhi.freezeyou.utils.Support.getLocalString;
 
 public class FreezeYouBaseActivity extends AppCompatActivity {
     private static final int APP_LOCK_ACTIVITY_REQUEST_CODE = 65533;
+
+    // The lock state lives in the ashmem store because the settings screen writes it in one
+    // process and an activity of another process reads it.
+    private static final String ASHMEM_KV_ID = "AshmemKV";
+    private static final String UNLOCK_TIME_KEY = "unlockTime";
+    private static final String BACKGROUND_TIME_KEY = "backgroundTime";
+    private static final String SCREEN_OFF_LOCK_KEY = "screenOffLock";
+
+    private static final long TIMEOUT_NEVER = -1L;
+    private static final long TIMEOUT_IMMEDIATELY = 0L;
+    private static final long TIMEOUT_DEFAULT_MS = 900000L;
 
     private String mUnlockLogoPkgName;
     private boolean mHadBeenUnlocked = false;
@@ -122,12 +135,7 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (mHadBeenUnlocked) {
-            resetLockWaitTime(
-                    MMKV.mmkvWithAshmemID(
-                            getApplicationContext(), "AshmemKV",
-                            32, MMKV.MULTI_PROCESS_MODE, null
-                    )
-            );
+            resetLockWaitTime(getLockStore(this));
         }
     }
 
@@ -176,23 +184,77 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         if (!isAuthenticationEnabled()) return false;
         if (!isBiometricPromptPartAvailable(this)) return false;
 
-        MMKV mmkv =
-                MMKV.mmkvWithAshmemID(
-                        getApplicationContext(), "AshmemKV",
-                        32, MMKV.MULTI_PROCESS_MODE, null);
+        MMKV mmkv = getLockStore(this);
+        long unlockTime = mmkv.decodeLong(UNLOCK_TIME_KEY, 0);
+        // An install that has never been unlocked has no timestamp to age. The lock screen comes
+        // first whatever the timeout says — "never" means "not again after the first opening".
+        if (unlockTime == 0) return true;
 
-        long currentTime = new Date().getTime();
-        // 15 minutes
-        if (mmkv.decodeLong("unlockTime", 0) < currentTime - 900000) {
+        long timeoutMs = readAppLockTimeoutMs();
+
+        if (lockOnScreenOff.getValue(null) && mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
             return true;
-        } else {
-            resetLockWaitTime(mmkv);
+        }
+        if (timeoutMs == TIMEOUT_NEVER) {
             return false;
         }
+        if (timeoutMs == TIMEOUT_IMMEDIATELY) {
+            return mmkv.decodeLong(BACKGROUND_TIME_KEY, 0) > 0;
+        }
+
+        long currentTime = new Date().getTime();
+        // Whichever came later, the last refresh of the wait time or the app leaving the
+        // foreground: an activity switch inside the app moves neither of them far enough to lock.
+        if (currentTime - Math.max(unlockTime, mmkv.decodeLong(BACKGROUND_TIME_KEY, 0)) >= timeoutMs) {
+            return true;
+        }
+        resetLockWaitTime(mmkv);
+        return false;
     }
 
     protected boolean resetLockWaitTime(MMKV mmkv) {
-        return mmkv.encode("unlockTime", new Date().getTime());
+        return mmkv.encode(UNLOCK_TIME_KEY, new Date().getTime());
+    }
+
+    /** The store the lock state is shared through. */
+    public static MMKV getLockStore(Context context) {
+        return MMKV.mmkvWithAshmemID(
+                context.getApplicationContext(), ASHMEM_KV_ID,
+                32, MMKV.MULTI_PROCESS_MODE, null
+        );
+    }
+
+    /**
+     * Called when the last started activity of the process stops. Only a real exit reaches this
+     * point: on a switch between two screens of the app the next activity starts before the
+     * previous one stops, so the count never falls to zero. A configuration change is skipped for
+     * the same reason — the rotation restarts the screen, it does not leave it.
+     */
+    public static void markAppMovedToBackground(Context context) {
+        getLockStore(context).encode(BACKGROUND_TIME_KEY, new Date().getTime());
+    }
+
+    /** Called by the screen-off receiver; the lock is raised even before the timeout expires. */
+    public static void markLockedByScreenOff(Context context) {
+        getLockStore(context).encode(SCREEN_OFF_LOCK_KEY, true);
+    }
+
+    /** Called on a successful unlock: the wait time starts over and both lock triggers clear. */
+    public static void resetLockState(Context context) {
+        MMKV mmkv = getLockStore(context);
+        mmkv.encode(UNLOCK_TIME_KEY, new Date().getTime());
+        mmkv.removeValueForKey(BACKGROUND_TIME_KEY);
+        mmkv.removeValueForKey(SCREEN_OFF_LOCK_KEY);
+    }
+
+    private static long readAppLockTimeoutMs() {
+        try {
+            return Long.parseLong(appLockTimeout.getValue(null).trim());
+        } catch (Exception e) {
+            // A store that holds no readable timeout keeps the one the lock had hardcoded before
+            // it became a setting, rather than an unlocked app or a permanent lock screen.
+            return TIMEOUT_DEFAULT_MS;
+        }
     }
 
     protected void setUnlockLogoPkgName(String pkgName) {
