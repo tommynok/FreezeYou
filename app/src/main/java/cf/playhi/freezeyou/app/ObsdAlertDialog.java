@@ -69,10 +69,7 @@ public class ObsdAlertDialog extends AlertDialog {
         float density = getContext().getResources().getDisplayMetrics().density;
         MaterialShapeDrawable surface = new MaterialShapeDrawable(
                 ShapeAppearanceModel.builder()
-                        .setAllCorners(
-                                ShapeAppearanceModel.CORNER_FAMILY_ROUNDED,
-                                CORNER_RADIUS_DP * density
-                        )
+                        .setAllCornerSizes(CORNER_RADIUS_DP * density)
                         .build()
         );
         surface.setFillColor(ColorStateList.valueOf(resolveSurfaceColor()));
