@@ -62,6 +62,12 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 public class InstallPackagesActivity extends FreezeYouBaseActivity {
     private static final String ILLEGALPKGNAME = "Fy^&IllegalPN*@!128`+=：:,.[";
 
+    /** Material 3's minimum dialog width: the floor every install phase measures against. */
+    private static final int DIALOG_MIN_WIDTH_DP = 280;
+
+    /** The block the spinner occupies, whatever the platform spinner's own intrinsic size is. */
+    private static final int SPINNER_BLOCK_HEIGHT_DP = 48;
+
     /** Set while an install started from here is running and this window is waiting for its result. */
     private BroadcastReceiver installStatusReceiver;
 
@@ -284,10 +290,35 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER
         );
-        int padVertical = (int) (16 * getResources().getDisplayMetrics().density);
-        container.setPadding(0, padVertical, 0, padVertical);
         container.addView(progressBar, lp);
+        // Its own height rather than the spinner's: the platform spinner's intrinsic size follows
+        // the theme, so the two phases that show one measured differently and the window shifted
+        // between "preparing" and "installing".
+        container.setMinimumHeight(dpToPx(SPINNER_BLOCK_HEIGHT_DP));
         return container;
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    /**
+     * One dialog carries all four install phases and each holds different content: a spinner,
+     * then three lines of package detail with up to three buttons, then a spinner again, then a
+     * one-line result. Left to measure itself the window narrows and widens as they replace one
+     * another, and re-centres each time it does. The floor goes on the window content, not on the
+     * dialog's panel: that id belongs to the AppCompat resources, which is why
+     * clearCustomPanelMinimumHeight walks the tree instead of looking it up.
+     */
+    private void applyStableDialogWidth(AlertDialog dialog) {
+        Window window = dialog == null ? null : dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+        View content = window.findViewById(android.R.id.content);
+        if (content != null) {
+            content.setMinimumWidth(dpToPx(DIALOG_MIN_WIDTH_DP));
+        }
     }
 
     private void prepareInstallDialog(final boolean install, final Uri packageUri, final String apkFilePath, final String fromPkgLabel, final String fromPkgName) {
@@ -319,6 +350,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             installProgressView = spinnerView;
             progressDialog.show();
             clearCustomPanelMinimumHeight(spinnerView);
+            applyStableDialogWidth(progressDialog);
             setButtonVisible(progressDialog, DialogInterface.BUTTON_POSITIVE, false);
             setButtonVisible(progressDialog, DialogInterface.BUTTON_NEGATIVE, false);
             setButtonVisible(progressDialog, DialogInterface.BUTTON_NEUTRAL, false);
@@ -681,6 +713,7 @@ public class InstallPackagesActivity extends FreezeYouBaseActivity {
             currentConfirmationDialog = installPackagesAlertDialog;
             installPackagesAlertDialog.show();
             applyButtonAccentColor(installPackagesAlertDialog);
+            applyStableDialogWidth(installPackagesAlertDialog);
 
             Window w = installPackagesAlertDialog.getWindow();
             if (w != null) {
