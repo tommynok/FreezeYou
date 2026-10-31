@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.app;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -238,7 +239,6 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         MMKV mmkv = getLockStore(context);
         int count = mmkv.decodeInt(processKey, 0) + 1;
         mmkv.encode(processKey, count);
-        mmkv.removeValueForKey(BACKGROUND_TIME_KEY);
     }
 
     public static void onActivityStopped(Context context, boolean isChangingConfigurations) {
@@ -252,10 +252,39 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         }
     }
 
+    private static boolean isProcessAlive(Context context, String targetProcessName) {
+        try {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                java.util.List<ActivityManager.RunningAppProcessInfo> procs = am.getRunningAppProcesses();
+                if (procs != null) {
+                    for (ActivityManager.RunningAppProcessInfo info : procs) {
+                        if (targetProcessName.equals(info.processName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return false;
+    }
+
     private static boolean hasVisibleActivities(Context context, MMKV mmkv) {
         String pkg = context.getPackageName();
-        return mmkv.decodeInt("started_" + pkg, 0) > 0
-                || mmkv.decodeInt("started_" + pkg + ":installAndUninstall", 0) > 0;
+        if (mmkv.decodeInt("started_" + pkg, 0) > 0) {
+            return true;
+        }
+        String installProcess = pkg + ":installAndUninstall";
+        if (mmkv.decodeInt("started_" + installProcess, 0) > 0) {
+            if (isProcessAlive(context, installProcess)) {
+                return true;
+            } else {
+                mmkv.encode("started_" + installProcess, 0);
+            }
+        }
+        return false;
     }
 
     /**
