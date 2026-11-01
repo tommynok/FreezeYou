@@ -94,7 +94,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         // Nothing was carried into this session: the list of applications the user was let into is
         // written by whichever process raised the last lock screen, and a service that starts now
         // is the first thing that could say what is actually on screen.
-        ProcessSharedState.clearAllUnlockedPackages();
+        endUnlockedSession();
         registerScreenOffLockReceiver();
     }
 
@@ -107,7 +107,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
             unregisterReceiver(mScreenOffReceiver);
             mScreenOffReceiver = null;
         }
-        ProcessSharedState.clearAllUnlockedPackages();
+        endUnlockedSession();
         mExecutor.shutdown();
         super.onDestroy();
     }
@@ -122,11 +122,25 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (lockOnScreenOff.getValue(null)) {
-                    ProcessSharedState.clearAllUnlockedPackages();
+                    endUnlockedSession();
                 }
             }
         };
         registerReceiver(mScreenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
+    }
+
+    /**
+     * The applications the user was let into are forgotten - and with them the window they were let
+     * into.
+     *
+     * The lock goes up on a change of package, so a session that ends while a protected application
+     * is still the one in front has to stop reporting it as in front. Otherwise a device woken to
+     * that same screen names the package it already had, the event reads as no change, and the
+     * application the user was stopped from reading stays open for whoever wakes it next.
+     */
+    private void endUnlockedSession() {
+        ProcessSharedState.clearAllUnlockedPackages();
+        MainApplication.clearCurrentPackage();
     }
 
     /**
@@ -198,7 +212,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
                             isAuthenticationEnabled(), isBiometricPromptPartAvailable(this),
                             ProcessSharedState.isPackageUnlocked(pkgNameString))) {
-                        showAppLock(pkgNameString);
+                        showAppLock(pkgNameString, previousPkg);
                     }
                 }
 
@@ -389,15 +403,44 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 .putExtra("ignoreCurrentUnlockStatus", true);
     }
 
-    private void showAppLock(String pkgNameString) {
+    /**
+     * Raises the lock screen over the application the user has just entered, and if it cannot be
+     * raised, takes the user away from that application.
+     *
+     * A lock that failed to start is not a lock, and the service has already written this package as
+     * the window in front: every later event for it reads as no change, so nothing would ask again
+     * and the application the screen was meant to cover would go on open in front of whoever is
+     * next to hold the phone. So the recorded package goes back to what it was - which lets the next
+     * window change try once more - and the way out is the home screen, the same one a refusal on the
+     * lock screen takes. The service is not lost over it: an application nobody could cover is
+     * reported here rather than left looking like it was.
+     */
+    private void showAppLock(String pkgNameString, String previousPkg) {
         try {
             startActivity(buildAppLockIntent(this, pkgNameString));
         } catch (RuntimeException e) {
-            // The alternative is losing the service over the event. An application that was not
-            // covered is reported here rather than left looking like it was.
             Log.w("FreezeYouDebug",
                     "AccessibilityService: app lock could not be raised over " + pkgNameString
                             + ": " + e.getMessage(), e);
+            MainApplication.setCurrentPackage(previousPkg);
+            leaveTowardsHome();
+        }
+    }
+
+    /**
+     * The home screen is the only window that can stand in front of an application nobody has been
+     * let into: it is a window of its own rather than one this service would have to close.
+     */
+    private void leaveTowardsHome() {
+        try {
+            startActivity(new Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_HOME)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (RuntimeException e) {
+            // No home screen to go to leaves the application visible, which is what the retry on the
+            // next window change is for; losing the service over it would leave nothing to retry.
+            Log.w("FreezeYouDebug",
+                    "AccessibilityService: the home screen could not be reached: " + e.getMessage(), e);
         }
     }
 

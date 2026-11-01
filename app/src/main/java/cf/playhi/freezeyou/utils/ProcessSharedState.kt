@@ -79,8 +79,7 @@ object ProcessSharedState {
      */
     @JvmStatic
     fun setPackageUnlocked(pkgName: String?) {
-        val current = currentUnlockedPackages()
-        writeUnlockedPackages(current, unlockedPackagesAfterUnlock(current, pkgName))
+        mutateUnlockedPackages { current -> unlockedPackagesAfterUnlock(current, pkgName) }
     }
 
     @JvmStatic
@@ -90,8 +89,7 @@ object ProcessSharedState {
     /** The session unlock was for as long as this application was the one in front. */
     @JvmStatic
     fun clearPackageUnlocked(pkgName: String?) {
-        val current = currentUnlockedPackages()
-        writeUnlockedPackages(current, unlockedPackagesAfterLock(current, pkgName))
+        mutateUnlockedPackages { current -> unlockedPackagesAfterLock(current, pkgName) }
     }
 
     /**
@@ -101,7 +99,7 @@ object ProcessSharedState {
      */
     @JvmStatic
     fun clearAllUnlockedPackages() {
-        writeUnlockedPackages(currentUnlockedPackages(), "")
+        mutateUnlockedPackages { "" }
     }
 
     /**
@@ -130,12 +128,33 @@ object ProcessSharedState {
         return OneKeyListUtils.removePkgFromPkgNames(raw, pkgName)
     }
 
-    /** One write per real change: a window change that locks nothing is not a trip to the store. */
-    private fun writeUnlockedPackages(current: String, updated: String) {
-        if (current == updated) return
-        DefaultMultiProcessMMKVStorage().putString(KEY_UNLOCKED_PACKAGES, updated).sync()
+    /**
+     * Read, change, write the whole session set as one operation.
+     *
+     * The unlock is written by the main process and the leave is written by `:backgroundService`,
+     * and both edit the same stored string: an unlocked read-modify-write let the later writer
+     * publish the set as it saw it when it started, which could hand back an application the user
+     * had just left - and an application the session still counts as open is one the lock never
+     * asks about again. So the sequence takes the locks the OneKEY lists already take: one for the
+     * threads of this process, and MMKV's file lock for the other process.
+     */
+    private fun mutateUnlockedPackages(update: (String) -> String) {
+        synchronized(UNLOCKED_PACKAGES_LOCK) {
+            val storage = DefaultMultiProcessMMKVStorage()
+            storage.lock()
+            try {
+                val current = storage.getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
+                val updated = update(current)
+                // One write per real change: a window change that locks nothing is not a trip to the store.
+                if (current != updated) storage.putString(KEY_UNLOCKED_PACKAGES, updated).sync()
+            } finally {
+                storage.unlock()
+            }
+        }
     }
 
     private fun currentUnlockedPackages(): String =
         DefaultMultiProcessMMKVStorage().getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
+
+    private val UNLOCKED_PACKAGES_LOCK = Any()
 }
