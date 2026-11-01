@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Удалить из OneKey-заморозки</string>
     <string name="removeFromOneKeyUFList">Удалить из OneKey-разморозки</string>
     <string name="removeFromFreezeOnceQuit">Удалить из «Заморозка после выхода»</string>
+    <string name="removeFromAppLockList">Удалить из «Блокировка приложений»</string>
     <string name="removed">Удалено</string>
     <string name="removeFailed">Не удалось удалить</string>
     <string name="addToOneKeyList">Добавить в OneKey-заморозку</string>
     <string name="addToOneKeyUFList">Добавить в OneKey-разморозку</string>
     <string name="addToFreezeOnceQuit">Добавить в «Заморозка после выхода»</string>
+    <string name="addToAppLockList">Добавить в «Блокировка приложений»</string>
+    <string name="appLock">Блокировка приложений</string>
     <string name="addFailed">Не удалось добавить</string>
     <string name="caution">ВНИМАНИЕ</string>
     <string name="cautionContent">Не замораживайте важные для системы приложения. Это может привести к сбою системы</string>
@@ -452,6 +455,7 @@
         <item>OneKey-заморозка</item>
         <item>OneKey-разморозка</item>
         <item>Заморозка после выхода</item>
+        <item>Блокировка приложений</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>Нет</item>

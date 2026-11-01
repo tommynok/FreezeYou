@@ -155,6 +155,20 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     }
 
     /**
+     * Whether the unlocked session this screen was raised in has ended since.
+     *
+     * A screen the interception did not raise carries no stamp, and an answer given there is not a
+     * thing a screen-off may take back: that is the settings row proving the door opens, and the
+     * user is still standing in front of it.
+     */
+    private boolean isSessionStale() {
+        return ProcessSharedState.isAppLockSessionStale(
+                getIntent().getLongExtra("appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION),
+                ProcessSharedState.getSessionEpoch()
+        );
+    }
+
+    /**
      * A refusal cannot simply close this screen: the window the user then sees is the application
      * they were just stopped from opening, drawn while they watch. So the screen leaves towards the
      * home screen, which is a window of its own and the only one that can be behind an application
@@ -228,6 +242,17 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     public void onAuthenticationSucceeded(
                             @NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
+
+                        // The prompt is not answered when it is raised but whenever the device gets
+                        // round to it, and a screen-off in between has already ended the session
+                        // this screen was stamped in. Handing the application over now would open
+                        // it for whoever wakes the device next, so the answer is dropped and the
+                        // user is taken home rather than left looking at an application that was
+                        // never opened for them.
+                        if (isSessionStale()) {
+                            dismissWithoutRevealingTarget();
+                            return;
+                        }
 
                         // The application the user is now going into is open for as long as it stays
                         // the window in front; the accessibility service takes that back the moment

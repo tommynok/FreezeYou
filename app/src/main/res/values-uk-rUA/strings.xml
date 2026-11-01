@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Видалити зі списку OneKey-заморожування</string>
     <string name="removeFromOneKeyUFList">Видалити зі списку OneKey-розморожування</string>
     <string name="removeFromFreezeOnceQuit">Видалити з «Заморожування після виходу»</string>
+    <string name="removeFromAppLockList">Видалити з «Блокування застосунків»</string>
     <string name="removed">Видалено</string>
     <string name="removeFailed">Не вдалося видалити</string>
     <string name="addToOneKeyList">Додати в список OneKey-заморожування</string>
     <string name="addToOneKeyUFList">Додати в список OneKey-розморожування</string>
     <string name="addToFreezeOnceQuit">Додати в Заморожування після виходу</string>
+    <string name="addToAppLockList">Додати до «Блокування застосунків»</string>
+    <string name="appLock">Блокування застосунків</string>
     <string name="addFailed">Не вдалося додати</string>
     <string name="caution">УВАГА</string>
     <string name="cautionContent">Забороняється заморожувати важливі для системи додатки. Це може привести до збою системи</string>
@@ -452,6 +455,7 @@
         <item>OneKey-заморожування</item>
         <item>OneKey-розморожування</item>
         <item>Заморожування при виході</item>
+        <item>Блокування застосунків</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>Немає</item>

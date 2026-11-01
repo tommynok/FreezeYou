@@ -3,7 +3,9 @@ package cf.playhi.freezeyou
 import android.app.Application
 import android.content.Intent
 import cf.playhi.freezeyou.ui.AppLockActivity
+import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
+import cf.playhi.freezeyou.utils.ShadowContractMMKV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,11 +25,16 @@ import org.robolectric.annotation.Config
  * proved themselves inside, raise it too rarely and the application is simply open. The intent is
  * the whole contract between the service that sees the window and the screen that asks - the extra
  * naming the application is what lets that screen know that leaving it towards the application
- * would be the answer the user refused. And the session set is what the two processes hand each
- * other, so its shape has to survive two names of which one begins with the other.
+ * would be the answer the user refused, and the session it was stamped in is what lets it know that
+ * the answer arrived after that session had ended. And the session set is what the two processes
+ * hand each other, so its shape has to survive two names of which one begins with the other.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(
+    sdk = [34], application = Application::class,
+    shadows = [ShadowContractMMKV::class],
+    instrumentedPackages = ["com.tencent.mmkv"]
+)
 class AppLockInterceptionTest {
 
     private lateinit var context: Application
@@ -35,6 +42,7 @@ class AppLockInterceptionTest {
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
+        ShadowContractMMKV.reset()
     }
 
     @Test
@@ -188,5 +196,82 @@ class AppLockInterceptionTest {
     fun `an absent session unlocks nothing`() {
         assertFalse(ProcessSharedState.isUnlockedIn(null, "com.a"))
         assertFalse(ProcessSharedState.isUnlockedIn("", "com.a"))
+    }
+
+    @Test
+    fun `the interception stamps the session it was raised in`() {
+        val epoch = ProcessSharedState.advanceSessionEpoch()
+
+        val intent = AccessibilityService.buildAppLockIntent(context, "com.example.mail")
+
+        assertEquals(epoch, intent.getLongExtra("appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION))
+    }
+
+    @Test
+    fun `a session that ended is not one a lock screen may answer in`() {
+        assertFalse(ProcessSharedState.isAppLockSessionStale(0L, 0L))
+        assertFalse(ProcessSharedState.isAppLockSessionStale(2L, 2L))
+        assertTrue(ProcessSharedState.isAppLockSessionStale(0L, 1L))
+        assertTrue(ProcessSharedState.isAppLockSessionStale(2L, 3L))
+    }
+
+    @Test
+    fun `a screen that was never stamped is not refused by a session it never had`() {
+        // The settings row that proves the door opens names no session. Refusing its answer would be
+        // the worse kind of safe: the user leaves the application because a screen-off happened while
+        // they were being asked whether they may open this one.
+        assertFalse(
+            ProcessSharedState.isAppLockSessionStale(
+                ProcessSharedState.NO_APP_LOCK_SESSION, 0L
+            )
+        )
+        assertFalse(
+            ProcessSharedState.isAppLockSessionStale(
+                ProcessSharedState.NO_APP_LOCK_SESSION, 7L
+            )
+        )
+    }
+
+    @Test
+    fun `ending the session moves the epoch even when nothing was unlocked`() {
+        // The set cannot report this session: a lock screen still waiting for its first answer names
+        // no unlocked package, so clearing the set would be a no-op and the late success would stand.
+        val raised = ProcessSharedState.getSessionEpoch()
+
+        ProcessSharedState.clearAllUnlockedPackages()
+
+        assertEquals(raised + 1, ProcessSharedState.getSessionEpoch())
+        assertTrue(
+            ProcessSharedState.isAppLockSessionStale(raised, ProcessSharedState.getSessionEpoch())
+        )
+    }
+
+    @Test
+    fun `a protected application is on the list the menus read, and off it again`() {
+        val listKey = context.getString(R.string.sAppLockList)
+        assertEquals("New_AppLockList", listKey)
+
+        // The popup decides add-or-remove inside the write, so the second tap is the removal and not
+        // a repeat of the first.
+        assertTrue(OneKeyListUtils.toggleInOneKeyList(context, listKey, "com.example.mail")!!)
+        assertTrue(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.mail"))
+        assertFalse(OneKeyListUtils.toggleInOneKeyList(context, listKey, "com.example.mail")!!)
+        assertFalse(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.mail"))
+    }
+
+    @Test
+    fun `a selection added to the protected list is all on it and a removal takes only what it names`() {
+        val listKey = context.getString(R.string.sAppLockList)
+
+        assertTrue(
+            OneKeyListUtils.addToOneKeyList(context, listKey, listOf("com.example.mail", "com.example.bank"))
+        )
+        assertTrue(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.mail"))
+        assertTrue(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.bank"))
+
+        assertTrue(OneKeyListUtils.removeFromOneKeyList(context, listKey, listOf("com.example.mail")))
+
+        assertFalse(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.mail"))
+        assertTrue(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.bank"))
     }
 }

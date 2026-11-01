@@ -100,6 +100,11 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     private BroadcastReceiver mScreenOffReceiver;
+    /**
+     * Whether the screen this service raised over somebody else's application is still the one in
+     * front. The events arrive on one thread and only this class reads or writes it.
+     */
+    private boolean mAppLockIsUp = false;
 
     @Override
     public void onDestroy() {
@@ -141,6 +146,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     private void endUnlockedSession() {
         ProcessSharedState.clearAllUnlockedPackages();
         MainApplication.clearCurrentPackage();
+        mAppLockIsUp = false;
     }
 
     /**
@@ -202,7 +208,15 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
                 MainApplication.setCurrentPackage(pkgNameString);
 
-                if (!getPackageName().equals(pkgNameString)) {
+                if (getPackageName().equals(pkgNameString)) {
+                    // The window of this application is the lock screen raised over an application
+                    // the user has not been let into yet. They have not left that application - the
+                    // screen in front of them belongs to this one, and answering it as a departure
+                    // would freeze it or run its exit tasks while the question is still open.
+                    if (mAppLockIsUp) return;
+                } else {
+                    mAppLockIsUp = false;
+
                     // The application the user was let into is locked again the moment it stops
                     // being the window on screen. A window of this application is not that moment:
                     // the lock screen this service raises is one, and treating it as a departure
@@ -212,7 +226,14 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
                             isAuthenticationEnabled(), isBiometricPromptPartAvailable(this),
                             ProcessSharedState.isPackageUnlocked(pkgNameString))) {
-                        showAppLock(pkgNameString, previousPkg);
+                        if (!showAppLock(pkgNameString, previousPkg)) {
+                            // Nothing covers this application and the user is being taken away from
+                            // it, so the switch is not a visit: no usage counted for it, no exit
+                            // task run and no entry rule fired on the strength of a window the user
+                            // was refused.
+                            return;
+                        }
+                        mAppLockIsUp = true;
                     }
                 }
 
@@ -390,8 +411,14 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     /**
      * The lock screen as the interception needs it: raised without an animation over the
-     * application that has just taken the screen, and asking whether the user may be there at all
-     * rather than whether this application is locked.
+     * application that has just taken the screen, asking whether the user may be there at all
+     * rather than whether this application is locked, and stamped with the session it was raised
+     * in.
+     *
+     * <p>The stamp is what the screen answers with. A biometric prompt outlives the window that
+     * opened it, so a success can arrive after a screen-off ended the session the question was
+     * asked in - and an application unlocked into a session nobody is in any more is open in front
+     * of whoever next picks the phone up.
      */
     public static Intent buildAppLockIntent(Context context, String pkgNameString) {
         return new Intent(context, AppLockActivity.class)
@@ -400,6 +427,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                         | Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 .putExtra("unlockLogoPkgName", pkgNameString)
                 .putExtra("targetPkgName", pkgNameString)
+                .putExtra("appLockSessionEpoch", ProcessSharedState.getSessionEpoch())
                 .putExtra("ignoreCurrentUnlockStatus", true);
     }
 
@@ -414,16 +442,20 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * window change try once more - and the way out is the home screen, the same one a refusal on the
      * lock screen takes. The service is not lost over it: an application nobody could cover is
      * reported here rather than left looking like it was.
+     *
+     * @return whether the screen is now standing in front of that application.
      */
-    private void showAppLock(String pkgNameString, String previousPkg) {
+    private boolean showAppLock(String pkgNameString, String previousPkg) {
         try {
             startActivity(buildAppLockIntent(this, pkgNameString));
+            return true;
         } catch (RuntimeException e) {
             Log.w("FreezeYouDebug",
                     "AccessibilityService: app lock could not be raised over " + pkgNameString
                             + ": " + e.getMessage(), e);
             MainApplication.setCurrentPackage(previousPkg);
             leaveTowardsHome();
+            return false;
         }
     }
 

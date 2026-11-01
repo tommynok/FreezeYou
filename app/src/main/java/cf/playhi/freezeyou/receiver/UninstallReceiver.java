@@ -60,6 +60,7 @@ public class UninstallReceiver extends BroadcastReceiver {
             removeFromOneKeyList(context, context.getString(R.string.sAutoFreezeApplicationList), pkgName);
             removeFromOneKeyList(context, context.getString(R.string.sOneKeyUFApplicationList), pkgName);
             removeFromOneKeyList(context, context.getString(R.string.sFreezeOnceQuit), pkgName);
+            removeFromOneKeyList(context, context.getString(R.string.sAppLockList), pkgName);
             // The categories keep their own copy of the package names, so nothing above
             // reaches them
             removePackageFromUserDefinedCategories(context, pkgName);

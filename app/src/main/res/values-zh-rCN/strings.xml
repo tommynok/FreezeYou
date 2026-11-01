@@ -20,11 +20,14 @@
     <string name="removeFromOneKeyList">移出一键冻结列表</string>
     <string name="removeFromOneKeyUFList">移出一键解冻列表</string>
     <string name="removeFromFreezeOnceQuit">移出离开冻结列表</string>
+    <string name="removeFromAppLockList">移出应用锁定列表</string>
     <string name="removed">已移出</string>
     <string name="removeFailed">移除失败</string>
     <string name="addToOneKeyList">加入一键冻结列表</string>
     <string name="addToOneKeyUFList">加入一键解冻列表</string>
     <string name="addToFreezeOnceQuit">加入离开冻结列表</string>
+    <string name="addToAppLockList">加入应用锁定列表</string>
+    <string name="appLock">应用锁定</string>
     <string name="addFailed">添加失败</string>
     <string name="caution">警告</string>
     <string name="cautionContent">不知道的不要乱冻结，可能会使系统崩溃！\n请谨慎操作！\n\n长按可以多选\n右侧点为是否已冻结\n主题以及桌面三个图标等可以在“更多设置”中自行选择</string>
@@ -457,6 +460,7 @@
         <item>一键冻结</item>
         <item>一键解冻</item>
         <item>离开冻结</item>
+        <item>应用锁定</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>无</item>

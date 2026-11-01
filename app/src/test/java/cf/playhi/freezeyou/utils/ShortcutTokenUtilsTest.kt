@@ -167,6 +167,17 @@ class ShadowContractMMKV {
     @Implementation
     fun decodeBool(key: String, defValue: Boolean): Boolean = defValue
 
+    // Kept as text, the way the real store keeps it: a counter a test reads back has to survive the
+    // same round trip the device gives it.
+    @Implementation
+    fun decodeLong(key: String, defValue: Long): Long = strings[key]?.toLongOrNull() ?: defValue
+
+    @Implementation
+    fun encode(key: String, value: Long): Boolean {
+        strings[key] = value.toString()
+        return true
+    }
+
     @Implementation
     fun lock() = storageLock.lock()
 

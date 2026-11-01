@@ -140,6 +140,11 @@ public final class Support {
             popup.getMenu().findItem(R.id.main_sca_menu_addToOneKeyUFList).setTitle(R.string.removeFromOneKeyUFList);
         }
 
+        final String AppLockPkgNames = storage.getString(context.getString(R.string.sAppLockList), "");
+        if (existsInOneKeyList(AppLockPkgNames, pkgName)) {
+            popup.getMenu().findItem(R.id.main_sca_menu_addToAppLockList).setTitle(R.string.removeFromAppLockList);
+        }
+
         final boolean isRestorableSystemApp = RestoreUtils.isRestorableSystemPackage(context, pkgName);
         if (isRestorableSystemApp) {
             popup.getMenu().findItem(R.id.main_sca_menu_uninstall).setVisible(allowRestore);
@@ -232,6 +237,9 @@ public final class Support {
                             break;
                         case R.id.main_sca_menu_addToOneKeyUFList:
                             Support.checkAddOrRemove(context, pkgName, context.getString(R.string.sOneKeyUFApplicationList));
+                            break;
+                        case R.id.main_sca_menu_addToAppLockList:
+                            Support.checkAddOrRemove(context, pkgName, context.getString(R.string.sAppLockList));
                             break;
                         case R.id.main_sca_menu_appDetail:
                             Intent appDetailIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);

@@ -119,7 +119,8 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
             for (listKeyName in listOf(
                 appContext.getString(R.string.sAutoFreezeApplicationList),
                 appContext.getString(R.string.sOneKeyUFApplicationList),
-                appContext.getString(R.string.sFreezeOnceQuit)
+                appContext.getString(R.string.sFreezeOnceQuit),
+                appContext.getString(R.string.sAppLockList)
             )) {
                 success = removeUninstalledFromOneKeyList(appContext, listKeyName) && success
             }

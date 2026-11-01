@@ -56,6 +56,9 @@
                 android:id="@+id/menu_vM_freezeOnceQuit"
                 android:title="@string/freezeOnceQuit" />
             <item
+                android:id="@+id/menu_vM_appLock"
+                android:title="@string/appLock" />
+            <item
                 android:id="@+id/menu_vM_onlySA"
                 android:title="@string/onlySA" />
             <item

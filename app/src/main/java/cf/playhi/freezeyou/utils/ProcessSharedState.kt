@@ -20,9 +20,19 @@ object ProcessSharedState {
     private const val KEY_FOREGROUND_PACKAGE = "runtimeForegroundPackage"
     private const val KEY_NOTIFYING_PACKAGES = "runtimeNotifyingPackages"
     private const val KEY_UNLOCKED_PACKAGES = "runtimeUnlockedPackages"
+    private const val KEY_APP_LOCK_SESSION_EPOCH = "runtimeAppLockSessionEpoch"
 
     /** Package names cannot contain a newline, so it can separate them safely. */
     private const val SEPARATOR = "\n"
+
+    /**
+     * The stamp of a lock screen that was never raised inside an unlocked session.
+     *
+     * A real epoch counts up from zero, so a negative one is the absence of a stamp rather than a
+     * session nobody has joined yet: the lock of this application is opened without one, and an
+     * answer given there is not something a screen-off may take back.
+     */
+    const val NO_APP_LOCK_SESSION = -1L
 
     @JvmStatic
     fun setForegroundPackage(pkgName: String?) {
@@ -96,10 +106,16 @@ object ProcessSharedState {
      * Everything the user was let into is locked again: a service that restarted, or a device that
      * rebooted, must not find the applications of the last session still open in front of whoever
      * picks the phone up.
+     *
+     * The epoch moves even when the set was already empty. A lock screen still waiting for an
+     * answer names no unlocked package, so the session that ends around it is one the set cannot
+     * report - and it is exactly that answer, given after the screen went dark, the epoch exists to
+     * refuse.
      */
     @JvmStatic
     fun clearAllUnlockedPackages() {
         mutateUnlockedPackages { "" }
+        advanceSessionEpoch()
     }
 
     /**
@@ -127,6 +143,55 @@ object ProcessSharedState {
         if (pkgName.isNullOrEmpty()) return raw ?: ""
         return OneKeyListUtils.removePkgFromPkgNames(raw, pkgName)
     }
+
+    /**
+     * How many unlocked sessions this device has ended.
+     *
+     * The lock screen is raised by `:backgroundService` and answered in the main process, and the
+     * question the answer arrives with is whether the session it was asked in is still the running
+     * one. A biometric prompt outlives the screen that opened it: the user can authenticate while
+     * the device is in a pocket, and the success lands some time after the screen went dark and
+     * took the session with it. Counting the sessions that have ended is the cheapest fact both
+     * processes can agree on.
+     */
+    @JvmStatic
+    fun getSessionEpoch(): Long =
+        DefaultMultiProcessMMKVStorage().getLong(KEY_APP_LOCK_SESSION_EPOCH, 0L)
+
+    /**
+     * Start a new unlocked session and report its number.
+     *
+     * Read and written under the store's inter-process lock, so two processes ending a session at
+     * the same moment cannot both publish the same next number and leave a screen stamped in a
+     * session that another one already closed.
+     *
+     * @return the epoch every lock screen raised from now on is stamped with
+     */
+    @JvmStatic
+    fun advanceSessionEpoch(): Long = synchronized(SESSION_EPOCH_LOCK) {
+        val storage = DefaultMultiProcessMMKVStorage()
+        storage.lock()
+        try {
+            val next = storage.getLong(KEY_APP_LOCK_SESSION_EPOCH, 0L) + 1
+            storage.putLong(KEY_APP_LOCK_SESSION_EPOCH, next).sync()
+            next
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    /**
+     * Whether a lock screen stamped with [raisedEpoch] is answering for a session that has ended.
+     *
+     * [NO_APP_LOCK_SESSION] is not a session that ended but a screen that was never stamped - the
+     * lock of this application, which reads its own timeout and has no session to be refused by.
+     *
+     * Kept as a function over two numbers, like the session set helpers beside it, so the rule the
+     * activity applies can be read and tested without the store behind it.
+     */
+    @JvmStatic
+    fun isAppLockSessionStale(raisedEpoch: Long, currentEpoch: Long): Boolean =
+        raisedEpoch >= 0 && raisedEpoch != currentEpoch
 
     /**
      * Read, change, write the whole session set as one operation.
@@ -157,4 +222,6 @@ object ProcessSharedState {
         DefaultMultiProcessMMKVStorage().getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
 
     private val UNLOCKED_PACKAGES_LOCK = Any()
+
+    private val SESSION_EPOCH_LOCK = Any()
 }

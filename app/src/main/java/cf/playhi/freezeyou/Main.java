@@ -607,6 +607,9 @@ public class Main extends FreezeYouBaseActivity {
             case "FOQ":
                 titleResId = R.string.freezeOnceQuit;
                 break;
+            case "APPLOCK":
+                titleResId = R.string.appLock;
+                break;
             case "OS":
                 titleResId = R.string.onlySA;
                 break;
@@ -868,6 +871,12 @@ public class Main extends FreezeYouBaseActivity {
             case "FOQ":
                 oneKeyListCheckAndGenerate(
                         new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sFreezeOnceQuit), ""),
+                        AppList);
+                checkAndAddNotAvailablePair(AppList);
+                break;
+            case "APPLOCK":
+                oneKeyListCheckAndGenerate(
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sAppLockList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
@@ -1406,6 +1415,9 @@ public class Main extends FreezeYouBaseActivity {
                                     case R.id.list_menu_addToFreezeOnceQuit:
                                         processAddToOneKeyList(getString(R.string.sFreezeOnceQuit));
                                         return true;
+                                    case R.id.list_menu_addToAppLockList:
+                                        processAddToOneKeyList(getString(R.string.sAppLockList));
+                                        return true;
                                     case R.id.list_menu_removeFromOneKeyFreezeList:
                                         processRemoveFromOneKeyList(getString(R.string.sAutoFreezeApplicationList));
                                         return true;
@@ -1414,6 +1426,9 @@ public class Main extends FreezeYouBaseActivity {
                                         return true;
                                     case R.id.list_menu_removeFromFreezeOnceQuit:
                                         processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
+                                        return true;
+                                    case R.id.list_menu_removeFromAppLockList:
+                                        processRemoveFromOneKeyList(getString(R.string.sAppLockList));
                                         return true;
                                     case R.id.list_menu_freezeImmediately:
                                         confirmIfCriticalSelectedThenRun(false, () -> {
@@ -1956,6 +1971,9 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case "FOQ":
                         generateList("FOQ");
+                        break;
+                    case "APPLOCK":
+                        generateList("APPLOCK");
                         break;
                     case "UFU":
                         generateList("UFU");
@@ -3587,6 +3605,14 @@ public class Main extends FreezeYouBaseActivity {
                             @Override
                             public void run() {
                                 generateList("FOQ");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_appLock:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("APPLOCK");
                             }
                         }).start();
                         return true;

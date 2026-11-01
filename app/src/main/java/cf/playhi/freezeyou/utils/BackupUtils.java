@@ -456,6 +456,10 @@ public final class BackupUtils {
                     listKey = context.getString(R.string.sFreezeOnceQuit);
                     list = oneKeyListJSONObject.optString("foq");
                     break;
+                case "applock":
+                    listKey = context.getString(R.string.sAppLockList);
+                    list = oneKeyListJSONObject.optString("applock");
+                    break;
                 default:
                     continue;
             }
@@ -772,6 +776,7 @@ public final class BackupUtils {
                 if (firstObject.has("okff")) count++;
                 if (firstObject.has("okuf")) count++;
                 if (firstObject.has("foq")) count++;
+                if (firstObject.has("applock")) count++;
                 return count;
             }
             case "userTimeScheduledTasks":
@@ -1003,9 +1008,13 @@ public final class BackupUtils {
                     "foq",
                     listStorage.getString(context.getString(R.string.sFreezeOnceQuit), "")
             );
+            oneKeyListJSONObject.put(
+                    "applock",
+                    listStorage.getString(context.getString(R.string.sAppLockList), "")
+            );
             oneKeyListJSONArray.put(oneKeyListJSONObject);
             finalOutputJsonObject.put("oneKeyList", oneKeyListJSONArray);
-            // One-key freeze/unfreeze/leave lists end
+            // One-key freeze/unfreeze/leave/app lock lists end
 
             // Install package request and URI request whitelist start
             finalOutputJsonObject.put("uriAutoAllowPkgs_allows",

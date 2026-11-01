@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Remove from the Onekey Freeze list</string>
     <string name="removeFromOneKeyUFList">Remove from the Onekey Unfreeze list</string>
     <string name="removeFromFreezeOnceQuit">Remove from the Freeze Once Quit list</string>
+    <string name="removeFromAppLockList">Remove from App Lock</string>
     <string name="removed">Removed</string>
     <string name="removeFailed">Failed to remove</string>
     <string name="addToOneKeyList">Add to the Onekey Freeze list</string>
     <string name="addToOneKeyUFList">Add to the Onekey Unfreeze list</string>
     <string name="addToFreezeOnceQuit">Add to the Freeze Once Quit list</string>
+    <string name="addToAppLockList">Add to App Lock</string>
+    <string name="appLock">App Lock</string>
     <string name="addFailed">Failed to add</string>
     <string name="caution">CAUTION</string>
     <string name="cautionContent">Attention! \nDo not freeze the application which is very important to the system, that may cause the system to crash!</string>
@@ -464,6 +467,7 @@
         <item>Onekey Freeze</item>
         <item>Onekey Unfreeze</item>
         <item>Leave Freeze</item>
+        <item>App Lock</item>
     </string-array>
     <string-array name="launchModeSelectionValues" translatable="false">
         <item>all</item>
@@ -474,6 +478,7 @@
         <item>OO</item>
         <item>OOU</item>
         <item>FOQ</item>
+        <item>APPLOCK</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>None</item>

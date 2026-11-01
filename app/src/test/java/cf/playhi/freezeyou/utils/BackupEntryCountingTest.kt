@@ -177,11 +177,13 @@ class BackupEntryCountingTest {
     @Test
     fun oneKeyListsCountOnlyKnownListKeys() {
         val lists = JSONArray().put(
-            JSONObject().put("okff", "a,b").put("notAList", "c")
+            JSONObject().put("okff", "a,b").put("applock", "c,d").put("notAList", "e")
         )
         val backup = JSONObject().put("oneKeyList", lists)
 
-        assertEquals(1, count(backup, "oneKeyList"))
+        // A protected app is a stored list entry like the other three, so a backup carrying one
+        // promises to restore it - which the import has to have a case for.
+        assertEquals(2, count(backup, "oneKeyList"))
     }
 
     @Test
