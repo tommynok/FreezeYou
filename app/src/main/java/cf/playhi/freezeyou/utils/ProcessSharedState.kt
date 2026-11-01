@@ -19,6 +19,7 @@ object ProcessSharedState {
 
     private const val KEY_FOREGROUND_PACKAGE = "runtimeForegroundPackage"
     private const val KEY_NOTIFYING_PACKAGES = "runtimeNotifyingPackages"
+    private const val KEY_UNLOCKED_PACKAGES = "runtimeUnlockedPackages"
 
     /** Package names cannot contain a newline, so it can separate them safely. */
     private const val SEPARATOR = "\n"
@@ -63,4 +64,78 @@ object ProcessSharedState {
             .getString(KEY_NOTIFYING_PACKAGES, null) ?: return false
         return stored.splitToSequence(SEPARATOR).any { it == pkgName }
     }
+
+    /**
+     * The applications the user has authenticated for and has not left yet.
+     *
+     * The lock screen is raised by `:backgroundService`, which is the only thing that sees the
+     * window change, and the authentication succeeds inside an activity of the main process, so
+     * "this one is open now" has to cross the same boundary the foreground package does. The set is
+     * a comma list like the OneKEY lists and is edited through the same helpers rather than by
+     * concatenation: a shorter name must not cut a piece out of a longer one on the way out.
+     *
+     * An entry lives as long as the application is the one in front of the user, and the store
+     * outlives the process, so whoever stops watching clears it all - see [clearAllUnlockedPackages].
+     */
+    @JvmStatic
+    fun setPackageUnlocked(pkgName: String?) {
+        val current = currentUnlockedPackages()
+        writeUnlockedPackages(current, unlockedPackagesAfterUnlock(current, pkgName))
+    }
+
+    @JvmStatic
+    fun isPackageUnlocked(pkgName: String?): Boolean =
+        isUnlockedIn(currentUnlockedPackages(), pkgName)
+
+    /** The session unlock was for as long as this application was the one in front. */
+    @JvmStatic
+    fun clearPackageUnlocked(pkgName: String?) {
+        val current = currentUnlockedPackages()
+        writeUnlockedPackages(current, unlockedPackagesAfterLock(current, pkgName))
+    }
+
+    /**
+     * Everything the user was let into is locked again: a service that restarted, or a device that
+     * rebooted, must not find the applications of the last session still open in front of whoever
+     * picks the phone up.
+     */
+    @JvmStatic
+    fun clearAllUnlockedPackages() {
+        writeUnlockedPackages(currentUnlockedPackages(), "")
+    }
+
+    /**
+     * Whether [pkgName] is open in the session the raw set describes.
+     *
+     * Kept as a function over the stored string, like the OneKEY list helpers it is built from, so
+     * the shape of the set can be read and tested without the store behind it.
+     */
+    @JvmStatic
+    fun isUnlockedIn(raw: String?, pkgName: String?): Boolean {
+        if (pkgName.isNullOrEmpty()) return false
+        return OneKeyListUtils.existsInOneKeyList(raw, pkgName)
+    }
+
+    /** @return the session set with [pkgName] open in it; already in it, it is returned unchanged. */
+    @JvmStatic
+    fun unlockedPackagesAfterUnlock(raw: String?, pkgName: String?): String {
+        if (pkgName.isNullOrEmpty()) return raw ?: ""
+        return OneKeyListUtils.addPkgToPkgNames(raw, pkgName)
+    }
+
+    /** @return the session set with [pkgName] locked again; not in it, it is returned unchanged. */
+    @JvmStatic
+    fun unlockedPackagesAfterLock(raw: String?, pkgName: String?): String {
+        if (pkgName.isNullOrEmpty()) return raw ?: ""
+        return OneKeyListUtils.removePkgFromPkgNames(raw, pkgName)
+    }
+
+    /** One write per real change: a window change that locks nothing is not a trip to the store. */
+    private fun writeUnlockedPackages(current: String, updated: String) {
+        if (current == updated) return
+        DefaultMultiProcessMMKVStorage().putString(KEY_UNLOCKED_PACKAGES, updated).sync()
+    }
+
+    private fun currentUnlockedPackages(): String =
+        DefaultMultiProcessMMKVStorage().getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
 }

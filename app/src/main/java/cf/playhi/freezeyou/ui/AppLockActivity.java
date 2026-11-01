@@ -17,6 +17,7 @@ import java.util.concurrent.Executor;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.ProcessSharedState;
 
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG;
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
@@ -53,6 +54,10 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         mPromptHasBeenShown = false;
+        // The screen now answers for a different application than the one it was raised over, so
+        // the face on it has to change with it: a lock that shows one application while unlocking
+        // another tells the user nothing about what they are about to let open.
+        applyUnlockLogo();
     }
 
     @Override
@@ -75,6 +80,13 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                 fingerprintImageButton.setOnClickListener(v -> showBiometricPrompt());
             }
         }
+        applyUnlockLogo();
+    }
+
+    /** The face of the application this screen is standing in front of, when it stands in front of one. */
+    private void applyUnlockLogo() {
+        ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
+        if (logoImageView == null) return;
         String logoPkgName = getIntent().getStringExtra("unlockLogoPkgName");
         if (logoPkgName != null) {
             logoImageView.setImageBitmap(
@@ -125,6 +137,58 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         }
     }
 
+    /**
+     * Whether this screen was raised over somebody else's application rather than opened as the
+     * lock of this one. The extra is what says so: only the interception names the application it
+     * is standing in front of.
+     */
+    public static boolean isInterceptionRequest(Intent intent) {
+        if (intent == null) return false;
+        String targetPkgName = intent.getStringExtra("targetPkgName");
+        return targetPkgName != null && !"".equals(targetPkgName.trim());
+    }
+
+    /** The application this screen was raised over, or null when it is this application's own lock. */
+    private String targetPkgName() {
+        Intent intent = getIntent();
+        return isInterceptionRequest(intent) ? intent.getStringExtra("targetPkgName") : null;
+    }
+
+    /**
+     * A refusal cannot simply close this screen: the window the user then sees is the application
+     * they were just stopped from opening, drawn while they watch. So the screen leaves towards the
+     * home screen, which is a window of its own and the only one that can be behind an application
+     * nobody has been let into.
+     *
+     * @return whether this screen did the leaving. The lock of this application is not sent home:
+     *         there the caller is a screen of this application, is told the answer was "no", and
+     *         finishes itself - and the settings row that only wants proof the lock can be opened
+     *         again would throw the user out of the app over a mistap.
+     */
+    private boolean dismissWithoutRevealingTarget() {
+        if (!isInterceptionRequest(getIntent()) || isFinishing()) return false;
+        Intent home = new Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_HOME)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(home);
+        } catch (RuntimeException e) {
+            // Still leaving: a screen that stayed because it had nowhere to go would be the one
+            // place the application behind it is guaranteed to be visible. The service raises the
+            // lock again over the window that takes the screen.
+            e.printStackTrace();
+        }
+        finishImmediately(RESULT_CANCELED);
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!dismissWithoutRevealingTarget()) {
+            super.onBackPressed();
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -155,12 +219,20 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                             );
                         }
                         setResult(RESULT_CANCELED);
+                        // A prompt that was cancelled, timed out or locked out is a refusal, and a
+                        // refusal is not allowed to leave the application it was raised over visible.
+                        dismissWithoutRevealingTarget();
                     }
 
                     @Override
                     public void onAuthenticationSucceeded(
                             @NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
+
+                        // The application the user is now going into is open for as long as it stays
+                        // the window in front; the accessibility service takes that back the moment
+                        // it is not.
+                        ProcessSharedState.setPackageUnlocked(targetPkgName());
 
                         // Clears the background and screen-off triggers too: the app is open again
                         // from now, and an old stamp would lock it on the next resume.

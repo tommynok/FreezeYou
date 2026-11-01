@@ -1,7 +1,9 @@
 package cf.playhi.freezeyou;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -18,6 +20,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import cf.playhi.freezeyou.ui.AppLockActivity;
 import cf.playhi.freezeyou.utils.DataStatisticsUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
@@ -26,6 +29,9 @@ import cf.playhi.freezeyou.utils.ProcessSharedState;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.FUFUtils.processFreezeAction;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
 import static cf.playhi.freezeyou.utils.Support.checkLanguage;
@@ -47,6 +53,11 @@ import static cf.playhi.freezeyou.utils.TasksUtils.cancelAllUnexecutedDelayTasks
  *       timers or scheduled tasks.</li>
  *   <li><b>Event Triggers:</b> Dispatches {@code onApplicationsForeground} and {@code onLeaveApplications}
  *       rules defined in the automation trigger database.</li>
+ *   <li><b>Application Lock:</b> Throws {@code AppLockActivity} over an application on the protected list
+ *       the moment its window takes the screen, whichever way the user reached it - launcher icon,
+ *       system settings, a notification, or the recent-apps overview. An application that has to stay
+ *       unfrozen to receive its messages cannot be locked by freezing it, and a window change that is
+ *       already being listened for costs no more battery to act on than to read.</li>
  * </ul>
  *
  * <p><b>OEM Overlay Filtering (MIUI / HyperOS Quirks):</b><br>
@@ -80,14 +91,42 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
             checkLanguage(this);
         }
         super.onCreate();
+        // Nothing was carried into this session: the list of applications the user was let into is
+        // written by whichever process raised the last lock screen, and a service that starts now
+        // is the first thing that could say what is actually on screen.
+        ProcessSharedState.clearAllUnlockedPackages();
+        registerScreenOffLockReceiver();
     }
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+    private BroadcastReceiver mScreenOffReceiver;
 
     @Override
     public void onDestroy() {
+        if (mScreenOffReceiver != null) {
+            unregisterReceiver(mScreenOffReceiver);
+            mScreenOffReceiver = null;
+        }
+        ProcessSharedState.clearAllUnlockedPackages();
         mExecutor.shutdown();
         super.onDestroy();
+    }
+
+    /**
+     * A screen that went dark ends the session the user was let into: whoever wakes the device
+     * next is not necessarily the person who authenticated, and the applications they were reading
+     * are still in the foreground waiting for them.
+     */
+    private void registerScreenOffLockReceiver() {
+        mScreenOffReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (lockOnScreenOff.getValue(null)) {
+                    ProcessSharedState.clearAllUnlockedPackages();
+                }
+            }
+        };
+        registerReceiver(mScreenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
     }
 
     /**
@@ -100,8 +139,10 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      *   <li>Filters out OEM overlays (e.g. {@code miui.systemui.plugin}, MIUI volume panel dialogs).</li>
      *   <li>Filters out soft keyboards ({@code SoftInputWindow}) to prevent freezing apps while typing.</li>
      *   <li>Validates that the screen is actively illuminated ({@code pm.isScreenOn()}).</li>
-     *   <li>If the user switched to a different package, updates [MainApplication#getCurrentPackage] and
-     *       dispatches exit triggers ([onLeaveApplications]) and entry triggers ([onApplicationsForeground]).</li>
+     *   <li>If the user switched to a different package, updates [MainApplication#getCurrentPackage],
+     *       raises the application lock over a protected package they have just entered and locks
+     *       again the one they left, then dispatches exit triggers ([onLeaveApplications]) and entry
+     *       triggers ([onApplicationsForeground]).</li>
      * </ol>
      */
     @Override
@@ -146,6 +187,20 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 }
 
                 MainApplication.setCurrentPackage(pkgNameString);
+
+                if (!getPackageName().equals(pkgNameString)) {
+                    // The application the user was let into is locked again the moment it stops
+                    // being the window on screen. A window of this application is not that moment:
+                    // the lock screen this service raises is one, and treating it as a departure
+                    // would ask again before the answer had reached the application behind it.
+                    ProcessSharedState.clearPackageUnlocked(previousPkg);
+
+                    if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
+                            isAuthenticationEnabled(), isBiometricPromptPartAvailable(this),
+                            ProcessSharedState.isPackageUnlocked(pkgNameString))) {
+                        showAppLock(pkgNameString);
+                    }
+                }
 
                 addUpUseTimes(pkgNameString);
 
@@ -289,6 +344,61 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     private void addUpUseTimes(String currentPackage) {
         DataStatisticsUtils.addUseTimes(getApplicationContext(), currentPackage);
+    }
+
+    /**
+     * Whether the user asked for this application to be locked when it opens.
+     *
+     * Read from the same store the settings screen writes, on the thread the events arrive: a
+     * package that is not on any list costs one mapped read, which is what lets this run for every
+     * window change without a device noticing it.
+     */
+    private boolean isOnAppLockList(String pkgNameString) {
+        return existsInOneKeyList(
+                getApplicationContext(), getString(R.string.sAppLockList), pkgNameString);
+    }
+
+    /**
+     * The gate an application on the protected list still passes through before a lock screen is
+     * thrown over it: authentication has to be switched on, the device has to be able to ask for
+     * it, and the application must not already be open for this session.
+     *
+     * The last of the three is what keeps the screen from coming back over the application the
+     * user has just proved themselves inside - and, with it, the service from answering its own
+     * lock screen with another one.
+     *
+     * Kept over plain booleans, so the order it refuses in can be read without a device.
+     */
+    public static boolean appLockShouldIntercept(
+            boolean authenticationEnabled, boolean promptAvailable, boolean unlockedForSession) {
+        return authenticationEnabled && promptAvailable && !unlockedForSession;
+    }
+
+    /**
+     * The lock screen as the interception needs it: raised without an animation over the
+     * application that has just taken the screen, and asking whether the user may be there at all
+     * rather than whether this application is locked.
+     */
+    public static Intent buildAppLockIntent(Context context, String pkgNameString) {
+        return new Intent(context, AppLockActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                .putExtra("unlockLogoPkgName", pkgNameString)
+                .putExtra("targetPkgName", pkgNameString)
+                .putExtra("ignoreCurrentUnlockStatus", true);
+    }
+
+    private void showAppLock(String pkgNameString) {
+        try {
+            startActivity(buildAppLockIntent(this, pkgNameString));
+        } catch (RuntimeException e) {
+            // The alternative is losing the service over the event. An application that was not
+            // covered is reported here rather than left looking like it was.
+            Log.w("FreezeYouDebug",
+                    "AccessibilityService: app lock could not be raised over " + pkgNameString
+                            + ": " + e.getMessage(), e);
+        }
     }
 
     private void checkAndInstallWaitingForLeavingToInstallApplication(String previousPkg) {
