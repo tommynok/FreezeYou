@@ -13,9 +13,12 @@ Usage:
 """
 
 import argparse
+import html
+import http.client
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -30,6 +33,98 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 REPO_OWNER = 'tommynok'
 REPO_NAME = 'FreezeYou'
+
+# Long-running PRs put hundreds of comments and one very large review summary on a single
+# endpoint, so a page can be several hundred kilobytes. This network path truncates downloads
+# of that size mid-body, therefore pages are kept small and every read is retried.
+FETCH_TIMEOUT_SECONDS = 30
+FETCH_ATTEMPTS = 5
+PAGE_SIZE = 25
+RETRY_AFTER_CODES = (408, 429, 500, 502, 503, 504)
+RETRYABLE_TRANSPORT_ERRORS = (
+    http.client.HTTPException,
+    socket.timeout,
+    ConnectionError,
+    OSError,
+    json.JSONDecodeError,
+    UnicodeDecodeError,
+)
+
+
+def _is_retryable_http_error(error):
+    if not isinstance(error, urllib.error.HTTPError):
+        return True
+    if error.code in RETRY_AFTER_CODES:
+        return True
+    # A rate limit answers as 403 with a Retry-After header; anything else (401, 404) is a
+    # real answer and must not be retried.
+    if error.code == 403 and error.headers.get('Retry-After'):
+        return True
+    return False
+
+
+def _retry_delay(error, attempt):
+    header = getattr(error, 'headers', None)
+    if header is not None:
+        raw = header.get('Retry-After')
+        if raw:
+            try:
+                return max(1, min(int(raw), 30))
+            except ValueError:
+                pass
+    return min(2 ** attempt, 15)
+
+
+def _build_request(url, token, data=None, content_type=None):
+    headers = {
+        'User-Agent': 'FreezeYou-Qodo-Verifier',
+        'Accept': 'application/vnd.github+json',
+        # Uncompressed and unclosed-keep-alive: both are ways a body can arrive shorter than
+        # the Content-Length GitHub announced.
+        'Accept-Encoding': 'identity',
+        'Connection': 'close',
+    }
+    if content_type:
+        headers['Content-Type'] = content_type
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    return urllib.request.Request(url, data=data, headers=headers)
+
+
+def _read_json(opener, request):
+    with opener.open(request, timeout=FETCH_TIMEOUT_SECONDS) as resp:
+        raw = resp.read()
+        return json.loads(raw.decode('utf-8')), resp.headers.get('Link', '')
+
+
+def fetch_json(opener, token, url, payload=None, attempts=FETCH_ATTEMPTS):
+    """Fetch one GitHub answer, retrying truncated or transient reads. Returns (data, Link)."""
+    body = None
+    content_type = None
+    if payload is not None:
+        body = json.dumps(payload).encode('utf-8')
+        content_type = 'application/json'
+
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        request = _build_request(url, token, data=body, content_type=content_type)
+        try:
+            return _read_json(opener, request)
+        except urllib.error.URLError as error:
+            retryable = _is_retryable_http_error(error)
+            last_error = error
+        except RETRYABLE_TRANSPORT_ERRORS as error:
+            retryable = True
+            last_error = error
+        if not retryable:
+            raise
+        if attempt < attempts:
+            delay = _retry_delay(last_error, attempt)
+            print(f"  ~ GitHub answer unreadable ({type(last_error).__name__}); "
+                  f"retry {attempt}/{attempts - 1} in {delay}s")
+            time.sleep(delay)
+    raise RuntimeError(
+        f'Could not read {url} after {attempts} attempts: {last_error}')
 
 def build_opener(proxy_arg=None):
     proxies = {}
@@ -79,32 +174,14 @@ def get_token():
     return None
 
 def gh_api_get(opener, token, url):
-    headers = {
-        'User-Agent': 'FreezeYou-Qodo-Verifier',
-        'Accept': 'application/vnd.github.v3+json'
-    }
-    if token:
-        headers['Authorization'] = f'Bearer {token}'
-    req = urllib.request.Request(url, headers=headers)
-    with opener.open(req, timeout=20) as resp:
-        data = json.loads(resp.read().decode('utf-8'))
-        link_header = resp.headers.get('Link', '')
-        return data, link_header
+    data, link_header = fetch_json(opener, token, url)
+    return data, link_header
 
 def gh_graphql(opener, token, query, variables):
-    headers = {
-        'User-Agent': 'FreezeYou-Qodo-Verifier',
-        'Content-Type': 'application/json'
-    }
-    if token:
-        headers['Authorization'] = f'Bearer {token}'
-    req = urllib.request.Request(
-        'https://api.github.com/graphql',
-        data=json.dumps({'query': query, 'variables': variables}).encode('utf-8'),
-        headers=headers
-    )
-    with opener.open(req, timeout=20) as resp:
-        return json.loads(resp.read().decode('utf-8'))
+    data, _ = fetch_json(
+        opener, token, 'https://api.github.com/graphql',
+        payload={'query': query, 'variables': variables})
+    return data
 
 def get_pr_info(opener, token, pr_num):
     url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_num}'
@@ -118,7 +195,7 @@ def get_pr_threads(opener, token, pr_num):
     query($owner: String!, $name: String!, $pr: Int!, $cursor: String) {
       repository(owner: $owner, name: $name) {
         pullRequest(number: $pr) {
-          reviewThreads(first: 50, after: $cursor) {
+          reviewThreads(first: 25, after: $cursor) {
             pageInfo {
               hasNextPage
               endCursor
@@ -164,18 +241,44 @@ def get_pr_threads(opener, token, pr_num):
             break
     return all_threads
 
+def finding_title_from_body(body):
+    """Read the human title out of Qodo's first thread comment.
+
+    It opens with a severity badge image, then "N\\. Title <code>Bug</code> <code>...</code>".
+    """
+    for raw_line in html.unescape(body or '').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('<img') or line.startswith('!['):
+            continue
+        line = re.sub(r'<[^>]+>', ' ', line)
+        line = re.sub(r'^\d+\\?\.\s*', '', line).strip()
+        line = re.sub(r'\s+', ' ', line)
+        if line:
+            return line
+    return None
+
+def _next_page_url(link_header):
+    for part in (link_header or '').split(','):
+        chunk = part.strip()
+        if not chunk.startswith('<'):
+            continue
+        url, _, params = chunk[1:].partition('>')
+        if 'rel="next"' in params or "rel='next'" in params or 'rel=next' in params:
+            return url
+    return None
+
 def get_pr_issue_comments(opener, token, pr_num):
     all_comments = []
-    page = 1
-    while True:
-        url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues/{pr_num}/comments?per_page=100&page={page}'
+    url = (f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}'
+           f'/issues/{pr_num}/comments?per_page={PAGE_SIZE}')
+    visited = set()
+    while url and url not in visited:
+        visited.add(url)
         data, link_header = gh_api_get(opener, token, url)
         if not data:
             break
         all_comments.extend(data)
-        if 'rel="next"' not in link_header or len(data) < 100:
-            break
-        page += 1
+        url = _next_page_url(link_header)
     return all_comments
 
 def check_qodo_status(opener, token, pr_num, ignore_findings=None):
@@ -235,7 +338,7 @@ def check_qodo_status(opener, token, pr_num, ignore_findings=None):
         filtered = []
         for t in unresolved_threads:
             nodes = t.get('comments', {}).get('nodes', [])
-            body_text = nodes[0].get('body', '') if nodes else ''
+            body_text = html.unescape(nodes[0].get('body', '')) if nodes else ''
             if not any(ign.lower() in body_text.lower() for ign in ignore_findings):
                 filtered.append(t)
         unresolved_threads = filtered
@@ -269,7 +372,10 @@ def check_qodo_status(opener, token, pr_num, ignore_findings=None):
             b_cnt = 0
             v_cnt = 0
             for h in headers:
-                if any(ign.lower() in h.lower() for ign in ignore_findings):
+                # Qodo escapes apostrophes and quotes inside titles (&#x27;, &#34;), so a flag
+                # written the way a human reads the title must be compared against the unescaped one.
+                title = html.unescape(re.sub(r'<[^>]+>', ' ', h))
+                if any(ign.lower() in title.lower() for ign in ignore_findings):
                     continue
                 if re.search(r'\bRule violation\b', h, re.IGNORECASE):
                     v_cnt += 1
@@ -311,7 +417,9 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None, ign
                 print(f"[{time.strftime('%X')}] Warning: transient error during poll ({e}). Retrying in {poll_interval}s...")
                 time.sleep(poll_interval)
                 continue
-            raise
+            print(f"\n[ERROR] GitHub did not answer reliably: {e}")
+            print("  This is the download, not the review - re-run the script.")
+            return 4
         head_short = status['head_short']
         rev_sha = (status['reviewed_sha'] or 'unknown')[:7]
 
@@ -347,8 +455,9 @@ def verify_pr(pr_num, wait=False, timeout=300, poll_interval=15, proxy=None, ign
                     for t in status['unresolved_threads']:
                         nodes = t.get('comments', {}).get('nodes', [])
                         if nodes:
-                            first_line = nodes[0].get('body', '').splitlines()[0]
-                            print(f"    * {nodes[0].get('path')}:{nodes[0].get('line')}: {first_line[:120]}")
+                            body = nodes[0].get('body', '')
+                            title = finding_title_from_body(body) or body.splitlines()[0]
+                            print(f"    * {nodes[0].get('path')}:{nodes[0].get('line')}: {title[:120]}")
                 return 1
 
         if not wait:
