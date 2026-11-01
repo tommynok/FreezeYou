@@ -105,6 +105,15 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * front. The events arrive on one thread and only this class reads or writes it.
      */
     private boolean mAppLockIsUp = false;
+    /**
+     * The application a lock screen was raised over, whose leave has not been handled yet.
+     *
+     * The window that takes the screen after such a lock is raised is this application's own, and
+     * answering it as a departure would freeze or run the exit tasks of an application the user is
+     * still being asked about. So the owed leave is recorded here and paid out when a window of
+     * somebody else finally takes the screen.
+     */
+    private String mPendingAppLockPkg = null;
 
     @Override
     public void onDestroy() {
@@ -113,6 +122,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
             mScreenOffReceiver = null;
         }
         endUnlockedSession();
+        // A service with no more events to read has no more chances to pay an owed leave, and the
+        // next one starts from a screen it did not raise.
+        mPendingAppLockPkg = null;
         mExecutor.shutdown();
         super.onDestroy();
     }
@@ -217,6 +229,18 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 } else {
                     mAppLockIsUp = false;
 
+                    // Somebody else has taken the screen from behind this application's own window.
+                    // If an application the user was stopped at still has no leave recorded, this is
+                    // the moment it has one: they were never let into it, and it is still sitting
+                    // open behind everything they are looking at now.
+                    String pendingLockPkg = mPendingAppLockPkg;
+                    mPendingAppLockPkg = null;
+                    if (pendingLockOwesDeparture(
+                            pendingLockPkg, ProcessSharedState.isPackageUnlocked(pendingLockPkg))) {
+                        freezePendingLockQuit(pendingLockPkg);
+                        mExecutor.execute(() -> onLeaveApplications(pendingLockPkg, pkgNameString));
+                    }
+
                     // The application the user was let into is locked again the moment it stops
                     // being the window on screen. A window of this application is not that moment:
                     // the lock screen this service raises is one, and treating it as a departure
@@ -226,6 +250,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
                             isAuthenticationEnabled(), isBiometricPromptPartAvailable(this),
                             ProcessSharedState.isPackageUnlocked(pkgNameString))) {
+                        // From here this service answers for the way out of that application, whether
+                        // the screen comes up over it or not.
+                        mPendingAppLockPkg = pkgNameString;
                         if (!showAppLock(pkgNameString, previousPkg)) {
                             // Nothing covers this application and the user is being taken away from
                             // it, so the switch is not a visit: no usage counted for it, no exit
@@ -407,6 +434,38 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     public static boolean appLockShouldIntercept(
             boolean authenticationEnabled, boolean promptAvailable, boolean unlockedForSession) {
         return authenticationEnabled && promptAvailable && !unlockedForSession;
+    }
+
+    /**
+     * Whether the way out of an application the lock was raised over still has to be handled.
+     *
+     * An application the user has been let into is not owed anything here: the window change that
+     * reports them inside it names this application's lock as what they left, and the real way out of
+     * it arrives later as an ordinary departure, with its freeze-on-quit and its exit rules intact.
+     * Any other application behind a lock screen that has stopped being the window in front was
+     * refused, and stays open for whoever next looks at the recents screen unless someone pays its
+     * leave now.
+     *
+     * Kept over plain values, like the gate above, so the order it refuses in can be read without a
+     * device.
+     */
+    public static boolean pendingLockOwesDeparture(String pendingLockPkg, boolean unlockedForSession) {
+        return pendingLockPkg != null && !"".equals(pendingLockPkg) && !unlockedForSession;
+    }
+
+    /**
+     * Freezes an application the user was stopped at and never entered, when they asked for exactly
+     * that of the applications they leave.
+     */
+    private void freezePendingLockQuit(String pendingLockPkg) {
+        if (freezeOnceQuit.getValue(null)
+                && existsInOneKeyList(
+                getApplicationContext(), getString(R.string.sFreezeOnceQuit), pendingLockPkg)) {
+            processFreezeAction(
+                    getApplicationContext(), pendingLockPkg, null, null,
+                    false, null, false
+            );
+        }
     }
 
     /**

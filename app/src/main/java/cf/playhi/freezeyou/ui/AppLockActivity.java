@@ -32,6 +32,15 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     private BiometricPrompt mBiometricPrompt;
     private BiometricPrompt.PromptInfo mPromptInfo;
     private boolean mPromptHasBeenShown = false;
+    /**
+     * What the question now in flight was asked about: the application on screen and the session it
+     * was stamped in, both taken at the moment the question went out rather than at the moment an
+     * answer arrives.
+     */
+    private String mPromptedTargetPkg;
+    private long mPromptedSessionEpoch = ProcessSharedState.NO_APP_LOCK_SESSION;
+    /** Whether this screen is the window the user is looking at right now. */
+    private boolean mHasWindowFocus = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +72,8 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        reStampSessionOfAStandingScreen();
 
         if (!getIntent().getBooleanExtra("ignoreCurrentUnlockStatus", false)
                 && !isLocked()) {
@@ -104,10 +115,27 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        mHasWindowFocus = hasFocus;
         if (hasFocus && !mPromptHasBeenShown) {
             mPromptHasBeenShown = true;
             getWindow().getDecorView().post(this::showBiometricPrompt);
         }
+    }
+
+    /**
+     * The session an interception lock is standing in is refreshed when the screen comes back to it.
+     *
+     * A device that went dark ended that session, but the lock left on top of the application asks the
+     * same person the same question, and an answer given to it is not the device's mistake to punish:
+     * the stamp moves with the screen rather than turning an honest answer into a trip to the home
+     * screen. What the screen-off took back stays taken - the session set is empty from that moment,
+     * so the application behind this screen opens again only for whoever proves themselves now.
+     */
+    private void reStampSessionOfAStandingScreen() {
+        if (!isInterceptionRequest(getIntent())) return;
+        long epoch = ProcessSharedState.getSessionEpoch();
+        getIntent().putExtra("appLockSessionEpoch", epoch);
+        mPromptedSessionEpoch = epoch;
     }
 
     private void showBiometricPrompt() {
@@ -115,6 +143,13 @@ public class AppLockActivity extends FreezeYouBaseActivity {
             return;
         }
         if (mBiometricPrompt != null && mPromptInfo != null) {
+            // The answer comes back with nothing attached to it, so what it was asked about is
+            // recorded here - the last thing that is still true of this screen when the question is
+            // the one being answered.
+            mPromptedTargetPkg = targetPkgName();
+            mPromptedSessionEpoch = getIntent().getLongExtra(
+                    "appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION
+            );
             try {
                 mBiometricPrompt.authenticate(mPromptInfo);
             } catch (Exception e) {
@@ -155,17 +190,53 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     }
 
     /**
-     * Whether the unlocked session this screen was raised in has ended since.
+     * Whether an answer to a prompt is an answer about what this screen is asking now.
      *
-     * A screen the interception did not raise carries no stamp, and an answer given there is not a
-     * thing a screen-off may take back: that is the settings row proving the door opens, and the
+     * A prompt outlives the moment it was raised: the device may answer it after the interception has
+     * re-tasked this screen over another application, or after a screen-off ended the session the
+     * question was stamped in. Either way the biometric proves who is holding the phone and not which
+     * application they were being let into, so an answer that names a different question than the one
+     * on screen hands over nothing.
+     *
+     * <p>A screen the interception did not stamp carries no session, and an answer given there is not
+     * a thing a screen-off may take back: that is the settings row proving the door opens, and the
      * user is still standing in front of it.
+     *
+     * Kept over plain values, like the gate the service raises the screen through, so the rule can be
+     * read and tested without a screen.
      */
-    private boolean isSessionStale() {
-        return ProcessSharedState.isAppLockSessionStale(
-                getIntent().getLongExtra("appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION),
-                ProcessSharedState.getSessionEpoch()
+    public static boolean isAnswerForCurrentQuestion(
+            String promptedTarget, String currentTarget,
+            long promptedEpoch, long currentEpoch) {
+        // Null means "this screen is the lock of this application", and only the same kind of screen
+        // can answer it. Compared by hand: the platform helper for it is newer than this application
+        // runs on.
+        if (promptedTarget == null) {
+            if (currentTarget != null) return false;
+        } else if (!promptedTarget.equals(currentTarget)) {
+            return false;
+        }
+        return !ProcessSharedState.isAppLockSessionStale(promptedEpoch, currentEpoch);
+    }
+
+    /** Whether the answer in flight belongs to the question this screen is asking now. */
+    private boolean answerIsForCurrentQuestion() {
+        return isAnswerForCurrentQuestion(
+                mPromptedTargetPkg, targetPkgName(),
+                mPromptedSessionEpoch, ProcessSharedState.getSessionEpoch()
         );
+    }
+
+    /**
+     * Puts the question again to the user who just answered an older one.
+     *
+     * Only while this screen is the window they are looking at: a prompt raised at a screen nobody can
+     * see is a question asked of the next person to wake the device, and the answer to it arrives with
+     * no user in front of it.
+     */
+    private void askAgainIfStillTheScreenInTheFront() {
+        if (!mHasWindowFocus || isFinishing()) return;
+        showBiometricPrompt();
     }
 
     /**
@@ -244,20 +315,20 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                         super.onAuthenticationSucceeded(result);
 
                         // The prompt is not answered when it is raised but whenever the device gets
-                        // round to it, and a screen-off in between has already ended the session
-                        // this screen was stamped in. Handing the application over now would open
-                        // it for whoever wakes the device next, so the answer is dropped and the
-                        // user is taken home rather than left looking at an application that was
-                        // never opened for them.
-                        if (isSessionStale()) {
-                            dismissWithoutRevealingTarget();
+                        // round to it, and by then this screen may be asking about another
+                        // application or the session this question was stamped in may have ended.
+                        if (!answerIsForCurrentQuestion()) {
+                            // Nothing is handed over, and the user is not sent away either: this
+                            // screen is the one thing standing between the application and whoever is
+                            // holding the phone, so it asks again - about the application on it now.
+                            askAgainIfStillTheScreenInTheFront();
                             return;
                         }
 
                         // The application the user is now going into is open for as long as it stays
                         // the window in front; the accessibility service takes that back the moment
                         // it is not.
-                        ProcessSharedState.setPackageUnlocked(targetPkgName());
+                        ProcessSharedState.setPackageUnlocked(mPromptedTargetPkg);
 
                         // Clears the background and screen-off triggers too: the app is open again
                         // from now, and an old stamp would lock it on the next resume.

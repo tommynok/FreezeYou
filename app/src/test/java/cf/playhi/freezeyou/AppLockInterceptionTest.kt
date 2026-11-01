@@ -247,6 +247,46 @@ class AppLockInterceptionTest {
     }
 
     @Test
+    fun `an answer belongs to the application and the session it was asked about`() {
+        // The screen can be re-tasked over another application, or outlive the session it was raised
+        // in, while a question is still in flight. The biometric proves who is holding the phone in
+        // both cases and says nothing about which application they were being let into.
+        assertTrue(AppLockActivity.isAnswerForCurrentQuestion("com.a,", "com.a,", 3L, 3L))
+        assertFalse(AppLockActivity.isAnswerForCurrentQuestion("com.a,", "com.b,", 3L, 3L))
+        assertFalse(AppLockActivity.isAnswerForCurrentQuestion("com.a,", "com.a,", 3L, 4L))
+    }
+
+    @Test
+    fun `an answer given on the lock of this application is never refused for a session`() {
+        // The settings row that proves the door opens names no application and carries no stamp, and
+        // a screen-off while the user stands in front of it is not a reason to doubt their answer.
+        assertTrue(
+            AppLockActivity.isAnswerForCurrentQuestion(
+                null, null, ProcessSharedState.NO_APP_LOCK_SESSION, 9L
+            )
+        )
+        // The same screen re-tasked over somebody else's application is a different answer, though.
+        assertFalse(AppLockActivity.isAnswerForCurrentQuestion(null, "com.a,", -1L, 9L))
+    }
+
+    @Test
+    fun `a refused lock owes the way out of the application it stopped`() {
+        // The lock screen is a window of this application, so the user never left it for the
+        // protected one: the freeze-on-quit and the exit rules of that application have nobody to
+        // run them until somebody else takes the screen.
+        assertTrue(AccessibilityService.pendingLockOwesDeparture("com.example.bank", false))
+        assertFalse(AccessibilityService.pendingLockOwesDeparture("com.example.bank", true))
+    }
+
+    @Test
+    fun `an application the user was let into is not left by the lock coming down`() {
+        // Their answer opened it, and the way out is an ordinary departure with the unlock still
+        // recorded - running the tasks here would freeze the application the user is reading.
+        assertFalse(AccessibilityService.pendingLockOwesDeparture(null, false))
+        assertFalse(AccessibilityService.pendingLockOwesDeparture("", false))
+    }
+
+    @Test
     fun `a protected application is on the list the menus read, and off it again`() {
         val listKey = context.getString(R.string.sAppLockList)
         assertEquals("New_AppLockList", listKey)
