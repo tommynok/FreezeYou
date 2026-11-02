@@ -92,6 +92,25 @@ class AppLockInterceptionTest {
     }
 
     @Test
+    fun `lock on screen off is applicable whenever either lock is active`() {
+        assertFalse(AuthenticationUtils.isLockOnScreenOffApplicable(false, false))
+        assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable(true, false))
+        assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable(false, true))
+        assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable(true, true))
+
+        enableAuthentication.setValue(value = false)
+        enableAppLock.setValue(value = false)
+        assertFalse(AuthenticationUtils.isLockOnScreenOffApplicable())
+
+        enableAppLock.setValue(value = true)
+        assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable())
+
+        enableAppLock.setValue(value = false)
+        enableAuthentication.setValue(value = true)
+        assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable())
+    }
+
+    @Test
     fun `a shortcut that only launches an unprotected application is not stopped at this door`() {
         assertTrue(Freeze.isPlainLaunchOfAnUnprotectedApp(true, true, false))
 

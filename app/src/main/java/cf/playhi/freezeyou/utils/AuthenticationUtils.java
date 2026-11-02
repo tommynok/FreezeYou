@@ -27,6 +27,20 @@ public class AuthenticationUtils {
         return enableAppLock.getValue(null);
     }
 
+    /**
+     * Whether the setting to lock upon device screen off is applicable.
+     *
+     * Relocking on screen off is meaningful whenever either the lock on FreezeYou itself or the
+     * lock on protected applications is active.
+     */
+    public static boolean isLockOnScreenOffApplicable(boolean authEnabled, boolean appLockEnabled) {
+        return authEnabled || appLockEnabled;
+    }
+
+    public static boolean isLockOnScreenOffApplicable() {
+        return isLockOnScreenOffApplicable(isAuthenticationEnabled(), isAppLockEnabled());
+    }
+
     public static boolean isBiometricPromptPartAvailable(Context context) {
         BiometricManager biometricManager = BiometricManager.from(context);
         switch (biometricManager.canAuthenticate(
