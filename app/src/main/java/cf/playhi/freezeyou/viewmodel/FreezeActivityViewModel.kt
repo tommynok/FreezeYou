@@ -63,6 +63,15 @@ class FreezeActivityViewModel(application: Application) : AndroidViewModel(appli
         return mPkgName
     }
 
+    /**
+     * Whether the request in hand is the plain launch an activity shortcut was made for.
+     *
+     * The activity asks, because the flag is set here and only for a shortcut that carries a token
+     * this application signed: read from the intent again in the activity it would be a second,
+     * looser answer to the same question.
+     */
+    fun isJustLaunch(): Boolean = mJustLaunch
+
     fun getToastStringId(): LiveData<Int> {
         return mToastStringId
     }

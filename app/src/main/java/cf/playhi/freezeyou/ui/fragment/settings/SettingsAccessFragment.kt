@@ -12,13 +12,16 @@ import androidx.preference.Preference
 import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
 import cf.playhi.freezeyou.ui.AppLockActivity
+import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
 import cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable
 import cf.playhi.freezeyou.utils.SettingsUtils.changeIconEntryComponentState
+import cf.playhi.freezeyou.utils.Support.showAppLockAccessibilityWarningIfOff
 import cf.playhi.freezeyou.utils.ToastUtils
 
 /**
@@ -29,6 +32,7 @@ import cf.playhi.freezeyou.utils.ToastUtils
 class SettingsAccessFragment : CardPreferenceFragment() {
 
     private var enableAuthenticationActivityResultLauncher: ActivityResultLauncher<Intent>? = null
+    private var enableAppLockActivityResultLauncher: ActivityResultLauncher<Intent>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +49,18 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                         .putBoolean(enableAuthentication.name, true)
                         .apply()
                     findPreference<CheckBoxPreference>(enableAuthentication.name)?.isChecked = true
+                }
+            }
+            enableAppLockActivityResultLauncher = registerForActivityResult(
+                StartActivityForResult()
+            ) { result: ActivityResult ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    enableAppLock.setValue(value = true)
+                    PreferenceManager.getDefaultSharedPreferences(activity)
+                        .edit()
+                        .putBoolean(enableAppLock.name, true)
+                        .apply()
+                    findPreference<CheckBoxPreference>(enableAppLock.name)?.isChecked = true
                 }
             }
         }
@@ -74,6 +90,28 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                     }
                 }
                 true
+            }
+
+        // The app lock answers for other applications, so it asks the two questions that row has:
+        // whether anything is there to intercept with, and whether the device can be made to ask.
+        findPreference<Preference>(enableAppLock.name)?.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _: Preference?, newValue: Any ->
+                val activity: Activity? = activity
+                if (activity != null && true == newValue) {
+                    if (!isAccessibilitySettingsOn(activity)) {
+                        showAppLockAccessibilityWarningIfOff(activity)
+                    } else if (isBiometricPromptPartAvailable(activity)) {
+                        enableAppLockActivityResultLauncher?.launch(
+                            Intent(activity, AppLockActivity::class.java)
+                                .putExtra("ignoreCurrentUnlockStatus", true)
+                        )
+                    } else {
+                        ToastUtils.showToast(activity, R.string.authenticationFailed)
+                    }
+                    false
+                } else {
+                    true
+                }
             }
 
         bindIconEntry(firstIconEnabled.name, "cf.playhi.freezeyou.FirstIcon")

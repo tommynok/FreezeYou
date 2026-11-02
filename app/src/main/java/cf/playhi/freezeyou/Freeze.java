@@ -43,6 +43,7 @@ import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawab
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
 import static cf.playhi.freezeyou.utils.FUFUtils.getFUFRelatedToastString;
+import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
@@ -248,7 +249,7 @@ public class Freeze extends FreezeYouBaseActivity {
 
     private void checkAndExecuteGo() {
         if (mPendingGo && viewModel != null) {
-            if (isLocked()) {
+            if (!isPlainLaunchOfAnUnprotectedApplication() && isLocked()) {
                 checkAppLock();
                 return;
             }
@@ -256,6 +257,44 @@ public class Freeze extends FreezeYouBaseActivity {
             mIsExecuting = true;
             viewModel.go();
         }
+    }
+
+    @Override
+    protected boolean checkAppLock() {
+        // The trampoline that only launches somebody else's application has no screen of its own to
+        // protect, and stamping the session as unlocked here would let the tap read as an answer to
+        // this application's own lock.
+        if (isPlainLaunchOfAnUnprotectedApplication()) return false;
+        return super.checkAppLock();
+    }
+
+    /**
+     * Whether the request in hand is a shortcut left on "Launch" for an application the user has
+     * not put on the protected list.
+     *
+     * The lock that guards this application's screens was never a door into another one: whoever
+     * taps the shortcut has already been accepted by their own launcher, and asking them for a
+     * second secret proves only which button hides the first. An application the user did list is
+     * asked about by the service that watches windows, which does it once, over the application
+     * itself - asking here as well would be two screens for one answer.
+     */
+    private boolean isPlainLaunchOfAnUnprotectedApplication() {
+        if (viewModel == null) return false;
+        final String pkgName = viewModel.getPkgName().getValue();
+        final boolean hasTarget = pkgName != null && !"".equals(pkgName);
+        final boolean onProtectedList = hasTarget && existsInOneKeyList(
+                getApplicationContext(), getString(R.string.sAppLockList), pkgName);
+        return isPlainLaunchOfAnUnprotectedApp(
+                viewModel.isJustLaunch(), hasTarget, onProtectedList);
+    }
+
+    /**
+     * Kept over plain values, like the gate the service reads, so the order it refuses in can be
+     * read without a device.
+     */
+    public static boolean isPlainLaunchOfAnUnprotectedApp(
+            boolean justLaunch, boolean hasTargetPackage, boolean onProtectedList) {
+        return justLaunch && hasTargetPackage && !onProtectedList;
     }
 
     @Override

@@ -165,7 +165,15 @@ class ShadowContractMMKV {
     }
 
     @Implementation
-    fun decodeBool(key: String, defValue: Boolean): Boolean = defValue
+    fun decodeBool(key: String, defValue: Boolean): Boolean = booleans[key] ?: defValue
+
+    // Only a key somebody actually switched leaves its default, so a test that reads a switch it
+    // never wrote still gets the value an install ships with.
+    @Implementation
+    fun encode(key: String, value: Boolean): Boolean {
+        booleans[key] = value
+        return true
+    }
 
     // Kept as text, the way the real store keeps it: a counter a test reads back has to survive the
     // same round trip the device gives it.
@@ -191,6 +199,7 @@ class ShadowContractMMKV {
 
     companion object {
         val strings = mutableMapOf<String, String>()
+        val booleans = mutableMapOf<String, Boolean>()
         private val storageLock = ReentrantLock()
         var syncCount = 0
             private set
@@ -209,6 +218,7 @@ class ShadowContractMMKV {
         @Resetter
         fun reset() {
             strings.clear()
+            booleans.clear()
             syncCount = 0
         }
     }

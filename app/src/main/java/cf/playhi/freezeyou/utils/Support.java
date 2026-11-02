@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.utils;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +14,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Base64;
 import android.util.DisplayMetrics;
@@ -70,7 +73,51 @@ public final class Support {
                 }
                 AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(appContext);
             }
+            if (added && appContext.getString(R.string.sAppLockList).equals(oneKeyName)) {
+                showAppLockAccessibilityWarningIfOff(context);
+            }
         }, "OneKeyListMutation").start();
+    }
+
+    /**
+     * Tells the user that the lock they have just asked for cannot answer yet.
+     *
+     * The interception that throws a lock over a protected application lives in this application's
+     * accessibility service. With that permission not granted, every application on the list opens
+     * unanswered, and the list the user keeps giving no sign of it - so the row that adds to it says
+     * so, once, and lets the user decide about the trip to system settings.
+     *
+     * Safe from any thread: the service's own state is read where the call arrives and the dialog
+     * is handed to the main looper, because the tap that got here may be a worker's.
+     */
+    public static void showAppLockAccessibilityWarningIfOff(final Context context) {
+        final Activity activity = activityFromContext(context);
+        if (activity == null) {
+            // No window to hold the question: a toast is the best there is, and asking for a
+            // permission from a context that cannot show it is how a service ends up disabled.
+            showToast(context, R.string.needActiveAccessibilityService);
+            return;
+        }
+        if (AccessibilityUtils.isAccessibilitySettingsOn(activity)) return;
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (activity.isFinishing()) return;
+            FreezeYouAlertDialogBuilder(activity)
+                    .setTitle(R.string.appLockAccessibilityWarningTitle)
+                    .setMessage(R.string.appLockAccessibilityWarningMessage)
+                    .setPositiveButton(R.string.settings, (dialog, which) ->
+                            AccessibilityUtils.openAccessibilitySettings(activity))
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        });
+    }
+
+    /** The activity a context was wrapped around, or null when it never was one. */
+    private static Activity activityFromContext(Context context) {
+        while (context != null) {
+            if (context instanceof Activity) return (Activity) context;
+            context = context instanceof ContextWrapper ? ((ContextWrapper) context).getBaseContext() : null;
+        }
+        return null;
     }
 
     public static void showChooseActionPopupMenu(final Context context, Activity activity, View view, final String pkgName, final String name) {

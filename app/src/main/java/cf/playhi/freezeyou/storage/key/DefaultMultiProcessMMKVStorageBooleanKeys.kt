@@ -179,6 +179,12 @@ enum class DefaultMultiProcessMMKVStorageBooleanKeys : AbstractMMKVKey<Boolean> 
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     },
 
+    enableAppLock {
+        override fun defaultValue(): Boolean = false
+        override fun titleTextStringId(): Int = R.string.enableAppLock
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
+    },
+
     lockOnScreenOff {
         override fun defaultValue(): Boolean = false
         override fun titleTextStringId(): Int = R.string.lockOnScreenOff

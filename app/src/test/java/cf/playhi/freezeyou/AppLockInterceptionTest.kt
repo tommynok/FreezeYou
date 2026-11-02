@@ -3,6 +3,8 @@ package cf.playhi.freezeyou
 import android.app.Application
 import android.content.Intent
 import cf.playhi.freezeyou.ui.AppLockActivity
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
+import cf.playhi.freezeyou.utils.AuthenticationUtils
 import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
 import cf.playhi.freezeyou.utils.ShadowContractMMKV
@@ -65,6 +67,45 @@ class AppLockInterceptionTest {
     @Test
     fun `the application the user was let into is not asked about again`() {
         assertFalse(AccessibilityService.appLockShouldIntercept(true, true, true))
+    }
+
+    @Test
+    fun `the lock over these screens and the lock over other applications are two switches`() {
+        // An install ships with neither on, so a test that finds one on read it from the other.
+        assertFalse(AuthenticationUtils.isAuthenticationEnabled())
+        assertFalse(AuthenticationUtils.isAppLockEnabled())
+
+        // The complaint this answers: protecting an application meant being asked for this
+        // application's password every time the user opened it to change the list.
+        enableAppLock.setValue(value = true)
+        assertTrue(AuthenticationUtils.isAppLockEnabled())
+        assertFalse(AuthenticationUtils.isAuthenticationEnabled())
+
+        enableAuthentication.setValue(value = true)
+        assertTrue(AuthenticationUtils.isAuthenticationEnabled())
+
+        // And the way back is one switch, not an argument about which of the two was meant.
+        enableAppLock.setValue(value = false)
+        assertFalse(AuthenticationUtils.isAppLockEnabled())
+        assertTrue(AuthenticationUtils.isAuthenticationEnabled())
+    }
+
+    @Test
+    fun `a shortcut that only launches an unprotected application is not stopped at this door`() {
+        assertTrue(Freeze.isPlainLaunchOfAnUnprotectedApp(true, true, false))
+
+        // An application the user listed is asked about by the service that watches windows, over
+        // the application itself - asking here would be two screens for one answer, so the
+        // trampoline stays out of it.
+        assertFalse(Freeze.isPlainLaunchOfAnUnprotectedApp(true, true, true))
+
+        // A shortcut that freezes, unfreezes or opens-and-unfreezes changes this application's own
+        // state, and keeps the lock that guards it.
+        assertFalse(Freeze.isPlainLaunchOfAnUnprotectedApp(false, true, false))
+
+        // Nothing to launch is not a launch either: the request is left to the ordinary gate, which
+        // answers it with an invalid-arguments toast rather than a silent pass.
+        assertFalse(Freeze.isPlainLaunchOfAnUnprotectedApp(true, false, false))
     }
 
     @Test

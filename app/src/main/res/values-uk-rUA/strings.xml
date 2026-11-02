@@ -43,6 +43,7 @@
     <string name="summary_combineBatchQuickNotification">Показувати одну картку з кнопкою «Заморозити все» замість окремих сповіщень для кожного додатка</string>
     <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
     <string name="summary_lockOnScreenOff">Вимагати розблокування після вимкнення екрана</string>
+    <string name="summary_enableAppLock">Вимагати розблокування пристрою (PIN, відбиток тощо) при відкритті застосунків зі списку «Блокування застосунків»</string>
     <string name="summary_enableInstallPkgFunc">Дозволяє відкривати та встановлювати сторонні APK-файли через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Видаляє файл APK після успішного встановлення, щоб звільнити місце</string>
     <string name="summary_notAllowWhenIsObsd">Блокує встановлення/видалення, якщо екран перекрито вікном іншого додатку (захист від підміни натискань)</string>
@@ -402,6 +403,10 @@
     <string name="enableAuthentication">Ввімкнути автентифікацію</string>
     <string name="appLockTimeout">Час до блокування</string>
     <string name="lockOnScreenOff">Блокувати при вимкненні екрана</string>
+    <string name="enableAppLock">Ввімкнути блокування застосунків</string>
+    <string name="appLockAccessibilityWarningTitle">Потрібні спеціальні можливості</string>
+    <string name="appLockAccessibilityWarningMessage">Для роботи блокування застосунків потрібна служба спеціальних можливостей FreezeYou — вона відстежує відкриття захищених застосунків. Відкрити системні налаштування зараз?</string>
+    <string name="settings">Налаштування</string>
     <string name="authentication">Автентифікація</string>
     <string name="verifyToContinue">Підтвердити для продовження</string>
     <string name="authenticationFailed">Помилка автентифікації</string>

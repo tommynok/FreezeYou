@@ -43,6 +43,7 @@
     <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
     <string name="summary_lockOnScreenOff">Требовать разблокировку после выключения экрана устройства</string>
+    <string name="summary_enableAppLock">Требовать разблокировку устройства (PIN, отпечаток и т.д.) при открытии приложений из списка «Блокировка приложений»</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
@@ -402,6 +403,10 @@
     <string name="enableAuthentication">Включить аутентификацию</string>
     <string name="appLockTimeout">Время до блокировки</string>
     <string name="lockOnScreenOff">Блокировать при выключении экрана</string>
+    <string name="enableAppLock">Включить блокировку приложений</string>
+    <string name="appLockAccessibilityWarningTitle">Требуются специальные возможности</string>
+    <string name="appLockAccessibilityWarningMessage">Для работы блокировки приложений нужна служба специальных возможностей FreezeYou — она отслеживает открытие защищенных приложений. Открыть системные настройки сейчас?</string>
+    <string name="settings">Настройки</string>
     <string name="authentication">Аутентификация</string>
     <string name="verifyToContinue">Подтвердите для продолжения</string>
     <string name="authenticationFailed">Сбой аутентификации</string>

@@ -35,6 +35,13 @@
             app:summary="@string/summary_lockOnScreenOff"
             app:title="@string/lockOnScreenOff" />
         <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enableAppLock"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_enableAppLock"
+            app:title="@string/enableAppLock" />
+        <CheckBoxPreference
             app:defaultValue="true"
             app:disableDependentsState="false"
             app:iconSpaceReserved="false"

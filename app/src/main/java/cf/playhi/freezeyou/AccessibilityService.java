@@ -30,7 +30,7 @@ import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
-import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.FUFUtils.processFreezeAction;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
@@ -248,7 +248,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     ProcessSharedState.clearPackageUnlocked(previousPkg);
 
                     if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
-                            isAuthenticationEnabled(), isBiometricPromptPartAvailable(this),
+                            isAppLockEnabled(), isBiometricPromptPartAvailable(this),
                             ProcessSharedState.isPackageUnlocked(pkgNameString))) {
                         // From here this service answers for the way out of that application, whether
                         // the screen comes up over it or not.
@@ -422,7 +422,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     /**
      * The gate an application on the protected list still passes through before a lock screen is
-     * thrown over it: authentication has to be switched on, the device has to be able to ask for
+     * thrown over it: the app lock has to be switched on, the device has to be able to ask for
      * it, and the application must not already be open for this session.
      *
      * The last of the three is what keeps the screen from coming back over the application the
@@ -432,8 +432,8 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * Kept over plain booleans, so the order it refuses in can be read without a device.
      */
     public static boolean appLockShouldIntercept(
-            boolean authenticationEnabled, boolean promptAvailable, boolean unlockedForSession) {
-        return authenticationEnabled && promptAvailable && !unlockedForSession;
+            boolean appLockEnabled, boolean promptAvailable, boolean unlockedForSession) {
+        return appLockEnabled && promptAvailable && !unlockedForSession;
     }
 
     /**

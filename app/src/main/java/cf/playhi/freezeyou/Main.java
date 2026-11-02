@@ -133,6 +133,7 @@ import static cf.playhi.freezeyou.utils.MoreUtils.processListFilter;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.addToOneKeyList;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.removeFromOneKeyList;
+import static cf.playhi.freezeyou.utils.Support.showAppLockAccessibilityWarningIfOff;
 import static cf.playhi.freezeyou.utils.Support.showChooseActionPopupMenu;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeDot;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeFabDotBackground;
@@ -2194,9 +2195,15 @@ public class Main extends FreezeYouBaseActivity {
     private void processAddToOneKeyList(final String string) {
         final ArrayList<String> packages = new ArrayList<>(selectedPackages);
         final Context appContext = getApplicationContext();
-        new Thread(() -> showToast(Main.this,
-                addToOneKeyList(appContext, string, packages) ? R.string.success : R.string.failed),
-                "OneKeyListMutation").start();
+        new Thread(() -> {
+            final boolean added = addToOneKeyList(appContext, string, packages);
+            showToast(Main.this, added ? R.string.success : R.string.failed);
+            // A batch of protected applications is as unanswered as a single one, and the toast
+            // saying "success" is not the place the missing permission shows up.
+            if (added && appContext.getString(R.string.sAppLockList).equals(string)) {
+                showAppLockAccessibilityWarningIfOff(Main.this);
+            }
+        }, "OneKeyListMutation").start();
     }
 
     private void processRemoveFromOneKeyList(final String string) {
