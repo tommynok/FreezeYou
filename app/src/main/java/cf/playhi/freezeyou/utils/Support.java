@@ -100,7 +100,10 @@ public final class Support {
         }
         if (AccessibilityUtils.isAccessibilitySettingsOn(activity)) return;
         new Handler(Looper.getMainLooper()).post(() -> {
+            // The worker's answer can arrive after the screen that asked has gone: a rotation
+            // recreates it, and a dialog on a dead activity is a token leaked to no one.
             if (activity.isFinishing()) return;
+            if (Build.VERSION.SDK_INT >= 17 && activity.isDestroyed()) return;
             FreezeYouAlertDialogBuilder(activity)
                     .setTitle(R.string.appLockAccessibilityWarningTitle)
                     .setMessage(R.string.appLockAccessibilityWarningMessage)

@@ -26,6 +26,7 @@ class BackupEntryCountingTest {
             .put("secondIconEnabled", true)
             .put("thirdIconEnabled", true)
             .put("enableAuthentication", true)
+            .put("enableAppLock", true)
             .put("noCaution", true)
             .put("cacheApplicationsIcons", true)
 
@@ -48,6 +49,7 @@ class BackupEntryCountingTest {
             .put("secondIconEnabled", false)
             .put("thirdIconEnabled", true)
             .put("enableAuthentication", false)
+            .put("enableAppLock", true)
 
         assertEquals(0, countBooleanEntries(settings))
     }

@@ -47,14 +47,17 @@ public final class BackupUtils {
     public static final int MAX_RESTORE_JSON_CHARS = 16 * 1024 * 1024;
 
     /**
-     * Exported but never written back: the icons and the app lock are device-specific and are
-     * restored through their own flows, so they must not be counted as restorable either.
+     * Exported but never written back: the icons and both locks are device-specific and are
+     * restored through their own flows, so they must not be counted as restorable either. A lock
+     * carried in from another device would answer the door for applications this user never
+     * protected here, and it would do so without ever asking them.
      */
     private static final String[] NON_RESTORABLE_BOOLEAN_KEYS = new String[]{
             DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled.name(),
             DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled.name(),
             DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled.name(),
-            DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name()
+            DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name(),
+            DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock.name()
     };
 
     /**
