@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Intent
 import cf.playhi.freezeyou.ui.AppLockActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
 import cf.playhi.freezeyou.utils.AuthenticationUtils
 import cf.playhi.freezeyou.utils.OneKeyListUtils
 import cf.playhi.freezeyou.utils.ProcessSharedState
