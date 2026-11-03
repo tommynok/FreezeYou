@@ -8,7 +8,7 @@
   <a href="README.md">English</a> | <b>Русский</b>
 </p>
 
-> **Неофициальный форк** [FreezeYou](https://github.com/FreezeYou/FreezeYou), не связан с оригинальным разработчиком.
+> Форк проекта [FreezeYou](https://github.com/FreezeYou/FreezeYou). Искренняя благодарность автору за отличную идею, мощный инструмент и открытый исходный код!
 
 ---
 

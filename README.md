@@ -8,8 +8,7 @@
   <b>English</b> | <a href="README.ru.md">Русский</a>
 </p>
 
-> **Unofficial fork** of [FreezeYou](https://github.com/FreezeYou/FreezeYou), not affiliated with the original developer.
-> No support or issue tracker here.
+> A fork of the [FreezeYou](https://github.com/FreezeYou/FreezeYou) project. Sincere gratitude to the author for a great idea, a powerful tool, and open-source code!
 
 ---
 
