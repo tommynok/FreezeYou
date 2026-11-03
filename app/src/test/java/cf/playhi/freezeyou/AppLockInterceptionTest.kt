@@ -1,7 +1,9 @@
 package cf.playhi.freezeyou
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Intent
+import cf.playhi.freezeyou.utils.AccessibilityUtils
 import cf.playhi.freezeyou.ui.AppLockActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
@@ -374,5 +376,47 @@ class AppLockInterceptionTest {
 
         assertFalse(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.mail"))
         assertTrue(OneKeyListUtils.existsInOneKeyList(context, listKey, "com.example.bank"))
+    }
+
+    @Test
+    fun `re-lock policy determines whether application is locked immediately on exit`() {
+        assertTrue(AccessibilityService.shouldRelockOnAppExit("immediately"))
+        assertFalse(AccessibilityService.shouldRelockOnAppExit("screen_off"))
+        assertTrue(AccessibilityService.shouldRelockOnAppExit(null))
+        assertTrue(AccessibilityService.shouldRelockOnAppExit("other"))
+    }
+
+    @Test
+    fun `accessibility detection matches both full and short component names`() {
+        val target = ComponentName("cf.playhi.freezeyou", "cf.playhi.freezeyou.AccessibilityService")
+
+        // Full component notation
+        assertTrue(
+            AccessibilityUtils.isComponentInSettingValue(
+                "cf.playhi.freezeyou/cf.playhi.freezeyou.AccessibilityService",
+                target
+            )
+        )
+
+        // Short component notation common on modern Android / OEM ROMs
+        assertTrue(
+            AccessibilityUtils.isComponentInSettingValue(
+                "cf.playhi.freezeyou/.AccessibilityService",
+                target
+            )
+        )
+
+        // Multi-service colon-separated string with both short and external services
+        val composite = "com.other.service/.MyService:cf.playhi.freezeyou/.AccessibilityService:com.third.app/.ThirdService"
+        assertTrue(AccessibilityUtils.isComponentInSettingValue(composite, target))
+
+        // Non-matching services
+        assertFalse(AccessibilityUtils.isComponentInSettingValue("com.other.service/.MyService", target))
+        assertFalse(AccessibilityUtils.isComponentInSettingValue("cf.playhi.freezeyou/.OtherService", target))
+
+        // Null and empty checks
+        assertFalse(AccessibilityUtils.isComponentInSettingValue(null, target))
+        assertFalse(AccessibilityUtils.isComponentInSettingValue("", target))
+        assertFalse(AccessibilityUtils.isComponentInSettingValue("cf.playhi.freezeyou/.AccessibilityService", null))
     }
 }

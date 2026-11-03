@@ -66,6 +66,15 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.appLockTimeout
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
+    },
+
+    appLockReLockPolicy {
+        // "immediately" locks as soon as the protected app leaves the foreground.
+        // "screen_off" keeps the protected app unlocked while the device screen remains on.
+        override fun defaultValue() = "immediately"
+        override fun valueStringId(): Int = -1
+        override fun titleTextStringId(): Int = R.string.appLockReLockPolicy
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     };
 
     /**

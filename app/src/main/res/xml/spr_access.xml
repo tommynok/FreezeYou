@@ -64,6 +64,16 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_enableAppLock"
             app:title="@string/enableAppLock" />
+        <ListPreference
+            app:defaultValue="immediately"
+            app:dependency="enableAppLock"
+            app:entries="@array/appLockReLockPolicySelection"
+            app:entryValues="@array/appLockReLockPolicySelectionValues"
+            app:iconSpaceReserved="false"
+            app:key="appLockReLockPolicy"
+            app:singleLineTitle="false"
+            app:title="@string/appLockReLockPolicy"
+            app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 

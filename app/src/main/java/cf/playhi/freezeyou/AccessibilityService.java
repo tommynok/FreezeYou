@@ -30,6 +30,7 @@ import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockReLockPolicy;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.FUFUtils.processFreezeAction;
@@ -138,7 +139,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         mScreenOffReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (lockOnScreenOff.getValue(null)) {
+                if (isAppLockEnabled() || lockOnScreenOff.getValue(null)) {
                     endUnlockedSession();
                 }
             }
@@ -245,7 +246,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     // being the window on screen. A window of this application is not that moment:
                     // the lock screen this service raises is one, and treating it as a departure
                     // would ask again before the answer had reached the application behind it.
-                    ProcessSharedState.clearPackageUnlocked(previousPkg);
+                    if (shouldRelockOnAppExit(appLockReLockPolicy.getValue(null))) {
+                        ProcessSharedState.clearPackageUnlocked(previousPkg);
+                    }
 
                     if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
                             isAppLockEnabled(), isBiometricPromptPartAvailable(this),
@@ -451,6 +454,17 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      */
     public static boolean pendingLockOwesDeparture(String pendingLockPkg, boolean unlockedForSession) {
         return pendingLockPkg != null && !"".equals(pendingLockPkg) && !unlockedForSession;
+    }
+
+    /**
+     * Determines whether an application that the user was let into should be re-locked immediately
+     * upon navigating away from it, based on the configured [appLockReLockPolicy].
+     *
+     * <p>When set to "screen_off", the application remains unlocked while the screen is on, and is
+     * re-locked only when the screen goes dark or the session is reset.
+     */
+    public static boolean shouldRelockOnAppExit(String reLockPolicy) {
+        return !"screen_off".equals(reLockPolicy);
     }
 
     /**

@@ -106,6 +106,9 @@ public final class BackupUtils {
                 DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout.name(),
                 R.array.appLockTimeoutSelectionValues);
         OFFERED_VALUE_ARRAYS.put(
+                DefaultMultiProcessMMKVStorageStringKeys.appLockReLockPolicy.name(),
+                R.array.appLockReLockPolicySelectionValues);
+        OFFERED_VALUE_ARRAYS.put(
                 DefaultSharedPreferenceStorageStringKeys.mainActivityPattern.name(),
                 R.array.mainActivityPatternSelectionValues);
         OFFERED_VALUE_ARRAYS.put(
