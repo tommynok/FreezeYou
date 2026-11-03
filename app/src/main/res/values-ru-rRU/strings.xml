@@ -103,7 +103,7 @@
     <string name="createActivityShortcut">Создать ярлык активити</string>
     <string name="cannotFindTheEntrance">У этого приложения не нашлось точки входа</string>
     <string name="unfreezeAndLaunchActivity">Приложение заморожено — активити не запустится. Разморозить? Оно останется размороженным. Если нужно замораживать приложение через ярлык — создайте его через пункт «%1$s».</string>
-    <string name="iconAEntry">Иконки и вход</string>
+    <string name="iconAEntry">Значок и способ входа во FreezeYou</string>
     <string name="dialEntry">Используйте клавиатуру для ввода</string>
     <string name="dialEntry_Ex">Если ярлыки на экране скрыты, откройте FreezeYou, набрав код *#*#373393968#*#* (*#*#FreezeYou#*#*) в номеронабирателе телефона. Поддерживается на большинстве Android-устройств.</string>
     <string name="ciFinishedToast">Отправлено, пожалуйста, дождитесь обновления лаунчера, или перезапустите его.</string>

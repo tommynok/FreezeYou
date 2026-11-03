@@ -9,15 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.annotation.Keep
 import androidx.preference.CheckBoxPreference
 import androidx.preference.Preference
-import cf.playhi.freezeyou.ui.fragment.settings.CardPreferenceFragment
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff
-import cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled
-import cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled
-import cf.playhi.freezeyou.utils.AuthenticationUtils.isLockOnScreenOffApplicable
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
@@ -53,7 +48,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                         .putBoolean(enableAuthentication.name, true)
                         .apply()
                     findPreference<CheckBoxPreference>(enableAuthentication.name)?.isChecked = true
-                    updateLockOnScreenOffState(authEnabled = true)
                 }
             }
             enableAppLockActivityResultLauncher = registerForActivityResult(
@@ -66,7 +60,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                         .putBoolean(enableAppLock.name, true)
                         .apply()
                     findPreference<CheckBoxPreference>(enableAppLock.name)?.isChecked = true
-                    updateLockOnScreenOffState(appLockEnabled = true)
                 }
             }
         }
@@ -92,7 +85,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                         }
                         return@OnPreferenceChangeListener false
                     } else {
-                        updateLockOnScreenOffState(authEnabled = false)
                         return@OnPreferenceChangeListener true
                     }
                 }
@@ -117,12 +109,9 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                     }
                     false
                 } else {
-                    updateLockOnScreenOffState(appLockEnabled = false)
                     true
                 }
             }
-
-        updateLockOnScreenOffState()
 
         bindIconEntry(firstIconEnabled.name, "cf.playhi.freezeyou.FirstIcon")
         bindIconEntry(secondIconEnabled.name, "cf.playhi.freezeyou.SecondIcon")
@@ -142,15 +131,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
     override fun onResume() {
         super.onResume()
         activity?.setTitle(R.string.accessAndSecurity)
-        updateLockOnScreenOffState()
-    }
-
-    private fun updateLockOnScreenOffState(
-        authEnabled: Boolean = isAuthenticationEnabled(),
-        appLockEnabled: Boolean = isAppLockEnabled()
-    ) {
-        findPreference<Preference>(lockOnScreenOff.name)?.isEnabled =
-            isLockOnScreenOffApplicable(authEnabled, appLockEnabled)
     }
 
 }

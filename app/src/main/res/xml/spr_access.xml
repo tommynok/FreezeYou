@@ -28,13 +28,7 @@
             app:useSimpleSummaryProvider="true" />
         <CheckBoxPreference
             app:defaultValue="false"
-            app:iconSpaceReserved="false"
-            app:key="enableAppLock"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_enableAppLock"
-            app:title="@string/enableAppLock" />
-        <CheckBoxPreference
-            app:defaultValue="false"
+            app:dependency="enableAuthentication"
             app:iconSpaceReserved="false"
             app:key="lockOnScreenOff"
             app:singleLineTitle="false"
@@ -56,6 +50,20 @@
             app:singleLineTitle="false"
             app:summary="@string/includeFUFActivityInRecentsSummary"
             app:title="@string/includeFUFActivityInRecents" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/appLock">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enableAppLock"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_enableAppLock"
+            app:title="@string/enableAppLock" />
 
     </PreferenceCategory>
 

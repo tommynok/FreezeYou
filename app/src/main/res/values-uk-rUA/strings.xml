@@ -103,7 +103,7 @@
     <string name="createActivityShortcut">Створити ярлик активіті</string>
     <string name="cannotFindTheEntrance">У цього додатку не знайшлося точки входу</string>
     <string name="unfreezeAndLaunchActivity">Додаток заморожений — активіті не запуститься. Розморозити? Він залишиться розмороженим. Якщо потрібно заморожувати додаток через ярлик — створіть його через пункт «%1$s».</string>
-    <string name="iconAEntry">Іконки і вхід</string>
+    <string name="iconAEntry">Значок та спосіб входу у FreezeYou</string>
     <string name="dialEntry">Використовуйте клавіатуру для введення</string>
     <string name="dialEntry_Ex">Якщо ярлики на екрані приховано, відкрийте FreezeYou, набравши код *#*#373393968#*#* (*#*#FreezeYou#*#*) у номеронабирачі телефону. Підтримується на більшості Android-пристроїв.</string>
     <string name="ciFinishedToast">Відправлено, будь ласка, дочекайтеся оновлення лаунчера, або перезапустіть його.</string>
