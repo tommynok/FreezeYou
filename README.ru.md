@@ -1,6 +1,12 @@
-# FreezeYou-Fork
+<p align="center">
+  <img src="art/icon.png" width="128" height="128" alt="FreezeYou Logo">
+</p>
 
-[English](README.md) | Русский
+<h1 align="center">FreezeYou-Fork</h1>
+
+<p align="center">
+  <a href="README.md">English</a> | <b>Русский</b>
+</p>
 
 > **Неофициальный форк** [FreezeYou](https://github.com/FreezeYou/FreezeYou), не связан с оригинальным разработчиком.
 

@@ -1,6 +1,12 @@
-# FreezeYou-Fork
+<p align="center">
+  <img src="art/icon.png" width="128" height="128" alt="FreezeYou Logo">
+</p>
 
-English | [Русский](README.ru.md)
+<h1 align="center">FreezeYou-Fork</h1>
+
+<p align="center">
+  <b>English</b> | <a href="README.ru.md">Русский</a>
+</p>
 
 > **Unofficial fork** of [FreezeYou](https://github.com/FreezeYou/FreezeYou), not affiliated with the original developer.
 > No support or issue tracker here.
