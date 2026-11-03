@@ -1,9 +1,14 @@
-# FreezeYou-Fork
+<p align="center">
+  <img src="art/icon.png" width="128" height="128" alt="FreezeYou Logo">
+</p>
 
-English | [Русский](README.ru.md)
+<h1 align="center">FreezeYou-Fork</h1>
 
-> **Unofficial fork** of [FreezeYou](https://github.com/FreezeYou/FreezeYou), not affiliated with the original developer.
-> No support or issue tracker here.
+<p align="center">
+  <b>English</b> | <a href="README.ru.md">Русский</a>
+</p>
+
+> A fork of the [FreezeYou](https://github.com/FreezeYou/FreezeYou) project. Sincere gratitude to the author for a great idea, a powerful tool, and open-source code!
 
 ---
 
@@ -19,7 +24,7 @@ FreezeYou disables applications you do not want running in the background and re
 - Home-screen shortcuts and widgets for freeze/unfreeze and launch
 - Lists and filters: frozen, unfrozen, system, user, custom groups
 - Quick notification after unfreezing, one-tap actions from it
-- Backup and restore of settings, lists, shortcuts and scheduled tasks
+- Backup and restore of settings, lists and scheduled tasks
 
 ---
 
@@ -27,6 +32,9 @@ FreezeYou disables applications you do not want running in the background and re
 
 ### ✦ Added
 
+- **App Lock** — launch interception and protection of any app with biometrics or PIN code (the original FreezeYou only supported a password to enter FreezeYou itself)
+- **Uninstall and restore system apps** — uninstallation of built-in system apps (via Shizuku or Root) and their restoration from a dedicated list
+- **Protection of critical components from freezing** — prevention of accidental freezing of the default launcher, keyboards, settings, and core system processes
 - **Activity launcher and shortcuts** — pick any activity of any application, launch it directly or create a home-screen shortcut for it; non-exported activities included (elevated launch via Root/Shizuku)
 - **"Running" filter** on the main list, available in every mode
 - **Offline help page** for the scheduled-task command syntax
@@ -34,7 +42,6 @@ FreezeYou disables applications you do not want running in the background and re
 - **Fast list/grid view toggle**
 - **Grey icons** for frozen applications
 - **Reorganized settings** — 13 sections in three groups, with a separated danger zone
-- **Protection warning** when freezing system-critical packages
 
 ### ✦ Improved
 
