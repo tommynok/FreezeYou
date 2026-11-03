@@ -621,10 +621,16 @@
     </string-array>
     <string-array name="appLockReLockPolicySelection">
         <item>Immediately on exit</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
         <item>When screen turns off</item>
     </string-array>
     <string-array name="appLockReLockPolicySelectionValues" translatable="false">
         <item>immediately</item>
+        <item>60000</item>
+        <item>120000</item>
+        <item>300000</item>
         <item>screen_off</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">

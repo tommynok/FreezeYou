@@ -530,6 +530,9 @@
     </string-array>
     <string-array name="appLockReLockPolicySelection">
         <item>退出应用时</item>
+        <item>1 分钟后</item>
+        <item>2 分钟后</item>
+        <item>5 分钟后</item>
         <item>设备息屏时</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">

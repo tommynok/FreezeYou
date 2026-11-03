@@ -381,9 +381,36 @@ class AppLockInterceptionTest {
     @Test
     fun `re-lock policy determines whether application is locked immediately on exit`() {
         assertTrue(AccessibilityService.shouldRelockOnAppExit("immediately"))
-        assertFalse(AccessibilityService.shouldRelockOnAppExit("screen_off"))
         assertTrue(AccessibilityService.shouldRelockOnAppExit(null))
-        assertTrue(AccessibilityService.shouldRelockOnAppExit("other"))
+        assertFalse(AccessibilityService.shouldRelockOnAppExit("screen_off"))
+        assertFalse(AccessibilityService.shouldRelockOnAppExit("60000"))
+        assertFalse(AccessibilityService.shouldRelockOnAppExit("120000"))
+        assertFalse(AccessibilityService.shouldRelockOnAppExit("300000"))
+    }
+
+    @Test
+    fun `re-lock timeout expiry evaluates departure timestamp against configured threshold`() {
+        // Immediate policy always expires
+        assertTrue(AccessibilityService.isAppLockSessionExpired("immediately", 1000L, 1005L))
+        assertTrue(AccessibilityService.isAppLockSessionExpired(null, 1000L, 1005L))
+
+        // Screen-off policy never expires while device remains active
+        assertFalse(AccessibilityService.isAppLockSessionExpired("screen_off", 1000L, 9999999L))
+
+        // Threshold policy
+        // Active session without recorded departure never expires prematurely
+        assertFalse(AccessibilityService.isAppLockSessionExpired("60000", null, 5000L))
+
+        // Within threshold: unexpired
+        assertFalse(AccessibilityService.isAppLockSessionExpired("60000", 1000L, 30000L))
+        assertFalse(AccessibilityService.isAppLockSessionExpired("60000", 1000L, 60999L))
+
+        // At or beyond threshold: expired
+        assertTrue(AccessibilityService.isAppLockSessionExpired("60000", 1000L, 61000L))
+        assertTrue(AccessibilityService.isAppLockSessionExpired("60000", 1000L, 70000L))
+
+        // Malformed policy safely defaults to expired
+        assertTrue(AccessibilityService.isAppLockSessionExpired("invalid", 1000L, 1005L))
     }
 
     @Test

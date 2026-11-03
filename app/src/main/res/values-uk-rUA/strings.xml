@@ -525,6 +525,9 @@
     </string-array>
     <string-array name="appLockReLockPolicySelection">
         <item>Одразу при виході</item>
+        <item>Через 1 хвилину</item>
+        <item>Через 2 хвилини</item>
+        <item>Через 5 хвилин</item>
         <item>При вимкненні екрана</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">

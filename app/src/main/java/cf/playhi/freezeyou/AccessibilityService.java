@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.os.Build;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
@@ -17,6 +18,8 @@ import androidx.annotation.CallSuper;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -100,6 +103,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     }
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+    private final Map<String, Long> mPackageDepartures = new ConcurrentHashMap<>();
     private BroadcastReceiver mScreenOffReceiver;
     /**
      * Whether the screen this service raised over somebody else's application is still the one in
@@ -157,6 +161,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * application the user was stopped from reading stays open for whoever wakes it next.
      */
     private void endUnlockedSession() {
+        mPackageDepartures.clear();
         ProcessSharedState.clearAllUnlockedPackages();
         MainApplication.clearCurrentPackage();
         mAppLockIsUp = false;
@@ -246,24 +251,37 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     // being the window on screen. A window of this application is not that moment:
                     // the lock screen this service raises is one, and treating it as a departure
                     // would ask again before the answer had reached the application behind it.
+                    if (previousPkg != null && !"".equals(previousPkg)) {
+                        mPackageDepartures.put(previousPkg, SystemClock.elapsedRealtime());
+                    }
                     if (shouldRelockOnAppExit(appLockReLockPolicy.getValue(null))) {
                         ProcessSharedState.clearPackageUnlocked(previousPkg);
                     }
 
-                    if (isOnAppLockList(pkgNameString) && appLockShouldIntercept(
-                            isAppLockEnabled(), isBiometricPromptPartAvailable(this),
-                            ProcessSharedState.isPackageUnlocked(pkgNameString))) {
-                        // From here this service answers for the way out of that application, whether
-                        // the screen comes up over it or not.
-                        mPendingAppLockPkg = pkgNameString;
-                        if (!showAppLock(pkgNameString, previousPkg)) {
-                            // Nothing covers this application and the user is being taken away from
-                            // it, so the switch is not a visit: no usage counted for it, no exit
-                            // task run and no entry rule fired on the strength of a window the user
-                            // was refused.
-                            return;
+                    if (isOnAppLockList(pkgNameString)) {
+                        String policy = appLockReLockPolicy.getValue(null);
+                        Long departure = mPackageDepartures.get(pkgNameString);
+                        if (isAppLockSessionExpired(policy, departure, SystemClock.elapsedRealtime())) {
+                            ProcessSharedState.clearPackageUnlocked(pkgNameString);
                         }
-                        mAppLockIsUp = true;
+
+                        if (appLockShouldIntercept(
+                                isAppLockEnabled(), isBiometricPromptPartAvailable(this),
+                                ProcessSharedState.isPackageUnlocked(pkgNameString))) {
+                            // From here this service answers for the way out of that application, whether
+                            // the screen comes up over it or not.
+                            mPendingAppLockPkg = pkgNameString;
+                            if (!showAppLock(pkgNameString, previousPkg)) {
+                                // Nothing covers this application and the user is being taken away from
+                                // it, so the switch is not a visit: no usage counted for it, no exit
+                                // task run and no entry rule fired on the strength of a window the user
+                                // was refused.
+                                return;
+                            }
+                            mAppLockIsUp = true;
+                        } else {
+                            mPackageDepartures.remove(pkgNameString);
+                        }
                     }
                 }
 
@@ -460,11 +478,43 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * Determines whether an application that the user was let into should be re-locked immediately
      * upon navigating away from it, based on the configured [appLockReLockPolicy].
      *
-     * <p>When set to "screen_off", the application remains unlocked while the screen is on, and is
-     * re-locked only when the screen goes dark or the session is reset.
+     * <p>When set to {@code "immediately"} (or unspecified), the application is locked the instant
+     * the user leaves it. When set to {@code "screen_off"} or a millisecond timeout, the departure
+     * timestamp is evaluated on re-entry or screen-off instead.
      */
     public static boolean shouldRelockOnAppExit(String reLockPolicy) {
-        return !"screen_off".equals(reLockPolicy);
+        return reLockPolicy == null || "immediately".equals(reLockPolicy);
+    }
+
+    /**
+     * Evaluates whether an unlocked application session has expired based on the configured [appLockReLockPolicy],
+     * its departure timestamp, and the current system uptime.
+     *
+     * <p>Policies:
+     * <ul>
+     *   <li>{@code "immediately"}: always expired upon leaving the application.</li>
+     *   <li>{@code "screen_off"}: never expires while the screen remains illuminated.</li>
+     *   <li>numeric millisecond string (e.g. {@code "60000"}): expires once the time elapsed since
+     *       departure reaches or exceeds the threshold.</li>
+     * </ul>
+     */
+    public static boolean isAppLockSessionExpired(
+            String reLockPolicy, Long departureTime, long currentTime) {
+        if (reLockPolicy == null || "immediately".equals(reLockPolicy)) {
+            return true;
+        }
+        if ("screen_off".equals(reLockPolicy)) {
+            return false;
+        }
+        try {
+            long timeoutMs = Long.parseLong(reLockPolicy);
+            if (departureTime == null) {
+                return false;
+            }
+            return (currentTime - departureTime) >= timeoutMs;
+        } catch (NumberFormatException e) {
+            return true;
+        }
     }
 
     /**
