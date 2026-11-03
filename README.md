@@ -27,6 +27,9 @@ FreezeYou disables applications you do not want running in the background and re
 
 ### ✦ Added
 
+- **App Lock** — launch interception and protection of any app with biometrics or PIN code (the original FreezeYou only supported a password to enter FreezeYou itself)
+- **Uninstall and restore system apps** — uninstallation of built-in system apps (via Shizuku or Root) and their restoration from a dedicated list
+- **Protection of critical components from freezing** — prevention of accidental freezing of the default launcher, keyboards, settings, and core system processes
 - **Activity launcher and shortcuts** — pick any activity of any application, launch it directly or create a home-screen shortcut for it; non-exported activities included (elevated launch via Root/Shizuku)
 - **"Running" filter** on the main list, available in every mode
 - **Offline help page** for the scheduled-task command syntax
@@ -34,7 +37,6 @@ FreezeYou disables applications you do not want running in the background and re
 - **Fast list/grid view toggle**
 - **Grey icons** for frozen applications
 - **Reorganized settings** — 13 sections in three groups, with a separated danger zone
-- **Protection warning** when freezing system-critical packages
 
 ### ✦ Improved
 
