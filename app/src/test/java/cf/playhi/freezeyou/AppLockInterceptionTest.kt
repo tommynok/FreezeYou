@@ -446,4 +446,46 @@ class AppLockInterceptionTest {
         assertFalse(AccessibilityUtils.isComponentInSettingValue("", target))
         assertFalse(AccessibilityUtils.isComponentInSettingValue("cf.playhi.freezeyou/.AccessibilityService", null))
     }
+
+    @Test
+    fun `isReturningFromAppLock identifies transitions returning from lock screen`() {
+        val ourPkg = "cf.playhi.freezeyou"
+        val lockedApp = "com.example.bank"
+
+        // Active lock flag is sufficient to identify return
+        assertTrue(
+            AccessibilityService.isReturningFromAppLock(
+                true, "com.any", lockedApp, lockedApp, ourPkg
+            )
+        )
+
+        // Matching package transition when lock flag was already reset
+        assertTrue(
+            AccessibilityService.isReturningFromAppLock(
+                false, ourPkg, lockedApp, lockedApp, ourPkg
+            )
+        )
+
+        // Ordinary app transitions from external apps are not returning from lock
+        assertFalse(
+            AccessibilityService.isReturningFromAppLock(
+                false, "com.android.launcher", lockedApp, lockedApp, ourPkg
+            )
+        )
+        assertFalse(
+            AccessibilityService.isReturningFromAppLock(
+                false, ourPkg, "com.other.app", lockedApp, ourPkg
+            )
+        )
+        assertFalse(
+            AccessibilityService.isReturningFromAppLock(
+                false, null, lockedApp, lockedApp, ourPkg
+            )
+        )
+        assertFalse(
+            AccessibilityService.isReturningFromAppLock(
+                false, ourPkg, lockedApp, null, ourPkg
+            )
+        )
+    }
 }

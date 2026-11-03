@@ -263,6 +263,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
             // lock again over the window that takes the screen.
             e.printStackTrace();
         }
+        moveTaskToBack(true);
         finishImmediately(RESULT_CANCELED);
         return true;
     }

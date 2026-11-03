@@ -232,6 +232,28 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     // screen in front of them belongs to this one, and answering it as a departure
                     // would freeze it or run its exit tasks while the question is still open.
                     if (mAppLockIsUp) return;
+                } else if (isReturningFromAppLock(
+                        mAppLockIsUp, previousPkg, pkgNameString, mPendingAppLockPkg, getPackageName())) {
+                    mAppLockIsUp = false;
+                    String pendingLockPkg = mPendingAppLockPkg;
+                    mPendingAppLockPkg = null;
+
+                    if (!ProcessSharedState.isPackageUnlocked(pkgNameString)) {
+                        // The user dismissed, cancelled, or backed out of the lock screen without
+                        // proving themselves. Never re-raise the lock over the application they
+                        // refused to unlock (which would trap them in an infinite loop), and never
+                        // let them into it: send them safely to the home screen and handle pending quit.
+                        if (pendingLockPkg != null && !"".equals(pendingLockPkg)) {
+                            freezePendingLockQuit(pendingLockPkg);
+                            mExecutor.execute(() -> onLeaveApplications(pendingLockPkg, pkgNameString));
+                        }
+                        leaveTowardsHome();
+                        return;
+                    }
+
+                    // Authentication succeeded: clear any stale departure time and let the user into
+                    // the application without re-evaluating session expiry or re-raising the prompt.
+                    mPackageDepartures.remove(pkgNameString);
                 } else {
                     mAppLockIsUp = false;
 
@@ -251,11 +273,11 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                     // being the window on screen. A window of this application is not that moment:
                     // the lock screen this service raises is one, and treating it as a departure
                     // would ask again before the answer had reached the application behind it.
-                    if (previousPkg != null && !"".equals(previousPkg)) {
+                    if (previousPkg != null && !"".equals(previousPkg) && !getPackageName().equals(previousPkg)) {
                         mPackageDepartures.put(previousPkg, SystemClock.elapsedRealtime());
-                    }
-                    if (shouldRelockOnAppExit(appLockReLockPolicy.getValue(null))) {
-                        ProcessSharedState.clearPackageUnlocked(previousPkg);
+                        if (shouldRelockOnAppExit(appLockReLockPolicy.getValue(null))) {
+                            ProcessSharedState.clearPackageUnlocked(previousPkg);
+                        }
                     }
 
                     if (isOnAppLockList(pkgNameString)) {
@@ -263,6 +285,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                         Long departure = mPackageDepartures.get(pkgNameString);
                         if (isAppLockSessionExpired(policy, departure, SystemClock.elapsedRealtime())) {
                             ProcessSharedState.clearPackageUnlocked(pkgNameString);
+                            mPackageDepartures.remove(pkgNameString);
                         }
 
                         if (appLockShouldIntercept(
@@ -279,6 +302,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                                 return;
                             }
                             mAppLockIsUp = true;
+                            return;
                         } else {
                             mPackageDepartures.remove(pkgNameString);
                         }
@@ -472,6 +496,21 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      */
     public static boolean pendingLockOwesDeparture(String pendingLockPkg, boolean unlockedForSession) {
         return pendingLockPkg != null && !"".equals(pendingLockPkg) && !unlockedForSession;
+    }
+
+    /**
+     * Whether an incoming window change represents returning from an active application lock screen.
+     *
+     * <p>When an interception lock was standing in front of an application and steps down, the
+     * window beneath it briefly surfaces. If the user successfully authenticated, they are entering
+     * the application; if they cancelled or backed out, they are refusing entry and must be sent home
+     * without re-triggering the lock in a loop.
+     */
+    public static boolean isReturningFromAppLock(
+            boolean appLockIsUp, String previousPkg, String currentPkg, String pendingLockPkg, String ourPkg) {
+        if (appLockIsUp) return true;
+        return ourPkg != null && ourPkg.equals(previousPkg)
+                && pendingLockPkg != null && pendingLockPkg.equals(currentPkg);
     }
 
     /**
