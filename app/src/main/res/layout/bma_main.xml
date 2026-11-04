@@ -23,13 +23,6 @@
             android:layout_height="wrap_content"
             android:text="@string/restoreBackupFromFile" />
 
-        <Button
-            android:id="@+id/bma_main_restoreShortcuts_button"
-            style="@style/Widget.App.Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/restoreShortcuts" />
-
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

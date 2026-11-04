@@ -102,7 +102,6 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
     private void initButtons() {
         Button bma_main_saveToFile_button = findViewById(R.id.bma_main_saveToFile_button);
         Button bma_main_restoreFromFile_button = findViewById(R.id.bma_main_restoreFromFile_button);
-        Button bma_main_restoreShortcuts_button = findViewById(R.id.bma_main_restoreShortcuts_button);
         Button bma_main_export_button = findViewById(R.id.bma_main_export_button);
         Button bma_main_import_button = findViewById(R.id.bma_main_import_button);
         Button bma_main_copy_button = findViewById(R.id.bma_main_copy_button);
@@ -130,10 +129,6 @@ public class BackupMainActivity extends FreezeYouBaseActivity {
                         .addCategory(Intent.CATEGORY_OPENABLE)
                         .setType("*/*")
         ));
-
-        bma_main_restoreShortcuts_button.setOnClickListener(v ->
-                startActivity(new Intent(BackupMainActivity.this, RestoreShortcutsActivity.class))
-        );
 
         bma_main_export_button.setOnClickListener(v -> {
             EditText editText = findViewById(R.id.bma_main_inputAndoutput_editText);
