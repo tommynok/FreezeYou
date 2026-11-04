@@ -22,6 +22,21 @@ object LauncherShortcutUtils {
 
     const val KEY_SAVED_SHORTCUTS = "savedLauncherShortcuts"
 
+    val ALLOWED_SHORTCUT_CLASSES: Set<String> = setOf(
+        "cf.playhi.freezeyou.Freeze",
+        "cf.playhi.freezeyou.ForceStop",
+        "cf.playhi.freezeyou.OneKeyFreeze",
+        "cf.playhi.freezeyou.OneKeyUF",
+        "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
+        "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity",
+        "cf.playhi.freezeyou.Main"
+    )
+
+    @JvmStatic
+    fun isAllowedShortcutClass(cls: String?): Boolean {
+        return cls != null && ALLOWED_SHORTCUT_CLASSES.contains(cls)
+    }
+
     data class ShortcutRecord(
         val id: String,
         val name: String,
@@ -87,7 +102,7 @@ object LauncherShortcutUtils {
         target: String? = null,
         tasks: String? = null,
         justLaunch: Boolean = false
-    ) {
+    ): Boolean {
         val intent = Intent(context, cls)
             .setAction(Intent.ACTION_MAIN)
             .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -106,23 +121,26 @@ object LauncherShortcutUtils {
         }
         ShortcutTokenUtils.attachToken(intent, action)
         val shortcutId = id.ifBlank { "FreezeYou! ${pkgName}_${System.currentTimeMillis()}" }
-        saveShortcutRecord(
-            context,
-            ShortcutRecord(
-                id = shortcutId,
-                name = title,
-                pkgName = pkgName,
-                cls = cls.name,
-                target = target,
-                tasks = tasks,
-                justLaunch = justLaunch
-            )
-        )
-        requestCreateShortCut(
+        val requested = requestCreateShortCut(
             title,
             intent,
             icon, shortcutId, context, null
         )
+        if (requested) {
+            saveShortcutRecord(
+                context,
+                ShortcutRecord(
+                    id = shortcutId,
+                    name = title,
+                    pkgName = pkgName,
+                    cls = cls.name,
+                    target = target,
+                    tasks = tasks,
+                    justLaunch = justLaunch
+                )
+            )
+        }
+        return requested
     }
 
     /**
@@ -145,7 +163,7 @@ object LauncherShortcutUtils {
         id: String,
         context: Context,
         bm: Bitmap?
-    ) {
+    ): Boolean {
         if (!intent.hasExtra(ShortcutTokenUtils.EXTRA_AUTH_TOKEN)) {
             val component = intent.component
             val action = when (component?.className) {
@@ -160,15 +178,13 @@ object LauncherShortcutUtils {
             ShortcutTokenUtils.attachToken(intent, action)
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            requestCreateShortCutOldApi(title, intent, icon, context, bm)
+            return requestCreateShortCutOldApi(title, intent, icon, context, bm)
         } else {
             val mShortcutManager: ShortcutManager? = context.getSystemService(
                 ShortcutManager::class.java
             )
             if (mShortcutManager != null) {
                 if (mShortcutManager.isRequestPinShortcutSupported) {
-                    // An empty id throws from ShortcutInfo.Builder; a generated one keeps the
-                    // request valid, and pin failures must not crash the caller.
                     val shortcutId = id.ifBlank { java.util.UUID.randomUUID().toString() }
                     val shortcutInfoBuilder = ShortcutInfo.Builder(context, shortcutId)
                         .setIcon(
@@ -181,17 +197,18 @@ object LauncherShortcutUtils {
                         .setLongLabel(title.ifEmpty { " " })
 
                     val pinShortcutInfo = shortcutInfoBuilder.build()
-                    try {
+                    return try {
                         mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
                     } catch (e: Exception) {
                         e.printStackTrace()
                         showToast(context, context.getString(R.string.requestFailed) + e.message)
+                        false
                     }
                 } else {
-                    requestCreateShortCutOldApi(title, intent, icon, context, bm)
+                    return requestCreateShortCutOldApi(title, intent, icon, context, bm)
                 }
             } else {
-                requestCreateShortCutOldApi(title, intent, icon, context, bm)
+                return requestCreateShortCutOldApi(title, intent, icon, context, bm)
             }
         }
     }
@@ -211,7 +228,7 @@ object LauncherShortcutUtils {
         icon: Drawable?,
         context: Context,
         bm: Bitmap?
-    ) {
+    ): Boolean {
         val addShortCut = Intent("com.android.launcher.action.INSTALL_SHORTCUT")
 
         @Suppress("DEPRECATION")
@@ -220,7 +237,7 @@ object LauncherShortcutUtils {
         @Suppress("DEPRECATION")
         addShortCut.putExtra(Intent.EXTRA_SHORTCUT_INTENT, intent)
 
-        try {
+        return try {
             val bitmap: Bitmap = bm ?: getBitmapFromDrawable(icon)
             var size = context.resources.getDimension(android.R.dimen.app_icon_size)
             if (size < 1) {
@@ -242,9 +259,11 @@ object LauncherShortcutUtils {
             }
             context.sendBroadcast(addShortCut)
             showToast(context, R.string.requested)
+            true
         } catch (e: Exception) {
             e.printStackTrace()
             showToast(context, context.getString(R.string.requestFailed) + e.message)
+            false
         }
     }
 
@@ -266,7 +285,7 @@ object LauncherShortcutUtils {
                 val name = obj.optString("name", "")
                 val pkgName = obj.optString("pkgName", "")
                 val cls = obj.optString("cls", "")
-                if (name.isNotEmpty() && pkgName.isNotEmpty() && cls.isNotEmpty()) {
+                if (name.isNotEmpty() && pkgName.isNotEmpty() && isAllowedShortcutClass(cls)) {
                     list.add(
                         ShortcutRecord(
                             id = if (id.isNotEmpty()) id else "FreezeYou! ${pkgName}_$i",
@@ -395,7 +414,7 @@ object LauncherShortcutUtils {
                 val name = obj.optString("name", "")
                 val pkgName = obj.optString("pkgName", "")
                 val cls = obj.optString("cls", "")
-                if (name.isNotEmpty() && pkgName.isNotEmpty() && cls.isNotEmpty()) {
+                if (name.isNotEmpty() && pkgName.isNotEmpty() && isAllowedShortcutClass(cls)) {
                     val id = obj.optString("id", "FreezeYou! ${pkgName}_${System.currentTimeMillis()}_$i")
                     val rec = ShortcutRecord(
                         id = id,
@@ -452,6 +471,9 @@ object LauncherShortcutUtils {
 
     @JvmStatic
     fun restoreShortcut(context: Context, record: ShortcutRecord): Boolean {
+        if (!isAllowedShortcutClass(record.cls)) {
+            return false
+        }
         return try {
             val cls = Class.forName(record.cls)
             val icon = resolveShortcutIcon(context, record.pkgName)
@@ -466,7 +488,6 @@ object LauncherShortcutUtils {
                 tasks = record.tasks,
                 justLaunch = record.justLaunch
             )
-            true
         } catch (e: Exception) {
             e.printStackTrace()
             false

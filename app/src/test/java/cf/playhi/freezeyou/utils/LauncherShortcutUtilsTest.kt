@@ -127,6 +127,7 @@ class LauncherShortcutUtilsTest {
             .put(JSONObject().put("name", "Valid").put("pkgName", "com.valid").put("cls", "cf.playhi.freezeyou.Freeze"))
             .put(JSONObject().put("name", "").put("pkgName", "com.invalid").put("cls", "cf.playhi.freezeyou.Freeze"))
             .put(JSONObject().put("name", "NoClass").put("pkgName", "com.noclass"))
+            .put(JSONObject().put("name", "Disallowed").put("pkgName", "com.app").put("cls", "android.app.Activity"))
 
         val count = LauncherShortcutUtils.importShortcutsFromJson(context, array)
         assertEquals(1, count)
@@ -151,5 +152,32 @@ class LauncherShortcutUtilsTest {
         assertTrue(LauncherShortcutUtils.isSpecialOrBatchShortcut("FOQ"))
         assertFalse(LauncherShortcutUtils.isSpecialOrBatchShortcut("com.example.regular.app"))
         assertFalse(LauncherShortcutUtils.isSpecialOrBatchShortcut(null))
+    }
+
+    @Test
+    fun isAllowedShortcutClassValidatesAllowedClasses() {
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.Freeze"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.ForceStop"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.OneKeyFreeze"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.OneKeyUF"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity"))
+        assertTrue(LauncherShortcutUtils.isAllowedShortcutClass("cf.playhi.freezeyou.Main"))
+        assertFalse(LauncherShortcutUtils.isAllowedShortcutClass("android.app.Activity"))
+        assertFalse(LauncherShortcutUtils.isAllowedShortcutClass("com.malicious.CustomActivity"))
+        assertFalse(LauncherShortcutUtils.isAllowedShortcutClass(null))
+        assertFalse(LauncherShortcutUtils.isAllowedShortcutClass(""))
+    }
+
+    @Test
+    fun restoreShortcutRejectsDisallowedClass() {
+        val disallowedRecord = ShortcutRecord(
+            id = "disallowed_id",
+            name = "Disallowed",
+            pkgName = "com.example.app",
+            cls = "android.app.Activity"
+        )
+        val success = LauncherShortcutUtils.restoreShortcut(context, disallowedRecord)
+        assertFalse(success)
     }
 }

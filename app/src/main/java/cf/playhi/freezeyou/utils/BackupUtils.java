@@ -856,7 +856,7 @@ public final class BackupUtils {
             String name = entry.optString("name", "");
             String pkgName = entry.optString("pkgName", "");
             String cls = entry.optString("cls", "");
-            if (!name.isEmpty() && !pkgName.isEmpty() && !cls.isEmpty()) {
+            if (!name.isEmpty() && !pkgName.isEmpty() && LauncherShortcutUtils.isAllowedShortcutClass(cls)) {
                 count++;
             }
         }

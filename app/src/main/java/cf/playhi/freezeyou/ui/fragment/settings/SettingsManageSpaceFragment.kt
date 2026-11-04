@@ -14,7 +14,6 @@ import cf.playhi.freezeyou.utils.FileUtils.clearIconCache
 import cf.playhi.freezeyou.utils.FileUtils.deleteAllFiles
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromOneKeyList
 import cf.playhi.freezeyou.utils.OneKeyListUtils.removeUninstalledFromUserDefinedCategories
-import cf.playhi.freezeyou.utils.LauncherShortcutUtils
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -126,7 +125,6 @@ class SettingsManageSpaceFragment : CardPreferenceFragment() {
                 success = removeUninstalledFromOneKeyList(appContext, listKeyName) && success
             }
             success = purgeUninstalledPackageTimes(appContext) && success
-            LauncherShortcutUtils.cleanUninstalledShortcuts(appContext)
             withContext(Dispatchers.Main) {
                 showToast(currentActivity, if (success) R.string.success else R.string.failed)
             }

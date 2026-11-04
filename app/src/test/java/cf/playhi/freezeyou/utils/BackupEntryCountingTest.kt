@@ -217,6 +217,7 @@ class BackupEntryCountingTest {
             .put(JSONObject().put("name", "App2").put("pkgName", "com.app2").put("cls", "cf.playhi.freezeyou.ForceStop"))
             .put(JSONObject().put("name", "Invalid").put("pkgName", ""))
             .put(JSONObject().put("name", "").put("pkgName", "com.app3").put("cls", "cf.playhi.freezeyou.Freeze"))
+            .put(JSONObject().put("name", "Disallowed").put("pkgName", "com.app4").put("cls", "android.app.Activity"))
         val backup = JSONObject().put("launcherShortcuts", shortcuts)
 
         assertEquals(2, count(backup, "launcherShortcuts"))

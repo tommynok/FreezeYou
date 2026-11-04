@@ -1,5 +1,6 @@
 package cf.playhi.freezeyou.ui
 
+import android.content.pm.ShortcutManager
 import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
@@ -47,7 +48,22 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
         mSkipButton = findViewById(R.id.restoreShortcuts_skip_button)
         mCancelButton = findViewById(R.id.restoreShortcuts_cancel_button)
 
-        mShortcuts = LauncherShortcutUtils.getSavedShortcutRecords(this)
+        val allRecords = LauncherShortcutUtils.getSavedShortcutRecords(this)
+        val pinnedIds: Set<String>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val shortcutManager = getSystemService(ShortcutManager::class.java)
+            if (shortcutManager != null) {
+                try {
+                    shortcutManager.pinnedShortcuts.map { it.id }.toSet()
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+        mShortcuts = filterUnpinnedShortcuts(allRecords, pinnedIds)
 
         if (mShortcuts.isEmpty()) {
             showToast(this, R.string.noShortcutsToRestore)
@@ -67,6 +83,8 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
                     } else {
                         mPinRequested = true
                     }
+                } else {
+                    showToast(this, getString(R.string.restoreShortcutFailed, record.name))
                 }
             }
         }
@@ -121,5 +139,16 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    companion object {
+        @JvmStatic
+        fun filterUnpinnedShortcuts(
+            allRecords: List<ShortcutRecord>,
+            pinnedIds: Set<String>?
+        ): List<ShortcutRecord> {
+            if (pinnedIds == null) return allRecords
+            return allRecords.filter { it.id !in pinnedIds }
+        }
     }
 }
