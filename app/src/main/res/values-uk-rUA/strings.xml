@@ -589,10 +589,10 @@
     <string name="restore_completed_title">Відновлення завершено</string>
     <string name="restore_completed_single_app">Додаток «%1$s» успішно відновлено</string>
     <string name="batch_restoring">Відновлення…</string>
-    <string name="restoreShortcuts">Відновити ярлики на робочому столі</string>
-    <string name="restoreShortcutsPromptMessage">Натисніть «Додати», щоб закріпити ярлик на робочому столі. Лаунчер запитає системне підтвердження.</string>
+    <string name="restoreShortcuts">Відновлення ярликів</string>
+    <string name="restoreShortcutsPromptMessage">Натисніть «ОК», щоб закріпити ярлик на робочому столі. Лаунчер запитає системне підтвердження.</string>
     <string name="noShortcutsToRestore">Немає збережених ярликів для відновлення</string>
-    <string name="skip">Пропустити</string>
+    <string name="skip">Пропуск</string>
     <string name="restoreShortcutsProgress">Ярлик %1$d з %2$d</string>
     <string name="restoreShortcutFailed">Не вдалося додати ярлик «%1$s»</string>
 </resources>

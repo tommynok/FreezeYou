@@ -57,4 +57,14 @@ class RestoreShortcutsActivityTest {
         val formatted = app.getString(R.string.restoreShortcutFailed, "Telegram")
         assertEquals("Не удалось добавить ярлык «Telegram»", formatted)
     }
+
+    @Test
+    fun buttonAndTitleStringsInRussian() {
+        val app = RuntimeEnvironment.getApplication()
+        assertEquals("Восстановление ярлыков", app.getString(R.string.restoreShortcuts))
+        assertEquals("Пропуск", app.getString(R.string.skip))
+        assertEquals("ОК", app.getString(R.string.okay))
+        assertEquals("Отмена", app.getString(R.string.cancel))
+        assertTrue(app.getString(R.string.restoreShortcutsPromptMessage).contains("«ОК»"))
+    }
 }
