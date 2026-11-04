@@ -425,6 +425,11 @@
             android:label="@string/impt"
             android:theme="@style/AppTheme.Dark.Default" />
         <activity
+            android:name=".ui.RestoreShortcutsActivity"
+            android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
+            android:label="@string/restoreShortcuts"
+            android:theme="@style/AppTheme.Dark.Default" />
+        <activity
             android:name=".ui.LauncherShortcutConfirmAndGenerateActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:exported="true"

@@ -54,6 +54,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
             new ImportGroup(R.string.moreSettings,
                     "generalSettings_boolean", "generalSettings_string", "generalSettings_int"),
             new ImportGroup(R.string.backupGroupOneKeyLists, "oneKeyList"),
+            new ImportGroup(R.string.shortCut, "launcherShortcuts"),
             new ImportGroup(R.string.scheduledTasks,
                     "userTimeScheduledTasks", "userTriggerScheduledTasks"),
             new ImportGroup(R.string.myCustomization, "userDefinedCategories"),
@@ -230,6 +231,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
         }
         final JSONObject selectedContents = adapter.getFinalList();
         final Context appContext = getApplicationContext();
+        final boolean hasShortcutsInSelection = selectedContents.has("launcherShortcuts");
         mImporting = true;
         mFinishButton.setEnabled(false);
         mCancelButton.setEnabled(false);
@@ -247,6 +249,9 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
                 ToastUtils.showToast(
                         BackupImportChooserActivity.this,
                         imported ? R.string.finish : R.string.failed);
+                if (imported && hasShortcutsInSelection) {
+                    startActivity(new Intent(BackupImportChooserActivity.this, RestoreShortcutsActivity.class));
+                }
                 // This screen reports its own result, so it finishes before anything is recreated:
                 // the helper below skips a finishing activity, and being recreated here would take
                 // the report away from the screen that just gave it.

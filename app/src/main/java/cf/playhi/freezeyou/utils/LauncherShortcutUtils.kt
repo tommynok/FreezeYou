@@ -1,6 +1,5 @@
 package cf.playhi.freezeyou.utils
 
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
@@ -12,11 +11,26 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.allowEditWhenCreateShortcut
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.ui.LauncherShortcutConfirmAndGenerateActivity
 import cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable
 import cf.playhi.freezeyou.utils.ToastUtils.showToast
+import org.json.JSONArray
+import org.json.JSONObject
 
 object LauncherShortcutUtils {
+
+    const val KEY_SAVED_SHORTCUTS = "savedLauncherShortcuts"
+
+    data class ShortcutRecord(
+        val id: String,
+        val name: String,
+        val pkgName: String,
+        val cls: String,
+        val target: String? = null,
+        val tasks: String? = null,
+        val justLaunch: Boolean = false
+    )
 
     /**
      * @param title Shortcut label
@@ -91,10 +105,23 @@ object LauncherShortcutUtils {
             else -> ShortcutTokenUtils.ACTION_FREEZE
         }
         ShortcutTokenUtils.attachToken(intent, action)
+        val shortcutId = id.ifBlank { "FreezeYou! ${pkgName}_${System.currentTimeMillis()}" }
+        saveShortcutRecord(
+            context,
+            ShortcutRecord(
+                id = shortcutId,
+                name = title,
+                pkgName = pkgName,
+                cls = cls.name,
+                target = target,
+                tasks = tasks,
+                justLaunch = justLaunch
+            )
+        )
         requestCreateShortCut(
             title,
             intent,
-            icon, id, context, null
+            icon, shortcutId, context, null
         )
     }
 
@@ -218,6 +245,231 @@ object LauncherShortcutUtils {
         } catch (e: Exception) {
             e.printStackTrace()
             showToast(context, context.getString(R.string.requestFailed) + e.message)
+        }
+    }
+
+    @JvmStatic
+    fun getSavedShortcutRecords(context: Context): List<ShortcutRecord> {
+        val storage = DefaultMultiProcessMMKVStorage()
+        val jsonStr = storage.getString(KEY_SAVED_SHORTCUTS, null) ?: return emptyList()
+        return parseShortcutRecords(jsonStr)
+    }
+
+    @JvmStatic
+    fun parseShortcutRecords(jsonStr: String): List<ShortcutRecord> {
+        val list = ArrayList<ShortcutRecord>()
+        try {
+            val array = JSONArray(jsonStr)
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val id = obj.optString("id", "")
+                val name = obj.optString("name", "")
+                val pkgName = obj.optString("pkgName", "")
+                val cls = obj.optString("cls", "")
+                if (name.isNotEmpty() && pkgName.isNotEmpty() && cls.isNotEmpty()) {
+                    list.add(
+                        ShortcutRecord(
+                            id = if (id.isNotEmpty()) id else "FreezeYou! ${pkgName}_$i",
+                            name = name,
+                            pkgName = pkgName,
+                            cls = cls,
+                            target = if (obj.has("target") && !obj.isNull("target")) obj.optString("target") else null,
+                            tasks = if (obj.has("tasks") && !obj.isNull("tasks")) obj.optString("tasks") else null,
+                            justLaunch = obj.optBoolean("justLaunch", false)
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return list
+    }
+
+    @JvmStatic
+    fun saveShortcutRecord(context: Context, record: ShortcutRecord) {
+        val storage = DefaultMultiProcessMMKVStorage()
+        try {
+            storage.lock()
+            val existing = getSavedShortcutRecords(context).toMutableList()
+            val index = existing.indexOfFirst {
+                it.id == record.id || (it.pkgName == record.pkgName && it.cls == record.cls && it.target == record.target)
+            }
+            if (index >= 0) {
+                existing[index] = record
+            } else {
+                existing.add(record)
+            }
+            saveShortcutRecords(context, existing)
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    @JvmStatic
+    fun saveShortcutRecords(context: Context, records: List<ShortcutRecord>) {
+        val array = JSONArray()
+        for (rec in records) {
+            val obj = JSONObject()
+            obj.put("id", rec.id)
+            obj.put("name", rec.name)
+            obj.put("pkgName", rec.pkgName)
+            obj.put("cls", rec.cls)
+            obj.put("target", rec.target)
+            obj.put("tasks", rec.tasks)
+            obj.put("justLaunch", rec.justLaunch)
+            array.put(obj)
+        }
+        val storage = DefaultMultiProcessMMKVStorage()
+        storage.putString(KEY_SAVED_SHORTCUTS, array.toString()).sync()
+    }
+
+    @JvmStatic
+    fun removeShortcutsForPackage(context: Context, pkgName: String) {
+        val storage = DefaultMultiProcessMMKVStorage()
+        try {
+            storage.lock()
+            val existing = getSavedShortcutRecords(context).filter { it.pkgName != pkgName }
+            saveShortcutRecords(context, existing)
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    @JvmStatic
+    fun cleanUninstalledShortcuts(context: Context) {
+        val storage = DefaultMultiProcessMMKVStorage()
+        try {
+            storage.lock()
+            val existing = getSavedShortcutRecords(context).filter { rec ->
+                if (isSpecialOrBatchShortcut(rec.pkgName)) {
+                    true
+                } else {
+                    ApplicationInfoUtils.isAppInstalled(context, rec.pkgName)
+                }
+            }
+            saveShortcutRecords(context, existing)
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    @JvmStatic
+    fun isSpecialOrBatchShortcut(pkgName: String?): Boolean {
+        if (pkgName == null) return false
+        return when (pkgName) {
+            "cf.playhi.freezeyou.extra.fuf",
+            "cf.playhi.freezeyou.extra.oklock",
+            "OF", "UF", "OO", "OOU", "FOQ", "OS", "OU", "UFU" -> true
+            else -> pkgName.startsWith("CATEGORY") || pkgName.startsWith("FORCESTOPCATEGORY")
+        }
+    }
+
+    @JvmStatic
+    fun exportShortcutsToJson(context: Context): JSONArray {
+        val records = getSavedShortcutRecords(context)
+        val array = JSONArray()
+        for (rec in records) {
+            val obj = JSONObject()
+            obj.put("id", rec.id)
+            obj.put("name", rec.name)
+            obj.put("pkgName", rec.pkgName)
+            obj.put("cls", rec.cls)
+            obj.put("target", rec.target)
+            obj.put("tasks", rec.tasks)
+            obj.put("justLaunch", rec.justLaunch)
+            array.put(obj)
+        }
+        return array
+    }
+
+    @JvmStatic
+    fun importShortcutsFromJson(context: Context, jsonArray: JSONArray): Int {
+        val storage = DefaultMultiProcessMMKVStorage()
+        try {
+            storage.lock()
+            val existing = getSavedShortcutRecords(context).toMutableList()
+            var importedCount = 0
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.optJSONObject(i) ?: continue
+                val name = obj.optString("name", "")
+                val pkgName = obj.optString("pkgName", "")
+                val cls = obj.optString("cls", "")
+                if (name.isNotEmpty() && pkgName.isNotEmpty() && cls.isNotEmpty()) {
+                    val id = obj.optString("id", "FreezeYou! ${pkgName}_${System.currentTimeMillis()}_$i")
+                    val rec = ShortcutRecord(
+                        id = id,
+                        name = name,
+                        pkgName = pkgName,
+                        cls = cls,
+                        target = if (obj.has("target") && !obj.isNull("target")) obj.optString("target") else null,
+                        tasks = if (obj.has("tasks") && !obj.isNull("tasks")) obj.optString("tasks") else null,
+                        justLaunch = obj.optBoolean("justLaunch", false)
+                    )
+                    val idx = existing.indexOfFirst {
+                        it.id == rec.id || (it.pkgName == rec.pkgName && it.cls == rec.cls && it.target == rec.target)
+                    }
+                    if (idx >= 0) {
+                        existing[idx] = rec
+                    } else {
+                        existing.add(rec)
+                    }
+                    importedCount++
+                }
+            }
+            if (importedCount > 0) {
+                saveShortcutRecords(context, existing)
+            }
+            return importedCount
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    @JvmStatic
+    fun resolveShortcutIcon(context: Context, pkgName: String): Drawable {
+        return when (pkgName) {
+            "cf.playhi.freezeyou.extra.oklock" -> {
+                context.resources.getDrawable(R.drawable.screenlock)
+            }
+            "cf.playhi.freezeyou.extra.fuf", "OF", "UF", "OO", "OOU", "FOQ", "OS", "OU", "UFU" -> {
+                context.resources.getDrawable(R.mipmap.ic_launcher_round)
+            }
+            else -> {
+                if (pkgName.startsWith("CATEGORY") || pkgName.startsWith("FORCESTOPCATEGORY")) {
+                    context.resources.getDrawable(R.mipmap.ic_launcher_round)
+                } else {
+                    ApplicationIconUtils.getApplicationIcon(
+                        context,
+                        pkgName,
+                        ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context),
+                        false
+                    )
+                }
+            }
+        }
+    }
+
+    @JvmStatic
+    fun restoreShortcut(context: Context, record: ShortcutRecord): Boolean {
+        return try {
+            val cls = Class.forName(record.cls)
+            val icon = resolveShortcutIcon(context, record.pkgName)
+            createShortCut(
+                title = record.name,
+                pkgName = record.pkgName,
+                icon = icon,
+                cls = cls,
+                id = record.id,
+                context = context,
+                target = record.target,
+                tasks = record.tasks,
+                justLaunch = record.justLaunch
+            )
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }

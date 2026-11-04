@@ -697,4 +697,9 @@
     <string name="restore_completed_title">Restoration completed</string>
     <string name="restore_completed_single_app">Application \"%1$s\" restored successfully</string>
     <string name="batch_restoring">Restoring…</string>
+    <string name="restoreShortcuts">Restore desktop shortcuts</string>
+    <string name="restoreShortcutsPromptMessage">Tap \"Add\" to pin each shortcut to your home screen. The launcher will ask for system confirmation.</string>
+    <string name="noShortcutsToRestore">No saved shortcuts to restore</string>
+    <string name="skip">Skip</string>
+    <string name="restoreShortcutsProgress">Shortcut %1$d of %2$d</string>
 </resources>

@@ -594,4 +594,9 @@
     <string name="restore_completed_title">恢复完成</string>
     <string name="restore_completed_single_app">应用“%1$s”已成功恢复</string>
     <string name="batch_restoring">正在恢复…</string>
+    <string name="restoreShortcuts">恢复桌面快捷方式</string>
+    <string name="restoreShortcutsPromptMessage">点击“添加”将每个快捷方式固定到主屏幕。启动器将请求系统确认。</string>
+    <string name="noShortcutsToRestore">没有可恢复的已保存快捷方式</string>
+    <string name="skip">跳过</string>
+    <string name="restoreShortcutsProgress">快捷方式 %1$d / %2$d</string>
 </resources>

@@ -791,6 +791,8 @@ public final class BackupUtils {
                 return countImportableTriggerTasks(array);
             case "userDefinedCategories":
                 return countImportableCategories(array);
+            case "launcherShortcuts":
+                return countImportableLauncherShortcuts(array);
             case "uriAutoAllowPkgs_allows":
             case "installPkgs_autoAllowPkgs_allows":
                 return firstObject == null ? 0 : 1;
@@ -839,6 +841,23 @@ public final class BackupUtils {
                     count++;
                 }
             } catch (JSONException ignored) {
+            }
+        }
+        return count;
+    }
+
+    private static int countImportableLauncherShortcuts(JSONArray array) {
+        int count = 0;
+        for (int i = 0; i < array.length(); ++i) {
+            JSONObject entry = array.optJSONObject(i);
+            if (entry == null) {
+                continue;
+            }
+            String name = entry.optString("name", "");
+            String pkgName = entry.optString("pkgName", "");
+            String cls = entry.optString("cls", "");
+            if (!name.isEmpty() && !pkgName.isEmpty() && !cls.isEmpty()) {
+                count++;
             }
         }
         return count;
@@ -916,6 +935,11 @@ public final class BackupUtils {
                         importedAny |= importAutoAllowList(context, jsonObject, AutoAllowListUtils.INSTALL_ALLOW);
                         break;
                     // Install request whitelist end
+                    // Launcher shortcuts start
+                    case "launcherShortcuts":
+                        importedAny |= importLauncherShortcuts(context, jsonObject);
+                        break;
+                    // Launcher shortcuts end
                     default:
                         break;
                 }
@@ -927,6 +951,14 @@ public final class BackupUtils {
         }
 
         return importedAny;
+    }
+
+    private static boolean importLauncherShortcuts(Context context, JSONObject jsonObject) {
+        JSONArray array = jsonObject.optJSONArray("launcherShortcuts");
+        if (array == null || array.length() == 0) {
+            return false;
+        }
+        return LauncherShortcutUtils.importShortcutsFromJson(context, array) > 0;
     }
 
     public static String getExportContent(@NonNull Context context) {
@@ -1040,6 +1072,11 @@ public final class BackupUtils {
             // User defined categories start
             finalOutputJsonObject.put("userDefinedCategories", generateUserDefinedCategoriesJSONArray(context));
             // User defined categories end
+
+            // Launcher shortcuts start
+            finalOutputJsonObject.put("launcherShortcuts",
+                    LauncherShortcutUtils.exportShortcutsToJson(context));
+            // Launcher shortcuts end
 
         } catch (JSONException e) {
             e.printStackTrace();

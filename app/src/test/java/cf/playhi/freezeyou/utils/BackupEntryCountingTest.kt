@@ -210,6 +210,18 @@ class BackupEntryCountingTest {
         assertEquals(0, count(empty, "uriAutoAllowPkgs_allows"))
     }
 
+    @Test
+    fun launcherShortcutsCountOnlyValidEntries() {
+        val shortcuts = JSONArray()
+            .put(JSONObject().put("name", "App1").put("pkgName", "com.app1").put("cls", "cf.playhi.freezeyou.Freeze"))
+            .put(JSONObject().put("name", "App2").put("pkgName", "com.app2").put("cls", "cf.playhi.freezeyou.ForceStop"))
+            .put(JSONObject().put("name", "Invalid").put("pkgName", ""))
+            .put(JSONObject().put("name", "").put("pkgName", "com.app3").put("cls", "cf.playhi.freezeyou.Freeze"))
+        val backup = JSONObject().put("launcherShortcuts", shortcuts)
+
+        assertEquals(2, count(backup, "launcherShortcuts"))
+    }
+
     private fun count(backup: JSONObject, category: String): Int =
         BackupUtils.countImportableEntries(app(), backup, category)
 

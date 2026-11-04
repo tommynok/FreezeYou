@@ -78,6 +78,8 @@ public class UninstallReceiver extends BroadcastReceiver {
             // Clean up cached name for uninstalled application
             context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                     .edit().remove(pkgName).apply();
+            // Clean up saved shortcuts for uninstalled application
+            cf.playhi.freezeyou.utils.LauncherShortcutUtils.removeShortcutsForPackage(context, pkgName);
         }
     }
 }
