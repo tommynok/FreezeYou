@@ -285,7 +285,7 @@ object LauncherShortcutUtils {
                 val name = obj.optString("name", "")
                 val pkgName = obj.optString("pkgName", "")
                 val cls = obj.optString("cls", "")
-                if (name.isNotEmpty() && pkgName.isNotEmpty() && isAllowedShortcutClass(cls)) {
+                if (name.isNotEmpty() && pkgName.isNotEmpty()) {
                     list.add(
                         ShortcutRecord(
                             id = if (id.isNotEmpty()) id else "FreezeYou! ${pkgName}_$i",
@@ -355,23 +355,6 @@ object LauncherShortcutUtils {
         }
     }
 
-    @JvmStatic
-    fun cleanUninstalledShortcuts(context: Context) {
-        val storage = DefaultMultiProcessMMKVStorage()
-        try {
-            storage.lock()
-            val existing = getSavedShortcutRecords(context).filter { rec ->
-                if (isSpecialOrBatchShortcut(rec.pkgName)) {
-                    true
-                } else {
-                    ApplicationInfoUtils.isAppInstalled(context, rec.pkgName)
-                }
-            }
-            saveShortcutRecords(context, existing)
-        } finally {
-            storage.unlock()
-        }
-    }
 
     @JvmStatic
     fun isSpecialOrBatchShortcut(pkgName: String?): Boolean {

@@ -144,6 +144,16 @@ class LauncherShortcutUtilsTest {
     }
 
     @Test
+    fun parseShortcutRecordsFaithfullyDeserializesStorageEntries() {
+        val json = JSONArray()
+            .put(JSONObject().put("name", "Custom").put("pkgName", "com.custom").put("cls", "com.custom.CustomActivity"))
+            .toString()
+        val parsed = LauncherShortcutUtils.parseShortcutRecords(json)
+        assertEquals(1, parsed.size)
+        assertEquals("com.custom.CustomActivity", parsed[0].cls)
+    }
+
+    @Test
     fun isSpecialOrBatchShortcutIdentifiesSpecialKeys() {
         assertTrue(LauncherShortcutUtils.isSpecialOrBatchShortcut("cf.playhi.freezeyou.extra.fuf"))
         assertTrue(LauncherShortcutUtils.isSpecialOrBatchShortcut("cf.playhi.freezeyou.extra.oklock"))

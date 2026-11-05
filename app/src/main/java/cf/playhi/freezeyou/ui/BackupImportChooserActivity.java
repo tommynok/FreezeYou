@@ -329,6 +329,7 @@ public class BackupImportChooserActivity extends FreezeYouBaseActivity {
             }
 
             if (presentCategories.length() == 0) continue;
+            if (itemCount == 0) continue;
 
             totalEntries += itemCount;
             HashMap<String, String> keyValuePair = new HashMap<>();

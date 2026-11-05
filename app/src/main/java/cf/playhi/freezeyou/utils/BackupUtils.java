@@ -955,8 +955,11 @@ public final class BackupUtils {
 
     private static boolean importLauncherShortcuts(Context context, JSONObject jsonObject) {
         JSONArray array = jsonObject.optJSONArray("launcherShortcuts");
-        if (array == null || array.length() == 0) {
+        if (array == null) {
             return false;
+        }
+        if (array.length() == 0) {
+            return true;
         }
         return LauncherShortcutUtils.importShortcutsFromJson(context, array) > 0;
     }
