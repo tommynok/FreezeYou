@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ProgressBar
+import cf.playhi.freezeyou.utils.ShadowContractMMKV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,7 +21,7 @@ import org.robolectric.annotation.LooperMode
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 34], application = Application::class)
+@Config(sdk = [23, 34], application = Application::class, shadows = [ShadowContractMMKV::class])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MainRunningRefreshTest {
     private lateinit var activity: Main
