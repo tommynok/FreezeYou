@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 
@@ -148,6 +149,7 @@ import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
 import static cf.playhi.freezeyou.utils.VersionUtils.isOutdated;
 import cf.playhi.freezeyou.utils.RunningAppsRefreshControl;
 import cf.playhi.freezeyou.utils.RunningAppsSortControl;
+import cf.playhi.freezeyou.utils.RunningAppsUsageCache;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -180,6 +182,13 @@ public class Main extends FreezeYouBaseActivity {
     private final static int SORT_BY_LAST_UPDATED = 10;
     private final static int SORT_BY_RUNNING_RAM = RunningAppsSortControl.SORT_BY_RUNNING_RAM;
     private final static int SORT_BY_RUNNING_CPU = RunningAppsSortControl.SORT_BY_RUNNING_CPU;
+
+    // How long a background running-apps scan stays reusable. The privileged /proc scan and the
+    // top/meminfo sampling are what make the first opening of a running tab take seconds, so they
+    // are warmed in the background after the first list paints and reused within this window.
+    // PSS moves slowly; CPU% is a momentary sample, so the window is kept short and the refresh
+    // button (which clears the cache) is always there for a current reading.
+    private static final long RUNNING_PRELOAD_MAX_AGE_MS = 15_000L;
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private ActionMode currentSelectionActionMode;
@@ -222,6 +231,12 @@ public class Main extends FreezeYouBaseActivity {
     private int mUnprivilegedUninstallSuccessCount = 0;
 
     private final AtomicInteger mListGeneration = new AtomicInteger(0);
+    // Warmed in the background after the first list paints so the first opening of a running tab
+    // reuses the privileged scan instead of paying for it again. Cleared whenever the running set
+    // can have changed (a status broadcast, an external package change, an explicit refresh).
+    private final RunningAppsUsageCache<RunningSnapshot> mRunningUsageCache = new RunningAppsUsageCache<>();
+    // The preload is a once-per-launch background warm-up, not something every re-render repeats.
+    private final AtomicBoolean mRunningPreloadStarted = new AtomicBoolean(false);
     // Every rebuild goes through one worker holding one queued request. Each caller used to start
     // a thread of its own, and every thread pulled the whole installed-package list across
     // binder: an install session fires PACKAGE_ADDED / REMOVED / REPLACED in quick succession, so
@@ -498,6 +513,8 @@ public class Main extends FreezeYouBaseActivity {
                 return;
             }
             if (!checkRunningFilterAvailableAndWarn()) return;
+            // An explicit refresh asks for a current reading, so the warmed scan must not answer it.
+            mRunningUsageCache.clear();
             generateList(currentFilter, currentSortRule, currentCategoryLabel);
         }
     }
@@ -1106,9 +1123,26 @@ public class Main extends FreezeYouBaseActivity {
             case "RUN":
             case "RUN_SYS":
             case "RUN_USER":
-                Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
-                Map<String, RunningAppsUtils.ResourceUsage> runningUsage =
-                        RunningAppsUtils.getResourceUsage(applicationContext, runningPackages);
+                // The two privileged calls below are the bulk of the wait on a running tab. A
+                // fresh background preload (or an earlier running-tab pass) already paid for them,
+                // so reuse the snapshot within its window; otherwise scan now and cache the result
+                // for the next opening. An empty scan is a failed source, not "nothing running",
+                // and is never cached.
+                RunningSnapshot runningSnapshot = mRunningUsageCache.freshPayload(
+                        System.currentTimeMillis(), RUNNING_PRELOAD_MAX_AGE_MS);
+                final Set<String> runningPackages;
+                final Map<String, RunningAppsUtils.ResourceUsage> runningUsage;
+                if (runningSnapshot != null) {
+                    runningPackages = runningSnapshot.packages;
+                    runningUsage = runningSnapshot.usage;
+                } else {
+                    runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
+                    runningUsage = RunningAppsUtils.getResourceUsage(applicationContext, runningPackages);
+                    if (!runningPackages.isEmpty()) {
+                        mRunningUsageCache.store(
+                                new RunningSnapshot(runningPackages, runningUsage), System.currentTimeMillis());
+                    }
+                }
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
@@ -1451,6 +1485,7 @@ public class Main extends FreezeYouBaseActivity {
                 linearLayout.setVisibility(View.GONE);
                 appListFragmentContainer.setVisibility(View.VISIBLE);
                 updateRefreshControlState();
+                maybeStartRunningPreload(filter);
 
                 currentMultiChoiceModeListener = new AbsListView.MultiChoiceModeListener() {
                     @Override
@@ -1982,6 +2017,9 @@ public class Main extends FreezeYouBaseActivity {
                     if (intent.getPackage() != null && !Main.this.getPackageName().equals(intent.getPackage())) {
                         return;
                     }
+                    // A freeze, unfreeze, stop, install, uninstall or restore can all change which
+                    // processes are live, so the warmed running-apps scan is no longer trustworthy.
+                    mRunningUsageCache.clear();
                     if (intent.getBooleanExtra("uninstallSuccess", false)) {
                         showUninstallCompletedDialog(
                                 intent.getStringExtra("appName"),
@@ -2032,6 +2070,8 @@ public class Main extends FreezeYouBaseActivity {
                     if (!isPackageChangeAction(action)) {
                         return;
                     }
+                    // Installed, updated or removed outside this app: the running set may have moved.
+                    mRunningUsageCache.clear();
                     if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
                         boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
                         Uri data = intent.getData();
@@ -2987,6 +3027,65 @@ public class Main extends FreezeYouBaseActivity {
             this.hasSystemUpdate = hasSystemUpdate;
             this.uninstallUpdatesOnly = uninstallUpdatesOnly;
         }
+    }
+
+    private static final class RunningSnapshot {
+        final Set<String> packages;
+        final Map<String, RunningAppsUtils.ResourceUsage> usage;
+
+        RunningSnapshot(Set<String> packages, Map<String, RunningAppsUtils.ResourceUsage> usage) {
+            this.packages = packages;
+            this.usage = usage;
+        }
+    }
+
+    /**
+     * The two privileged reads a running tab needs: which packages have a live process, and their
+     * CPU/PSS sample. Shared by the list generation and the background preload so the scan logic
+     * lives in one place. Runs off the UI thread; both calls carry their own timeouts and return
+     * empty on an unavailable source.
+     */
+    private RunningSnapshot computeRunningSnapshot(Context context) {
+        Set<String> packages = RunningAppsUtils.getRunningPackages(context);
+        Map<String, RunningAppsUtils.ResourceUsage> usage =
+                RunningAppsUtils.getResourceUsage(context, packages);
+        return new RunningSnapshot(packages, usage);
+    }
+
+    /**
+     * Warms the running-apps scan in the background once per launch, after the first non-running
+     * list is on screen, so opening a running tab a moment later reuses it instead of hiding the
+     * list behind the spinner for the privileged scan and the top sampling. Skipped when the first
+     * list is already a running one (its own pass caches the scan) and when no elevated source is
+     * configured. Best-effort: a failed or empty scan simply leaves the cache cold.
+     */
+    private void maybeStartRunningPreload(String renderedFilter) {
+        if (RunningAppsRefreshControl.isRunningFilter(renderedFilter)) {
+            return;
+        }
+        if (!mRunningPreloadStarted.compareAndSet(false, true)) {
+            return;
+        }
+        if (!RunningAppsUtils.isRunningFilterAvailable()) {
+            return;
+        }
+        final Context applicationContext = getApplicationContext();
+        new Thread(() -> {
+            if (isFinishing()) return;
+            // The user may have opened a running tab before the preload got going; that pass already
+            // cached a fresh scan, so there is nothing left to warm.
+            if (mRunningUsageCache.freshPayload(System.currentTimeMillis(), RUNNING_PRELOAD_MAX_AGE_MS) != null) {
+                return;
+            }
+            try {
+                RunningSnapshot snapshot = computeRunningSnapshot(applicationContext);
+                if (!isFinishing() && !snapshot.packages.isEmpty()) {
+                    mRunningUsageCache.store(snapshot, System.currentTimeMillis());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, "RunningListPreload").start();
     }
 
     /**
