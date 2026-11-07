@@ -9,17 +9,49 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/search_editText"
+        <LinearLayout
+            android:id="@+id/main_search_bar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:autofillHints="pkgLabel"
-            android:backgroundTint="@color/realTranslucent"
-            android:hint="@string/search"
-            android:inputType="text"
-            android:paddingLeft="5dp"
-            android:paddingRight="5dp"
-            android:singleLine="true" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/search_editText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:autofillHints="pkgLabel"
+                android:backgroundTint="@color/realTranslucent"
+                android:hint="@string/search"
+                android:inputType="text"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:singleLine="true" />
+
+            <ProgressBar
+                android:id="@+id/main_refresh_progressBar"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/main_refresh_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="4dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/refresh"
+                android:scaleType="centerInside"
+                android:visibility="gone"
+                app:srcCompat="@drawable/ic_action_refresh" />
+
+        </LinearLayout>
 
         <FrameLayout
             android:id="@+id/layout2"

@@ -36,6 +36,17 @@ class MainAppListStatsTest {
         )
     }
 
+    @Test
+    @Config(qualifiers = "ru-rRU")
+    fun russianStatsShowMemoryBeforeCpuWithValuesFirst() {
+        val context = RuntimeEnvironment.getApplication()
+        val usage = RunningAppsUtils.ResourceUsage(12.0, 128L * 1024 * 1024)
+        val memory = android.text.format.Formatter.formatShortFileSize(context, usage.pssBytes!!)
+        val cpu = String.format(context.resources.configuration.locale, "%.1f%%", usage.cpuPercent)
+        assertEquals("$memory ОЗУ · $cpu ЦП", RunningAppsUtils.formatResourceUsage(context, usage))
+        assertEquals("— ОЗУ · — ЦП", RunningAppsUtils.formatResourceUsage(context, null))
+    }
+
     private fun checkRecycledRows(layout: Int, nameId: Int, iconId: Int) {
         val context = ContextThemeWrapper(RuntimeEnvironment.getApplication(), R.style.AppTheme_Default)
         val stats = context.getString(R.string.runningAppStats, "12.0%", "1 MB")

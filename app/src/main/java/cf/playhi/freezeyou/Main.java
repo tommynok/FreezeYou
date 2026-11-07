@@ -146,6 +146,7 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
 import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
 import static cf.playhi.freezeyou.utils.VersionUtils.isOutdated;
+import cf.playhi.freezeyou.utils.RunningAppsRefreshControl;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -236,6 +237,8 @@ public class Main extends FreezeYouBaseActivity {
     private TextWatcher mSearchTextWatcher = null;
     private ImageButton mMoreSettingsImageButton;
     private ImageButton mSelectionActionsImageButton;
+    private ImageButton mRefreshButton;
+    private ProgressBar mRefreshProgressBar;
     // A popup left open when the activity pauses is restored with the window and then torn down
     // on focus loss, which flashes the dimming layer on the way back into the app.
     private PopupMenu mActivePopupMenu;
@@ -268,6 +271,7 @@ public class Main extends FreezeYouBaseActivity {
         }
         applyOriginalLightMainBackground();
         setupFloatingButtons();
+        setupRefreshControl();
         setupBackNavigation();
         try {
             manageCrashLog();
@@ -403,6 +407,60 @@ public class Main extends FreezeYouBaseActivity {
                 popupMenu.show();
             });
         }
+    }
+
+    private void setupRefreshControl() {
+        mRefreshButton = findViewById(R.id.main_refresh_button);
+        mRefreshProgressBar = findViewById(R.id.main_refresh_progressBar);
+        if (mRefreshButton != null) {
+            mRefreshButton.setOnClickListener(v -> onRefreshButtonClicked());
+        }
+        updateRefreshControlState();
+    }
+
+    private void onRefreshButtonClicked() {
+        synchronized (listGenerationLock) {
+            if (!RunningAppsRefreshControl.canTriggerRefresh(currentFilter, listGenerationRunning)) {
+                return;
+            }
+            if (!checkRunningFilterAvailableAndWarn()) return;
+            generateList(currentFilter, currentSortRule, currentCategoryLabel);
+        }
+    }
+
+    private void updateRefreshControlState() {
+        if (isFinishing()) return;
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            final String filter;
+            final boolean isRefreshing;
+            synchronized (listGenerationLock) {
+                filter = currentFilter;
+                isRefreshing = listGenerationRunning;
+            }
+            if (mRefreshButton != null) {
+                if (RunningAppsRefreshControl.isButtonVisible(filter, isRefreshing)) {
+                    android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
+                    boolean isLightTheme =
+                            getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue, true)
+                                    && isLightThemeValue.data != 0;
+                    mRefreshButton.setImageResource(
+                            isLightTheme ? R.drawable.ic_action_refresh_light : R.drawable.ic_action_refresh
+                    );
+                    mRefreshButton.setVisibility(View.VISIBLE);
+                    mRefreshButton.setEnabled(true);
+                } else {
+                    mRefreshButton.setVisibility(View.GONE);
+                }
+            }
+            if (mRefreshProgressBar != null) {
+                mRefreshProgressBar.setVisibility(
+                        RunningAppsRefreshControl.isProgressBarVisible(filter, isRefreshing)
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+            }
+        });
     }
 
     private void setupBackNavigation() {
@@ -640,6 +698,7 @@ public class Main extends FreezeYouBaseActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(titleResId == 0 ? getString(R.string.app_name) : getString(titleResId));
             }
+            updateRefreshControlState();
         });
     }
 
@@ -655,25 +714,29 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void generateList(String filter, int sortRule, String categoryLabel) {
-        currentFilter = filter;
-        currentCategoryLabel = categoryLabel;
-        currentSortRule = sortRule;
-        filterEstablished = true;
         scheduleListGeneration(filter, sortRule, categoryLabel);
     }
 
     private void scheduleListGeneration(String filter, int sortRule, String categoryLabel) {
+        final boolean startWorker;
         synchronized (listGenerationLock) {
+            currentFilter = filter;
+            currentCategoryLabel = categoryLabel;
+            currentSortRule = sortRule;
+            filterEstablished = true;
+            // Invalidate the previous result when requested, not when the queued scan starts.
+            mListGeneration.incrementAndGet();
             queuedFilter = filter;
             queuedSortRule = sortRule;
             queuedCategoryLabel = categoryLabel;
             listGenerationQueued = true;
-            if (listGenerationRunning) {
-                return;
-            }
+            startWorker = !listGenerationRunning;
             listGenerationRunning = true;
         }
-        new Thread(() -> runQueuedListGenerations(), "AppListRefresh").start();
+        updateRefreshControlState();
+        if (startWorker) {
+            new Thread(() -> runQueuedListGenerations(), "AppListRefresh").start();
+        }
     }
 
     private void runQueuedListGenerations() {
@@ -681,11 +744,14 @@ public class Main extends FreezeYouBaseActivity {
             final String filter;
             final int sortRule;
             final String categoryLabel;
+            final int generation;
             synchronized (listGenerationLock) {
                 if (!listGenerationQueued) {
                     listGenerationRunning = false;
+                    updateRefreshControlState();
                     return;
                 }
+                generation = mListGeneration.get();
                 filter = queuedFilter;
                 sortRule = queuedSortRule;
                 categoryLabel = queuedCategoryLabel;
@@ -694,7 +760,7 @@ public class Main extends FreezeYouBaseActivity {
                 queuedCategoryLabel = null;
             }
             try {
-                generateListNow(filter, sortRule, categoryLabel);
+                generateListNow(filter, sortRule, categoryLabel, generation);
             } catch (Exception e) {
                 // The package list and the icons behind it come from binder calls into
                 // system_server. While the system restarts they answer with DeadSystemException,
@@ -728,11 +794,11 @@ public class Main extends FreezeYouBaseActivity {
             if (loadingProgressTextView != null) loadingProgressTextView.setVisibility(View.GONE);
             if (layout2 != null) layout2.setVisibility(View.GONE);
             if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.VISIBLE);
+            updateRefreshControlState();
         });
     }
 
-    private void generateListNow(String filter, int sortRule, String categoryLabel) {
-        final int generation = mListGeneration.incrementAndGet();
+    private void generateListNow(String filter, int sortRule, String categoryLabel, int generation) {
         final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
         final Context applicationContext = getApplicationContext();
 
@@ -1218,9 +1284,6 @@ public class Main extends FreezeYouBaseActivity {
             public void run() {
                 if (generation != mListGeneration.get() || isFinishing()) return;
 
-                currentFilter = filter;
-                currentCategoryLabel = categoryLabel;
-                currentSortRule = sortRule;
                 updateFilterTitle(filter);
                 mCurrentUnfilteredAppList = AppList;
 
@@ -1278,6 +1341,7 @@ public class Main extends FreezeYouBaseActivity {
                 main_loading_progress_textView.setVisibility(View.GONE);
                 linearLayout.setVisibility(View.GONE);
                 appListFragmentContainer.setVisibility(View.VISIBLE);
+                updateRefreshControlState();
 
                 currentMultiChoiceModeListener = new AbsListView.MultiChoiceModeListener() {
                     @Override

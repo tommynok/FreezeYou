@@ -419,7 +419,7 @@
     <string name="onlyRunning">Running</string>
     <string name="onlyRunningSys">Running: System</string>
     <string name="onlyRunningUser">Running: User</string>
-    <string name="runningAppStats">CPU: %1$s · RAM: %2$s</string>
+    <string name="runningAppStats">%2$s RAM · %1$s CPU</string>
     <string name="criticalPackagesWarning">Critical applications that system stability depends on have been selected:\n\n%1$s\n\nFreezing them can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
     <string name="critical_package_freeze_warning_single">A critical application that system stability depends on has been selected:\n\n%1$s\n\nFreezing it can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
     <string name="critical_packages_uninstall_warning_batch">Critical applications that system stability depends on have been selected:\n\n%1$s\n\nUninstalling them can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
