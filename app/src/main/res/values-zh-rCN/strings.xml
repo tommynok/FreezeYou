@@ -424,6 +424,7 @@
     <string name="onlyRunning">运行中</string>
     <string name="onlyRunningSys">运行中：系统</string>
     <string name="onlyRunningUser">运行中：用户</string>
+    <string name="runningAppStats">CPU：%1$s · 内存：%2$s</string>
     <string name="criticalPackagesWarning">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n冻结它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
     <string name="critical_package_freeze_warning_single">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n冻结它可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
     <string name="critical_packages_uninstall_warning_batch">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n卸载它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>

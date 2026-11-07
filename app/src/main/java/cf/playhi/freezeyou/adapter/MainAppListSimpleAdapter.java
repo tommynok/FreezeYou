@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -115,6 +116,13 @@ public class MainAppListSimpleAdapter extends SimpleAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = super.getView(position, convertView, parent);
+
+        TextView runningStats = view.findViewById(R.id.running_app_stats);
+        if (runningStats != null) {
+            String stats = (String) mAppList.get(position).get("RunningStats");
+            runningStats.setText(stats);
+            runningStats.setVisibility(stats == null ? View.GONE : View.VISIBLE);
+        }
 
         View icon = view.findViewById(mIconViewId);
         if (icon instanceof ImageView) {

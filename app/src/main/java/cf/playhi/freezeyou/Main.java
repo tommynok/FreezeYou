@@ -942,6 +942,8 @@ public class Main extends FreezeYouBaseActivity {
             case "RUN_SYS":
             case "RUN_USER":
                 Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
+                Map<String, RunningAppsUtils.ResourceUsage> runningUsage =
+                        RunningAppsUtils.getResourceUsage(applicationContext, runningPackages);
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
@@ -958,6 +960,8 @@ public class Main extends FreezeYouBaseActivity {
                                 saveIconCache
                         );
                         if (keyValuePair != null) {
+                            keyValuePair.put("RunningStats", RunningAppsUtils.formatResourceUsage(
+                                    applicationContext, runningUsage.get(packageInfo1.packageName)));
                             AppList.add(keyValuePair);
                         }
                     }

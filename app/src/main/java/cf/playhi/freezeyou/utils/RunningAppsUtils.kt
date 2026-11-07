@@ -2,7 +2,9 @@ package cf.playhi.freezeyou.utils
 
 import android.content.Context
 import android.os.Build
+import android.text.format.Formatter
 import android.util.Log
+import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled
 import rikka.shizuku.Shizuku
@@ -62,6 +64,104 @@ object RunningAppsUtils {
             )
         }
         return fallback
+    }
+
+    data class ResourceUsage(val cpuPercent: Double?, val pssBytes: Long?)
+
+    private const val RESOURCE_TIMEOUT_MS = 8_000L
+    private const val CPU_MARKER = "__FREEZEYOU_CPU__"
+    internal const val RESOURCE_COMMAND =
+        "dumpsys -t 5 meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
+            "memory_pid=\$!; " +
+            "cpu_output=\$(top -b -n 2 -d 1 -o PID,%CPU,ARGS 2>/dev/null); " +
+            "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\""
+    private val memoryRow = Regex("^\\s*([\\d,]+)K:\\s+(\\S+)\\s+\\(pid\\s+(\\d+)(?:\\s|\\)).*")
+    private val cpuRow = Regex("^\\s*(\\d+)\\s+([\\d.]+)\\s+(\\S+)(?:\\s.*)?$")
+    private val cpuHeader = Regex("^\\s*PID\\s+%CPU\\s+ARGS\\s*$")
+
+    @JvmStatic
+    fun getResourceUsage(context: Context, packageNames: Set<String>): Map<String, ResourceUsage> {
+        if (packageNames.isEmpty()) return emptyMap()
+        val shizukuFirst = selectFUFMode.getValue()?.toIntOrNull() in SHIZUKU_API_MODES
+        for (useShizuku in listOf(shizukuFirst, !shizukuFirst)) {
+            if (Thread.currentThread().isInterrupted) return emptyMap()
+            try {
+                if (useShizuku && !PrivilegedShellUtils.isShizukuAvailable(context)) continue
+                val result = if (useShizuku) {
+                    PrivilegedShellUtils.runShizukuCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
+                } else {
+                    PrivilegedShellUtils.runRootCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
+                }
+                if (result.exitCode != 0) continue
+                val usage = parseResourceUsage(result.output, packageNames)
+                if (usage.isNotEmpty()) return usage
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return emptyMap()
+            } catch (e: Exception) {
+                if (isDebugModeEnabled()) Log.e("DebugModeLogcat", "getResourceUsage failed", e)
+            }
+        }
+        return emptyMap()
+    }
+
+    @JvmStatic
+    fun parseResourceUsage(output: String, packageNames: Set<String>): Map<String, ResourceUsage> {
+        val sections = output.split(CPU_MARKER, limit = 2)
+        val memory = linkedMapOf<Int, Pair<String, Long>>()
+        for (line in sections[0].lineSequence()) {
+            val match = memoryRow.matchEntire(line) ?: continue
+            val kb = match.groupValues[1].replace(",", "").toLongOrNull() ?: continue
+            if (kb > Long.MAX_VALUE / 1024) continue
+            val pid = match.groupValues[3].toIntOrNull()?.takeIf { it > 0 } ?: continue
+            memory[pid] = match.groupValues[2] to kb * 1024
+        }
+        val cpu = linkedMapOf<Int, Pair<String, Double>>()
+        var samples = 0
+        if (sections.size == 2) {
+            for (line in sections[1].lineSequence()) {
+                if (cpuHeader.matches(line.replace('[', ' ').replace(']', ' '))) {
+                    samples++
+                    cpu.clear()
+                    continue
+                }
+                // Only the second top sample measures the requested interval.
+                if (samples < 2) continue
+                val match = cpuRow.matchEntire(line) ?: continue
+                val pid = match.groupValues[1].toIntOrNull()?.takeIf { it > 0 } ?: continue
+                val percent = match.groupValues[2].toDoubleOrNull()?.takeIf { it.isFinite() } ?: continue
+                cpu[pid] = match.groupValues[3] to percent
+            }
+        }
+        val usage = linkedMapOf<String, ResourceUsage>()
+        for (pid in memory.keys + cpu.keys) {
+            val mem = memory[pid]
+            val load = cpu[pid]
+            if (mem != null && load != null && mem.first != load.first) continue
+            val packageName = (mem?.first ?: load?.first ?: continue).substringBefore(':')
+            if (packageName !in packageNames) continue
+            val previous = usage[packageName]
+            usage[packageName] = if (previous == null) {
+                ResourceUsage(load?.second, mem?.second)
+            } else {
+                ResourceUsage(
+                    if (previous.cpuPercent != null && load != null) previous.cpuPercent + load.second else null,
+                    if (previous.pssBytes != null && mem != null && previous.pssBytes <= Long.MAX_VALUE - mem.second) {
+                        previous.pssBytes + mem.second
+                    } else null
+                )
+            }
+        }
+        return usage
+    }
+
+    @JvmStatic
+    fun formatResourceUsage(context: Context, usage: ResourceUsage?): String {
+        val cpu = usage?.cpuPercent?.let {
+            String.format(context.resources.configuration.locale, "%.1f%%", it)
+        } ?: "—"
+        val memory = usage?.pssBytes?.let { Formatter.formatShortFileSize(context, it) } ?: "—"
+        return context.getString(R.string.runningAppStats, cpu, memory)
     }
 
     private fun getShizukuRunningPackages(context: Context): Set<String> {
