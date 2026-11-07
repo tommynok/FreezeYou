@@ -105,9 +105,9 @@ class MainRunningRefreshTest {
     }
 
     @Test
-    fun sortButtonVisibleOnlyForRunningFilters() {
+    fun sortButtonVisibleForAllFilters() {
         val sortButton = activity.findViewById<ImageButton>(R.id.main_sort_running_button)
-        for (filter in listOf("RUN", "RUN_SYS", "RUN_USER")) {
+        for (filter in listOf("RUN", "RUN_SYS", "RUN_USER", "all", "UF", "OF")) {
             set("listGenerationRunning", true)
             queue(filter)
             set("listGenerationQueued", false)
@@ -115,14 +115,6 @@ class MainRunningRefreshTest {
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals(View.VISIBLE, sortButton.visibility)
             assertTrue(sortButton.isEnabled)
-        }
-        for (filter in listOf("all", "UF", "OF")) {
-            set("listGenerationRunning", true)
-            queue(filter)
-            set("listGenerationQueued", false)
-            invoke("runQueuedListGenerations")
-            shadowOf(Looper.getMainLooper()).idle()
-            assertEquals(View.GONE, sortButton.visibility)
         }
     }
 

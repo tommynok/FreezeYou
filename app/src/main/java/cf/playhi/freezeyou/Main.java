@@ -429,23 +429,56 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void onSortRunningButtonClicked(View v) {
-        if (!RunningAppsRefreshControl.isRunningFilter(currentFilter)) return;
         PopupMenu popupMenu = new PopupMenu(getLightPopupContext(this), v);
-        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_running_memory);
-        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_running_cpu);
-        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.alphabetical);
-        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.sortBy_default);
+        boolean runningFilter = RunningAppsRefreshControl.isRunningFilter(currentFilter);
+        if (runningFilter) {
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_running_memory);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_running_cpu);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.alphabetical);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.sortBy_default);
+        } else {
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_default);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_no);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.uf_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.uf_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 5, R.string.ff_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 6, R.string.ff_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 7, R.string.us_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 8, R.string.us_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 9, R.string.alphabetical);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 10, R.string.lastInstall);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 11, R.string.lastUpdate);
+        }
         popupMenu.setOnMenuItemClickListener(item -> {
             int order = item.getOrder();
             int newSortRule;
-            if (order == 1) {
-                newSortRule = SORT_BY_RUNNING_RAM;
-            } else if (order == 2) {
-                newSortRule = SORT_BY_RUNNING_CPU;
-            } else if (order == 3) {
-                newSortRule = SORT_BY_ALPHABETICAL;
+            if (runningFilter) {
+                if (order == 1) {
+                    newSortRule = SORT_BY_RUNNING_RAM;
+                } else if (order == 2) {
+                    newSortRule = SORT_BY_RUNNING_CPU;
+                } else if (order == 3) {
+                    newSortRule = SORT_BY_ALPHABETICAL;
+                } else {
+                    newSortRule = SORT_BY_DEFAULT;
+                }
             } else {
-                newSortRule = SORT_BY_DEFAULT;
+                if (order == 7 || order == 8) {
+                    AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
+                }
+                switch (order) {
+                    case 1: newSortRule = SORT_BY_DEFAULT; break;
+                    case 2: newSortRule = SORT_BY_NO; break;
+                    case 3: newSortRule = SORT_BY_UF_ASCENDING; break;
+                    case 4: newSortRule = SORT_BY_UF_DESCENDING; break;
+                    case 5: newSortRule = SORT_BY_FF_ASCENDING; break;
+                    case 6: newSortRule = SORT_BY_FF_DESCENDING; break;
+                    case 7: newSortRule = SORT_BY_US_ASCENDING; break;
+                    case 8: newSortRule = SORT_BY_US_DESCENDING; break;
+                    case 9: newSortRule = SORT_BY_ALPHABETICAL; break;
+                    case 10: newSortRule = SORT_BY_LAST_INSTALLED; break;
+                    default: newSortRule = SORT_BY_LAST_UPDATED; break;
+                }
             }
             generateList(currentFilter, newSortRule, currentCategoryLabel);
             return true;
@@ -667,7 +700,6 @@ public class Main extends FreezeYouBaseActivity {
             if ("white".equals(cTheme) || "default".equals(cTheme)) {
                 menu.findItem(R.id.menu_timedTasks).setIcon(R.drawable.ic_action_alarm_light);
                 menu.findItem(R.id.menu_viewMode).setIcon(R.drawable.ic_action_filter_light);
-                menu.findItem(R.id.menu_sortBy).setIcon(R.drawable.ic_action_sort_light);
             }
         }
         return true;
@@ -3893,96 +3925,6 @@ public class Main extends FreezeYouBaseActivity {
                     case R.id.menu_onClickFunc_createFUFShortcut:
                         appListViewOnClickMode = APPListViewOnClickMode_createFUFShortcut;
                         saveOnClickFunctionStatus(appListViewOnClickMode);
-                        return true;
-                    case R.id.menu_sB_default:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_DEFAULT);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_no:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_NO);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_uf_ascending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_UF_ASCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_uf_descending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_UF_DESCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_ff_ascending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_FF_ASCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_ff_descending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_FF_DESCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_us_ascending:
-                        AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_US_ASCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_us_descending:
-                        AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_US_DESCENDING);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_alphabetical:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_ALPHABETICAL);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_last_install:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_LAST_INSTALLED);
-                            }
-                        }).start();
-                        return true;
-                    case R.id.menu_sB_last_update:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_LAST_UPDATED);
-                            }
-                        }).start();
                         return true;
                     default:
                         return super.onOptionsItemSelected(item);

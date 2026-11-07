@@ -23,7 +23,7 @@ public final class RunningAppsSortControl {
     }
 
     public static boolean isSortButtonVisible(String filter) {
-        return isRunningFilter(filter);
+        return true;
     }
 
     public static int resolveSortRuleForFilter(String filter, int generalSortRule, int runningSortRule) {

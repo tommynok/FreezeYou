@@ -13,11 +13,16 @@ class RunningAppsSortControlTest {
     fun runningFiltersIdentifyCorrectly() {
         for (filter in listOf("RUN", "RUN_SYS", "RUN_USER")) {
             assertTrue(RunningAppsSortControl.isRunningFilter(filter))
-            assertTrue(RunningAppsSortControl.isSortButtonVisible(filter))
         }
         for (filter in listOf("all", "OF", "UF", "OO", "OOU", "FOQ", "APPLOCK", "OS", "OUS", "OU", "UFU", "", null)) {
             assertFalse(RunningAppsSortControl.isRunningFilter(filter))
-            assertFalse(RunningAppsSortControl.isSortButtonVisible(filter))
+        }
+    }
+
+    @Test
+    fun sortButtonVisibleForAllFilters() {
+        for (filter in listOf("RUN", "RUN_SYS", "RUN_USER", "all", "OF", "UF", "OO", "OOU", "FOQ", "APPLOCK", "OS", "OUS", "OU", "UFU", "", null)) {
+            assertTrue(RunningAppsSortControl.isSortButtonVisible(filter))
         }
     }
 
