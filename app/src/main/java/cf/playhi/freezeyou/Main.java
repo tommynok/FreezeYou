@@ -1989,11 +1989,15 @@ public class Main extends FreezeYouBaseActivity {
                                 intent.getIntExtra("batchCount", -1)
                         );
                     }
-                    if (intent.getBooleanExtra("refreshAppList", false)
-                            || isStatusDependentFilter(currentFilter)) {
-                        // A status change can add or remove the row from a status-dependent list
-                        // (frozen, unfrozen, running), so the filter has to be re-run; patching
-                        // the dot in place would leave the app in a list it no longer matches.
+                    final boolean refreshRequested = intent.getBooleanExtra("refreshAppList", false);
+                    if (!refreshRequested && RunningAppsRefreshControl.isRunningFilter(currentFilter)) {
+                        // On a running tab a stop or freeze only removes rows: prune them in place
+                        // so the list stays on screen with its scroll and metrics, instead of
+                        // rebuilding behind the spinner for seconds.
+                        patchRunningListInPlace();
+                    } else if (refreshRequested || isStatusDependentFilter(currentFilter)) {
+                        // Install/uninstall/restore (refreshAppList) and the frozen/unfrozen filters
+                        // can add rows as well as remove them, so the filter has to be re-run in full.
                         new Thread(() -> generateList(currentFilter)).start();
                     } else {
                         // A single action names its package; re-checking every row costs two
@@ -2982,6 +2986,47 @@ public class Main extends FreezeYouBaseActivity {
             this.isSystemApp = isSystemApp;
             this.hasSystemUpdate = hasSystemUpdate;
             this.uninstallUpdatesOnly = uninstallUpdatesOnly;
+        }
+    }
+
+    /**
+     * A force-stop or freeze on a running tab only takes rows away: the app leaves the running
+     * set. Re-reading just the running process names and dropping the rows that are gone keeps
+     * the list on screen with its scroll position and the metrics already collected, instead of
+     * hiding it behind the spinner while every installed package, icon and metric is read again.
+     * The scan is the quick /proc one the list itself uses and carries no metrics, so this costs
+     * a fraction of a full rebuild. Install/uninstall/restore ask for a full rebuild through the
+     * refreshAppList flag and never come here.
+     */
+    private void patchRunningListInPlace() {
+        final Context applicationContext = getApplicationContext();
+        new Thread(() -> {
+            final Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
+            runOnUiThread(() -> {
+                if (isFinishing()) return;
+                // The user may have left the running tab while the scan was out; the prune only
+                // means something for a running list, and a full generation owns any other filter.
+                if (!RunningAppsRefreshControl.isRunningFilter(currentFilter)) return;
+                pruneRunningRows(runningPackages);
+            });
+        }, "RunningListPrune").start();
+    }
+
+    private void pruneRunningRows(Set<String> runningPackages) {
+        final String notAvailable = getString(R.string.notAvailable);
+        // The adapter holds a clone (or the search-filtered subset) of the unfiltered list, so a
+        // row has to be dropped from both or clearing the query would bring the stopped app back.
+        boolean changed = RunningAppsRefreshControl.pruneStoppedRows(
+                mCurrentUnfilteredAppList, runningPackages, notAvailable);
+        if (mMainActivityAppListFragment != null
+                && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
+            MainAppListSimpleAdapter adapter =
+                    (MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter();
+            changed |= RunningAppsRefreshControl.pruneStoppedRows(
+                    adapter.getStoredArrayList(), runningPackages, notAvailable);
+            if (changed) {
+                adapter.notifyDataSetChanged();
+            }
         }
     }
 
