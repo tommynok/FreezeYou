@@ -13,6 +13,10 @@ import java.util.zip.GZIPOutputStream;
 public final class GZipUtils {
     // Reference: http://www.cnblogs.com/whoislcj/p/5473806.html
 
+    // A backup is a small JSON document; anything past this is a crafted or corrupt file whose
+    // only other outcome is an OutOfMemoryError.
+    private static final int MAX_DECOMPRESSED_BYTES = 16 * 1024 * 1024;
+
     /**
      * @param unGzipStr String to compress
      * @return Compressed string, or "" on failure
@@ -42,29 +46,30 @@ public final class GZipUtils {
 
     /**
      * @param gzipStr Compressed string
-     * @return Decompressed string
+     * @return Decompressed string, or "" when the input is invalid, oversized or cannot be inflated
      */
     public static String gzipDecompress(String gzipStr) {
         if (TextUtils.isEmpty(gzipStr)) {
             return "";
         }
-        try {
-            byte[] t = Base64.decode(gzipStr, Base64.DEFAULT);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ByteArrayInputStream in = new ByteArrayInputStream(t);
-            GZIPInputStream gzip = new GZIPInputStream(in);
-            byte[] buffer = new byte[1024 * 1024];
+        try (ByteArrayInputStream in =
+                     new ByteArrayInputStream(Base64.decode(gzipStr, Base64.DEFAULT));
+             GZIPInputStream gzip = new GZIPInputStream(in);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[64 * 1024];
+            int total = 0;
             int n;
             while ((n = gzip.read(buffer, 0, buffer.length)) > 0) {
+                total += n;
+                if (total > MAX_DECOMPRESSED_BYTES) {
+                    return "";
+                }
                 out.write(buffer, 0, n);
             }
-            gzip.close();
-            in.close();
-            out.close();
             return out.toString();
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             e.printStackTrace();
-        } catch (IllegalArgumentException e) {
+        } catch (OutOfMemoryError e) {
             e.printStackTrace();
         }
         return "";

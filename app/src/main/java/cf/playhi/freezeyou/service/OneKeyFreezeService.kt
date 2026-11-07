@@ -11,18 +11,21 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouBaseService
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.selectFUFMode
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortCutOneKeyFreezeAdditionalOptions
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.ui.AskLockScreenActivity
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.utils.FUFUtils.oneKeyAction
 import cf.playhi.freezeyou.utils.PackageListUtils
-import net.grandcentrix.tray.AppPreferences
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class OneKeyFreezeService : FreezeYouBaseService() {
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) {
-            // Restart after the process was killed: nothing to act on.
-            return super.onStartCommand(intent, flags, startId)
-        }
+
+    private val mExecutor = Executors.newSingleThreadExecutor()
+    private val mActiveTasks = AtomicInteger(0)
+
+    override fun onCreate() {
+        super.onCreate()
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 "OneKeyFreeze",
@@ -32,29 +35,49 @@ class OneKeyFreezeService : FreezeYouBaseService() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             notificationManager?.createNotificationChannel(channel)
             val mBuilder = Notification.Builder(this, "OneKeyFreeze")
-            mBuilder.setSmallIcon(R.drawable.ic_notification)
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo)
             mBuilder.setContentText(getString(R.string.oneKeyFreeze))
             startForeground(2, mBuilder.build())
         } else {
             startForeground(2, Notification())
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            // Restart after the process was killed: nothing to act on.
+            if (mActiveTasks.get() == 0) {
+                doFinish(startId)
+            } else {
+                stopSelf(startId)
+            }
+            return super.onStartCommand(null, flags, startId)
+        }
         val auto = intent.getBooleanExtra("autoCheckAndLockScreen", true)
-        val pref = AppPreferences(applicationContext)
+        val pref = DefaultMultiProcessMMKVStorage()
         val pkgNames = PackageListUtils.parse(
             pref.getString(getString(R.string.sAutoFreezeApplicationList), "")
         )
-        if (pkgNames.isNotEmpty()) {
-            oneKeyAction(
-                this, true,
-                pkgNames,
-                selectFUFMode.getValue()!!.toInt()
-            )
+        mActiveTasks.incrementAndGet()
+        mExecutor.execute {
+            try {
+                if (pkgNames.isNotEmpty()) {
+                    oneKeyAction(
+                        this, true,
+                        pkgNames,
+                        selectFUFMode.getValue()!!.toInt()
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                checkAuto(auto, this, startId)
+            }
         }
-        checkAuto(auto, this)
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun checkAndLockScreen(context: Context) {
+    private fun checkAndLockScreen(context: Context, startId: Int) {
         when (shortCutOneKeyFreezeAdditionalOptions.getValue(null)) {
             "askLockScreen" -> {
                 startActivity(
@@ -63,18 +86,26 @@ class OneKeyFreezeService : FreezeYouBaseService() {
                         AskLockScreenActivity::class.java
                     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
-                doFinish()
+                finishTask(startId)
             }
             "lockScreenImmediately" -> {
                 DevicePolicyManagerUtils.doLockScreen(context)
-                doFinish()
+                finishTask(startId)
             }
-            "nothing" -> doFinish()
-            else -> doFinish()
+            "nothing" -> finishTask(startId)
+            else -> finishTask(startId)
         }
     }
 
-    private fun doFinish() {
+    private fun finishTask(startId: Int) {
+        if (mActiveTasks.decrementAndGet() == 0) {
+            doFinish(startId)
+        } else {
+            stopSelf(startId)
+        }
+    }
+
+    private fun doFinish(startId: Int = -1) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -83,15 +114,20 @@ class OneKeyFreezeService : FreezeYouBaseService() {
         }
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
         mNotificationManager?.cancel(2)
-        stopSelf()
+        if (startId != -1) stopSelf(startId) else stopSelf()
     }
 
-    private fun checkAuto(auto: Boolean, context: Context) {
+    private fun checkAuto(auto: Boolean, context: Context, startId: Int) {
         if (auto) {
-            checkAndLockScreen(context)
+            checkAndLockScreen(context, startId)
         } else {
-            doFinish()
+            finishTask(startId)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mExecutor.shutdown()
     }
 
     override fun onBind(intent: Intent): IBinder? {

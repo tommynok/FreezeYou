@@ -8,8 +8,8 @@ import org.junit.Test
  * The list of applications currently showing a notification is one string, each package followed by
  * a comma, and it decides whether "do not freeze applications that are notifying" lets a freeze
  * through. A batch used to take packages out of it one at a time, each with its own round trip to
- * Tray's content provider; it is one pass now, and this is the part of that pass worth pinning
- * down, because a package wrongly left in the list silently stops being freezable.
+ * the preferences provider that held it; it is one pass now, and this is the part of that pass worth
+ * pinning down, because a package wrongly left in the list silently stops being freezable.
  *
  * Both directions of that one string are checked here. Removal used `String.replace(pkgName + ",")`
  * and addition used `notifying + pkgName + ","` guarded by a `contains` test, so a shorter name cut

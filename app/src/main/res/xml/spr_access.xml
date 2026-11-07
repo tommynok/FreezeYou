@@ -16,6 +16,24 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_enableAuthentication"
             app:title="@string/enableAuthentication" />
+        <ListPreference
+            app:defaultValue="900000"
+            app:dependency="enableAuthentication"
+            app:entries="@array/appLockTimeoutSelection"
+            app:entryValues="@array/appLockTimeoutSelectionValues"
+            app:iconSpaceReserved="false"
+            app:key="appLockTimeout"
+            app:singleLineTitle="false"
+            app:title="@string/appLockTimeout"
+            app:useSimpleSummaryProvider="true" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="enableAuthentication"
+            app:iconSpaceReserved="false"
+            app:key="lockOnScreenOff"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_lockOnScreenOff"
+            app:title="@string/lockOnScreenOff" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:disableDependentsState="false"
@@ -32,6 +50,30 @@
             app:singleLineTitle="false"
             app:summary="@string/includeFUFActivityInRecentsSummary"
             app:title="@string/includeFUFActivityInRecents" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/appLock">
+
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enableAppLock"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_enableAppLock"
+            app:title="@string/enableAppLock" />
+        <ListPreference
+            app:defaultValue="immediately"
+            app:dependency="enableAppLock"
+            app:entries="@array/appLockReLockPolicySelection"
+            app:entryValues="@array/appLockReLockPolicySelectionValues"
+            app:iconSpaceReserved="false"
+            app:key="appLockReLockPolicy"
+            app:singleLineTitle="false"
+            app:title="@string/appLockReLockPolicy"
+            app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 

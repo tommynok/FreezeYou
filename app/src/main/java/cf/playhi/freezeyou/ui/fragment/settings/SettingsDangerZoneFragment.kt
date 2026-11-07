@@ -37,7 +37,7 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                 R.string.clearAllUserData,
                 R.string.notice
             )
-                .setPositiveButton(R.string.yes) { _, _ ->
+                .setPositiveButton(R.string.okay) { _, _ ->
                     val activityManager =
                         requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
                     if (activityManager != null && Build.VERSION.SDK_INT >= 19) {
@@ -57,7 +57,7 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                         showToast(requireActivity(), R.string.sysVerLow)
                     }
                 }
-                .setNegativeButton(R.string.no, null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
             true
         }
@@ -69,7 +69,7 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                 R.string.selfRevokeProfileOwner,
                 R.string.plsConfirm
             )
-                .setPositiveButton(R.string.yes) { _, _ ->
+                .setPositiveButton(R.string.okay) { _, _ ->
                     if (isProfileOwner(requireContext())) {
                         try {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -95,7 +95,7 @@ class SettingsDangerZoneFragment : CardPreferenceFragment() {
                         showToast(requireActivity(), R.string.isNotProfileOwner)
                     }
                 }
-                .setNegativeButton(R.string.no, null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
             true
         }

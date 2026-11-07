@@ -134,12 +134,6 @@ class AboutActivity : FreezeYouBaseActivity() {
                     )
                 )
                 .setIcon(R.mipmap.ic_launcher_new_round)
-                .setMessage(
-                    String.format(
-                        getString(R.string.welcomeToUseAppName),
-                        getString(R.string.app_name)
-                    )
-                )
                 .setNegativeButton(
                     R.string.importConfig
                 ) { _: DialogInterface?, _: Int ->

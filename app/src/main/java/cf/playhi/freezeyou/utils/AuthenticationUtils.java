@@ -7,12 +7,38 @@ import androidx.biometric.BiometricManager;
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG;
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
 import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication;
 
 public class AuthenticationUtils {
 
     public static boolean isAuthenticationEnabled() {
         return enableAuthentication.getValue(null);
+    }
+
+    /**
+     * Whether the applications on the App Lock list must be unlocked into.
+     *
+     * Kept apart from {@link #isAuthenticationEnabled()}: the lock that guards this application's
+     * own screens and the lock that guards the applications the user listed are two promises, and
+     * turning one on has never been a request for the other.
+     */
+    public static boolean isAppLockEnabled() {
+        return enableAppLock.getValue(null);
+    }
+
+    /**
+     * Whether the setting to lock upon device screen off is applicable.
+     *
+     * Relocking on screen off is meaningful whenever either the lock on FreezeYou itself or the
+     * lock on protected applications is active.
+     */
+    public static boolean isLockOnScreenOffApplicable(boolean authEnabled, boolean appLockEnabled) {
+        return authEnabled || appLockEnabled;
+    }
+
+    public static boolean isLockOnScreenOffApplicable() {
+        return isLockOnScreenOffApplicable(isAuthenticationEnabled(), isAppLockEnabled());
     }
 
     public static boolean isBiometricPromptPartAvailable(Context context) {

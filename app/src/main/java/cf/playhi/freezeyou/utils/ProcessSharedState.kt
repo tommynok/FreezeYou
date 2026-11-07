@@ -19,13 +19,25 @@ object ProcessSharedState {
 
     private const val KEY_FOREGROUND_PACKAGE = "runtimeForegroundPackage"
     private const val KEY_NOTIFYING_PACKAGES = "runtimeNotifyingPackages"
+    private const val KEY_UNLOCKED_PACKAGES = "runtimeUnlockedPackages"
+    private const val KEY_APP_LOCK_SESSION_EPOCH = "runtimeAppLockSessionEpoch"
 
     /** Package names cannot contain a newline, so it can separate them safely. */
     private const val SEPARATOR = "\n"
 
+    /**
+     * The stamp of a lock screen that was never raised inside an unlocked session.
+     *
+     * A real epoch counts up from zero, so a negative one is the absence of a stamp rather than a
+     * session nobody has joined yet: the lock of this application is opened without one, and an
+     * answer given there is not something a screen-off may take back.
+     */
+    const val NO_APP_LOCK_SESSION = -1L
+
     @JvmStatic
     fun setForegroundPackage(pkgName: String?) {
         if (pkgName.isNullOrEmpty()) return
+        if (pkgName == getForegroundPackage()) return
         DefaultMultiProcessMMKVStorage().putString(KEY_FOREGROUND_PACKAGE, pkgName)
     }
 
@@ -62,4 +74,154 @@ object ProcessSharedState {
             .getString(KEY_NOTIFYING_PACKAGES, null) ?: return false
         return stored.splitToSequence(SEPARATOR).any { it == pkgName }
     }
+
+    /**
+     * The applications the user has authenticated for and has not left yet.
+     *
+     * The lock screen is raised by `:backgroundService`, which is the only thing that sees the
+     * window change, and the authentication succeeds inside an activity of the main process, so
+     * "this one is open now" has to cross the same boundary the foreground package does. The set is
+     * a comma list like the OneKEY lists and is edited through the same helpers rather than by
+     * concatenation: a shorter name must not cut a piece out of a longer one on the way out.
+     *
+     * An entry lives as long as the application is the one in front of the user, and the store
+     * outlives the process, so whoever stops watching clears it all - see [clearAllUnlockedPackages].
+     */
+    @JvmStatic
+    fun setPackageUnlocked(pkgName: String?) {
+        mutateUnlockedPackages { current -> unlockedPackagesAfterUnlock(current, pkgName) }
+    }
+
+    @JvmStatic
+    fun isPackageUnlocked(pkgName: String?): Boolean =
+        isUnlockedIn(currentUnlockedPackages(), pkgName)
+
+    /** The session unlock was for as long as this application was the one in front. */
+    @JvmStatic
+    fun clearPackageUnlocked(pkgName: String?) {
+        mutateUnlockedPackages { current -> unlockedPackagesAfterLock(current, pkgName) }
+    }
+
+    /**
+     * Everything the user was let into is locked again: a service that restarted, or a device that
+     * rebooted, must not find the applications of the last session still open in front of whoever
+     * picks the phone up.
+     *
+     * The epoch moves even when the set was already empty. A lock screen still waiting for an
+     * answer names no unlocked package, so the session that ends around it is one the set cannot
+     * report - and it is exactly that answer, given after the screen went dark, the epoch exists to
+     * refuse.
+     */
+    @JvmStatic
+    fun clearAllUnlockedPackages() {
+        mutateUnlockedPackages { "" }
+        advanceSessionEpoch()
+    }
+
+    /**
+     * Whether [pkgName] is open in the session the raw set describes.
+     *
+     * Kept as a function over the stored string, like the OneKEY list helpers it is built from, so
+     * the shape of the set can be read and tested without the store behind it.
+     */
+    @JvmStatic
+    fun isUnlockedIn(raw: String?, pkgName: String?): Boolean {
+        if (pkgName.isNullOrEmpty()) return false
+        return OneKeyListUtils.existsInOneKeyList(raw, pkgName)
+    }
+
+    /** @return the session set with [pkgName] open in it; already in it, it is returned unchanged. */
+    @JvmStatic
+    fun unlockedPackagesAfterUnlock(raw: String?, pkgName: String?): String {
+        if (pkgName.isNullOrEmpty()) return raw ?: ""
+        return OneKeyListUtils.addPkgToPkgNames(raw, pkgName)
+    }
+
+    /** @return the session set with [pkgName] locked again; not in it, it is returned unchanged. */
+    @JvmStatic
+    fun unlockedPackagesAfterLock(raw: String?, pkgName: String?): String {
+        if (pkgName.isNullOrEmpty()) return raw ?: ""
+        return OneKeyListUtils.removePkgFromPkgNames(raw, pkgName)
+    }
+
+    /**
+     * How many unlocked sessions this device has ended.
+     *
+     * The lock screen is raised by `:backgroundService` and answered in the main process, and the
+     * question the answer arrives with is whether the session it was asked in is still the running
+     * one. A biometric prompt outlives the screen that opened it: the user can authenticate while
+     * the device is in a pocket, and the success lands some time after the screen went dark and
+     * took the session with it. Counting the sessions that have ended is the cheapest fact both
+     * processes can agree on.
+     */
+    @JvmStatic
+    fun getSessionEpoch(): Long =
+        DefaultMultiProcessMMKVStorage().getLong(KEY_APP_LOCK_SESSION_EPOCH, 0L)
+
+    /**
+     * Start a new unlocked session and report its number.
+     *
+     * Read and written under the store's inter-process lock, so two processes ending a session at
+     * the same moment cannot both publish the same next number and leave a screen stamped in a
+     * session that another one already closed.
+     *
+     * @return the epoch every lock screen raised from now on is stamped with
+     */
+    @JvmStatic
+    fun advanceSessionEpoch(): Long = synchronized(SESSION_EPOCH_LOCK) {
+        val storage = DefaultMultiProcessMMKVStorage()
+        storage.lock()
+        try {
+            val next = storage.getLong(KEY_APP_LOCK_SESSION_EPOCH, 0L) + 1
+            storage.putLong(KEY_APP_LOCK_SESSION_EPOCH, next).sync()
+            next
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    /**
+     * Whether a lock screen stamped with [raisedEpoch] is answering for a session that has ended.
+     *
+     * [NO_APP_LOCK_SESSION] is not a session that ended but a screen that was never stamped - the
+     * lock of this application, which reads its own timeout and has no session to be refused by.
+     *
+     * Kept as a function over two numbers, like the session set helpers beside it, so the rule the
+     * activity applies can be read and tested without the store behind it.
+     */
+    @JvmStatic
+    fun isAppLockSessionStale(raisedEpoch: Long, currentEpoch: Long): Boolean =
+        raisedEpoch >= 0 && raisedEpoch != currentEpoch
+
+    /**
+     * Read, change, write the whole session set as one operation.
+     *
+     * The unlock is written by the main process and the leave is written by `:backgroundService`,
+     * and both edit the same stored string: an unlocked read-modify-write let the later writer
+     * publish the set as it saw it when it started, which could hand back an application the user
+     * had just left - and an application the session still counts as open is one the lock never
+     * asks about again. So the sequence takes the locks the OneKEY lists already take: one for the
+     * threads of this process, and MMKV's file lock for the other process.
+     */
+    private fun mutateUnlockedPackages(update: (String) -> String) {
+        synchronized(UNLOCKED_PACKAGES_LOCK) {
+            val storage = DefaultMultiProcessMMKVStorage()
+            storage.lock()
+            try {
+                val current = storage.getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
+                val updated = update(current)
+                // One write per real change: a window change that locks nothing is not a trip to the store.
+                if (current != updated) storage.putString(KEY_UNLOCKED_PACKAGES, updated).sync()
+            } finally {
+                storage.unlock()
+            }
+        }
+    }
+
+    private fun currentUnlockedPackages(): String =
+        DefaultMultiProcessMMKVStorage().getString(KEY_UNLOCKED_PACKAGES, "") ?: ""
+
+    private val UNLOCKED_PACKAGES_LOCK = Any()
+
+    private val SESSION_EPOCH_LOCK = Any()
 }

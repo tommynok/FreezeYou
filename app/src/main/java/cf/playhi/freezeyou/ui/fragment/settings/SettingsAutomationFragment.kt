@@ -22,7 +22,7 @@ class SettingsAutomationFragment : CardPreferenceFragment() {
                 R.string.askIfDel,
                 R.string.caution
             )
-                .setPositiveButton(R.string.yes) { _, _ ->
+                .setPositiveButton(R.string.okay) { _, _ ->
                     val activity = activity
                     deleteAllScheduledTasks(requireContext()) {
                         if (activity != null && !activity.isFinishing) {
@@ -30,7 +30,7 @@ class SettingsAutomationFragment : CardPreferenceFragment() {
                         }
                     }
                 }
-                .setNegativeButton(R.string.no, null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
             true
         }

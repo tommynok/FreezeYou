@@ -64,6 +64,8 @@ public class ScheduledTasksManageSimpleAdapter extends SimpleAdapter {
             db.close();
             if (timeS != null && timeS.contains(":")) {
                 TasksUtils.checkTimeTasks(mContext);
+            } else {
+                TasksUtils.checkTriggerTasks(mContext);
             }
             notifyDataSetChanged();
         });

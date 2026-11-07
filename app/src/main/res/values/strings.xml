@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Remove from the Onekey Freeze list</string>
     <string name="removeFromOneKeyUFList">Remove from the Onekey Unfreeze list</string>
     <string name="removeFromFreezeOnceQuit">Remove from the Freeze Once Quit list</string>
+    <string name="removeFromAppLockList">Remove from App Lock</string>
     <string name="removed">Removed</string>
     <string name="removeFailed">Failed to remove</string>
     <string name="addToOneKeyList">Add to the Onekey Freeze list</string>
     <string name="addToOneKeyUFList">Add to the Onekey Unfreeze list</string>
     <string name="addToFreezeOnceQuit">Add to the Freeze Once Quit list</string>
+    <string name="addToAppLockList">Add to App Lock</string>
+    <string name="appLock">App Lock</string>
     <string name="addFailed">Failed to add</string>
     <string name="caution">CAUTION</string>
     <string name="cautionContent">Attention! \nDo not freeze the application which is very important to the system, that may cause the system to crash!</string>
@@ -34,9 +37,13 @@
     <string name="mayUnrootedOrOtherEx">Permissions may not be granted, targets have been uninstalled, or other exceptions have occurred</string>
     <string name="nApplicationsFailedColonList">%1$d application(s) failed: %2$s</string>
     <string name="andNMoreApplications">, and %1$d more</string>
+    <string name="andMoreApplications">… and %1$d more</string>
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
+    <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
     <string name="summary_enableAuthentication">Require device unlock (PIN, fingerprint, etc.) before opening FreezeYou</string>
+    <string name="summary_lockOnScreenOff">Require unlock after the device screen turns off</string>
+    <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. System security (fingerprint, PIN, or pattern) is used.</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
@@ -44,7 +51,7 @@
     <string name="summary_manageIpaAutoAllow">List of apps allowed to request installs without asking each time</string>
     <string name="summary_manageMyCustomization">Create, rename, or delete your own app groups</string>
     <string name="clearUninstalledPkgsInAllLists">Remove uninstalled applications from all lists</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Clears uninstalled apps from OneKey lists, Freeze Once Quit, My customization and statistics</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Clears uninstalled apps from OneKey lists, Freeze Once Quit, App Lock, My customization and statistics</string>
     <string name="summary_clearIconCache">Frees up storage used by cached app icons; they\'ll be reloaded as needed</string>
     <string name="summary_clearNameCache">Frees up storage used by cached app names; they\'ll be reloaded as needed</string>
     <string name="summary_clearAllCache">Clears both the icon cache and the name cache at once</string>
@@ -96,7 +103,7 @@
     <string name="createActivityShortcut">Create an activity shortcut</string>
     <string name="cannotFindTheEntrance">Cannot find an entrance to this application</string>
     <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen. If you need to freeze the application from a shortcut — create one with «%1$s».</string>
-    <string name="iconAEntry">Icons and Entrances</string>
+    <string name="iconAEntry">FreezeYou icons and entry</string>
     <string name="dialEntry">Use the dial pad to enter</string>
     <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>
     <string name="ciFinishedToast">Submitted, please wait for the launcher to refresh or restart the launcher.</string>
@@ -128,12 +135,14 @@
     <string name="notificationBar">Notification</string>
     <string name="disableSlideOut">Do not disappear when slide out</string>
     <string name="disableClickDisappear">Do not disappear after clicked</string>
+    <string name="freezeAll">Freeze all</string>
+    <string name="quickFUFGroupSummaryContent">Unfrozen applications: %1$d</string>
     <string name="effectNextCreate">Take effects the next time created</string>
     <string name="helpTranslate">Help Translate</string>
     <string name="thanksList">Project contributors</string>
     <string name="automation">Automation</string>
     <string name="freezeAfterScreenLock">Run the one-key freeze when the screen goes off</string>
-    <string name="freezeAfterScreenLockSummary">Freezes the applications in the "One-key freeze" list every time the screen goes off.</string>
+    <string name="freezeAfterScreenLockSummary">Freezes the applications in the \"One-key freeze\" list every time the screen goes off.</string>
     <string name="screenLockFreezeNotiTitle">Freeze when the screen goes off</string>
     <string name="screenLockFreezeNotiText">Will freeze apps in the One-key freeze list</string>
     <string name="screenLockFreezeNotiTapHint">Tap to turn this off</string>
@@ -149,8 +158,9 @@
     <string name="accessibility_service_description">Listen to the foreground application changes. \nUsed to active the functions to avoid freezing foreground applications when automatic freezing, automatically freeze applications when they are not the foreground applications, etc.</string>
     <string name="configureAccessibilityService">Configure Accessibility Service</string>
     <string name="freezeOnceQuit">Leave Freeze</string>
-    <string name="freezeOnceQuitSummary">Applications in the "Freeze after leaving" list are frozen as soon as you leave them.</string>
+    <string name="freezeOnceQuitSummary">Applications in the \"Freeze after leaving\" list are frozen as soon as you leave them.</string>
     <string name="needActiveAccessibilityService">Need to enable Accessibility Service</string>
+    <string name="needActiveDeviceAdmin">Need to activate Device Administrator</string>
     <string name="invalidArguments">Invalid parameters</string>
     <string name="plsConfirm">Please Confirm</string>
     <string name="removeNoRootCaution">Do you really want to release the no-root mode permission? \nTo avoid causing unnecessary trouble, please unfreeze all frozen applications before releasing!</string>
@@ -162,6 +172,8 @@
     <string name="scheduledTasks">Scheduled tasks</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
+    <string name="doNotSave">Don\'t save</string>
+    <string name="diagnosisRefreshFailed">Diagnosis interrupted, some checks did not run</string>
     <string name="time">Time</string>
     <string name="enable">Enable</string>
     <string name="repeat">Repeat</string>
@@ -246,7 +258,7 @@
     <string name="regenerateSomeCache">Regenerate some caches</string>
     <string name="updateSomeData">Update some data</string>
     <string name="backupAndRestore">Backup and restore</string>
-    <string name="summary_backupAndRestore">Export your settings, lists, shortcuts and scheduled tasks to a file, and import it back</string>
+    <string name="summary_backupAndRestore">Export your settings, lists and scheduled tasks to a file, and import it back</string>
     <string name="status">Status</string>
     <string name="debugMode">Debug Mode</string>
     <string name="debugModeSummary">Logs internal app actions (freeze/unfreeze attempts, Shizuku/root calls) to help diagnose problems. May slightly reduce performance.</string>
@@ -346,6 +358,7 @@
     <string name="remove">Remove</string>
     <string name="newFolder">New Folder</string>
     <string name="alreadyExist">Already exists</string>
+    <string name="operationAlreadyInProgress">An operation for this app is already running</string>
     <string name="queryStatus">Query Status</string>
     <string name="newClassification">New category</string>
     <string name="displayLanguage">Display Language</string>
@@ -377,6 +390,7 @@
     <string name="jumpToSysInstaller">Go to system installer</string>
     <string name="appearance">Appearance</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Create quick freeze notification after unfrozen</string>
+    <string name="combineBatchQuickNotification">Combine batch notifications</string>
     <string name="executionResult_colon_message">Execution result: %1$s</string>
     <string name="unknownResult_probablySuccess">Unknown result (Probably success)</string>
     <string name="unknownError">Unknown error</string>
@@ -388,6 +402,13 @@
     <string name="unlock">Unlock</string>
     <string name="security">Security</string>
     <string name="enableAuthentication">Enable authentication</string>
+    <string name="appLockTimeout">Lock timeout</string>
+    <string name="lockOnScreenOff">Lock on screen off</string>
+    <string name="enableAppLock">Enable App Lock</string>
+    <string name="appLockReLockPolicy">Re-lock policy</string>
+    <string name="appLockAccessibilityWarningTitle">Accessibility Service Required</string>
+    <string name="appLockAccessibilityWarningMessage">Application lock requires the FreezeYou Accessibility Service to detect when protected apps are opened. Open system settings to enable it now?</string>
+    <string name="settings">Settings</string>
     <string name="authentication">Authentication</string>
     <string name="verifyToContinue">Verify to continue</string>
     <string name="authenticationFailed">Authentication failed</string>
@@ -398,6 +419,9 @@
     <string name="onlyRunning">Running</string>
     <string name="onlyRunningSys">Running: System</string>
     <string name="onlyRunningUser">Running: User</string>
+    <string name="runningAppStats">%2$s RAM · %1$s CPU</string>
+    <string name="sortBy_running_memory">By memory (RAM)</string>
+    <string name="sortBy_running_cpu">By CPU</string>
     <string name="criticalPackagesWarning">Critical applications that system stability depends on have been selected:\n\n%1$s\n\nFreezing them can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
     <string name="critical_package_freeze_warning_single">A critical application that system stability depends on has been selected:\n\n%1$s\n\nFreezing it can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
     <string name="critical_packages_uninstall_warning_batch">Critical applications that system stability depends on have been selected:\n\n%1$s\n\nUninstalling them can leave the device without a status bar, Settings, or a keyboard, making it difficult to operate. Continue anyway?</string>
@@ -430,6 +454,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">Operation on FreezeYou is not allowed</string>
     <string name="shizukuVersionIsTooLow">Shizuku version is too low</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku is not installed or other exceptions</string>
+    <string name="authorizationStatus_authorized">Shizuku authorization granted</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku permission not granted</string>
+    <string name="profileOwnerActive">Profile owner mode active</string>
+    <string name="systemAppModeActive">System app mode available</string>
     <string name="includeFUFActivityInRecents">Include freeze and unfreeze activity in recents</string>
     <string name="includeFUFActivityInRecentsSummary">Also shows the freeze/unfreeze progress screen as a separate entry in recent apps.</string>
     <string name="playFUFAnimations">Play freeze and unfreeze animations</string>
@@ -437,6 +465,8 @@
     <string name="sFreezeOnceQuit" translatable="false">New_FreezeOnceQuit</string>
     <string name="sAutoFreezeApplicationList" translatable="false">New_AutoFreezeApplicationList</string>
     <string name="sOneKeyUFApplicationList" translatable="false">New_OneKeyUFApplicationList</string>
+    <!-- The applications the app lock is thrown over when they come to the foreground. -->
+    <string name="sAppLockList" translatable="false">New_AppLockList</string>
     <string-array name="launchModeSelection">
         <item>Show All</item>
         <item>Frozen only</item>
@@ -446,6 +476,7 @@
         <item>Onekey Freeze</item>
         <item>Onekey Unfreeze</item>
         <item>Leave Freeze</item>
+        <item>App Lock</item>
     </string-array>
     <string-array name="launchModeSelectionValues" translatable="false">
         <item>all</item>
@@ -456,6 +487,7 @@
         <item>OO</item>
         <item>OOU</item>
         <item>FOQ</item>
+        <item>APPLOCK</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>None</item>
@@ -466,6 +498,17 @@
         <item>nothing</item>
         <item>askLockScreen</item>
         <item>lockScreenImmediately</item>
+    </string-array>
+    <string name="shortcutClickAction">Action on application shortcut click</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Ask for action (default)</item>
+        <item>Always open (unfreeze and launch)</item>
+        <item>Toggle (freeze / unfreeze)</item>
+    </string-array>
+    <string-array name="shortcutClickActionSelectionValues" translatable="false">
+        <item>dialog</item>
+        <item>open_and_uf</item>
+        <item>toggle</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>Default</item>
@@ -561,6 +604,38 @@
         <item>9</item>
         <item>8</item>
     </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>Immediately on exit</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelectionValues" translatable="false">
+        <item>0</item>
+        <item>60000</item>
+        <item>120000</item>
+        <item>300000</item>
+        <item>600000</item>
+        <item>900000</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="appLockReLockPolicySelection">
+        <item>Immediately on exit</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>When screen turns off</item>
+    </string-array>
+    <string-array name="appLockReLockPolicySelectionValues" translatable="false">
+        <item>immediately</item>
+        <item>60000</item>
+        <item>120000</item>
+        <item>300000</item>
+        <item>screen_off</item>
+    </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>Default</item>
         <item>Dark</item>
@@ -605,7 +680,7 @@
     <string name="restore_failed">Failed to restore application</string>
     <string name="restore_partial">Restored %1$d of %2$d applications</string>
     <string name="restore_only_in_uninstalled_system_filter">To restore this app, use the Uninstalled system filter.</string>
-    <string name="full_system_uninstall_requires_shell">Full removal of an updated system app requires root or Shizuku.</string>
+    <string name="full_system_uninstall_requires_shell">Full removal of a system app requires root or Shizuku.</string>
     <string name="updateCheckUnlocked">Check for updates unlocked</string>
     <string name="apkInstallation">APK Installation</string>
     <string name="batch_uninstall">Uninstall selected</string>
@@ -625,4 +700,10 @@
     <string name="restore_completed_title">Restoration completed</string>
     <string name="restore_completed_single_app">Application \"%1$s\" restored successfully</string>
     <string name="batch_restoring">Restoring…</string>
+    <string name="restoreShortcuts">Restore shortcuts</string>
+    <string name="restoreShortcutsPromptMessage">Tap \"OK\" to pin each shortcut to your home screen. The launcher will ask for system confirmation.</string>
+    <string name="noShortcutsToRestore">No saved shortcuts to restore</string>
+    <string name="skip">Skip</string>
+    <string name="restoreShortcutsProgress">Shortcut %1$d of %2$d</string>
+    <string name="restoreShortcutFailed">Could not add the shortcut \"%1$s\"</string>
 </resources>

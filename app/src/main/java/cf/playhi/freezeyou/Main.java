@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
@@ -56,8 +57,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import net.grandcentrix.tray.AppPreferences;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -70,16 +69,20 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 
 import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.service.ForceStopService;
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 import cf.playhi.freezeyou.ui.AboutActivity;
 import cf.playhi.freezeyou.ui.BackupMainActivity;
 import cf.playhi.freezeyou.ui.FirstTimeSetupActivity;
@@ -99,6 +102,7 @@ import cf.playhi.freezeyou.utils.FUFUtils;
 import cf.playhi.freezeyou.utils.LogSharingUtils;
 import cf.playhi.freezeyou.utils.OneKeyListUtils;
 import cf.playhi.freezeyou.utils.ServiceUtils;
+import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 import cf.playhi.freezeyou.utils.TasksUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -129,6 +133,7 @@ import static cf.playhi.freezeyou.utils.MoreUtils.processListFilter;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.addToOneKeyList;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.removeFromOneKeyList;
+import static cf.playhi.freezeyou.utils.Support.showAppLockAccessibilityWarningIfOff;
 import static cf.playhi.freezeyou.utils.Support.showChooseActionPopupMenu;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeDot;
 import static cf.playhi.freezeyou.utils.ThemeUtils.getThemeFabDotBackground;
@@ -141,6 +146,8 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
 import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
 import static cf.playhi.freezeyou.utils.VersionUtils.isOutdated;
+import cf.playhi.freezeyou.utils.RunningAppsRefreshControl;
+import cf.playhi.freezeyou.utils.RunningAppsSortControl;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -171,6 +178,8 @@ public class Main extends FreezeYouBaseActivity {
     private final static int SORT_BY_ALPHABETICAL = 8;
     private final static int SORT_BY_LAST_INSTALLED = 9;
     private final static int SORT_BY_LAST_UPDATED = 10;
+    private final static int SORT_BY_RUNNING_RAM = RunningAppsSortControl.SORT_BY_RUNNING_RAM;
+    private final static int SORT_BY_RUNNING_CPU = RunningAppsSortControl.SORT_BY_RUNNING_CPU;
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private ActionMode currentSelectionActionMode;
@@ -181,19 +190,64 @@ public class Main extends FreezeYouBaseActivity {
     private int customThemeDisabledDot = R.drawable.shapedotblack;
     private int customThemeEnabledDot = R.drawable.shapedotblack;
     private BroadcastReceiver updateFrozenStatusBroadcastReceiver;
-    private String currentFilter = "all";
-    private int currentSortRule = SORT_BY_DEFAULT;
+    private BroadcastReceiver mPackageChangeReceiver;
+    // The adapter only holds the rows the search shows; menu eligibility and force-stop targets
+    // must follow the whole selection, including packages the query hides.
+    private volatile List<Map<String, Object>> mCurrentUnfilteredAppList;
+    private volatile String currentFilter = "all";
+    // The base64 label of the custom category the list currently shows, or null for any other
+    // filter. A selection-menu edit has no other way to tell whether its category is still on
+    // screen when it finishes.
+    private volatile String currentCategoryLabel = null;
+    private volatile int currentSortRule = SORT_BY_DEFAULT;
+    private volatile int currentGeneralSortRule = SORT_BY_DEFAULT;
+    private volatile int currentRunningSortRule = SORT_BY_RUNNING_RAM;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
-    private boolean shortcutsCompleted = true;
-    private int shortcutsCount;
+    // The launcher's pin dialog pauses this activity between two shortcuts, so a batch has to
+    // survive resumes. It used to walk selectedPackages itself, which crashed the screen as soon
+    // as the user left the selection mode while a dialog was still open; this is a snapshot taken
+    // when the batch starts and read forward from.
+    private List<String> mPendingShortcutPackages = null;
+    private int mPendingShortcutIndex = 0;
 
     private boolean isGridMode = false;
+    private boolean restoreFilterFromSavedState = false;
+    private volatile boolean filterEstablished = false;
+    private boolean mRestoreSelectionAfterFragmentRebuild = false;
 
     private MainActivityAppListFragment mMainActivityAppListFragment;
     private final Queue<String> mUnprivilegedUninstallQueue = new LinkedList<>();
     private String mCurrentUnprivilegedUninstallPkg = null;
     private int mUnprivilegedUninstallSuccessCount = 0;
+
+    private final AtomicInteger mListGeneration = new AtomicInteger(0);
+    // Every rebuild goes through one worker holding one queued request. Each caller used to start
+    // a thread of its own, and every thread pulled the whole installed-package list across
+    // binder: an install session fires PACKAGE_ADDED / REMOVED / REPLACED in quick succession, so
+    // several full scans ran at once. mListGeneration only discards the result of a superseded
+    // pass, the scan itself was paid for every time. Collapsing them keeps the last request, which
+    // is the one that would have won the generation check anyway.
+    private final Object listGenerationLock = new Object();
+    private boolean listGenerationRunning;
+    private boolean listGenerationQueued;
+    private String queuedFilter;
+    private int queuedSortRule;
+    private String queuedCategoryLabel;
+    // A full status snapshot must not apply after a newer one, and must not overwrite the rows
+    // a single-package broadcast patched while it was still being computed.
+    private final AtomicInteger mStatusRefreshGeneration = new AtomicInteger(0);
+    private final Set<String> mStatusPatchedDuringFullRefresh =
+            Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private TextWatcher mSearchTextWatcher = null;
+    private ImageButton mMoreSettingsImageButton;
+    private ImageButton mSelectionActionsImageButton;
+    private ImageButton mRefreshButton;
+    private ProgressBar mRefreshProgressBar;
+    private ImageButton mSortRunningButton;
+    // A popup left open when the activity pauses is restored with the window and then torn down
+    // on focus loss, which flashes the dimming layer on the way back into the app.
+    private PopupMenu mActivePopupMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -202,14 +256,100 @@ public class Main extends FreezeYouBaseActivity {
             setTheme(R.style.AppTheme_Default_Main);
         }
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            // recreate() keeps the intent that started the activity, so a shortcut's filter would
+            // otherwise win over the filter the user had switched to before the grid/list toggle.
+            currentFilter = savedInstanceState.getString("currentFilter", currentFilter);
+            // The category the filter came from travels with it: without the label the recreated
+            // list is still the category's packages, but no edit can tell that it is on screen.
+            currentCategoryLabel = savedInstanceState.getString("currentCategoryLabel");
+            restoreFilterFromSavedState = savedInstanceState.containsKey("currentFilter");
+            filterEstablished = restoreFilterFromSavedState;
+        }
         setContentView(R.layout.main);
+        if (savedInstanceState != null) {
+            EditText searchEditText = findViewById(R.id.search_editText);
+            String searchQuery = savedInstanceState.getString("searchQuery");
+            if (searchEditText != null && !TextUtils.isEmpty(searchQuery)) {
+                searchEditText.setText(searchQuery);
+                searchEditText.setSelection(searchQuery.length());
+            }
+        }
         applyOriginalLightMainBackground();
+        setupFloatingButtons();
+        setupRefreshControl();
         setupBackNavigation();
         try {
             manageCrashLog();
         } catch (Exception e) {
             e.printStackTrace();
             checkIfNeedAskFirstTimeSetupAndShowDialog();
+        }
+    }
+
+    /**
+     * The manifest routes orientation and screen-size changes here instead of recreating the
+     * activity, so {@link #go()} runs only once per instance and would keep the layout it picked on
+     * launch. With the automatic pattern the list/grid choice has to follow the new configuration;
+     * an explicit grid/list choice is the user's decision and stays put.
+     */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // go() has not run yet while the first-run dialog is still up; it resolves the mode from
+        // the configuration it finds, so there is nothing to rebuild here.
+        if (mMainActivityAppListFragment == null) {
+            return;
+        }
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String mainPattern =
+                sharedPref.getString(mainActivityPattern.name(), mainActivityPattern.defaultValue());
+        if (!mainActivityPattern.defaultValue().equals(mainPattern)) {
+            return;
+        }
+
+        boolean newGridMode = resolveGridMode(
+                mainPattern,
+                newConfig.orientation,
+                newConfig.screenWidthDp,
+                newConfig.screenHeightDp
+        );
+        if (newGridMode == isGridMode) {
+            return;
+        }
+
+        isGridMode = newGridMode;
+        // Swapping the widget destroys the old list's modal action mode, whose teardown normally
+        // clears the selection. A rotation is not the user cancelling it, so the selection has to
+        // survive the swap and be checked again on the new list.
+        mRestoreSelectionAfterFragmentRebuild =
+                (currentSelectionActionMode != null || mRestoreSelectionAfterFragmentRebuild)
+                        && !selectedPackages.isEmpty();
+        mMainActivityAppListFragment = new MainActivityAppListFragment();
+        mMainActivityAppListFragment.setUseGridMode(isGridMode);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment)
+                .commit();
+        new Thread(() -> generateList(currentFilter)).start();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Before the launch worker has run there is no filter choice to save yet; writing the
+        // initial "all" would then beat the shortcut's filter on the recreated instance.
+        if (filterEstablished) {
+            outState.putString("currentFilter", currentFilter);
+            if (currentCategoryLabel != null) {
+                outState.putString("currentCategoryLabel", currentCategoryLabel);
+            }
+        }
+        EditText searchEditText = findViewById(R.id.search_editText);
+        if (searchEditText != null && !TextUtils.isEmpty(searchEditText.getText())) {
+            outState.putString("searchQuery", searchEditText.getText().toString());
         }
     }
 
@@ -232,6 +372,186 @@ public class Main extends FreezeYouBaseActivity {
      *       to finish the activity / exit the application naturally.</li>
      * </ol>
      */
+    private void setupFloatingButtons() {
+        mMoreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
+        mSelectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
+
+        if (mMoreSettingsImageButton != null) {
+            mMoreSettingsImageButton.setOnLongClickListener(v -> {
+                if (mMoreSettingsImageButton.getAlpha() == 0.2f) {
+                    mMoreSettingsImageButton.setAlpha(1f);
+                } else {
+                    mMoreSettingsImageButton.setAlpha(0.2f);
+                }
+                return true;
+            });
+
+            mMoreSettingsImageButton.setOnClickListener(v -> {
+                mMoreSettingsImageButton.setAlpha(1f);
+                PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
+                popupMenu.inflate(R.menu.menu);
+                onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
+                popupMenu.setOnMenuItemClickListener(this::onMainOptionsItemSelected);
+                popupMenu.setOnDismissListener(menu -> {
+                    if (mActivePopupMenu == popupMenu) {
+                        mActivePopupMenu = null;
+                    }
+                    RotateAnimation animation =
+                            new RotateAnimation(45, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                    animation.setDuration(300);
+                    animation.setRepeatMode(RotateAnimation.REVERSE);
+                    animation.setFillAfter(true);
+                    mMoreSettingsImageButton.startAnimation(animation);
+                });
+                RotateAnimation animation =
+                        new RotateAnimation(0, 45, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+                animation.setDuration(300);
+                animation.setRepeatMode(RotateAnimation.REVERSE);
+                animation.setFillAfter(true);
+                mMoreSettingsImageButton.startAnimation(animation);
+                mActivePopupMenu = popupMenu;
+                popupMenu.show();
+            });
+        }
+    }
+
+    private void setupRefreshControl() {
+        mRefreshButton = findViewById(R.id.main_refresh_button);
+        mRefreshProgressBar = findViewById(R.id.main_refresh_progressBar);
+        mSortRunningButton = findViewById(R.id.main_sort_running_button);
+        if (mRefreshButton != null) {
+            mRefreshButton.setOnClickListener(v -> onRefreshButtonClicked());
+        }
+        if (mSortRunningButton != null) {
+            mSortRunningButton.setOnClickListener(this::onSortRunningButtonClicked);
+        }
+        updateRefreshControlState();
+    }
+
+    private void onSortRunningButtonClicked(View v) {
+        PopupMenu popupMenu = new PopupMenu(getLightPopupContext(this), v);
+        boolean runningFilter = RunningAppsRefreshControl.isRunningFilter(currentFilter);
+        if (runningFilter) {
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_running_memory);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_running_cpu);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.alphabetical);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.sortBy_default);
+        } else {
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_default);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_no);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.uf_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.uf_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 5, R.string.ff_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 6, R.string.ff_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 7, R.string.us_ascending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 8, R.string.us_descending);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 9, R.string.alphabetical);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 10, R.string.lastInstall);
+            popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 11, R.string.lastUpdate);
+        }
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int order = item.getOrder();
+            int newSortRule;
+            if (runningFilter) {
+                if (order == 1) {
+                    newSortRule = SORT_BY_RUNNING_RAM;
+                } else if (order == 2) {
+                    newSortRule = SORT_BY_RUNNING_CPU;
+                } else if (order == 3) {
+                    newSortRule = SORT_BY_ALPHABETICAL;
+                } else {
+                    newSortRule = SORT_BY_DEFAULT;
+                }
+            } else {
+                if (order == 7 || order == 8) {
+                    AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
+                }
+                switch (order) {
+                    case 1: newSortRule = SORT_BY_DEFAULT; break;
+                    case 2: newSortRule = SORT_BY_NO; break;
+                    case 3: newSortRule = SORT_BY_UF_ASCENDING; break;
+                    case 4: newSortRule = SORT_BY_UF_DESCENDING; break;
+                    case 5: newSortRule = SORT_BY_FF_ASCENDING; break;
+                    case 6: newSortRule = SORT_BY_FF_DESCENDING; break;
+                    case 7: newSortRule = SORT_BY_US_ASCENDING; break;
+                    case 8: newSortRule = SORT_BY_US_DESCENDING; break;
+                    case 9: newSortRule = SORT_BY_ALPHABETICAL; break;
+                    case 10: newSortRule = SORT_BY_LAST_INSTALLED; break;
+                    default: newSortRule = SORT_BY_LAST_UPDATED; break;
+                }
+            }
+            generateList(currentFilter, newSortRule, currentCategoryLabel);
+            return true;
+        });
+        popupMenu.setOnDismissListener(menu -> {
+            if (mActivePopupMenu == popupMenu) {
+                mActivePopupMenu = null;
+            }
+        });
+        mActivePopupMenu = popupMenu;
+        popupMenu.show();
+    }
+
+    private void onRefreshButtonClicked() {
+        synchronized (listGenerationLock) {
+            if (!RunningAppsRefreshControl.canTriggerRefresh(currentFilter, listGenerationRunning)) {
+                return;
+            }
+            if (!checkRunningFilterAvailableAndWarn()) return;
+            generateList(currentFilter, currentSortRule, currentCategoryLabel);
+        }
+    }
+
+    private void updateRefreshControlState() {
+        if (isFinishing()) return;
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            final String filter;
+            final boolean isRefreshing;
+            synchronized (listGenerationLock) {
+                filter = currentFilter;
+                isRefreshing = listGenerationRunning;
+            }
+            if (mRefreshButton != null) {
+                if (RunningAppsRefreshControl.isButtonVisible(filter, isRefreshing)) {
+                    android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
+                    boolean isLightTheme =
+                            getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue, true)
+                                    && isLightThemeValue.data != 0;
+                    mRefreshButton.setImageResource(
+                            isLightTheme ? R.drawable.ic_action_refresh_light : R.drawable.ic_action_refresh
+                    );
+                    mRefreshButton.setVisibility(View.VISIBLE);
+                    mRefreshButton.setEnabled(true);
+                } else {
+                    mRefreshButton.setVisibility(View.GONE);
+                }
+            }
+            if (mSortRunningButton != null) {
+                if (RunningAppsSortControl.isSortButtonVisible(filter)) {
+                    android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
+                    boolean isLightTheme =
+                            getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue, true)
+                                    && isLightThemeValue.data != 0;
+                    mSortRunningButton.setImageResource(
+                            isLightTheme ? R.drawable.ic_action_sort_light : R.drawable.ic_action_sort
+                    );
+                    mSortRunningButton.setVisibility(View.VISIBLE);
+                    mSortRunningButton.setEnabled(!isRefreshing);
+                } else {
+                    mSortRunningButton.setVisibility(View.GONE);
+                }
+            }
+            if (mRefreshProgressBar != null) {
+                mRefreshProgressBar.setVisibility(
+                        RunningAppsRefreshControl.isProgressBarVisible(filter, isRefreshing)
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+            }
+        });
+    }
+
     private void setupBackNavigation() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -286,31 +606,26 @@ public class Main extends FreezeYouBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!shortcutsCompleted && shortcutsCount > 0) {
-            String pkgName;
-            shortcutsCount = shortcutsCount - 1;
-            pkgName = selectedPackages.get(shortcutsCount);
-            createShortCut(
-                    getApplicationLabel(Main.this, null, null, pkgName),
-                    pkgName,
-                    getApplicationIcon(
-                            Main.this,
-                            pkgName,
-                            getApplicationInfoFromPkgName(pkgName, this),
-                            false),
-                    Freeze.class,
-                    "FreezeYou! " + pkgName,
-                    Main.this
-            );
-            shortcutsCompleted = (shortcutsCount <= 0);
+        if (hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            requestNextPinShortcut();
         }
         updateFrozenStatus(null);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         if (sharedPref.getBoolean(saveOnClickFunctionStatus.name(), saveOnClickFunctionStatus.defaultValue())) {
             appListViewOnClickMode = sharedPref.getInt("onClickFunctionStatus", APPListViewOnClickMode_chooseAction);
         }
-        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
-            currentSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+        restoreSortMethodStatus();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mActivePopupMenu != null) {
+            try {
+                mActivePopupMenu.dismiss();
+            } catch (Exception ignored) {
+            }
+            mActivePopupMenu = null;
         }
     }
 
@@ -325,6 +640,13 @@ public class Main extends FreezeYouBaseActivity {
         }
         if (updateFrozenStatusBroadcastReceiver != null)
             unregisterReceiver(updateFrozenStatusBroadcastReceiver);
+        if (mPackageChangeReceiver != null) {
+            try {
+                unregisterReceiver(mPackageChangeReceiver);
+            } catch (Exception ignored) {
+            }
+            mPackageChangeReceiver = null;
+        }
     }
 
     @Override
@@ -346,7 +668,23 @@ public class Main extends FreezeYouBaseActivity {
                 }
                 break;
             case 80002:
-                processNextUnprivilegedUninstall();
+                if (abortUninstallBatchOnCancel(
+                        resultCode, isPackageStillInstalled(mCurrentUnprivilegedUninstallPkg))) {
+                    // The user backed out of a system uninstall prompt: the rest of the batch
+                    // must not keep throwing prompts at them one after another.
+                    mUnprivilegedUninstallQueue.clear();
+                    mCurrentUnprivilegedUninstallPkg = null;
+                    mIsBatchUninstallRunning = false;
+                    if (mUnprivilegedUninstallSuccessCount > 0) {
+                        showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
+                        sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                .setPackage(getPackageName())
+                                .putExtra("refreshAppList", true));
+                        new Thread(() -> generateList(currentFilter)).start();
+                    }
+                } else {
+                    processNextUnprivilegedUninstall();
+                }
                 break;
             default:
                 break;
@@ -362,7 +700,6 @@ public class Main extends FreezeYouBaseActivity {
             if ("white".equals(cTheme) || "default".equals(cTheme)) {
                 menu.findItem(R.id.menu_timedTasks).setIcon(R.drawable.ic_action_alarm_light);
                 menu.findItem(R.id.menu_viewMode).setIcon(R.drawable.ic_action_filter_light);
-                menu.findItem(R.id.menu_sortBy).setIcon(R.drawable.ic_action_sort_light);
             }
         }
         return true;
@@ -381,7 +718,9 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void generateList(String filter) {
-        generateList(filter, currentSortRule);
+        int targetSortRule = RunningAppsSortControl.resolveSortRuleForFilter(
+                filter, getSortMethodStatus(), getRunningSortMethodStatus());
+        generateList(filter, targetSortRule);
     }
 
     /**
@@ -415,6 +754,9 @@ public class Main extends FreezeYouBaseActivity {
             case "FOQ":
                 titleResId = R.string.freezeOnceQuit;
                 break;
+            case "APPLOCK":
+                titleResId = R.string.appLock;
+                break;
             case "OS":
                 titleResId = R.string.onlySA;
                 break;
@@ -444,6 +786,7 @@ public class Main extends FreezeYouBaseActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(titleResId == 0 ? getString(R.string.app_name) : getString(titleResId));
             }
+            updateRefreshControlState();
         });
     }
 
@@ -452,81 +795,146 @@ public class Main extends FreezeYouBaseActivity {
      * @param sortRule Sort rule ID
      */
     private void generateList(String filter, int sortRule) {
-        currentFilter = filter;
-        currentSortRule = sortRule;
-        updateFilterTitle(filter);
-        final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
-        final ProgressBar progressBar = findViewById(R.id.progressBar);
-        final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
-        final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
-        final FrameLayout linearLayout = findViewById(R.id.layout2);
-        final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
-        final EditText search_editText = findViewById(R.id.search_editText);
-        final ImageButton moreSettingsImageButton = findViewById(R.id.main_moreSettings_button);
-        final ImageButton selectionActionsImageButton = findViewById(R.id.main_selectionActions_button);
+        // A refresh (and a sort change) re-renders the filter already on screen; keep tracking
+        // the category it came from so an edit started from the selection menu can still refresh
+        // this view. Any other filter starts a different list, with no category behind it.
+        generateList(filter, sortRule, filter.equals(currentFilter) ? currentCategoryLabel : null);
+    }
 
-        final Context applicationContext = getApplicationContext();
+    private void generateList(String filter, int sortRule, String categoryLabel) {
+        scheduleListGeneration(filter, sortRule, categoryLabel);
+    }
 
-        moreSettingsImageButton.setOnLongClickListener(v -> {
-            if (moreSettingsImageButton.getAlpha() == 0.2f) {
-                moreSettingsImageButton.setAlpha(1f);
+    private void scheduleListGeneration(String filter, int sortRule, String categoryLabel) {
+        final boolean startWorker;
+        synchronized (listGenerationLock) {
+            boolean runningFilter = RunningAppsRefreshControl.isRunningFilter(filter);
+            if (!runningFilter && RunningAppsSortControl.isRunningSortRule(sortRule)) {
+                sortRule = getSortMethodStatus();
+            }
+            if (runningFilter) {
+                if (currentRunningSortRule != sortRule) saveRunningSortMethodStatus(sortRule);
+                currentRunningSortRule = sortRule;
             } else {
-                moreSettingsImageButton.setAlpha(0.2f);
+                if (currentGeneralSortRule != sortRule) saveSortMethodStatus(sortRule);
+                currentGeneralSortRule = sortRule;
             }
-            return true;
-        });
+            currentFilter = filter;
+            currentCategoryLabel = categoryLabel;
+            currentSortRule = sortRule;
+            filterEstablished = true;
+            // Invalidate the previous result when requested, not when the queued scan starts.
+            mListGeneration.incrementAndGet();
+            queuedFilter = filter;
+            queuedSortRule = sortRule;
+            queuedCategoryLabel = categoryLabel;
+            listGenerationQueued = true;
+            startWorker = !listGenerationRunning;
+            listGenerationRunning = true;
+        }
+        updateRefreshControlState();
+        if (startWorker) {
+            new Thread(() -> runQueuedListGenerations(), "AppListRefresh").start();
+        }
+    }
 
-        moreSettingsImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                moreSettingsImageButton.setAlpha(1f);
-                PopupMenu popupMenu = new PopupMenu(getLightPopupContext(Main.this), v);
-                popupMenu.inflate(R.menu.menu);
-                onPrepareMainOptionsMenu(popupMenu.getMenu(), true);
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        return onMainOptionsItemSelected(item);
-                    }
-                });
-                popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-                    @Override
-                    public void onDismiss(PopupMenu menu) {
-                        RotateAnimation animation =
-                                new RotateAnimation(45, 0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                        animation.setDuration(300);
-                        animation.setRepeatMode(RotateAnimation.REVERSE);
-                        animation.setFillAfter(true);
-                        moreSettingsImageButton.startAnimation(animation);
-                    }
-                });
-                RotateAnimation animation =
-                        new RotateAnimation(0, 45, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                animation.setDuration(300);
-                animation.setRepeatMode(RotateAnimation.REVERSE);
-                animation.setFillAfter(true);
-                moreSettingsImageButton.startAnimation(animation);
-                popupMenu.show();
+    private void runQueuedListGenerations() {
+        while (true) {
+            final String filter;
+            final int sortRule;
+            final String categoryLabel;
+            final int generation;
+            synchronized (listGenerationLock) {
+                if (!listGenerationQueued) {
+                    listGenerationRunning = false;
+                    updateRefreshControlState();
+                    return;
+                }
+                generation = mListGeneration.get();
+                filter = queuedFilter;
+                sortRule = queuedSortRule;
+                categoryLabel = queuedCategoryLabel;
+                listGenerationQueued = false;
+                queuedFilter = null;
+                queuedCategoryLabel = null;
             }
+            try {
+                generateListNow(filter, sortRule, categoryLabel, generation);
+            } catch (Exception e) {
+                // The package list and the icons behind it come from binder calls into
+                // system_server. While the system restarts they answer with DeadSystemException,
+                // and a list whose parcel stops half way arrives as "Failure retrieving array".
+                // This thread is bare, so anything thrown on it reaches the default handler, which
+                // writes a crash log and calls Process.killProcess - a system hiccup took the whole
+                // app down and offered to upload a log on the next launch. Drop the pass instead;
+                // the next broadcast or the next launch asks again. Errors stay fatal on purpose:
+                // an OutOfMemoryError building 556 rows is not something to carry on from.
+                e.printStackTrace();
+                restoreListAfterFailedGeneration();
+            }
+        }
+    }
+
+    /**
+     * A rebuild hides the list behind the progress bar before it starts, so a pass that dies has
+     * to put the screen back itself or the spinner turns forever over an empty container. No toast:
+     * showing one is a binder call too, and the system is the thing that just failed.
+     */
+    private void restoreListAfterFailedGeneration() {
+        if (isFinishing()) return;
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            final ProgressBar progressBar = findViewById(R.id.progressBar);
+            final TextView loadingProgressTextView = findViewById(R.id.main_loading_progress_textView);
+            final FrameLayout layout2 = findViewById(R.id.layout2);
+            final FrameLayout appListFragmentContainer =
+                    findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            if (loadingProgressTextView != null) loadingProgressTextView.setVisibility(View.GONE);
+            if (layout2 != null) layout2.setVisibility(View.GONE);
+            if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.VISIBLE);
+            updateRefreshControlState();
         });
+    }
+
+    private void generateListNow(String filter, int sortRule, String categoryLabel, int generation) {
+        final ArrayList<Map<String, Object>> AppList = new ArrayList<>();
+        final Context applicationContext = getApplicationContext();
 
         if (isFinishing()) return;
 
         runOnUiThread(() -> {
+            if (generation != mListGeneration.get() || isFinishing()) return;
+
+            final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+            final ProgressBar progressBar = findViewById(R.id.progressBar);
+            final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
+            final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+            final FrameLayout linearLayout = findViewById(R.id.layout2);
 
             int floatingButtonBackground = Build.VERSION.SDK_INT >= 21 ?
                     (isGridMode ? R.drawable.oval_ripple_grid : R.drawable.oval_ripple) :
                     getThemeFabDotBackground(Main.this);
-            moreSettingsImageButton.setBackgroundResource(floatingButtonBackground);
-            selectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
+            if (mMoreSettingsImageButton != null) {
+                mMoreSettingsImageButton.setBackgroundResource(floatingButtonBackground);
+            }
+            if (mSelectionActionsImageButton != null) {
+                mSelectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
+            }
 
-            linearLayout.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.VISIBLE);
-            main_loading_progress_textView.setVisibility(View.VISIBLE);
-            appListFragmentContainer.setVisibility(View.GONE);
-            main_loading_progress_textView.setText(R.string.loadingPkgList);
-            if (noCaution.getValue(applicationContext)) {
-                mainCautionTextView.setVisibility(View.GONE);
+            if (linearLayout != null) linearLayout.setVisibility(View.VISIBLE);
+            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+            if (main_loading_progress_textView != null) {
+                main_loading_progress_textView.setVisibility(View.VISIBLE);
+                main_loading_progress_textView.setText(R.string.loadingPkgList);
+            }
+            if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.GONE);
+            if (mainCautionTextView != null) {
+                if (noCaution.getValue(applicationContext)) {
+                    mainCautionTextView.setVisibility(View.GONE);
+                } else {
+                    mainCautionTextView.setVisibility(View.VISIBLE);
+                }
             }
         });
 
@@ -616,19 +1024,25 @@ public class Main extends FreezeYouBaseActivity {
                 break;
             case "OO":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sAutoFreezeApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sAutoFreezeApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "OOU":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sOneKeyUFApplicationList), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sOneKeyUFApplicationList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
             case "FOQ":
                 oneKeyListCheckAndGenerate(
-                        new AppPreferences(applicationContext).getString(getString(R.string.sFreezeOnceQuit), ""),
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sFreezeOnceQuit), ""),
+                        AppList);
+                checkAndAddNotAvailablePair(AppList);
+                break;
+            case "APPLOCK":
+                oneKeyListCheckAndGenerate(
+                        new DefaultMultiProcessMMKVStorage().getString(getString(R.string.sAppLockList), ""),
                         AppList);
                 checkAndAddNotAvailablePair(AppList);
                 break;
@@ -693,6 +1107,8 @@ public class Main extends FreezeYouBaseActivity {
             case "RUN_SYS":
             case "RUN_USER":
                 Set<String> runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
+                Map<String, RunningAppsUtils.ResourceUsage> runningUsage =
+                        RunningAppsUtils.getResourceUsage(applicationContext, runningPackages);
                 for (int i = 0; i < size; i++) {
                     packageInfo1 = packageInfo.get(i);
                     if (RestoreUtils.isAppUninstalled(packageInfo1.applicationInfo)) continue;
@@ -709,6 +1125,10 @@ public class Main extends FreezeYouBaseActivity {
                                 saveIconCache
                         );
                         if (keyValuePair != null) {
+                            RunningAppsUtils.ResourceUsage usage = runningUsage.get(packageInfo1.packageName);
+                            keyValuePair.put("RunningStats", RunningAppsUtils.formatResourceUsage(
+                                    applicationContext, usage));
+                            keyValuePair.put("RunningUsage", usage);
                             AppList.add(keyValuePair);
                         }
                     }
@@ -726,7 +1146,10 @@ public class Main extends FreezeYouBaseActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                main_loading_progress_textView.setText(R.string.sorting);
+                TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+                if (main_loading_progress_textView != null) {
+                    main_loading_progress_textView.setText(R.string.sorting);
+                }
             }
         });
 
@@ -734,6 +1157,14 @@ public class Main extends FreezeYouBaseActivity {
             switch (sortRule) {
                 case SORT_BY_DEFAULT:
                     setSortByDefault(AppList);
+                    break;
+                case SORT_BY_RUNNING_RAM:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, RunningAppsSortControl.createRamComparator(Collator.getInstance()));
+                    break;
+                case SORT_BY_RUNNING_CPU:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, RunningAppsSortControl.createCpuComparator(Collator.getInstance()));
                     break;
                 case SORT_BY_UF_ASCENDING:
                     setSortByDefault(AppList);
@@ -955,11 +1386,22 @@ public class Main extends FreezeYouBaseActivity {
 
             }
         }
-        if (isFinishing()) return;
+        if (generation != mListGeneration.get() || isFinishing()) return;
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (generation != mListGeneration.get() || isFinishing()) return;
+
+                updateFilterTitle(filter);
+                mCurrentUnfilteredAppList = AppList;
+
+                final EditText search_editText = findViewById(R.id.search_editText);
+                final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);
+                final ProgressBar progressBar = findViewById(R.id.progressBar);
+                final TextView mainCautionTextView = findViewById(R.id.main_caution_textView);
+                final TextView main_loading_progress_textView = findViewById(R.id.main_loading_progress_textView);
+                final FrameLayout linearLayout = findViewById(R.id.layout2);
 
                 final MainAppListSimpleAdapter adapter =
                         mMainActivityAppListFragment.setAppListAdapter(
@@ -969,26 +1411,38 @@ public class Main extends FreezeYouBaseActivity {
                         );
 
 
-                search_editText.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
+                if (search_editText != null) {
+                    if (mSearchTextWatcher != null) {
+                        search_editText.removeTextChangedListener(mSearchTextWatcher);
                     }
-
-                    @Override
-                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                        if (TextUtils.isEmpty(charSequence)) {
-                            adapter.replaceAllInFormerArrayList(AppList);
-                        } else {
-                            adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
+                    mSearchTextWatcher = new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                         }
-                    }
 
-                    @Override
-                    public void afterTextChanged(Editable editable) {
+                        @Override
+                        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                            if (TextUtils.isEmpty(charSequence)) {
+                                adapter.replaceAllInFormerArrayList(AppList);
+                            } else {
+                                adapter.replaceAllInFormerArrayList(processListFilter(charSequence, AppList));
+                            }
+                            if (currentSelectionActionMode != null) {
+                                updateRestoreMenuVisibility(currentSelectionActionMode.getMenu());
+                            }
+                        }
 
+                        @Override
+                        public void afterTextChanged(Editable editable) {
+                        }
+                    };
+                    search_editText.addTextChangedListener(mSearchTextWatcher);
+
+                    CharSequence currentQuery = search_editText.getText();
+                    if (!TextUtils.isEmpty(currentQuery)) {
+                        adapter.replaceAllInFormerArrayList(processListFilter(currentQuery, AppList));
                     }
-                });
+                }
 
                 main_loading_progress_textView.setText(R.string.finish);
                 progressBar.setVisibility(View.GONE);
@@ -996,6 +1450,7 @@ public class Main extends FreezeYouBaseActivity {
                 main_loading_progress_textView.setVisibility(View.GONE);
                 linearLayout.setVisibility(View.GONE);
                 appListFragmentContainer.setVisibility(View.VISIBLE);
+                updateRefreshControlState();
 
                 currentMultiChoiceModeListener = new AbsListView.MultiChoiceModeListener() {
                     @Override
@@ -1023,7 +1478,7 @@ public class Main extends FreezeYouBaseActivity {
                     @Override
                     public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
                         currentSelectionActionMode = actionMode;
-                        selectionActionsImageButton.setVisibility(View.VISIBLE);
+                        if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.VISIBLE);
                         Main.this.getMenuInflater().inflate(R.menu.multichoicemenu, menu);
                         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
                         if (restoreItem != null) restoreItem.setVisible(false);
@@ -1086,52 +1541,15 @@ public class Main extends FreezeYouBaseActivity {
                                         showAddNewUserDefinedClassificationDialog();
                                         return true;
                                     default:
-                                        boolean isInRemoveMode =
+                                        final boolean isInRemoveMode =
                                                 menuItem.getGroupId()
                                                         == R.id.list_menu_groupItem_removeFromUserDefined_menuGroup;
-                                        String title = menuItem.getTitle().toString();
-                                        String existsPkgs = "";
-                                        SQLiteDatabase userDefinedDb = openOrCreateDatabase("userDefinedCategories", Context.MODE_PRIVATE, null);
-                                        userDefinedDb.execSQL(
-                                                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-                                        );
-                                        Cursor cursor =
-                                                userDefinedDb.query(
-                                                        "categories",
-                                                        new String[]{"packages"},
-                                                        "label = '" + Base64.encodeToString(title.getBytes(), Base64.DEFAULT) + "'",
-                                                        null, null, null, null
-                                                );
-
-                                        if (cursor.moveToFirst()) {
-                                            existsPkgs =
-                                                    cursor.getString(
-                                                            cursor.getColumnIndex("packages")
-                                                    );
-                                        }
-
-                                        int size = selectedPackages.size();
-                                        for (int i = 0; i < size; i++) {
-                                            if (isInRemoveMode) {
-                                                existsPkgs = OneKeyListUtils.removePkgFromPkgNames(
-                                                        existsPkgs, selectedPackages.get(i)
-                                                );
-                                            } else {
-                                                existsPkgs = OneKeyListUtils.addPkgToPkgNames(
-                                                        existsPkgs, selectedPackages.get(i)
-                                                );
-                                            }
-                                        }
-                                        userDefinedDb.execSQL(
-                                                "UPDATE categories SET packages = '"
-                                                        + existsPkgs
-                                                        + "' WHERE label = '"
-                                                        + Base64.encodeToString(title.getBytes(), Base64.DEFAULT)
-                                                        + "';"
-                                        );
-                                        cursor.close();
-                                        userDefinedDb.close();
-                                        showToast(Main.this, isInRemoveMode ? R.string.removed : R.string.added);
+                                        final String title = menuItem.getTitle().toString();
+                                        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+                                        final Context appContext = getApplicationContext();
+                                        new Thread(() -> updateUserDefinedCategoryFromSelection(
+                                                appContext, title, packages, isInRemoveMode),
+                                                "UserDefinedCategoryMutation").start();
                                         return true;
                                 }
                             default:
@@ -1175,6 +1593,9 @@ public class Main extends FreezeYouBaseActivity {
                                     case R.id.list_menu_addToFreezeOnceQuit:
                                         processAddToOneKeyList(getString(R.string.sFreezeOnceQuit));
                                         return true;
+                                    case R.id.list_menu_addToAppLockList:
+                                        processAddToOneKeyList(getString(R.string.sAppLockList));
+                                        return true;
                                     case R.id.list_menu_removeFromOneKeyFreezeList:
                                         processRemoveFromOneKeyList(getString(R.string.sAutoFreezeApplicationList));
                                         return true;
@@ -1183,6 +1604,9 @@ public class Main extends FreezeYouBaseActivity {
                                         return true;
                                     case R.id.list_menu_removeFromFreezeOnceQuit:
                                         processRemoveFromOneKeyList(getString(R.string.sFreezeOnceQuit));
+                                        return true;
+                                    case R.id.list_menu_removeFromAppLockList:
+                                        processRemoveFromOneKeyList(getString(R.string.sAppLockList));
                                         return true;
                                     case R.id.list_menu_freezeImmediately:
                                         confirmIfCriticalSelectedThenRun(false, () -> {
@@ -1216,32 +1640,25 @@ public class Main extends FreezeYouBaseActivity {
                                         return true;
                                     }
                                     case R.id.list_menu_createDisEnableShortCut:
+                                        if (selectedPackages.isEmpty()) {
+                                            return true;
+                                        }
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                             ShortcutManager mShortcutManager =
                                                     Main.this.getSystemService(ShortcutManager.class);
                                             if (mShortcutManager != null && mShortcutManager.isRequestPinShortcutSupported()) {
-                                                shortcutsCount = selectedPackages.size() - 1;
-                                                if (shortcutsCount >= 0) {
-                                                    String pkgName = selectedPackages.get(shortcutsCount);
-                                                    createShortCut(
-                                                            getApplicationLabel(Main.this, null, null, pkgName),
-                                                            pkgName,
-                                                            getApplicationIcon(
-                                                                    Main.this,
-                                                                    pkgName,
-                                                                    getApplicationInfoFromPkgName(pkgName, Main.this),
-                                                                    false),
-                                                            Freeze.class,
-                                                            "FreezeYou! " + pkgName,
-                                                            Main.this
-                                                    );
-                                                }
-                                                shortcutsCompleted = (shortcutsCount <= 0);
+                                                // One system dialog per package, and each one takes
+                                                // this activity off screen, so the rest of the batch
+                                                // is continued from onResume against a snapshot the
+                                                // selection mode cannot clear.
+                                                mPendingShortcutPackages = new ArrayList<>(selectedPackages);
+                                                mPendingShortcutIndex = 0;
+                                                requestNextPinShortcut();
                                             } else {
-                                                createFUFShortcutsBatch();
+                                                createFUFShortcutsBatch(new ArrayList<>(selectedPackages));
                                             }
                                         } else {
-                                            createFUFShortcutsBatch();
+                                            createFUFShortcutsBatch(new ArrayList<>(selectedPackages));
                                         }
                                         return true;
                                     case R.id.list_menu_copyAfterBeingFormatted:
@@ -1264,14 +1681,30 @@ public class Main extends FreezeYouBaseActivity {
 
                     @Override
                     public void onDestroyActionMode(ActionMode actionMode) {
-                        selectedPackages.clear();
+                        // A configuration swap tears the action mode down for its own reasons; the
+                        // selection was not cancelled by the user and is restored below.
+                        if (!mRestoreSelectionAfterFragmentRebuild) {
+                            selectedPackages.clear();
+                            // Leaving the selection mode also cancels an unfinished shortcut batch:
+                            // the snapshot is dropped here, so the next resume finds nothing left
+                            // to pin.
+                            mPendingShortcutPackages = null;
+                            mPendingShortcutIndex = 0;
+                            mIsBatchUninstallChecking = false;
+                        }
                         currentSelectionActionMode = null;
-                        selectionActionsImageButton.setVisibility(View.GONE);
+                        if (mSelectionActionsImageButton != null) mSelectionActionsImageButton.setVisibility(View.GONE);
                     }
                 };
                 mMainActivityAppListFragment.setMultiChoiceModeListener(currentMultiChoiceModeListener);
 
-                selectionActionsImageButton.setOnClickListener(v -> {
+                if (mRestoreSelectionAfterFragmentRebuild) {
+                    mRestoreSelectionAfterFragmentRebuild = false;
+                    restoreCheckedSelection(adapter);
+                }
+
+                if (mSelectionActionsImageButton != null) {
+                    mSelectionActionsImageButton.setOnClickListener(v -> {
                     if (currentSelectionActionMode == null || currentMultiChoiceModeListener == null) {
                         return;
                     }
@@ -1280,11 +1713,16 @@ public class Main extends FreezeYouBaseActivity {
                     currentMultiChoiceModeListener.onPrepareActionMode(currentSelectionActionMode, popupMenu.getMenu());
                     popupMenu.setOnMenuItemClickListener(item ->
                             currentMultiChoiceModeListener.onActionItemClicked(currentSelectionActionMode, item));
+                    popupMenu.setOnDismissListener(menu -> {
+                        if (mActivePopupMenu == popupMenu) {
+                            mActivePopupMenu = null;
+                        }
+                    });
+                    mActivePopupMenu = popupMenu;
                     popupMenu.show();
                 });
+                }
 
-            }
-        });
 
         mMainActivityAppListFragment.setOnAppListItemClickListener((adapterView, view, i, l) -> {
             Map<String, Object> map =
@@ -1312,20 +1750,26 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case APPListViewOnClickMode_autoUFOrFreeze:
                         if (realGetFrozenStatus(Main.this, pkgName, null)) {
+                            // Unfreezing is the way back to a missing status bar or keyboard, so it
+                            // stays a single tap.
                             processSingleActionInProcess(
                                     Main.this, pkgName, null, null,
                                     false, false, false);
                         } else {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         }
                         break;
                     case APPListViewOnClickMode_freezeImmediately:
                         if (!realGetFrozenStatus(Main.this, pkgName, null)) {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         } else {
                             if (!lesserToast.getValue(null)) {
                                 showToast(Main.this, R.string.freezeCompleted);
@@ -1362,28 +1806,42 @@ public class Main extends FreezeYouBaseActivity {
                                     Main.this, pkgName, null, null,
                                     false, true, false);
                         } else {
-                            processSingleActionInProcess(
-                                    Main.this, pkgName, null, null,
-                                    true, false, false);
+                            confirmIfCriticalPackagesThenRun(
+                                    Collections.singletonList(pkgName), false,
+                                    () -> processSingleActionInProcess(
+                                            Main.this, pkgName, null, null,
+                                            true, false, false));
                         }
                         break;
                     case APPListViewOnClickMode_addToOFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromOFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sAutoFreezeApplicationList), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_addToOUFList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromOUFList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sOneKeyUFApplicationList), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_addToFOQList:
-                        showToast(Main.this, addToOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                addToOneKeyList(applicationContext, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.added : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_removeFromFOQList:
-                        showToast(Main.this, removeFromOneKeyList(Main.this, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed);
+                        new Thread(() -> showToast(Main.this,
+                                removeFromOneKeyList(applicationContext, getString(R.string.sFreezeOnceQuit), pkgName) ? R.string.removed : R.string.failed),
+                                "OneKeyListMutation").start();
                         break;
                     case APPListViewOnClickMode_createFUFShortcut:
                         checkSettingsAndRequestCreateShortcut(
@@ -1401,6 +1859,8 @@ public class Main extends FreezeYouBaseActivity {
                     default:
                         break;
                 }
+            }
+        });
             }
         });
     }
@@ -1442,7 +1902,7 @@ public class Main extends FreezeYouBaseActivity {
                     shareCrashLog(logFile, logText);
                     checkIfNeedAskFirstTimeSetupAndShowDialog();
                 })
-                .setNegativeButton(R.string.no, (dialogInterface, i) -> {
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
                     logFile.delete();
                     checkIfNeedAskFirstTimeSetupAndShowDialog();
                 })
@@ -1477,11 +1937,51 @@ public class Main extends FreezeYouBaseActivity {
         );
     }
 
+    /**
+     * Resolves the list/grid mode for the given pattern. The automatic pattern follows the
+     * orientation, and only falls back to the aspect ratio when the configuration has none
+     * (for example in freeform windows).
+     */
+    public static boolean resolveGridMode(String pattern, int orientation, int width, int height) {
+        if ("grid".equals(pattern)) {
+            return true;
+        }
+        if ("list".equals(pattern)) {
+            return false;
+        }
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return true;
+        }
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            return false;
+        }
+        return height > 0 && width > height * 1.2;
+    }
+
+    public static boolean isPackageChangeAction(String action) {
+        return Intent.ACTION_PACKAGE_ADDED.equals(action)
+                || Intent.ACTION_PACKAGE_REMOVED.equals(action)
+                || Intent.ACTION_PACKAGE_REPLACED.equals(action);
+    }
+
+    public static boolean shouldDropPackageFromSelectionOnRemoval(String action, boolean isReplacing) {
+        return Intent.ACTION_PACKAGE_REMOVED.equals(action) && !isReplacing;
+    }
+
     private void go() {
         if (updateFrozenStatusBroadcastReceiver == null) {
             updateFrozenStatusBroadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    if (intent == null) {
+                        return;
+                    }
+                    // An intent aimed at somebody else is not ours to answer. A missing target is
+                    // allowed on purpose: the senders outside Main do not name a package, and on
+                    // every Android version the registration above already keeps them to this app.
+                    if (intent.getPackage() != null && !Main.this.getPackageName().equals(intent.getPackage())) {
+                        return;
+                    }
                     if (intent.getBooleanExtra("uninstallSuccess", false)) {
                         showUninstallCompletedDialog(
                                 intent.getStringExtra("appName"),
@@ -1489,12 +1989,11 @@ public class Main extends FreezeYouBaseActivity {
                                 intent.getIntExtra("batchCount", -1)
                         );
                     }
-                    if (intent.getBooleanExtra("refreshAppList", false)) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                    } else if (currentFilter != null && currentFilter.startsWith("RUN")) {
-                        // Freezing or force-stopping an app can remove it from the
-                        // Running list; a plain icon-status patch wouldn't drop it,
-                        // so re-run the filter to re-query the running package set.
+                    if (intent.getBooleanExtra("refreshAppList", false)
+                            || isStatusDependentFilter(currentFilter)) {
+                        // A status change can add or remove the row from a status-dependent list
+                        // (frozen, unfrozen, running), so the filter has to be re-run; patching
+                        // the dot in place would leave the app in a list it no longer matches.
                         new Thread(() -> generateList(currentFilter)).start();
                     } else {
                         // A single action names its package; re-checking every row costs two
@@ -1505,7 +2004,69 @@ public class Main extends FreezeYouBaseActivity {
             };
             IntentFilter filter = new IntentFilter("cf.playhi.freezeyou.action.packageStatusChanged");
             filter.addAction("cf.playhi.freezeyou.action.packageStatusChanged");
-            this.registerReceiver(updateFrozenStatusBroadcastReceiver, filter);
+            // Everything this receiver reacts to is sent by this app. Exporting it let any local
+            // application rebuild the whole list or pop the uninstall-completed dialog. The flag
+            // is not version-gated: below Android 13 ContextCompat registers the receiver behind
+            // the app's own signature permission, so the sender restriction holds there too, while
+            // the broadcasts this app sends itself still arrive.
+            ContextCompat.registerReceiver(
+                    Main.this,
+                    updateFrozenStatusBroadcastReceiver,
+                    filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            );
+        }
+
+        if (mPackageChangeReceiver == null) {
+            mPackageChangeReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null) {
+                        return;
+                    }
+                    String action = intent.getAction();
+                    if (!isPackageChangeAction(action)) {
+                        return;
+                    }
+                    if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+                        boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
+                        Uri data = intent.getData();
+                        String pkgName = data == null ? null : data.getSchemeSpecificPart();
+                        if (shouldDropPackageFromSelectionOnRemoval(action, replacing)
+                                && pkgName != null
+                                && selectedPackages.contains(pkgName)) {
+                            selectedPackages.remove(pkgName);
+                            if (currentSelectionActionMode != null) {
+                                if (selectedPackages.isEmpty()) {
+                                    // Nothing is left to act on, so an empty action bar would
+                                    // only offer actions against no packages.
+                                    currentSelectionActionMode.finish();
+                                } else {
+                                    currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
+                                    Menu menu = currentSelectionActionMode.getMenu();
+                                    if (menu != null) {
+                                        updateRestoreMenuVisibility(menu);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Installed, updated or removed outside this app: nothing has refreshed the
+                    // rows' membership, labels or icons yet.
+                    new Thread(() -> generateList(currentFilter)).start();
+                }
+            };
+            IntentFilter packageChangeFilter = new IntentFilter();
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+            packageChangeFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+            packageChangeFilter.addDataScheme("package");
+            ContextCompat.registerReceiver(
+                    Main.this,
+                    mPackageChangeReceiver,
+                    packageChangeFilter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            );
         }
 
         TasksUtils.checkTimeTasks(this);
@@ -1515,9 +2076,7 @@ public class Main extends FreezeYouBaseActivity {
         if (sharedPref.getBoolean(saveOnClickFunctionStatus.name(), saveOnClickFunctionStatus.defaultValue())) {
             appListViewOnClickMode = sharedPref.getInt("onClickFunctionStatus", APPListViewOnClickMode_chooseAction);
         }
-        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
-            currentSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
-        }
+        restoreSortMethodStatus();
         if (!sharedPref.getBoolean(noCaution.name(), noCaution.defaultValue())) {
             buildAlertDialog(Main.this, R.mipmap.ic_launcher_new_round, R.string.cautionContent, R.string.caution)
                     .setPositiveButton(android.R.string.ok, (dialogInterface, ii) -> {
@@ -1531,27 +2090,30 @@ public class Main extends FreezeYouBaseActivity {
 
         String mainPattern =
                 sharedPref.getString(mainActivityPattern.name(), mainActivityPattern.defaultValue());
-        if (mainActivityPattern.defaultValue().equals(mainPattern)) {
-            isGridMode =
-                    getWindowManager().getDefaultDisplay().getWidth()
-                            > getWindowManager().getDefaultDisplay().getHeight() * 1.2;
-        } else {
-            isGridMode = "grid".equals(mainPattern);
-        }
-        if (mMainActivityAppListFragment == null) {
-            mMainActivityAppListFragment = new MainActivityAppListFragment();
-            mMainActivityAppListFragment.setUseGridMode(isGridMode);
-        }
+        isGridMode = resolveGridMode(
+                mainPattern,
+                getResources().getConfiguration().orientation,
+                getWindowManager().getDefaultDisplay().getWidth(),
+                getWindowManager().getDefaultDisplay().getHeight()
+        );
+        mMainActivityAppListFragment = new MainActivityAppListFragment();
+        mMainActivityAppListFragment.setUseGridMode(isGridMode);
 
+        // replace(), not add(): after recreate() the FragmentManager has already restored the
+        // previous list fragment into this container, and add() stacked a second one on top of it.
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment);
+        fragmentTransaction.replace(R.id.main_appList_fragmentContainer_frameLayout, mMainActivityAppListFragment);
         fragmentTransaction.commit();
 
         Thread initThread;
         initThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                if (restoreFilterFromSavedState) {
+                    generateList(currentFilter);
+                    return;
+                }
                 String mode = getIntent().getStringExtra("pkgName");
                 if (mode == null) {
                     mode = launchMode.getValue(Main.this);
@@ -1585,6 +2147,9 @@ public class Main extends FreezeYouBaseActivity {
                         break;
                     case "FOQ":
                         generateList("FOQ");
+                        break;
+                    case "APPLOCK":
+                        generateList("APPLOCK");
                         break;
                     case "UFU":
                         generateList("UFU");
@@ -1687,43 +2252,114 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
+    /**
+     * Re-checks the rows that were selected before a configuration swap rebuilt the list. Checking
+     * an item in a modal-choice list starts the selection action mode by itself, so the checked
+     * state and its controls come back together. The listener reports every check it receives;
+     * the membership is left alone because the selection is exactly what is being restored.
+     */
+    private void restoreCheckedSelection(MainAppListSimpleAdapter adapter) {
+        if (selectedPackages.isEmpty() || mMainActivityAppListFragment == null) {
+            return;
+        }
+        ArrayList<Map<String, Object>> rows = adapter.getStoredArrayList();
+        // The selection is carried by checked rows. An application the active search hides has no
+        // row to restore, and leaving it in the list would keep it in batch actions without
+        // anything on screen showing it is still selected.
+        Set<String> visiblePackages = new HashSet<>();
+        for (Map<String, Object> row : rows) {
+            visiblePackages.add((String) row.get("PackageName"));
+        }
+        selectedPackages.retainAll(visiblePackages);
+        if (selectedPackages.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            if (selectedPackages.contains((String) rows.get(i).get("PackageName"))) {
+                needProcessOnItemCheckedStateChanged = false;
+                mMainActivityAppListFragment.setItemChecked(i, true);
+            }
+        }
+        if (currentSelectionActionMode != null) {
+            currentSelectionActionMode.setTitle(Integer.toString(selectedPackages.size()));
+            updateRestoreMenuVisibility(currentSelectionActionMode.getMenu());
+        }
+    }
+
+    public static boolean canForceStop(boolean installedAppActionsVisible, boolean hasUnfrozenSelection) {
+        return installedAppActionsVisible && hasUnfrozenSelection;
+    }
+
+    public static List<String> filterForceStopTargets(List<String> selectedPackages, Set<String> frozenPackageSet) {
+        List<String> targetPackages = new ArrayList<>();
+        if (selectedPackages == null) {
+            return targetPackages;
+        }
+        for (String pkg : selectedPackages) {
+            if (frozenPackageSet == null || !frozenPackageSet.contains(pkg)) {
+                targetPackages.add(pkg);
+            }
+        }
+        return targetPackages;
+    }
+
+    public static boolean hasUnfrozenPackage(Set<String> selectedPackages, List<Map<String, Object>> packageRows) {
+        if (selectedPackages == null || packageRows == null) {
+            return false;
+        }
+        for (Map<String, Object> row : packageRows) {
+            String packageName = (String) row.get("PackageName");
+            if (selectedPackages.contains(packageName) && !Boolean.TRUE.equals(row.get("Frozen"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasUninstalledSystemPackage(Set<String> selectedPackages, List<Map<String, Object>> packageRows) {
+        if (selectedPackages == null || packageRows == null) {
+            return false;
+        }
+        for (Map<String, Object> row : packageRows) {
+            String packageName = (String) row.get("PackageName");
+            if (selectedPackages.contains(packageName) && Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void updateRestoreMenuVisibility(Menu menu) {
         MenuItem restoreItem = menu.findItem(R.id.list_menu_restoreImmediately);
         if (restoreItem == null) return;
         boolean uninstalledSystemFilter = RestoreUtils.isRestoreFilter(currentFilter);
-        boolean eligible = uninstalledSystemFilter
+        boolean eligible = uninstalledSystemFilter && Build.VERSION.SDK_INT >= 26
                 && !selectedPackages.isEmpty()
                 && !selectedPackages.contains(getString(R.string.notAvailable));
         restoreItem.setVisible(eligible);
 
         // Saved one-key/custom lists can retain an uninstalled system package, so inspect the
-        // selected rows' cached flags rather than relying on the current filter alone.
+        // selected rows' cached flags rather than relying on the current filter alone. The
+        // adapter carries only the rows the search shows, so a selected package the query hides
+        // would otherwise drop out of the calculation and hide or expose the wrong actions.
         Set<String> selectedPackageSet = new HashSet<>(selectedPackages);
-        boolean hasUninstalledSystemSelection = false;
-        boolean hasUnfrozenSelection = false;
-        if (mMainActivityAppListFragment != null
+        List<Map<String, Object>> rows = mCurrentUnfilteredAppList;
+        if (rows == null
+                && mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedPackageSet.contains(packageName)) {
-                    if (Boolean.TRUE.equals(row.get("RestorableSystemApp"))) {
-                        hasUninstalledSystemSelection = true;
-                    }
-                    if (!Boolean.TRUE.equals(row.get("Frozen"))) {
-                        hasUnfrozenSelection = true;
-                    }
-                }
-            }
+            rows = ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList();
         }
+        boolean hasUninstalledSystemSelection = hasUninstalledSystemPackage(selectedPackageSet, rows);
+        boolean hasUnfrozenSelection = hasUnfrozenPackage(selectedPackageSet, rows);
         boolean installedAppActionsVisible = !uninstalledSystemFilter
                 && !hasUninstalledSystemSelection;
 
-        boolean canForceStop = installedAppActionsVisible && hasUnfrozenSelection;
+        boolean forceStopVisible = canForceStop(installedAppActionsVisible, hasUnfrozenSelection);
 
         menu.findItem(R.id.list_menu_freezeImmediately).setVisible(installedAppActionsVisible);
         menu.findItem(R.id.list_menu_UFImmediately).setVisible(installedAppActionsVisible);
-        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(canForceStop);
+        menu.findItem(R.id.list_menu_ForceStopImmediately).setVisible(forceStopVisible);
         menu.findItem(R.id.list_menu_createDisEnableShortCut).setVisible(installedAppActionsVisible);
         MenuItem uninstallItem = menu.findItem(R.id.list_menu_uninstallImmediately);
         if (uninstallItem != null) {
@@ -1731,67 +2367,117 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
-    private void processAddToOneKeyList(String string) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!addToOneKeyList(getApplicationContext(), string, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
+    private void processAddToOneKeyList(final String string) {
+        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+        final Context appContext = getApplicationContext();
+        new Thread(() -> {
+            final boolean added = addToOneKeyList(appContext, string, packages);
+            showToast(Main.this, added ? R.string.success : R.string.failed);
+            // A batch of protected applications is as unanswered as a single one, and the toast
+            // saying "success" is not the place the missing permission shows up.
+            if (added && appContext.getString(R.string.sAppLockList).equals(string)) {
+                showAppLockAccessibilityWarningIfOff(Main.this);
             }
-        }
-        showToast(Main.this, R.string.success);
+        }, "OneKeyListMutation").start();
     }
 
-    private void processRemoveFromOneKeyList(String s) {
-        int size = selectedPackages.size();
-        for (int i = 0; i < size; i++) {
-            if (!removeFromOneKeyList(getApplicationContext(), s, selectedPackages.get(i))) {
-                showToast(Main.this, selectedPackages.get(i) + getString(R.string.failed));
-            }
+    private void processRemoveFromOneKeyList(final String string) {
+        final ArrayList<String> packages = new ArrayList<>(selectedPackages);
+        final Context appContext = getApplicationContext();
+        new Thread(() -> showToast(Main.this,
+                removeFromOneKeyList(appContext, string, packages) ? R.string.success : R.string.failed),
+                "OneKeyListMutation").start();
+    }
+
+    private void updateUserDefinedCategoryFromSelection(
+            Context context, String title, ArrayList<String> packages, boolean remove) {
+        final String encodedTitle = Base64.encodeToString(title.getBytes(), Base64.DEFAULT);
+        // The helper reads the category under the same lock the per-app popup takes, so the two
+        // writers cannot overwrite each other's membership change with a stale copy.
+        final OneKeyListUtils.CategoryUpdate update = OneKeyListUtils.updateUserDefinedCategory(
+                context, encodedTitle, packages, remove);
+        if (update == null) {
+            return;
         }
-        showToast(Main.this, R.string.success);
+        showToast(Main.this, remove ? R.string.removed : R.string.added);
+        runOnUiThread(() -> {
+            // The list may have been opened before this worker committed: refresh it with the
+            // membership just written, but only while it still shows that category - the user
+            // may have opened another filter in the meantime. A later edit of the same category
+            // supersedes this one even if this callback happens to land after it.
+            if (isFinishing()
+                    || !encodedTitle.equals(currentCategoryLabel)
+                    || !OneKeyListUtils.isLatestCategoryUpdate(encodedTitle, update.revision)) {
+                return;
+            }
+            final int sortRule = currentSortRule;
+            new Thread(() -> {
+                if (isFinishing()
+                        || !encodedTitle.equals(currentCategoryLabel)
+                        || !OneKeyListUtils.isLatestCategoryUpdate(encodedTitle, update.revision)) {
+                    return;
+                }
+                generateList(update.packages, sortRule, encodedTitle);
+            }, "UserDefinedCategoryRefresh").start();
+        });
     }
 
     private void processDisableAndEnableImmediately(boolean freeze) {
+        Set<String> selectedSet = new HashSet<>(selectedPackages);
+        applyFrozenStateToRows(mCurrentUnfilteredAppList, selectedSet, freeze);
         if (mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            Set<String> selectedSet = new HashSet<>(selectedPackages);
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
-                if (selectedSet.contains(packageName)) {
-                    row.put("Frozen", freeze);
-                    row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
-                }
-            }
-            ((MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter()).notifyDataSetChanged();
+            MainAppListSimpleAdapter appListAdapter = (MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter();
+            applyFrozenStateToRows(appListAdapter.getStoredArrayList(), selectedSet, freeze);
+            appListAdapter.notifyDataSetChanged();
         }
         int size = selectedPackages.size();
         String[] pkgNameList = selectedPackages.toArray(new String[size]);
         FUFUtils.processBatchAction(Main.this, pkgNameList, freeze);
     }
 
+    /**
+     * The adapter holds only the rows the current search shows, so the unfiltered list is patched
+     * as well: clearing the query would otherwise bring the old status dots back.
+     */
+    private void applyFrozenStateToRows(List<Map<String, Object>> rows, Set<String> selectedSet, boolean freeze) {
+        if (rows == null) {
+            return;
+        }
+        for (Map<String, Object> row : rows) {
+            if (selectedSet.contains((String) row.get("PackageName"))) {
+                row.put("Frozen", freeze);
+                row.put("isFrozen", freeze ? customThemeDisabledDot : customThemeEnabledDot);
+            }
+        }
+    }
+
     private void processForceStopImmediately() {
         Set<String> frozenPackageSet = new HashSet<>();
-        if (mMainActivityAppListFragment != null
+        List<Map<String, Object>> rows = mCurrentUnfilteredAppList;
+        if (rows == null
+                && mMainActivityAppListFragment != null
                 && mMainActivityAppListFragment.getAppListAdapter() instanceof MainAppListSimpleAdapter) {
-            for (Map<String, Object> row : ((MainAppListSimpleAdapter)
-                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList()) {
-                String packageName = (String) row.get("PackageName");
+            rows = ((MainAppListSimpleAdapter)
+                    mMainActivityAppListFragment.getAppListAdapter()).getStoredArrayList();
+        }
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
                 if (Boolean.TRUE.equals(row.get("Frozen"))) {
-                    frozenPackageSet.add(packageName);
+                    frozenPackageSet.add((String) row.get("PackageName"));
                 }
             }
         }
-        List<String> targetPackages = new ArrayList<>();
-        for (String pkg : selectedPackages) {
-            if (!frozenPackageSet.contains(pkg)) {
-                targetPackages.add(pkg);
-            }
-        }
+        List<String> targetPackages = filterForceStopTargets(selectedPackages, frozenPackageSet);
         if (targetPackages.isEmpty()) {
             return;
         }
         String[] pkgNameList = targetPackages.toArray(new String[0]);
+        // No toast here on purpose: ForceStopUtils.forceStop is the one that learns whether the
+        // elevated shell was reachable, and it already reports "executed" or the failure. Saying
+        // "executed" up front would announce a success that may never happen, and would ignore
+        // the lesserToast preference that the real report respects.
         ServiceUtils.startService(
                 Main.this,
                 new Intent(Main.this, ForceStopService.class)
@@ -1800,7 +2486,7 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void processBatchUninstall() {
-        if (selectedPackages.isEmpty()) {
+        if (selectedPackages.isEmpty() || mIsBatchUninstallRunning || mIsBatchUninstallChecking) {
             return;
         }
 
@@ -1836,8 +2522,48 @@ public class Main extends FreezeYouBaseActivity {
             return;
         }
 
-        boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
-        boolean rootAvailable = !shizukuAvailable && FUFUtils.checkRootPermission();
+        final List<String> selectedSnapshot = new ArrayList<>(selectedPackages);
+
+        final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
+        if (shizukuAvailable) {
+            showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
+        } else {
+            mIsBatchUninstallChecking = true;
+            new Thread(() -> {
+                boolean root = false;
+                try {
+                    root = FUFUtils.checkRootPermission();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                } finally {
+                    final boolean rootAvailable = root;
+                    runOnUiThread(() -> {
+                        mIsBatchUninstallChecking = false;
+                        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) {
+                            return;
+                        }
+                        // The action mode is a new instance after a configuration swap restores
+                        // the selection, so identity cannot be compared here: the unchanged
+                        // package snapshot is the thing that says this result still applies.
+                        if (currentSelectionActionMode == null
+                                || !selectedPackages.equals(selectedSnapshot)) {
+                            return;
+                        }
+                        showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
+                    });
+                }
+            }, "BatchUninstallRootCheck").start();
+        }
+    }
+
+    private void showBatchUninstallDialog(
+            List<String> userApps,
+            List<String> systemAppsWithUpdates,
+            List<String> systemApps,
+            int totalFound,
+            boolean shizukuAvailable,
+            boolean rootAvailable) {
+
         boolean hasPrivilegedShell = shizukuAvailable || rootAvailable;
         int skippedSystemCount = systemAppsWithUpdates.size() + systemApps.size();
 
@@ -2026,6 +2752,7 @@ public class Main extends FreezeYouBaseActivity {
                         if (ok) {
                             successCount++;
                             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                                    .setPackage(getPackageName())
                                     .putExtra("pkgName", item.packageName)
                                     .putExtra("refreshAppList", false));
                         }
@@ -2135,31 +2862,52 @@ public class Main extends FreezeYouBaseActivity {
         startUnprivilegedUninstallQueue(userApps);
     }
 
+    /**
+     * A cancelled system uninstall prompt ends the whole batch: the user pressed back, and the
+     * prompts left in the queue would only trap them into confirming one package after another.
+     * The uninstaller reports RESULT_CANCELED by default though, so a removal that went through
+     * arrives looking exactly like a back press - the package has to still be installed before
+     * this may throw the rest of the queue away.
+     */
+    static boolean abortUninstallBatchOnCancel(int resultCode, boolean currentPkgStillInstalled) {
+        return resultCode == RESULT_CANCELED && currentPkgStillInstalled;
+    }
+
+    private boolean isPackageStillInstalled(String pkg) {
+        if (pkg == null) {
+            return false;
+        }
+        try {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
     private void startUnprivilegedUninstallQueue(List<String> userApps) {
         mUnprivilegedUninstallQueue.clear();
         mUnprivilegedUninstallQueue.addAll(userApps);
         mUnprivilegedUninstallSuccessCount = 0;
         mCurrentUnprivilegedUninstallPkg = null;
+        // The queue spans many activity results, so a second batch must not start over it.
+        mIsBatchUninstallRunning = true;
         processNextUnprivilegedUninstall();
     }
 
     private void processNextUnprivilegedUninstall() {
         if (mCurrentUnprivilegedUninstallPkg != null) {
-            boolean stillInstalled = true;
-            try {
-                getPackageManager().getPackageInfo(mCurrentUnprivilegedUninstallPkg, 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                stillInstalled = false;
-            }
-            if (!stillInstalled) {
+            if (!isPackageStillInstalled(mCurrentUnprivilegedUninstallPkg)) {
                 mUnprivilegedUninstallSuccessCount++;
             }
             mCurrentUnprivilegedUninstallPkg = null;
         }
 
         if (mUnprivilegedUninstallQueue.isEmpty()) {
+            mIsBatchUninstallRunning = false;
             showUninstallCompletedDialog(null, false, mUnprivilegedUninstallSuccessCount);
             sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
+                    .setPackage(getPackageName())
                     .putExtra("refreshAppList", true));
             new Thread(() -> generateList(currentFilter)).start();
             return;
@@ -2179,9 +2927,10 @@ public class Main extends FreezeYouBaseActivity {
 
     private AlertDialog mUninstallCompletedDialog = null;
     private volatile boolean mIsBatchUninstallRunning = false;
+    private volatile boolean mIsBatchUninstallChecking = false;
 
     private void showUninstallCompletedDialog(String appName, boolean updatesOnly, int batchCount) {
-        if (isFinishing() || isDestroyed()) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
             return;
         }
         if (hideUninstallSuccessDialog.getValue(this)) {
@@ -2237,6 +2986,37 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     /**
+     * Filters whose membership is decided by the package's current freeze state. A status
+     * broadcast can move an app in or out of them, so the list has to be rebuilt instead of
+     * patching the row's status dot.
+     */
+    public static boolean isStatusDependentFilter(String filter) {
+        if (filter == null) {
+            return false;
+        }
+        return filter.startsWith("RUN")
+                || "OF".equals(filter)
+                || "UF".equals(filter)
+                || "UFU".equals(filter);
+    }
+
+    private static final class FrozenStatusCheck {
+        final String packageName;
+        final Map<String, Object> row;
+        final boolean packageMissing;
+        final boolean restorableSystemApp;
+        final boolean frozen;
+
+        FrozenStatusCheck(String packageName, Map<String, Object> row, boolean packageMissing, boolean restorableSystemApp, boolean frozen) {
+            this.packageName = packageName;
+            this.row = row;
+            this.packageMissing = packageMissing;
+            this.restorableSystemApp = restorableSystemApp;
+            this.frozen = frozen;
+        }
+    }
+
+    /**
      * Updates application freeze status indicators in-place across the visible list adapter.
      *
      * <p><b>Scroll Position Preservation Rationale:</b><br>
@@ -2248,70 +3028,180 @@ public class Main extends FreezeYouBaseActivity {
      *
      * <p><b>Granular Row Targeting:</b><br>
      * When invoked with a specific {@code onlyPkgName} (such as from {@link #updateFrozenStatusBroadcastReceiver}
-     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), the loop terminates immediately
-     * after updating the matching package in memory, minimizing CPU overhead and preventing UI stutter.
+     * upon receiving {@code cf.playhi.freezeyou.action.packageStatusChanged}), only the rows of that
+     * package are looked up and updated in memory, minimizing CPU overhead and preventing UI stutter.
+     *
+     * <p><b>Off-UI Evaluation:</b><br>
+     * A full re-check costs two or three synchronous binder calls per installed package. On a
+     * device with hundreds of apps it used to hold the UI thread for the whole resume, so only the
+     * single-package path stays synchronous; the full list is evaluated on a worker and applied
+     * back on the UI thread.
      *
      * @param onlyPkgName target package name to refresh individually, or null to re-evaluate all rows (e.g. onResume)
      */
     private void updateFrozenStatus(String onlyPkgName) {
-
         if (mMainActivityAppListFragment == null) {
             return;
         }
 
         Adapter adapter = mMainActivityAppListFragment.getAppListAdapter();
-        if (adapter instanceof MainAppListSimpleAdapter) {
-            // Runs on every onResume, so coming back from the settings applies the switch at once.
-            ((MainAppListSimpleAdapter) adapter)
-                    .setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
-            PackageManager pm = getPackageManager();
-            int count = adapter.getCount();
-            for (int i = 0; i < count; i++) {
-                Map<String, Object> hm = ((MainAppListSimpleAdapter) adapter).getStoredArrayList().get(i);
-                String pkgName = (String) hm.get("PackageName");
-                if (onlyPkgName != null && !onlyPkgName.equals(pkgName)) {
-                    continue;
-                }
-                ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, this);
+        if (!(adapter instanceof MainAppListSimpleAdapter)) {
+            return;
+        }
+        final MainAppListSimpleAdapter appListAdapter = (MainAppListSimpleAdapter) adapter;
+        // Runs on every onResume, so coming back from the settings applies the switch at once.
+        appListAdapter.setGreyFrozenIcons(greyFrozenApplicationsIcons.getValue(this));
 
-                // Check if uninstalled
-                if (applicationInfo == null) {
-                    hm.put("Name", getString(R.string.uninstalled));
-                    continue;
-                }
+        if (onlyPkgName != null) {
+            mStatusPatchedDuringFullRefresh.add(onlyPkgName);
+            updateSingleRowFrozenStatus(appListAdapter, onlyPkgName);
+            return;
+        }
 
-                boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
-                boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
-                if (onlyPkgName != null && !mIsBatchUninstallRunning) {
-                    if (isUninstalled && !isRestoreFilter) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                        return;
-                    }
-                    if (isRestoreFilter && !isUninstalled) {
-                        new Thread(() -> generateList(currentFilter)).start();
-                        return;
-                    }
-                }
-
-                if (onlyPkgName != null) {
-                    hm.put("Name", getApplicationLabel(Main.this, pm, applicationInfo, pkgName));
-                    hm.put("Img", getApplicationIcon(Main.this, pkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this)));
-                }
-
-                boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
-                hm.put("RestorableSystemApp", restorable);
-                // Update frozen status dot and greyscale flag. Icon is not regenerated; greyscale is handled by adapter.
-                processFrozenStatus(hm, pkgName, pm);
-                if (restorable) {
-                    hm.put("isFrozen", customThemeDisabledDot);
-                    hm.put("Frozen", true);
-                }
-                if (onlyPkgName != null) {
-                    break;
+        final int generation = mListGeneration.get();
+        mStatusPatchedDuringFullRefresh.clear();
+        final int statusGeneration = mStatusRefreshGeneration.incrementAndGet();
+        final String notAvailable = getString(R.string.notAvailable);
+        // The adapter holds only the rows the search matches, while the selection menu and the
+        // force-stop batch read the flags from the unfiltered list behind it. Evaluating the
+        // hidden rows here too keeps both sources in step without waiting for a rebuild.
+        final Set<Map<String, Object>> seenRows =
+                Collections.newSetFromMap(new IdentityHashMap<>());
+        final ArrayList<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : appListAdapter.getStoredArrayList()) {
+            if (seenRows.add(row)) {
+                rows.add(row);
+            }
+        }
+        if (mCurrentUnfilteredAppList != null) {
+            for (Map<String, Object> row : mCurrentUnfilteredAppList) {
+                if (seenRows.add(row)) {
+                    rows.add(row);
                 }
             }
-            ((MainAppListSimpleAdapter) adapter).notifyDataSetChanged();
         }
+        new Thread(() -> {
+            final PackageManager pm = getPackageManager();
+            final ArrayList<FrozenStatusCheck> checks = new ArrayList<>(rows.size());
+            for (Map<String, Object> row : rows) {
+                String pkgName = (String) row.get("PackageName");
+                if (notAvailable.equals(pkgName)) {
+                    continue;
+                }
+                ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(pkgName, Main.this);
+                if (applicationInfo == null) {
+                    checks.add(new FrozenStatusCheck(pkgName, row, true, false, false));
+                    continue;
+                }
+                checks.add(new FrozenStatusCheck(
+                        pkgName,
+                        row,
+                        false,
+                        RestoreUtils.isRestorableSystemApp(applicationInfo),
+                        realGetFrozenStatus(Main.this, pkgName, pm)));
+            }
+            runOnUiThread(() -> {
+                if (isFinishing()
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())
+                        || generation != mListGeneration.get()
+                        || statusGeneration != mStatusRefreshGeneration.get()
+                        || mMainActivityAppListFragment == null
+                        || mMainActivityAppListFragment.getAppListAdapter() != appListAdapter) {
+                    return;
+                }
+                for (FrozenStatusCheck check : checks) {
+                    if (check.packageName != null
+                            && mStatusPatchedDuringFullRefresh.contains(check.packageName)) {
+                        continue;
+                    }
+                    if (check.packageMissing) {
+                        check.row.put("Name", getString(R.string.uninstalled));
+                        continue;
+                    }
+                    check.row.put("RestorableSystemApp", check.restorableSystemApp);
+                    // A restorable system app can only be restored, so it keeps the frozen look
+                    // even when the frozen flag itself is off.
+                    boolean frozen = check.frozen || check.restorableSystemApp;
+                    check.row.put("isFrozen", frozen ? customThemeDisabledDot : customThemeEnabledDot);
+                    check.row.put("Frozen", frozen);
+                }
+                appListAdapter.notifyDataSetChanged();
+            });
+        }).start();
+    }
+
+    /**
+     * The single-package path is cheap by construction: it evaluates the named package once and
+     * applies the result to every row that shows it, so it may stay on the calling thread. All
+     * duplicate rows are updated because the full snapshot skips the whole package by name.
+     */
+    private void updateSingleRowFrozenStatus(MainAppListSimpleAdapter appListAdapter, String onlyPkgName) {
+        final Set<Map<String, Object>> seenRows =
+                Collections.newSetFromMap(new IdentityHashMap<>());
+        final ArrayList<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> hm : appListAdapter.getStoredArrayList()) {
+            if (onlyPkgName.equals(hm.get("PackageName")) && seenRows.add(hm)) {
+                rows.add(hm);
+            }
+        }
+        // A package the search hides has no adapter row, but its flags still drive the selection
+        // menu and the force-stop batch, so the unfiltered rows are patched as well.
+        if (mCurrentUnfilteredAppList != null) {
+            for (Map<String, Object> hm : mCurrentUnfilteredAppList) {
+                if (onlyPkgName.equals(hm.get("PackageName")) && seenRows.add(hm)) {
+                    rows.add(hm);
+                }
+            }
+        }
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        ApplicationInfo applicationInfo = getApplicationInfoFromPkgName(onlyPkgName, this);
+        // Check if uninstalled
+        if (applicationInfo == null) {
+            for (Map<String, Object> hm : rows) {
+                hm.put("Name", getString(R.string.uninstalled));
+            }
+            appListAdapter.notifyDataSetChanged();
+            return;
+        }
+
+        boolean isUninstalled = RestoreUtils.isAppUninstalled(applicationInfo);
+        boolean isRestoreFilter = RestoreUtils.isRestoreFilter(currentFilter);
+        if (!mIsBatchUninstallRunning
+                && ((isUninstalled && !isRestoreFilter) || (isRestoreFilter && !isUninstalled))) {
+            new Thread(() -> generateList(currentFilter)).start();
+            return;
+        }
+
+        PackageManager pm = getPackageManager();
+        String name = getApplicationLabel(Main.this, pm, applicationInfo, onlyPkgName);
+        Drawable icon = getApplicationIcon(Main.this, onlyPkgName, applicationInfo, false, cacheApplicationsIcons.getValue(Main.this));
+        boolean restorable = RestoreUtils.isRestorableSystemApp(applicationInfo);
+        // A restorable system app can only be restored, so it keeps the frozen look. The icon is
+        // not regenerated; the greyscale filter is applied by the adapter.
+        boolean frozen = realGetFrozenStatus(Main.this, onlyPkgName, pm) || restorable;
+        int dot = frozen ? customThemeDisabledDot : customThemeEnabledDot;
+
+        for (Map<String, Object> hm : rows) {
+            // Each row needs its own instance: binding one animated drawable to two ImageViews
+            // replaces its callback and stops the animation on the first one.
+            hm.put("Img", copyDrawable(icon));
+            hm.put("Name", name);
+            hm.put("RestorableSystemApp", restorable);
+            hm.put("isFrozen", dot);
+            hm.put("Frozen", frozen);
+        }
+        appListAdapter.notifyDataSetChanged();
+    }
+
+    private static Drawable copyDrawable(Drawable drawable) {
+        if (drawable == null) {
+            return null;
+        }
+        Drawable.ConstantState state = drawable.getConstantState();
+        return state == null ? drawable : state.newDrawable().mutate();
     }
 
     private void saveOnClickFunctionStatus(int status) {
@@ -2322,10 +3212,45 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
+    private void restoreSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        synchronized (listGenerationLock) {
+            if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+                currentGeneralSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+                currentRunningSortRule = sharedPref.getInt("runningSortMethodStatus", SORT_BY_RUNNING_RAM);
+            }
+            currentSortRule = RunningAppsSortControl.resolveSortRuleForFilter(
+                    currentFilter, currentGeneralSortRule, currentRunningSortRule);
+        }
+    }
+
+    private int getSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            return sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+        }
+        return currentGeneralSortRule;
+    }
+
+    private int getRunningSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            return sharedPref.getInt("runningSortMethodStatus", SORT_BY_RUNNING_RAM);
+        }
+        return currentRunningSortRule;
+    }
+
     private void saveSortMethodStatus(int status) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (sharedPreferences.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
             sharedPreferences.edit().putInt("sortMethodStatus", status).apply();
+        }
+    }
+
+    private void saveRunningSortMethodStatus(int status) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if (sharedPreferences.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            sharedPreferences.edit().putInt("runningSortMethodStatus", status).apply();
         }
     }
 
@@ -2348,9 +3273,9 @@ public class Main extends FreezeYouBaseActivity {
                             R.mipmap.ic_launcher_new_round,
                             R.string.notUpdatedForALongTimeMessage,
                             R.string.notice)
-                            .setPositiveButton(R.string.yes, (dialogInterface, i) ->
+                            .setPositiveButton(R.string.okay, (dialogInterface, i) ->
                                     checkUpdate(Main.this))
-                            .setNegativeButton(R.string.no, null)
+                            .setNegativeButton(R.string.cancel, null)
                             .setNeutralButton(R.string.later, (dialog, which) -> {
                                 sharedPreferences.edit()
                                         .putLong("Time", new Date().getTime())
@@ -2364,11 +3289,14 @@ public class Main extends FreezeYouBaseActivity {
         }).start();
     }
 
-    private void createFUFShortcutsBatch() { // Android < 8.0
-        int sps = selectedPackages.size();
-        String pkgName;
-        for (int i = 0; i < sps; i++) {
-            pkgName = selectedPackages.get(i);
+    private void createFUFShortcutsBatch(List<String> targetPackages) { // Android < 8.0 and no pin support
+        if (targetPackages == null) {
+            return;
+        }
+        for (String pkgName : targetPackages) {
+            if (pkgName == null) {
+                continue;
+            }
             createShortCut(
                     getApplicationLabel(Main.this, null, null, pkgName),
                     pkgName,
@@ -2382,6 +3310,50 @@ public class Main extends FreezeYouBaseActivity {
                     Main.this
             );
         }
+    }
+
+    /**
+     * Pins the next package of the batch and steps the cursor forward. The system dialog this
+     * raises takes the activity off screen, so the call that matters is the one {@code onResume}
+     * makes when the user comes back, not the one running now.
+     */
+    private void requestNextPinShortcut() {
+        if (!hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            mPendingShortcutPackages = null;
+            mPendingShortcutIndex = 0;
+            return;
+        }
+        String pkgName = getNextPendingShortcutPackage(mPendingShortcutPackages, mPendingShortcutIndex);
+        mPendingShortcutIndex++;
+        if (pkgName != null) {
+            createShortCut(
+                    getApplicationLabel(Main.this, null, null, pkgName),
+                    pkgName,
+                    getApplicationIcon(
+                            Main.this,
+                            pkgName,
+                            getApplicationInfoFromPkgName(pkgName, Main.this),
+                            false),
+                    Freeze.class,
+                    "FreezeYou! " + pkgName,
+                    Main.this
+            );
+        }
+        if (!hasPendingShortcuts(mPendingShortcutPackages, mPendingShortcutIndex)) {
+            mPendingShortcutPackages = null;
+            mPendingShortcutIndex = 0;
+        }
+    }
+
+    static boolean hasPendingShortcuts(List<String> snapshot, int currentIndex) {
+        return snapshot != null && currentIndex >= 0 && currentIndex < snapshot.size();
+    }
+
+    static String getNextPendingShortcutPackage(List<String> snapshot, int currentIndex) {
+        if (snapshot == null || currentIndex < 0 || currentIndex >= snapshot.size()) {
+            return null;
+        }
+        return snapshot.get(currentIndex);
     }
 
     private void setSortByDefault(ArrayList<Map<String, Object>> AppList) {
@@ -2403,7 +3375,6 @@ public class Main extends FreezeYouBaseActivity {
         AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this);
         builder.setIcon(R.mipmap.ic_launcher_new_round);
         builder.setTitle(String.format(getString(R.string.welcomeToUseAppName), getString(R.string.app_name)));
-        builder.setMessage(String.format(getString(R.string.welcomeToUseAppName), getString(R.string.app_name)));
         builder.setPositiveButton(R.string.quickSetup, (dialogInterface, i) -> {
             startActivity(
                     new Intent(getApplicationContext(), FirstTimeSetupActivity.class)
@@ -2491,7 +3462,13 @@ public class Main extends FreezeYouBaseActivity {
             for (int i = 0; i < cursor.getCount(); i++) {
                 int id = cursor.getInt(cursor.getColumnIndex("_id"));
                 String title = cursor.getString(cursor.getColumnIndex("label"));
-                subMenu.add(groupId, id + idBase, id, new String(Base64.decode(title, Base64.DEFAULT)));
+                String decodedTitle;
+                try {
+                    decodedTitle = new String(Base64.decode(title, Base64.DEFAULT));
+                } catch (Exception e) {
+                    decodedTitle = title != null ? title : "";
+                }
+                subMenu.add(groupId, id + idBase, id, decodedTitle);
                 cursor.moveToNext();
             }
         }
@@ -2584,7 +3561,8 @@ public class Main extends FreezeYouBaseActivity {
                         null, null, null, null
                 );
         if (cursor.moveToFirst()) {
-            generateList(cursor.getString(cursor.getColumnIndex("packages")));
+            generateList(cursor.getString(cursor.getColumnIndex("packages")),
+                    getSortMethodStatus(), base64Label);
         } else {
             showToast(this, R.string.failed);
         }
@@ -2766,10 +3744,14 @@ public class Main extends FreezeYouBaseActivity {
                         startActivity(new Intent(this, AboutActivity.class));
                         return true;
                     case R.id.menu_oneKeyFreezeImmediately:
-                        startActivity(new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false));
+                        Intent oneKeyFreezeIntent = new Intent(this, OneKeyFreeze.class).putExtra("autoCheckAndLockScreen", false);
+                        ShortcutTokenUtils.attachToken(oneKeyFreezeIntent, ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE);
+                        startActivity(oneKeyFreezeIntent);
                         return true;
                     case R.id.menu_oneKeyUFImmediately:
-                        startActivity(new Intent(this, OneKeyUF.class));
+                        Intent oneKeyUFIntent = new Intent(this, OneKeyUF.class);
+                        ShortcutTokenUtils.attachToken(oneKeyUFIntent, ShortcutTokenUtils.ACTION_ONE_KEY_UF);
+                        startActivity(oneKeyUFIntent);
                         return true;
                     case R.id.menu_vM_onlyFrozen:
                         new Thread(new Runnable() {
@@ -2840,6 +3822,14 @@ public class Main extends FreezeYouBaseActivity {
                             @Override
                             public void run() {
                                 generateList("FOQ");
+                            }
+                        }).start();
+                        return true;
+                    case R.id.menu_vM_appLock:
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                generateList("APPLOCK");
                             }
                         }).start();
                         return true;
@@ -2936,107 +3926,6 @@ public class Main extends FreezeYouBaseActivity {
                         appListViewOnClickMode = APPListViewOnClickMode_createFUFShortcut;
                         saveOnClickFunctionStatus(appListViewOnClickMode);
                         return true;
-                    case R.id.menu_sB_default:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_DEFAULT);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_DEFAULT);
-                        return true;
-                    case R.id.menu_sB_no:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_NO);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_NO);
-                        return true;
-                    case R.id.menu_sB_uf_ascending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_UF_ASCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_UF_ASCENDING);
-                        return true;
-                    case R.id.menu_sB_uf_descending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_UF_DESCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_UF_DESCENDING);
-                        return true;
-                    case R.id.menu_sB_ff_ascending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_FF_ASCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_FF_ASCENDING);
-                        return true;
-                    case R.id.menu_sB_ff_descending:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_FF_DESCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_FF_DESCENDING);
-                        return true;
-                    case R.id.menu_sB_us_ascending:
-                        AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_US_ASCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_US_ASCENDING);
-                        return true;
-                    case R.id.menu_sB_us_descending:
-                        AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_US_DESCENDING);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_US_DESCENDING);
-                        return true;
-                    case R.id.menu_sB_alphabetical:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_ALPHABETICAL);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_ALPHABETICAL);
-                        return true;
-                    case R.id.menu_sB_last_install:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_LAST_INSTALLED);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_LAST_INSTALLED);
-                        return true;
-                    case R.id.menu_sB_last_update:
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                generateList(currentFilter, SORT_BY_LAST_UPDATED);
-                            }
-                        }).start();
-                        saveSortMethodStatus(SORT_BY_LAST_UPDATED);
-                        return true;
                     default:
                         return super.onOptionsItemSelected(item);
                 }
@@ -3049,8 +3938,17 @@ public class Main extends FreezeYouBaseActivity {
      * allowed — this only asks first, and only when such a package is actually in the selection.
      */
     private void confirmIfCriticalSelectedThenRun(boolean isUninstall, Runnable action) {
+        confirmIfCriticalPackagesThenRun(selectedPackages, isUninstall, action);
+    }
+
+    /**
+     * The same question for any set of packages, so that a single row tapped into one of the
+     * direct-freeze modes cannot slip past a safeguard the bulk path has: one application freezes
+     * just as hard as a selection of them.
+     */
+    private void confirmIfCriticalPackagesThenRun(List<String> packagesToCheck, boolean isUninstall, Runnable action) {
         final List<String> critical =
-                CriticalPackagesUtils.findCriticalPackages(this, selectedPackages);
+                CriticalPackagesUtils.findCriticalPackages(this, packagesToCheck);
         if (critical.isEmpty()) {
             action.run();
             return;
@@ -3080,7 +3978,7 @@ public class Main extends FreezeYouBaseActivity {
         FreezeYouAlertDialogBuilder(this)
                 .setTitle(R.string.caution)
                 .setMessage(getString(warningResId, names.toString()))
-                .setPositiveButton(R.string.yes, (dialog, which) -> action.run())
+                .setPositiveButton(R.string.okay, (dialog, which) -> action.run())
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }

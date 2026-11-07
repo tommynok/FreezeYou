@@ -7,7 +7,6 @@ import android.widget.SimpleAdapter;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -38,13 +37,9 @@ public class BackupImportChooserActivitySwitchSimpleAdapter extends SimpleAdapte
     public BackupImportChooserActivitySwitchSimpleAdapter(Context context, JSONObject jsonObject, ArrayList<HashMap<String, String>> data, int resource, String[] from, int[] to) {
         super(context, data, resource, from, to);
         mData = data;
-        if (jsonObject != null) {
-            try {
-                mJsonObject = new JSONObject(jsonObject.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
+        // The chooser is the only owner of the payload: a second serialized copy of a large
+        // backup stalled the UI thread before the restore options could appear.
+        mJsonObject = jsonObject;
     }
 
     @Override

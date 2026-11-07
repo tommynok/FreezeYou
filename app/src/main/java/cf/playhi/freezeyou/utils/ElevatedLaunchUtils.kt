@@ -55,7 +55,11 @@ object ElevatedLaunchUtils {
         return try {
             process = Runtime.getRuntime().exec(RootUtils.getSuBinary())
             outputStream = DataOutputStream(process.outputStream)
-            outputStream.writeBytes("${amStartCommand(pkgName, target).joinToString(" ")}\n")
+            val commandLine = amStartCommand(pkgName, target).joinToString(" ") { token ->
+                if (token == "am" || token == "start" || token.startsWith("-")) token
+                else PrivilegedShellUtils.shellQuote(token)
+            }
+            outputStream.writeBytes("$commandLine\n")
             outputStream.writeBytes("exit\n")
             outputStream.flush()
             val ok = succeeded(process, "root")

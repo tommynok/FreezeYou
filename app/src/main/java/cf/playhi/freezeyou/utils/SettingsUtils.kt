@@ -25,6 +25,7 @@ import cf.playhi.freezeyou.service.ScreenLockOneKeyFreezeService
 import cf.playhi.freezeyou.storage.key.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.*
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.*
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.enableInstallPkgFunc
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.organizationName
@@ -35,12 +36,41 @@ import rikka.shizuku.Shizuku
 object SettingsUtils {
 
     /**
-     * Show toast, check availability, sync to MMKV, etc.
+     * What a tap on an application shortcut does.
+     *
+     * The single-choice key answers as soon as the installation holds a choice. The two legacy
+     * booleans speak only for an installation that never made one, and nothing writes them any
+     * more: consulting them beside the choice, the way the screens used to each do in their own
+     * store, is how the settings screen and the first-run setup ended up showing opposite answers
+     * to the same question while the shortcut did a third thing.
+     *
+     * Read from storage rather than through `getValue()` — an unset key there returns the default,
+     * and "no choice stored yet" has to stay distinguishable from "the user chose to be asked".
      */
     @JvmStatic
+    fun resolveShortcutClickAction(): String {
+        val stored = DefaultMultiProcessMMKVStorage().getString(shortcutClickAction.name, null)
+        if (!stored.isNullOrEmpty()) return stored
+        if (shortcutAutoFUF.getValue()) return "toggle"
+        if (openAndUFImmediately.getValue()) return "open_and_uf"
+        return checkNotNull(shortcutClickAction.defaultValue())
+    }
+
+    /**
+     * Show toast, check availability, sync to MMKV, etc.
+     *
+     * `isRestoreMode` applies a backup with only the organization-name failure toast
+     * suppressed. Permission requests, settings screens, root probes and the mode
+     * selection toasts still run: a restore must behave exactly like a manual toggle,
+     * because a silent restore left Shizuku mode enabled with no grant and freezing
+     * broken, and the mode toasts are the same feedback a manual selection gives.
+     */
+    @JvmStatic
+    @JvmOverloads
     fun checkPreferenceData(
         context: Context, activity: Activity,
-        sharedPreferences: SharedPreferences?, key: String?
+        sharedPreferences: SharedPreferences?, key: String?,
+        isRestoreMode: Boolean = false
     ) {
         if (key == null || sharedPreferences == null) return
 
@@ -79,7 +109,7 @@ object SettingsUtils {
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    showToast(context, R.string.failed)
+                    if (!isRestoreMode) showToast(context, R.string.failed)
                 }
             avoidFreezeNotifyingApplications -> {
                 if (Build.VERSION.SDK_INT >= 21) {
@@ -114,7 +144,7 @@ object SettingsUtils {
                     )
                 }
             selectFUFMode -> {
-                when (selectFUFMode.getValue()?.toInt()) {
+                when (selectFUFMode.getValue()?.toIntOrNull()) {
                     API_FREEZEYOU_MROOT_DPM ->
                         if (!DevicePolicyManagerUtils.isDeviceOwner(context)) {
                             showToast(context, R.string.noMRootPermission)
@@ -138,7 +168,9 @@ object SettingsUtils {
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER,
                     API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE ->
-                        if (!FUFUtils.isSystemApp(context)) {
+                        if (!FUFUtils.isSystemApp(context) ||
+                            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE) != PackageManager.PERMISSION_GRANTED
+                        ) {
                             showToast(context, R.string.insufficientPermission)
                         }
                     API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
@@ -154,12 +186,25 @@ object SettingsUtils {
                                     if (Shizuku.shouldShowRequestPermissionRationale()) {
                                         showToast(context, R.string.insufficientPermission)
                                     } else {
-                                        Shizuku.addRequestPermissionResultListener { _, grantResult ->
-                                            if (grantResult == PERMISSION_GRANTED) {
-                                                checkAndEnableShizukuMultiProcessSupport(context)
+                                        val listener = object : Shizuku.OnRequestPermissionResultListener {
+                                            override fun onRequestPermissionResult(
+                                                requestCode: Int, grantResult: Int
+                                            ) {
+                                                Shizuku.removeRequestPermissionResultListener(this)
+                                                if (grantResult == PERMISSION_GRANTED) {
+                                                    checkAndEnableShizukuMultiProcessSupport(
+                                                        context.applicationContext
+                                                    )
+                                                }
                                             }
                                         }
-                                        Shizuku.requestPermission(-1)
+                                        Shizuku.addRequestPermissionResultListener(listener)
+                                        try {
+                                            Shizuku.requestPermission(0)
+                                        } catch (e: Exception) {
+                                            Shizuku.removeRequestPermissionResultListener(listener)
+                                            throw e
+                                        }
                                     }
                                 } else {
                                     checkAndEnableShizukuMultiProcessSupport(context)

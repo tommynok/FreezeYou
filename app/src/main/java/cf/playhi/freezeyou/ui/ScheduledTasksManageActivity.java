@@ -149,7 +149,7 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                         ScheduledTasksManageActivity.this,
                                         R.drawable.ic_warning, R.string.askIfDel, R.string.notice
                                 )
-                                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                                .setPositiveButton(R.string.okay, (dialog, which) -> {
                                     for (int aSelectedTaskPosition : selectedTasksPositions) {
                                         boolean isTimeTask =
                                                 (boolean) (((ScheduledTasksManageSimpleAdapter) tasksListView.getAdapter())
@@ -157,14 +157,15 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                                         int id = integerArrayList.get(aSelectedTaskPosition);
                                         SQLiteDatabase db = openOrCreateDatabase(isTimeTask ? "scheduledTasks" : "scheduledTriggerTasks", MODE_PRIVATE, null);
                                         if (isTimeTask) {
-                                            TasksUtils.cancelTheTask(ScheduledTasksManageActivity.this, id);
+                                            TasksUtils.cancelTheTask(ScheduledTasksManageActivity.this, id, true);
                                         }
                                         db.execSQL("DELETE FROM tasks WHERE _id = " + id);
                                         db.close();
                                     }
+                                    TasksUtils.checkTriggerTasks(ScheduledTasksManageActivity.this);
                                     mode.finish();
                                 })
-                                .setNegativeButton(R.string.no, null)
+                                .setNegativeButton(R.string.cancel, null)
                                 .create().show();
                         return true;
                     case R.id.stma_menu_mc_selectAll:
@@ -318,9 +319,14 @@ public class ScheduledTasksManageActivity extends FreezeYouBaseActivity {
                 Map<String, Object> keyValuePair = new HashMap<>();
                 keyValuePair.put("label", label);
                 int indexOf = Arrays.asList(getResources().getStringArray(R.array.triggersValues)).indexOf(tg);
-                keyValuePair.put("time",
-                        Arrays.asList(getResources().getStringArray(R.array.triggers))
-                                .get(indexOf == -1 ? 0 : indexOf));
+                String[] triggerNames = getResources().getStringArray(R.array.triggers);
+                String triggerLabel;
+                if (indexOf >= 0 && indexOf < triggerNames.length) {
+                    triggerLabel = triggerNames[indexOf];
+                } else {
+                    triggerLabel = (tg != null && !tg.isEmpty()) ? tg : getString(R.string.unknown);
+                }
+                keyValuePair.put("time", triggerLabel);
                 keyValuePair.put("isTimeTask", false);
                 keyValuePair.put("enabled", enabled == 1);
                 tasksData.add(keyValuePair);

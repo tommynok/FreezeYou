@@ -18,12 +18,9 @@ import android.os.Looper;
 import android.os.Parcelable;
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,7 +35,6 @@ import cf.playhi.freezeyou.utils.DebugModeUtils;
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils;
 import cf.playhi.freezeyou.utils.FileUtils;
 import cf.playhi.freezeyou.utils.InstallPackagesUtils;
-import cf.playhi.freezeyou.utils.RootUtils;
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils;
 import cf.playhi.freezeyou.utils.RestoreUtils;
 import cf.playhi.freezeyou.utils.ShizukuPackageInstaller;
@@ -48,19 +44,32 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
-import static cf.playhi.freezeyou.utils.ProcessUtils.destroyProcess;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 // Install and uninstall
 public class InstallPackagesService extends FreezeYouBaseService {
 
-    private final ArrayList<Intent> intentArrayList = new ArrayList<>();
-    private boolean processing = false;
+    public static final String NOTIFICATION_CHANNEL_RESULTS = "InstallPackagesResults";
+
+    /**
+     * Internal to this application: the installer dialog stays open through the install and shows
+     * the result itself, so it needs the outcome from the process the service runs in. Always sent
+     * with {@code setPackage} and received behind {@code RECEIVER_NOT_EXPORTED}.
+     */
+    public static final String ACTION_INSTALL_STATUS_CHANGED =
+            "cf.playhi.freezeyou.action.installStatusChanged";
+
+    public static final long INSTALL_TIMEOUT_MS = 120_000L;
+    public static final long UNINSTALL_TIMEOUT_MS = 60_000L;
+
+    private final InstallRequestQueue installRequestQueue = new InstallRequestQueue();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null)
+        if (intent == null) {
+            stopSelf(startId);
             return super.onStartCommand(null, flags, startId);
+        }
 
         final Intent i = new Intent(intent);
         i.putExtra("requestTime", new Date().getTime());
@@ -72,16 +81,15 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 && packageInfo != null
                 && packageInfo.packageName != null
                 && packageInfo.packageName.equals(MainApplication.getCurrentPackage())) {
-            MainApplication.setWaitingForLeavingToInstallApplicationIntent(i);
-            InstallPackagesUtils.
-                    postWaitingForLeavingToInstallApplicationNotification(this, packageInfo);
-            if (!processing) stopSelf();
-        } else {
-            if (processing) {
-                intentArrayList.add(i);
-            } else {
-                new Thread(() -> installAndUninstall(i)).start();
-            }
+            // Before the card is posted: a process killed after it appears must still leave a
+            // request behind, otherwise the user sees a waiting card for an install that can
+            // never happen. The persisted record is the only copy; a static would not survive
+            // the process and would race the executor that dispatches it.
+            InstallPackagesUtils.saveAndPostWaitingForLeavingRequest(this, i, packageInfo);
+            int stopId = installRequestQueue.idleStopId(startId);
+            if (stopId >= 0) stopSelf(stopId);
+        } else if (installRequestQueue.enqueue(i, startId)) {
+            new Thread(this::processQueue).start();
         }
         return super.onStartCommand(i, flags, startId);
     }
@@ -91,19 +99,27 @@ public class InstallPackagesService extends FreezeYouBaseService {
         super.onCreate();
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null)
+            if (notificationManager != null) {
                 notificationManager.createNotificationChannel(
                         new NotificationChannel("InstallPackages",
                                 getString(R.string.installAndUninstall), NotificationManager.IMPORTANCE_NONE)
                 );
+                // Results and waiting cards are user-visible, and on API 26+ a notification on an
+                // IMPORTANCE_NONE channel is never displayed; only the service's own foreground
+                // card stays silent.
+                notificationManager.createNotificationChannel(
+                        new NotificationChannel(NOTIFICATION_CHANNEL_RESULTS,
+                                getString(R.string.installAndUninstall), NotificationManager.IMPORTANCE_LOW)
+                );
+            }
             Notification.Builder mBuilder =
                     new Notification.Builder(this, "InstallPackages");
-            mBuilder.setSmallIcon(R.drawable.ic_notification);
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
             mBuilder.setContentText(getString(R.string.installAndUninstall));
             startForeground(5, mBuilder.build());
         } else {
             Notification.Builder mBuilder = new Notification.Builder(this);
-            mBuilder.setSmallIcon(R.drawable.ic_notification);
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
             mBuilder.setContentText(getString(R.string.installAndUninstall));
             startForeground(5, mBuilder.build());
         }
@@ -114,13 +130,73 @@ public class InstallPackagesService extends FreezeYouBaseService {
         return null;
     }
 
-    private void installAndUninstall(Intent intent) {
-        processing = true;
+    /**
+     * Tells a listening installer dialog how one install ended. The dialog lives in the
+     * {@code :installAndUninstall} process and the install runs here or in the finished receiver,
+     * so the package name is what ties a result back to the dialog that asked for it; a result for
+     * any other package is dropped by the listener.
+     *
+     * @param statusMessage the reason on failure, null on success
+     */
+    public static void broadcastInstallStatus(
+            Context context, String pkgName, boolean success, String statusMessage) {
+        broadcastInstallStatus(context, pkgName, null, success, statusMessage);
+    }
 
+    public static void broadcastInstallStarted(
+            Context context, String pkgName, String installRequestId) {
+        if ((pkgName == null || pkgName.isEmpty())
+                && (installRequestId == null || installRequestId.isEmpty())) {
+            return;
+        }
+        Intent intent = new Intent(ACTION_INSTALL_STATUS_CHANGED)
+                .setPackage(context.getPackageName())
+                .putExtra("pkgName", pkgName)
+                .putExtra("started", true);
+        if (installRequestId != null) {
+            intent.putExtra("installRequestId", installRequestId);
+        }
+        context.sendBroadcast(intent);
+    }
+
+    public static void broadcastInstallStatus(
+            Context context, String pkgName, String installRequestId,
+            boolean success, String statusMessage) {
+        if ((pkgName == null || pkgName.isEmpty())
+                && (installRequestId == null || installRequestId.isEmpty())) {
+            return;
+        }
+        Intent intent = new Intent(ACTION_INSTALL_STATUS_CHANGED)
+                .setPackage(context.getPackageName())
+                .putExtra("pkgName", pkgName)
+                .putExtra("success", success)
+                .putExtra("statusMessage", statusMessage);
+        if (installRequestId != null) {
+            intent.putExtra("installRequestId", installRequestId);
+        }
+        context.sendBroadcast(intent);
+    }
+
+    private void processQueue() {
+        while (true) {
+            Intent next = installRequestQueue.takeNextOrNull();
+            if (next != null) {
+                installAndUninstall(next);
+                continue;
+            }
+            int stopId = installRequestQueue.markDrainedIfEmpty();
+            if (stopId >= 0) {
+                stopSelf(stopId);
+                return;
+            }
+        }
+    }
+
+    private void installAndUninstall(Intent intent) {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ?
-                new Notification.Builder(this, "InstallPackages") :
+                new Notification.Builder(this, NOTIFICATION_CHANNEL_RESULTS) :
                 new Notification.Builder(this);
-        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setSmallIcon(R.drawable.ic_stat_logo);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -129,11 +205,6 @@ public class InstallPackagesService extends FreezeYouBaseService {
         } else {//Uninstall
             uninstall(intent, builder, notificationManager);
         }
-
-        // Remove completed intent
-        intentArrayList.remove(intent);
-
-        checkIfAllTaskDoneAndStopSelf();
     }
 
     private void uninstall(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
@@ -204,7 +275,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     && DevicePolicyManagerUtils.isDeviceOwner(this);
             boolean fullUninstallNeedsShell = UninstallPolicyUtils
                     .requiresPrivilegedShellForFullUninstall(
-                            isSystemApp, hasSystemUpdate, uninstallUpdatesOnly);
+                            isSystemApp, uninstallUpdatesOnly);
             boolean rootCheckRequired = UninstallPolicyUtils.shouldCheckRootPermission(
                     deviceOwnerAvailable, fullUninstallNeedsShell);
             boolean rootAvailable = !shizukuAvailable && rootCheckRequired
@@ -235,7 +306,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     Log.d("FreezeYouDebug", "InstallPackagesService: falling back to Shizuku shell commands");
                 }
                 for (String command : commands) {
-                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runShizukuCommand(command);
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runShizukuCommand(command, UNINSTALL_TIMEOUT_MS);
                     if (!result.isSuccessful()) {
                         String details = result.output == null || result.output.isEmpty()
                                 ? "exit code " + result.exitCode : result.output;
@@ -251,7 +322,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                 return;
             } else if (rootAvailable) {
                 for (String command : commands) {
-                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runRootCommand(command);
+                    PrivilegedShellUtils.CommandResult result = PrivilegedShellUtils.runRootCommand(command, UNINSTALL_TIMEOUT_MS);
                     if (!result.isSuccessful()) {
                         String details = result.output == null || result.output.isEmpty()
                                 ? "exit code " + result.exitCode : result.output;
@@ -268,9 +339,10 @@ public class InstallPackagesService extends FreezeYouBaseService {
             }
 
             if (deviceOwnerAvailable) {
-                // PackageInstaller can silently uninstall ordinary packages as Device Owner.
-                // It cannot express the two-step "remove update, then uninstall for the current
-                // user" operation, so do not claim a complete removal for an updated system app.
+                // PackageInstaller can silently uninstall ordinary user packages as Device Owner.
+                // In Android (DeletePackageHelper.mayDeletePackageLocked), it lacks DELETE_SYSTEM_APP
+                // and fails on factory preinstalled system apps, and cannot express the two-step removal
+                // for updated system apps. Full removal of any system app therefore requires a privileged shell.
                 if (fullUninstallNeedsShell) {
                     throw new IllegalStateException(
                             getString(R.string.full_system_uninstall_requires_shell));
@@ -345,26 +417,60 @@ public class InstallPackagesService extends FreezeYouBaseService {
     }
 
     private void install(Intent intent, Notification.Builder builder, NotificationManager notificationManager) {
+        final String installRequestId = intent.getStringExtra("installRequestId");
+        final String waitingPackageName = intent.getStringExtra("waitingPackageName");
+        final PackageInfo callerPackageInfo = intent.getParcelableExtra("packageInfo");
+        final String fallbackPackageName =
+                callerPackageInfo != null ? callerPackageInfo.packageName : waitingPackageName;
+        String copiedApkFilePath = null;
+        String resolvedPackageName = null;
+        boolean progressPosted = false;
+        boolean resultPosted = false;
+        broadcastInstallStarted(this, fallbackPackageName, installRequestId);
         try {
             String apkFilePath = intent.getStringExtra("apkFilePath");
             if (apkFilePath == null || "".equals(apkFilePath) || !new File(apkFilePath).exists()) {
                 Uri packageUri = intent.getParcelableExtra("packageUri");
-                if (packageUri == null) return;
+                if (packageUri == null) {
+                    cancelWaitingCardOnFailure(waitingPackageName, null);
+                    if (!resultPosted) {
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, fallbackPackageName, installRequestId, false, "Invalid package URI");
+                    }
+                    return;
+                }
                 InputStream in = getContentResolver().openInputStream(packageUri);
                 if (in == null) {
+                    cancelWaitingCardOnFailure(waitingPackageName, null);
+                    if (!resultPosted) {
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, fallbackPackageName, installRequestId, false, "Cannot open package URI");
+                    }
                     return;
                 }
 
                 String apkFileName = "package" + new Date().getTime() + "F.apk";
                 apkFilePath = getExternalCacheDir() + File.separator + "ZDF-" + apkFileName;
+                copiedApkFilePath = apkFilePath;
 
                 FileUtils.copyFile(in, apkFilePath);
             }
 
             PackageManager pm = getPackageManager();
             PackageInfo packageInfo = pm.getPackageArchiveInfo(apkFilePath, 0);
-            if (packageInfo == null) return;
+            if (packageInfo == null) {
+                cancelWaitingCardOnFailure(waitingPackageName, copiedApkFilePath);
+                if (!resultPosted) {
+                    resultPosted = true;
+                    broadcastInstallStatus(
+                            this, fallbackPackageName, installRequestId, false, "Cannot parse APK archive");
+                }
+                return;
+            }
             String willBeInstalledPackageName = packageInfo.packageName;
+            resolvedPackageName = willBeInstalledPackageName;
             packageInfo.applicationInfo.sourceDir = apkFilePath;
             packageInfo.applicationInfo.publicSourceDir = apkFilePath;
             String willBeInstalledName = pm.getApplicationLabel(packageInfo.applicationInfo).toString();
@@ -377,6 +483,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                     (willBeInstalledPackageName + "@InstallPackagesNotification").hashCode(),
                     builder.build()
             );
+            progressPosted = true;
 
             if (Build.VERSION.SDK_INT >= 21 && DevicePolicyManagerUtils.isDeviceOwner(this)) {
                 PackageInstaller packageInstaller = pm.getPackageInstaller();
@@ -403,31 +510,49 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 InstallPackagesFinishedReceiver.class)
                                                 .putExtra("name", willBeInstalledName)
                                                 .putExtra("pkgName", willBeInstalledPackageName)
-                                                .putExtra("apkFilePath", apkFilePath),
+                                                .putExtra("apkFilePath", apkFilePath)
+                                                .putExtra("installRequestId", installRequestId),
                                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                                                 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
                                                 : PendingIntent.FLAG_UPDATE_CURRENT)
                                 .getIntentSender());
             } else {
-                // Root Mode
+                // system_server parses the APK itself, and since Android 11 it cannot read the
+                // app's external cache, so the file is staged into /data/local/tmp inside the
+                // same shell session and installed from there. Shizuku's granted shell is
+                // preferred; a failed attempt is retried through root when it is available.
+                final String stagedPath =
+                        "/data/local/tmp/freezeyou-" + System.currentTimeMillis() + ".apk";
+                final String cmd = PrivilegedShellUtils.buildStagedInstallCommand(apkFilePath, stagedPath);
                 String result = null;
                 try {
-                    Process process = Runtime.getRuntime().exec(RootUtils.getSuBinary());
-                    DataOutputStream outputStream = new DataOutputStream(process.getOutputStream());
-                    outputStream.writeBytes("pm install -r \"" + apkFilePath + "\"\n");
-                    outputStream.writeBytes("exit\n");
-                    outputStream.flush();
-                    process.waitFor();
-
-                    // Delete Temp File
-                    InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
-
-                    InputStream pi = process.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(pi));
-                    result = bufferedReader.readLine();
-
-                    destroyProcess(outputStream, process);
+                    PrivilegedShellUtils.CommandResult cmdRes;
+                    if (PrivilegedShellUtils.isShizukuAvailable(this)) {
+                        cmdRes = PrivilegedShellUtils.runShizukuCommand(cmd, INSTALL_TIMEOUT_MS);
+                        if (!cmdRes.isSuccessful()
+                                && cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission()) {
+                            cmdRes = PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
+                        }
+                    } else {
+                        cmdRes = PrivilegedShellUtils.runRootCommand(cmd, INSTALL_TIMEOUT_MS);
+                    }
+                    result = cmdRes.output;
                 } finally {
+                    // A command killed by its deadline never returns, so the staged ZDF- copy
+                    // has to be cleaned up here and not only after a normal return. The copy in
+                    // /data/local/tmp is removed by the command itself; only a killed command
+                    // leaves it behind, so it is removed once more on the exception path.
+                    InstallPackagesUtils.deleteTempFile(this, apkFilePath, false);
+                    if (result == null) {
+                        try {
+                            String cleanup = "rm -f " + PrivilegedShellUtils.shellQuote(stagedPath);
+                            if (PrivilegedShellUtils.isShizukuAvailable(this)) {
+                                PrivilegedShellUtils.runShizukuCommand(cleanup, 10_000L);
+                            } else {
+                                PrivilegedShellUtils.runRootCommand(cleanup, 10_000L);
+                            }
+                        } catch (Exception ignored) {}
+                    }
                     if (result != null && result.toLowerCase().contains("success")) {
                         InstallPackagesUtils
                                 .notifyFinishNotification(
@@ -439,9 +564,14 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                                 willBeInstalledName),
                                         null,
                                         true);
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, willBeInstalledPackageName, installRequestId, true, null);
                         if (tryDelApkAfterInstalled.getValue(null))
                             InstallPackagesUtils.deleteTempFile(this, apkFilePath, true);
                     } else {
+                        final String reason =
+                                String.format(getString(R.string.reason_colon), result);
                         InstallPackagesUtils
                                 .notifyFinishNotification(
                                         this, notificationManager, builder,
@@ -450,21 +580,36 @@ public class InstallPackagesService extends FreezeYouBaseService {
                                         String.format(
                                                 getString(R.string.app_installFailed),
                                                 willBeInstalledName),
-                                        String.format(getString(R.string.reason_colon), result),
+                                        reason,
                                         false);
+                        resultPosted = true;
+                        broadcastInstallStatus(
+                                this, willBeInstalledPackageName, installRequestId, false, reason);
                     }
                 }
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            InstallPackagesUtils
-                    .notifyFinishNotification(
-                            this, notificationManager, builder,
-                            true,
-                            null,
-                            getString(R.string.installFailed),
-                            e.getLocalizedMessage(),
-                            false);
+            if (copiedApkFilePath != null) {
+                InstallPackagesUtils.deleteTempFile(this, copiedApkFilePath, false);
+            }
+            if (!resultPosted) {
+                resultPosted = true;
+                // The progress card replaced the waiting card; either way the failure has to
+                // replace the card that is currently visible under this package.
+                final String failurePackageName = progressPosted
+                        ? resolvedPackageName : fallbackPackageName;
+                InstallPackagesUtils
+                        .notifyFinishNotification(
+                                this, notificationManager, builder,
+                                true,
+                                failurePackageName,
+                                getString(R.string.installFailed),
+                                e.getLocalizedMessage(),
+                                false);
+                broadcastInstallStatus(
+                        this, failurePackageName, installRequestId, false, e.getLocalizedMessage());
+            }
             new Handler(Looper.getMainLooper()).post(() ->
                     showToast(
                             getApplicationContext(),
@@ -477,12 +622,53 @@ public class InstallPackagesService extends FreezeYouBaseService {
 
     }
 
-    private void checkIfAllTaskDoneAndStopSelf() {
-        if (intentArrayList.isEmpty()) {
+    /**
+     * A waiting request is cleared before its install runs, so a source that fails here must
+     * resolve the card itself; otherwise it would wait for an install that never comes.
+     */
+    private void cancelWaitingCardOnFailure(String waitingPackageName, String copiedApkFilePath) {
+        if (copiedApkFilePath != null) {
+            InstallPackagesUtils.deleteTempFile(this, copiedApkFilePath, false);
+        }
+        if (waitingPackageName != null) {
+            InstallPackagesUtils.cancelWaitingForLeavingToInstallApplicationNotification(
+                    this, waitingPackageName);
+        }
+    }
+
+    // Enqueue and drain share one monitor: a request cannot be queued after the worker decided to
+    // stop, and stopSelf always receives the newest startId so a newer command keeps the service.
+    static final class InstallRequestQueue {
+
+        private final ArrayList<Intent> pending = new ArrayList<>();
+        private boolean processing;
+        private int lastStartId = -1;
+
+        synchronized boolean enqueue(Intent intent, int startId) {
+            lastStartId = startId;
+            pending.add(intent);
+            if (processing) {
+                return false;
+            }
+            processing = true;
+            return true;
+        }
+
+        synchronized Intent takeNextOrNull() {
+            return pending.isEmpty() ? null : pending.remove(0);
+        }
+
+        synchronized int markDrainedIfEmpty() {
+            if (!pending.isEmpty()) {
+                return -1;
+            }
             processing = false;
-            stopSelf();
-        } else {
-            installAndUninstall(intentArrayList.get(0));
+            return lastStartId;
+        }
+
+        synchronized int idleStopId(int startId) {
+            lastStartId = startId;
+            return processing || !pending.isEmpty() ? -1 : lastStartId;
         }
     }
 

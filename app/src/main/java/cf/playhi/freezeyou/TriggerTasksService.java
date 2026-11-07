@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -26,20 +27,12 @@ public class TriggerTasksService extends FreezeYouBaseService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        if (intent != null) {
-            if (triggerScreenLockListener == null && intent.getBooleanExtra("OnScreenOn", false)) {
-                triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
-                triggerScreenLockListener.registerListener();
-            }
-
-            if (triggerScreenLockListener == null && intent.getBooleanExtra("OnScreenOff", false)) {
-                triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
-                triggerScreenLockListener.registerListener();
-            }
+        if (triggerScreenLockListener == null) {
+            triggerScreenLockListener = new TriggerScreenLockListener(getApplicationContext());
+            triggerScreenLockListener.registerListener();
         }
 
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     @Override
@@ -58,7 +51,7 @@ public class TriggerTasksService extends FreezeYouBaseService {
                 }
                 Notification.Builder mBuilder =
                         new Notification.Builder(this, "BackgroundService");
-                mBuilder.setSmallIcon(R.drawable.ic_notification);
+                mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
                 mBuilder.setContentText(getString(R.string.backgroundService));
                 Intent resultIntent = new Intent(getApplicationContext(), Main.class);
                 PendingIntent resultPendingIntent =
@@ -104,25 +97,51 @@ class TriggerScreenLockListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            final SQLiteDatabase db = context.openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
-            db.execSQL(
-                    "create table if not exists tasks(_id integer primary key autoincrement,tg varchar,tgextra varchar,enabled integer(1),label varchar,task varchar,column1 varchar,column2 varchar)"
-            );
-            Cursor cursor = db.query("tasks", null, null, null, null, null, null);
-            if (action != null && cursor.moveToFirst()) {
-                switch (action) {
-                    case Intent.ACTION_SCREEN_OFF:
-                        onActionScreenOnOff(context, cursor, false);
-                        break;
-                    case Intent.ACTION_SCREEN_ON:
-                        onActionScreenOnOff(context, cursor, true);
-                        break;
-                    default:
-                        break;
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
+            boolean hasScreenTrigger = false;
+            boolean scanSucceeded = false;
+            try {
+                db = context.openOrCreateDatabase("scheduledTriggerTasks", MODE_PRIVATE, null);
+                cursor = db.query("tasks", null, null, null, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        int enabled = cursor.getInt(cursor.getColumnIndex("enabled"));
+                        String tg = cursor.getString(cursor.getColumnIndex("tg"));
+                        if (enabled == 1 && ("onScreenOn".equals(tg) || "onScreenOff".equals(tg))) {
+                            hasScreenTrigger = true;
+                            break;
+                        }
+                        cursor.moveToNext();
+                    }
+                    if (action != null) {
+                        cursor.moveToFirst();
+                        switch (action) {
+                            case Intent.ACTION_SCREEN_OFF:
+                                onActionScreenOnOff(context, cursor, false);
+                                break;
+                            case Intent.ACTION_SCREEN_ON:
+                                onActionScreenOnOff(context, cursor, true);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                scanSucceeded = true;
+            } catch (SQLiteException e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
                 }
             }
-            cursor.close();
-            db.close();
+            if (scanSucceeded && !hasScreenTrigger) {
+                context.stopService(new Intent(context, TriggerTasksService.class));
+            }
         }
 
         private static void onActionScreenOnOff(Context context, Cursor cursor, boolean screenOn) {

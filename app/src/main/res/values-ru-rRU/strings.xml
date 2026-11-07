@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Удалить из OneKey-заморозки</string>
     <string name="removeFromOneKeyUFList">Удалить из OneKey-разморозки</string>
     <string name="removeFromFreezeOnceQuit">Удалить из «Заморозка после выхода»</string>
+    <string name="removeFromAppLockList">Удалить из «Блокировка приложений»</string>
     <string name="removed">Удалено</string>
     <string name="removeFailed">Не удалось удалить</string>
     <string name="addToOneKeyList">Добавить в OneKey-заморозку</string>
     <string name="addToOneKeyUFList">Добавить в OneKey-разморозку</string>
     <string name="addToFreezeOnceQuit">Добавить в «Заморозка после выхода»</string>
+    <string name="addToAppLockList">Добавить в «Блокировка приложений»</string>
+    <string name="appLock">Блокировка приложений</string>
     <string name="addFailed">Не удалось добавить</string>
     <string name="caution">ВНИМАНИЕ</string>
     <string name="cautionContent">Не замораживайте важные для системы приложения. Это может привести к сбою системы</string>
@@ -34,9 +37,13 @@
     <string name="mayUnrootedOrOtherEx">Не предоставлены разрешения, цели были удалены или возникли другие исключения</string>
     <string name="nApplicationsFailedColonList">Не удалось (%1$d): %2$s</string>
     <string name="andNMoreApplications">, и еще %1$d</string>
+    <string name="andMoreApplications">… и еще %1$d</string>
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
+    <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
     <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) перед открытием FreezeYou</string>
+    <string name="summary_lockOnScreenOff">Требовать разблокировку после выключения экрана устройства</string>
+    <string name="summary_enableAppLock">Запрашивать разблокировку при открытии приложений из списка «Блокировка приложений». Используется системная защита (отпечаток пальца, PIN-код или ключ).</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
@@ -44,7 +51,7 @@
     <string name="summary_manageIpaAutoAllow">Список приложений, которым разрешено запрашивать установку без подтверждения каждый раз</string>
     <string name="summary_manageMyCustomization">Создавайте, переименовывайте и удаляйте собственные группы приложений</string>
     <string name="clearUninstalledPkgsInAllLists">Убрать удаленные приложения из всех списков</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey, «Заморозка после выхода», «Моя подборка» и статистику от удаленных с устройства приложений</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищает списки OneKey, «Заморозка после выхода», «Блокировка приложений», «Моя подборка» и статистику от удаленных с устройства приложений</string>
     <string name="summary_clearIconCache">Освобождает место, занятое кэшем иконок приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearNameCache">Освобождает место, занятое кэшем названий приложений; они будут загружены заново по мере необходимости</string>
     <string name="summary_clearAllCache">Очищает сразу оба кэша — иконок и названий</string>
@@ -96,7 +103,7 @@
     <string name="createActivityShortcut">Создать ярлык активити</string>
     <string name="cannotFindTheEntrance">У этого приложения не нашлось точки входа</string>
     <string name="unfreezeAndLaunchActivity">Приложение заморожено — активити не запустится. Разморозить? Оно останется размороженным. Если нужно замораживать приложение через ярлык — создайте его через пункт «%1$s».</string>
-    <string name="iconAEntry">Иконки и вход</string>
+    <string name="iconAEntry">Значок и способ входа во FreezeYou</string>
     <string name="dialEntry">Используйте клавиатуру для ввода</string>
     <string name="dialEntry_Ex">Если ярлыки на экране скрыты, откройте FreezeYou, набрав код *#*#373393968#*#* (*#*#FreezeYou#*#*) в номеронабирателе телефона. Поддерживается на большинстве Android-устройств.</string>
     <string name="ciFinishedToast">Отправлено, пожалуйста, дождитесь обновления лаунчера, или перезапустите его.</string>
@@ -128,6 +135,8 @@
     <string name="notificationBar">Уведомления</string>
     <string name="disableSlideOut">Не исчезать при смахивании</string>
     <string name="disableClickDisappear">Не исчезать после нажатия</string>
+    <string name="freezeAll">Заморозить все</string>
+    <string name="quickFUFGroupSummaryContent">Разморожено приложений: %1$d</string>
     <string name="effectNextCreate">Вступит в силу в следующий раз</string>
     <string name="helpTranslate">Помогите перевести это приложение</string>
     <string name="thanksList">Благодарности участникам проекта</string>
@@ -151,6 +160,7 @@
     <string name="freezeOnceQuit">Заморозка после выхода</string>
     <string name="freezeOnceQuitSummary">Приложения из списка «Заморозка после выхода» замораживаются, как только вы из них вышли.</string>
     <string name="needActiveAccessibilityService">Нужно включить службу поддержки специальных возможностей</string>
+    <string name="needActiveDeviceAdmin">Нужно включить права администратора устройства</string>
     <string name="invalidArguments">Неверные параметры</string>
     <string name="plsConfirm">Пожалуйста, подтвердите</string>
     <string name="removeNoRootCaution">Вы действительно хотите отменить разрешение для режима без-root? \nЧтобы избежать ненужных проблем, разморозьте все замороженные приложения перед отключением этого режима!</string>
@@ -162,6 +172,8 @@
     <string name="scheduledTasks">Запланированные задания</string>
     <string name="add">Добавить</string>
     <string name="save">Сохранить</string>
+    <string name="doNotSave">Не сохранять</string>
+    <string name="diagnosisRefreshFailed">Диагностика прервана, часть проверок не выполнена</string>
     <string name="time">Время</string>
     <string name="enable">Включить</string>
     <string name="repeat">Повтор</string>
@@ -246,7 +258,7 @@
     <string name="regenerateSomeCache">Кэш приложений обновлен</string>
     <string name="updateSomeData">Названия и значки приложений актуализированы</string>
     <string name="backupAndRestore">Бекап и восстановление</string>
-    <string name="summary_backupAndRestore">Экспорт настроек, списков, ярлыков и заданий в файл и импорт обратно</string>
+    <string name="summary_backupAndRestore">Экспорт настроек, списков и заданий в файл и импорт обратно</string>
     <string name="status">Состояние</string>
     <string name="debugMode">Режим отладки</string>
     <string name="debugModeSummary">Записывает в журнал внутренние действия приложения (попытки заморозки/разморозки, вызовы Shizuku/root) для диагностики проблем. Может немного снизить производительность.</string>
@@ -345,6 +357,7 @@
     <string name="remove">Удалить</string>
     <string name="newFolder">Новая папка</string>
     <string name="alreadyExist">Уже существует</string>
+    <string name="operationAlreadyInProgress">Операция для этого приложения уже выполняется</string>
     <string name="queryStatus">Статус запроса</string>
     <string name="newClassification">Новая категория</string>
     <string name="displayLanguage">Язык приложения</string>
@@ -376,6 +389,7 @@
     <string name="jumpToSysInstaller">Перейти к системному установщику</string>
     <string name="appearance">Внешний вид</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Создать уведомление о быстрой заморозке после разморозки</string>
+    <string name="combineBatchQuickNotification">Объединять пакетные уведомления</string>
     <string name="executionResult_colon_message">Результат выполнения: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат неизвестен (вероятно успех)</string>
     <string name="unknownError">Неизвестная ошибка</string>
@@ -387,6 +401,13 @@
     <string name="unlock">Разблокировать</string>
     <string name="security">Безопасность</string>
     <string name="enableAuthentication">Включить аутентификацию</string>
+    <string name="appLockTimeout">Время до блокировки</string>
+    <string name="lockOnScreenOff">Блокировать при выключении экрана</string>
+    <string name="enableAppLock">Включить блокировку приложений</string>
+    <string name="appLockReLockPolicy">Повторная блокировка</string>
+    <string name="appLockAccessibilityWarningTitle">Требуются специальные возможности</string>
+    <string name="appLockAccessibilityWarningMessage">Для работы блокировки приложений нужна служба специальных возможностей FreezeYou — она отслеживает открытие защищенных приложений. Открыть системные настройки сейчас?</string>
+    <string name="settings">Настройки</string>
     <string name="authentication">Аутентификация</string>
     <string name="verifyToContinue">Подтвердите для продолжения</string>
     <string name="authenticationFailed">Сбой аутентификации</string>
@@ -397,6 +418,9 @@
     <string name="onlyRunning">Работающие</string>
     <string name="onlyRunningSys">Работающие: системные</string>
     <string name="onlyRunningUser">Работающие: пользовательские</string>
+    <string name="runningAppStats">%2$s ОЗУ · %1$s ЦП</string>
+    <string name="sortBy_running_memory">По памяти (ОЗУ)</string>
+    <string name="sortBy_running_cpu">По процессору (ЦП)</string>
     <string name="criticalPackagesWarning">Выбраны ключевые приложения, от которых зависит стабильность работы системы:\n\n%1$s\n\nИх заморозка может оставить устройство без строки состояния, Настроек или клавиатуры, что затруднит управление устройством. Все равно продолжить?</string>
     <string name="critical_package_freeze_warning_single">Выбрано ключевое приложение, от которого зависит стабильность работы системы:\n\n%1$s\n\nЕго заморозка может оставить устройство без строки состояния, Настроек или клавиатуры, что затруднит управление устройством. Все равно продолжить?</string>
     <string name="critical_packages_uninstall_warning_batch">Выбраны ключевые приложения, от которых зависит стабильность работы системы:\n\n%1$s\n\nИх удаление может оставить устройство без строки состояния, Настроек или клавиатуры, что затруднит управление устройством. Все равно продолжить?</string>
@@ -423,6 +447,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операции с FreezeYou запрещены</string>
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
+    <string name="authorizationStatus_authorized">Разрешение Shizuku предоставлено</string>
+    <string name="authorizationStatusNotAuthorized">Разрешение Shizuku не предоставлено</string>
+    <string name="profileOwnerActive">Режим владельца профиля активен</string>
+    <string name="systemAppModeActive">Доступен режим системного приложения</string>
     <string name="includeFUFActivityInRecents">Добавить активити заморозки и разморозки в недавних приложениях</string>
     <string name="includeFUFActivityInRecentsSummary">Также отображает экран процесса заморозки/разморозки отдельным пунктом в списке недавних приложений.</string>
     <string name="playFUFAnimations">Включить анимацию заморозки и разморозки</string>
@@ -436,11 +464,18 @@
         <item>OneKey-заморозка</item>
         <item>OneKey-разморозка</item>
         <item>Заморозка после выхода</item>
+        <item>Блокировка приложений</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>Нет</item>
         <item>Запрашивать блокировку экрана</item>
         <item>Блокировать экран сразу</item>
+    </string-array>
+    <string name="shortcutClickAction">Действие при нажатии на ярлык приложения</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Спрашивать действие (по умолчанию)</item>
+        <item>Всегда открывать (разморозка и запуск)</item>
+        <item>Переключатель (заморозка / разморозка)</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>По умолчанию</item>
@@ -481,6 +516,22 @@
         <item>Shizuku (режим отключения)</item>
         <item>Shizuku (режим Disable_User)</item>
         <item>Shizuku (режим Disable_Until_Used)</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>Сразу при выходе</item>
+        <item>1 минута</item>
+        <item>2 минуты</item>
+        <item>5 минут</item>
+        <item>10 минут</item>
+        <item>15 минут</item>
+        <item>Никогда</item>
+    </string-array>
+    <string-array name="appLockReLockPolicySelection">
+        <item>Сразу при выходе</item>
+        <item>Через 1 минуту</item>
+        <item>Через 2 минуты</item>
+        <item>Через 5 минут</item>
+        <item>При выключении экрана</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>По умолчанию</item>
@@ -541,4 +592,10 @@
     <string name="restore_completed_title">Восстановление завершено</string>
     <string name="restore_completed_single_app">Приложение «%1$s» успешно восстановлено</string>
     <string name="batch_restoring">Восстановление…</string>
+    <string name="restoreShortcuts">Восстановление ярлыков</string>
+    <string name="restoreShortcutsPromptMessage">Нажмите «ОК», чтобы закрепить ярлык на рабочем столе. Лаунчер запросит системное подтверждение.</string>
+    <string name="noShortcutsToRestore">Нет сохраненных ярлыков для восстановления</string>
+    <string name="skip">Пропуск</string>
+    <string name="restoreShortcutsProgress">Ярлык %1$d из %2$d</string>
+    <string name="restoreShortcutFailed">Не удалось добавить ярлык «%1$s»</string>
 </resources>

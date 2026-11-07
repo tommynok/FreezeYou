@@ -20,11 +20,14 @@
     <string name="removeFromOneKeyList">移出一键冻结列表</string>
     <string name="removeFromOneKeyUFList">移出一键解冻列表</string>
     <string name="removeFromFreezeOnceQuit">移出离开冻结列表</string>
+    <string name="removeFromAppLockList">移出应用锁定列表</string>
     <string name="removed">已移出</string>
     <string name="removeFailed">移除失败</string>
     <string name="addToOneKeyList">加入一键冻结列表</string>
     <string name="addToOneKeyUFList">加入一键解冻列表</string>
     <string name="addToFreezeOnceQuit">加入离开冻结列表</string>
+    <string name="addToAppLockList">加入应用锁定列表</string>
+    <string name="appLock">应用锁定</string>
     <string name="addFailed">添加失败</string>
     <string name="caution">警告</string>
     <string name="cautionContent">不知道的不要乱冻结，可能会使系统崩溃！\n请谨慎操作！\n\n长按可以多选\n右侧点为是否已冻结\n主题以及桌面三个图标等可以在“更多设置”中自行选择</string>
@@ -40,9 +43,13 @@
     <string name="mayUnrootedOrOtherEx">可能没有授予权限、目标已卸载或发生了其它异常</string>
     <string name="nApplicationsFailedColonList">%1$d 个应用失败：%2$s</string>
     <string name="andNMoreApplications">，以及另外 %1$d 个</string>
+    <string name="andMoreApplications">……等另 %1$d 个应用</string>
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
+    <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
     <string name="summary_enableAuthentication">打开 FreezeYou 前要求先解锁设备（PIN、指纹等）</string>
+    <string name="summary_lockOnScreenOff">设备息屏后需要重新解锁</string>
+    <string name="summary_enableAppLock">打开应用锁列表中的应用时要求解锁。使用系统安全保护（指纹、PIN 码或图案）。</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
     <string name="summary_notAllowWhenIsObsd">当屏幕被其他应用窗口遮挡时阻止安装/卸载确认（防点击劫持）</string>
@@ -50,7 +57,7 @@
     <string name="summary_manageIpaAutoAllow">允许无需每次确认即请求安装的应用列表</string>
     <string name="summary_manageMyCustomization">创建、重命名或删除你的应用分组</string>
     <string name="clearUninstalledPkgsInAllLists">从所有列表中移除已卸载的应用</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">从一键列表、“离开冻结”、“我的自选”及统计数据中清理已卸载的应用</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">从一键列表、“离开冻结”、“应用锁定”、“我的自选”及统计数据中清理已卸载的应用</string>
     <string name="summary_clearIconCache">释放已缓存应用图标占用的存储；需要时会重新加载</string>
     <string name="summary_clearNameCache">释放已缓存应用名称占用的存储；需要时会重新加载</string>
     <string name="summary_clearAllCache">一次清空图标缓存和名称缓存</string>
@@ -102,7 +109,7 @@
     <string name="createActivityShortcut">创建活动快捷方式</string>
     <string name="cannotFindTheEntrance">未找到该应用的入口</string>
     <string name="unfreezeAndLaunchActivity">应用已冻结，其界面无法启动。要解冻吗？解冻后将保持未冻结状态。如需通过快捷方式冻结应用——请通过“%1$s”项创建。</string>
-    <string name="iconAEntry">图标与入口</string>
+    <string name="iconAEntry">FreezeYou 图标与入口</string>
     <string name="dialEntry">拨号盘进入</string>
     <string name="dialEntry_Ex">*#*#373393968#*#*(*#*#FreezeYou#*#*)(大部分安卓设备支持)</string>
     <string name="ciFinishedToast">已提交，请等待桌面刷新或重启桌面。</string>
@@ -134,6 +141,8 @@
     <string name="notificationBar">通知栏</string>
     <string name="disableSlideOut">禁止滑动移除</string>
     <string name="disableClickDisappear">禁止点击消失</string>
+    <string name="freezeAll">全部冻结</string>
+    <string name="quickFUFGroupSummaryContent">已解冻应用：%1$d</string>
     <string name="effectNextCreate">下次创建时生效</string>
     <string name="helpTranslate">协助翻译</string>
     <string name="thanksList">原项目贡献者</string>
@@ -157,6 +166,7 @@
     <string name="freezeOnceQuit">离开冻结</string>
     <string name="freezeOnceQuitSummary">“离开冻结”列表中的应用会在你离开后立即冻结。</string>
     <string name="needActiveAccessibilityService">需要启用无障碍服务</string>
+    <string name="needActiveDeviceAdmin">需要激活设备管理器权限</string>
     <string name="invalidArguments">参数错误</string>
     <string name="plsConfirm">请确认</string>
     <string name="removeNoRootCaution">真的要解除免ROOT吗？\n!为避免造成不必要的麻烦，解除前请先解冻所有已冻结的程序！</string>
@@ -168,6 +178,8 @@
     <string name="scheduledTasks">计划任务</string>
     <string name="add">添加</string>
     <string name="save">保存</string>
+    <string name="doNotSave">不保存</string>
+    <string name="diagnosisRefreshFailed">诊断中断，部分检查未执行</string>
     <string name="time">时间</string>
     <string name="enable">启用</string>
     <string name="repeat">重复</string>
@@ -252,7 +264,7 @@
     <string name="regenerateSomeCache">重建一些缓存</string>
     <string name="updateSomeData">更新一些数据</string>
     <string name="backupAndRestore">备份与恢复</string>
-    <string name="summary_backupAndRestore">将设置、列表、快捷方式和计划任务导出到文件，并可重新导入</string>
+    <string name="summary_backupAndRestore">将设置、列表和计划任务导出到文件，并可重新导入</string>
     <string name="status">状态</string>
     <string name="debugMode">调试模式</string>
     <string name="debugModeSummary">记录应用内部操作（冻结/解冻尝试、Shizuku/root 调用）以便诊断问题。可能会略微降低性能。</string>
@@ -351,6 +363,7 @@
     <string name="remove">移除</string>
     <string name="newFolder">新文件夹</string>
     <string name="alreadyExist">已存在</string>
+    <string name="operationAlreadyInProgress">此应用的操作正在进行中</string>
     <string name="queryStatus">查询状态</string>
     <string name="newClassification">新建分类</string>
     <string name="displayLanguage">显示语言</string>
@@ -382,6 +395,7 @@
     <string name="jumpToSysInstaller">转至系统安装器</string>
     <string name="appearance">外观</string>
     <string name="createQuickFUFNotiAfterUnfrozen">解冻后创建相应的快捷通知</string>
+    <string name="combineBatchQuickNotification">合并批量快捷通知</string>
     <string name="executionResult_colon_message">执行结果：%1$s</string>
     <string name="unknownResult_probablySuccess">结果未知（可能成功）</string>
     <string name="unknownError">未知错误</string>
@@ -393,6 +407,13 @@
     <string name="unlock">解锁</string>
     <string name="security">安全</string>
     <string name="enableAuthentication">启用身份验证</string>
+    <string name="appLockTimeout">锁定超时</string>
+    <string name="lockOnScreenOff">息屏时立即锁定</string>
+    <string name="enableAppLock">启用应用锁定</string>
+    <string name="appLockReLockPolicy">重新锁定</string>
+    <string name="appLockAccessibilityWarningTitle">需要无障碍服务</string>
+    <string name="appLockAccessibilityWarningMessage">应用锁定需要 FreezeYou 的无障碍服务来检测受保护应用的打开。现在前往系统设置开启吗？</string>
+    <string name="settings">设置</string>
     <string name="authentication">身份验证</string>
     <string name="verifyToContinue">验证以继续</string>
     <string name="authenticationFailed">验证失败</string>
@@ -403,6 +424,9 @@
     <string name="onlyRunning">运行中</string>
     <string name="onlyRunningSys">运行中：系统</string>
     <string name="onlyRunningUser">运行中：用户</string>
+    <string name="runningAppStats">%2$s 内存 · %1$s CPU</string>
+    <string name="sortBy_running_memory">按内存 (RAM) 排序</string>
+    <string name="sortBy_running_cpu">按 CPU 排序</string>
     <string name="criticalPackagesWarning">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n冻结它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
     <string name="critical_package_freeze_warning_single">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n冻结它可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
     <string name="critical_packages_uninstall_warning_batch">已选择影响系统稳定运行的关键应用：\n\n%1$s\n\n卸载它们可能导致设备失去状态栏、设置或键盘，从而影响正常操作。仍要继续吗？</string>
@@ -428,6 +452,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">不允许对自冻执行此操作</string>
     <string name="shizukuVersionIsTooLow">Shizuku 的版本过低</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku 尚未安装或其他异常</string>
+    <string name="authorizationStatus_authorized">Shizuku 授权已获取</string>
+    <string name="authorizationStatusNotAuthorized">Shizuku 权限未授予</string>
+    <string name="profileOwnerActive">配置文件所有者模式已激活</string>
+    <string name="systemAppModeActive">系统应用模式可用</string>
     <string name="includeFUFActivityInRecents">在最近任务中包括冻结与解冻活动</string>
     <string name="includeFUFActivityInRecentsSummary">同时在最近任务列表中单独显示冻结/解冻进度界面。</string>
     <string name="playFUFAnimations">播放冻结与解冻动画</string>
@@ -441,11 +469,18 @@
         <item>一键冻结</item>
         <item>一键解冻</item>
         <item>离开冻结</item>
+        <item>应用锁定</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>无</item>
         <item>询问并锁屏</item>
         <item>立即锁屏</item>
+    </string-array>
+    <string name="shortcutClickAction">点击应用快捷方式时的操作</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>询问操作（默认）</item>
+        <item>始终打开（解冻并运行）</item>
+        <item>开关切换（冻结/解冻）</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>默认</item>
@@ -486,6 +521,22 @@
         <item>Shizuku（停用模式）</item>
         <item>Shizuku（Disable_User 模式）</item>
         <item>Shizuku（Disable_Until_Used 模式）</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>退出时立即</item>
+        <item>1 分钟</item>
+        <item>2 分钟</item>
+        <item>5 分钟</item>
+        <item>10 分钟</item>
+        <item>15 分钟</item>
+        <item>从不</item>
+    </string-array>
+    <string-array name="appLockReLockPolicySelection">
+        <item>退出应用时</item>
+        <item>1 分钟后</item>
+        <item>2 分钟后</item>
+        <item>5 分钟后</item>
+        <item>设备息屏时</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>默认</item>
@@ -546,4 +597,10 @@
     <string name="restore_completed_title">恢复完成</string>
     <string name="restore_completed_single_app">应用“%1$s”已成功恢复</string>
     <string name="batch_restoring">正在恢复…</string>
+    <string name="restoreShortcuts">恢复快捷方式</string>
+    <string name="restoreShortcutsPromptMessage">点击“确定”将快捷方式固定到主屏幕。启动器将请求系统确认。</string>
+    <string name="noShortcutsToRestore">没有可恢复的已保存快捷方式</string>
+    <string name="skip">跳过</string>
+    <string name="restoreShortcutsProgress">快捷方式 %1$d / %2$d</string>
+    <string name="restoreShortcutFailed">无法添加快捷方式“%1$s”</string>
 </resources>

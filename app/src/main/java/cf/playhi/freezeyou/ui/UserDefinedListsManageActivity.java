@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
@@ -53,14 +54,13 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
             for (int i = 0; i < cursor.getCount(); i++) {
                 HashMap<String, Object> hm = new HashMap<>();
                 int id = cursor.getInt(cursor.getColumnIndex("_id"));
-                String title =
-                        new String(
-                                Base64.decode(
-                                        cursor.getString(
-                                                cursor.getColumnIndex("label")
-                                        ), Base64.DEFAULT
-                                )
-                        );
+                String rawLabel = cursor.getString(cursor.getColumnIndex("label"));
+                String title;
+                try {
+                    title = new String(Base64.decode(rawLabel, Base64.DEFAULT));
+                } catch (Exception e) {
+                    title = rawLabel != null ? rawLabel : "";
+                }
                 String packages = cursor.getString(cursor.getColumnIndex("packages"));
                 hm.put("id", id);
                 hm.put("title", title);
@@ -144,9 +144,9 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
                     builder.setTitle(R.string.plsConfirm);
                     builder.setMessage(R.string.askIfDel);
                     builder.setPositiveButton(
-                            R.string.yes, (dialog, which) ->
+                            R.string.okay, (dialog, which) ->
                                     deleteUserDefinedListById((int) itemDataHashMap.get("id")));
-                    builder.setNegativeButton(R.string.no, null);
+                    builder.setNegativeButton(R.string.cancel, null);
                     builder.show();
                     break;
                 default:
@@ -157,14 +157,28 @@ public class UserDefinedListsManageActivity extends FreezeYouBaseActivity {
         popup.show();
     }
 
-    private void deleteUserDefinedListById(int id) {
-        SQLiteDatabase userDefinedListsDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
-        userDefinedListsDb.execSQL(
-                "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
-        );
-        userDefinedListsDb.delete("categories", "_id = " + id, null);
-        userDefinedListsDb.close();
-
-        loadUserDefinedLists();
+    private void deleteUserDefinedListById(final int id) {
+        new Thread(() -> {
+            SQLiteDatabase userDefinedListsDb = null;
+            try {
+                userDefinedListsDb = openOrCreateDatabase("userDefinedCategories", MODE_PRIVATE, null);
+                userDefinedListsDb.execSQL(
+                        "create table if not exists categories(_id integer primary key autoincrement,label varchar,packages varchar)"
+                );
+                userDefinedListsDb.delete("categories", "_id = ?", new String[]{String.valueOf(id)});
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (userDefinedListsDb != null) {
+                    userDefinedListsDb.close();
+                }
+            }
+            runOnUiThread(() -> {
+                if (!isFinishing()
+                        && (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 || !isDestroyed())) {
+                    loadUserDefinedLists();
+                }
+            });
+        }, "UserDefinedCategoryDelete").start();
     }
 }

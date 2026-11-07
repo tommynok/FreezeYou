@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -12,13 +13,11 @@ import androidx.appcompat.app.ActionBar;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
-import com.tencent.mmkv.MMKV;
-
-import java.util.Date;
 import java.util.concurrent.Executor;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.ProcessSharedState;
 
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG;
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
@@ -32,11 +31,26 @@ import static cf.playhi.freezeyou.utils.ToastUtils.showShortToast;
 public class AppLockActivity extends FreezeYouBaseActivity {
     private BiometricPrompt mBiometricPrompt;
     private BiometricPrompt.PromptInfo mPromptInfo;
+    private boolean mPromptHasBeenShown = false;
+    /**
+     * What the question now in flight was asked about: the application on screen and the session it
+     * was stamped in, both taken at the moment the question went out rather than at the moment an
+     * answer arrives.
+     */
+    private String mPromptedTargetPkg;
+    private long mPromptedSessionEpoch = ProcessSharedState.NO_APP_LOCK_SESSION;
+    /** Whether this screen is the window the user is looking at right now. */
+    private boolean mHasWindowFocus = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this);
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
         setContentView(R.layout.app_lock_main);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
@@ -48,26 +62,42 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        mPromptHasBeenShown = false;
+        // The screen now answers for a different application than the one it was raised over, so
+        // the face on it has to change with it: a lock that shows one application while unlocking
+        // another tells the user nothing about what they are about to let open.
+        applyUnlockLogo();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
+        reStampSessionOfAStandingScreen();
+
         if (!getIntent().getBooleanExtra("ignoreCurrentUnlockStatus", false)
                 && !isLocked()) {
-            finish();
+            finishImmediately(RESULT_OK);
             return;
         }
 
         Button unlockButton = findViewById(R.id.app_lock_main_unlock_button);
         ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
-        unlockButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
-        logoImageView.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
+        unlockButton.setOnClickListener(v -> showBiometricPrompt());
+        logoImageView.setOnClickListener(v -> showBiometricPrompt());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ImageButton fingerprintImageButton = findViewById(R.id.app_lock_main_fingerprint_imageButton);
-            fingerprintImageButton.setOnClickListener(v -> mBiometricPrompt.authenticate(mPromptInfo));
+            if (fingerprintImageButton != null) {
+                fingerprintImageButton.setOnClickListener(v -> showBiometricPrompt());
+            }
         }
+        applyUnlockLogo();
+    }
+
+    /** The face of the application this screen is standing in front of, when it stands in front of one. */
+    private void applyUnlockLogo() {
+        ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
+        if (logoImageView == null) return;
         String logoPkgName = getIntent().getStringExtra("unlockLogoPkgName");
         if (logoPkgName != null) {
             logoImageView.setImageBitmap(
@@ -80,14 +110,180 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     )
             );
         }
-
-        mBiometricPrompt.authenticate(mPromptInfo);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mBiometricPrompt.cancelAuthentication();
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        mHasWindowFocus = hasFocus;
+        if (hasFocus && !mPromptHasBeenShown) {
+            mPromptHasBeenShown = true;
+            getWindow().getDecorView().post(this::showBiometricPrompt);
+        }
+    }
+
+    /**
+     * The session an interception lock is standing in is refreshed when the screen comes back to it.
+     *
+     * A device that went dark ended that session, but the lock left on top of the application asks the
+     * same person the same question, and an answer given to it is not the device's mistake to punish:
+     * the stamp moves with the screen rather than turning an honest answer into a trip to the home
+     * screen. What the screen-off took back stays taken - the session set is empty from that moment,
+     * so the application behind this screen opens again only for whoever proves themselves now.
+     */
+    private void reStampSessionOfAStandingScreen() {
+        if (!isInterceptionRequest(getIntent())) return;
+        long epoch = ProcessSharedState.getSessionEpoch();
+        getIntent().putExtra("appLockSessionEpoch", epoch);
+        mPromptedSessionEpoch = epoch;
+    }
+
+    private void showBiometricPrompt() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        if (mBiometricPrompt != null && mPromptInfo != null) {
+            // The answer comes back with nothing attached to it, so what it was asked about is
+            // recorded here - the last thing that is still true of this screen when the question is
+            // the one being answered.
+            mPromptedTargetPkg = targetPkgName();
+            mPromptedSessionEpoch = getIntent().getLongExtra(
+                    "appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION
+            );
+            try {
+                mBiometricPrompt.authenticate(mPromptInfo);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void finishImmediately(int resultCode) {
+        View content = findViewById(android.R.id.content);
+        if (content != null) {
+            content.setVisibility(View.GONE);
+        }
+        setResult(resultCode);
+        finish();
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
+        } else {
+            overridePendingTransition(0, 0);
+        }
+    }
+
+    /**
+     * Whether this screen was raised over somebody else's application rather than opened as the
+     * lock of this one. The extra is what says so: only the interception names the application it
+     * is standing in front of.
+     */
+    public static boolean isInterceptionRequest(Intent intent) {
+        if (intent == null) return false;
+        String targetPkgName = intent.getStringExtra("targetPkgName");
+        return targetPkgName != null && !"".equals(targetPkgName.trim());
+    }
+
+    /** The application this screen was raised over, or null when it is this application's own lock. */
+    private String targetPkgName() {
+        Intent intent = getIntent();
+        return isInterceptionRequest(intent) ? intent.getStringExtra("targetPkgName") : null;
+    }
+
+    /**
+     * Whether an answer to a prompt is an answer about what this screen is asking now.
+     *
+     * A prompt outlives the moment it was raised: the device may answer it after the interception has
+     * re-tasked this screen over another application, or after a screen-off ended the session the
+     * question was stamped in. Either way the biometric proves who is holding the phone and not which
+     * application they were being let into, so an answer that names a different question than the one
+     * on screen hands over nothing.
+     *
+     * <p>A screen the interception did not stamp carries no session, and an answer given there is not
+     * a thing a screen-off may take back: that is the settings row proving the door opens, and the
+     * user is still standing in front of it.
+     *
+     * Kept over plain values, like the gate the service raises the screen through, so the rule can be
+     * read and tested without a screen.
+     */
+    public static boolean isAnswerForCurrentQuestion(
+            String promptedTarget, String currentTarget,
+            long promptedEpoch, long currentEpoch) {
+        // Null means "this screen is the lock of this application", and only the same kind of screen
+        // can answer it. Compared by hand: the platform helper for it is newer than this application
+        // runs on.
+        if (promptedTarget == null) {
+            if (currentTarget != null) return false;
+        } else if (!promptedTarget.equals(currentTarget)) {
+            return false;
+        }
+        return !ProcessSharedState.isAppLockSessionStale(promptedEpoch, currentEpoch);
+    }
+
+    /** Whether the answer in flight belongs to the question this screen is asking now. */
+    private boolean answerIsForCurrentQuestion() {
+        return isAnswerForCurrentQuestion(
+                mPromptedTargetPkg, targetPkgName(),
+                mPromptedSessionEpoch, ProcessSharedState.getSessionEpoch()
+        );
+    }
+
+    /**
+     * Puts the question again to the user who just answered an older one.
+     *
+     * Only while this screen is the window they are looking at: a prompt raised at a screen nobody can
+     * see is a question asked of the next person to wake the device, and the answer to it arrives with
+     * no user in front of it.
+     */
+    private void askAgainIfStillTheScreenInTheFront() {
+        if (!mHasWindowFocus || isFinishing()) return;
+        showBiometricPrompt();
+    }
+
+    /**
+     * A refusal cannot simply close this screen: the window the user then sees is the application
+     * they were just stopped from opening, drawn while they watch. So the screen leaves towards the
+     * home screen, which is a window of its own and the only one that can be behind an application
+     * nobody has been let into.
+     *
+     * @return whether this screen did the leaving. The lock of this application is not sent home:
+     *         there the caller is a screen of this application, is told the answer was "no", and
+     *         finishes itself - and the settings row that only wants proof the lock can be opened
+     *         again would throw the user out of the app over a mistap.
+     */
+    private boolean dismissWithoutRevealingTarget() {
+        if (!isInterceptionRequest(getIntent()) || isFinishing()) return false;
+        Intent home = new Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_HOME)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(home);
+        } catch (RuntimeException e) {
+            // Still leaving: a screen that stayed because it had nowhere to go would be the one
+            // place the application behind it is guaranteed to be visible. The service raises the
+            // lock again over the window that takes the screen.
+            e.printStackTrace();
+        }
+        moveTaskToBack(true);
+        finishImmediately(RESULT_CANCELED);
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!dismissWithoutRevealingTarget()) {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBiometricPrompt != null) {
+            try {
+                mBiometricPrompt.cancelAuthentication();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private void initBiometricPromptPart() {
@@ -98,13 +294,20 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     public void onAuthenticationError(
                             int errorCode, @NonNull CharSequence errString) {
                         super.onAuthenticationError(errorCode, errString);
-                        showShortToast(
-                                getApplicationContext(),
-                                String.format(
-                                        getString(R.string.authenticationError_colon), errString
-                                )
-                        );
+                        if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
+                                && errorCode != BiometricPrompt.ERROR_CANCELED
+                                && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                            showShortToast(
+                                    getApplicationContext(),
+                                    String.format(
+                                            getString(R.string.authenticationError_colon), errString
+                                    )
+                            );
+                        }
                         setResult(RESULT_CANCELED);
+                        // A prompt that was cancelled, timed out or locked out is a refusal, and a
+                        // refusal is not allowed to leave the application it was raised over visible.
+                        dismissWithoutRevealingTarget();
                     }
 
                     @Override
@@ -112,13 +315,27 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                             @NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
 
-                        MMKV.mmkvWithAshmemID(
-                                        getApplicationContext(), "AshmemKV",
-                                        32, MMKV.MULTI_PROCESS_MODE, null)
-                                .encode("unlockTime", new Date().getTime());
+                        // The prompt is not answered when it is raised but whenever the device gets
+                        // round to it, and by then this screen may be asking about another
+                        // application or the session this question was stamped in may have ended.
+                        if (!answerIsForCurrentQuestion()) {
+                            // Nothing is handed over, and the user is not sent away either: this
+                            // screen is the one thing standing between the application and whoever is
+                            // holding the phone, so it asks again - about the application on it now.
+                            askAgainIfStillTheScreenInTheFront();
+                            return;
+                        }
 
-                        setResult(RESULT_OK);
-                        finish();
+                        // The application the user is now going into is open for as long as it stays
+                        // the window in front; the accessibility service takes that back the moment
+                        // it is not.
+                        ProcessSharedState.setPackageUnlocked(mPromptedTargetPkg);
+
+                        // Clears the background and screen-off triggers too: the app is open again
+                        // from now, and an old stamp would lock it on the next resume.
+                        resetLockState(AppLockActivity.this);
+
+                        finishImmediately(RESULT_OK);
                     }
 
                     @Override

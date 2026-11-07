@@ -69,12 +69,9 @@ class Unfreeze : ContentProvider() {
                     bundle.putInt("result", 998)
                 } else {
                     if (FUFUtils.checkMRootFrozen(context, pkgName)) {
-                        if (FUFUtils.processMRootAction(
-                                context, pkgName, null,
-                                null, hidden = false, askRun = false,
-                                runImmediately = false, activity = null,
-                                finish = false, showUnnecessaryToast = false
-                            )
+                        val dpmApiMode = resolveOwnerApiMode(context)
+                        if (dpmApiMode != null &&
+                            unfreezeThroughDpm(context, pkgName, dpmApiMode)
                         ) {
                             bundle.putInt("result", 0)
                         } else {
@@ -103,12 +100,9 @@ class Unfreeze : ContentProvider() {
                     bundle.putInt("result", 998)
                 } else {
                     if (FUFUtils.checkMRootFrozen(context, pkgName)) {
-                        if (FUFUtils.processMRootAction(
-                                context, pkgName, null,
-                                null, hidden = false, askRun = false,
-                                runImmediately = false, activity = null,
-                                finish = false, showUnnecessaryToast = false
-                            )
+                        val dpmApiMode = resolveOwnerApiMode(context)
+                        if (dpmApiMode != null &&
+                            unfreezeThroughDpm(context, pkgName, dpmApiMode)
                         ) {
                             bundle.putInt("result", 0)
                         } else {
@@ -225,6 +219,14 @@ class Unfreeze : ContentProvider() {
             }
         }
     }
+
+    private fun unfreezeThroughDpm(context: Context, pkgName: String, apiMode: Int): Boolean =
+        FUFUtils.processAction(
+            context, pkgName, apiMode,
+            enable = true, showUnnecessaryToast = false,
+            askRun = false, target = null, tasks = null,
+            runImmediately = false, activity = null, finish = false
+        )
 
     private fun doApiV2Action(context: Context, pkgName: String, apiMode: Int): Int {
         return runBlocking {

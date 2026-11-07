@@ -40,6 +40,9 @@
             <item
                 android:id="@+id/main_sca_menu_addToFreezeOnceQuit"
                 android:title="@string/addToFreezeOnceQuit" />
+            <item
+                android:id="@+id/main_sca_menu_addToAppLockList"
+                android:title="@string/addToAppLockList" />
         </menu>
     </item>
 

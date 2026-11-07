@@ -17,6 +17,14 @@
             app:summary="@string/summary_createQuickFUFNotiAfterUnfrozen"
             app:title="@string/createQuickFUFNotiAfterUnfrozen" />
         <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="createQuickFUFNotiAfterUnfrozen"
+            app:iconSpaceReserved="false"
+            app:key="combineBatchQuickNotification"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_combineBatchQuickNotification"
+            app:title="@string/combineBatchQuickNotification" />
+        <CheckBoxPreference
             app:defaultValue="true"
             app:dependency="createQuickFUFNotiAfterUnfrozen"
             app:iconSpaceReserved="false"
@@ -50,6 +58,13 @@
         </Preference>
 
     </PreferenceCategory>
+
+    <CheckBoxPreference
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="lesserToast"
+        app:singleLineTitle="false"
+        app:title="@string/lesserToast" />
 
     <Preference
         app:iconSpaceReserved="false"

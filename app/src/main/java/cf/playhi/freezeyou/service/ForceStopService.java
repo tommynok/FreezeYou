@@ -8,25 +8,35 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
 import cf.playhi.freezeyou.utils.ForceStopUtils;
 
 public class ForceStopService extends FreezeYouBaseService {
 
+    private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
             // Restart after the process was killed: nothing to act on.
-            stopSelf();
+            stopSelf(startId);
             return super.onStartCommand(null, flags, startId);
         }
         Context context = getApplicationContext();
 
         String[] packages = intent.getStringArrayExtra("packages");
-        ForceStopUtils.forceStop(context, packages);
+        mExecutor.execute(() -> {
+            try {
+                ForceStopUtils.forceStop(context, packages);
+            } finally {
+                stopSelf(startId);
+            }
+        });
 
-        stopSelf();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -42,12 +52,18 @@ public class ForceStopService extends FreezeYouBaseService {
                         )
                 );
             Notification.Builder mBuilder = new Notification.Builder(this, "ForceStop");
-            mBuilder.setSmallIcon(R.drawable.ic_notification);
+            mBuilder.setSmallIcon(R.drawable.ic_stat_logo);
             mBuilder.setContentText(getString(R.string.forceStop));
             startForeground(6, mBuilder.build());
         } else {
             startForeground(6, new Notification());
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mExecutor.shutdown();
     }
 
     @Override

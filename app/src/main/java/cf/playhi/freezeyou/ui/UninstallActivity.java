@@ -22,7 +22,7 @@ public class UninstallActivity extends FreezeYouBaseActivity {
         AlertDialogUtils.buildAlertDialog(
                 this, R.mipmap.ic_launcher_new_round,
                 R.string.removeNoRootCaution, R.string.plsConfirm)
-                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                .setPositiveButton(R.string.okay, (dialog, which) -> {
                     if (DevicePolicyManagerUtils.isDeviceOwner(getApplicationContext())) {
                         try {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -42,7 +42,7 @@ public class UninstallActivity extends FreezeYouBaseActivity {
                     }
                     finish();
                 })
-                .setNegativeButton(R.string.no, (dialog, which) -> finish())
+                .setNegativeButton(R.string.cancel, (dialog, which) -> finish())
                 .setNeutralButton(R.string.update, (dialog, which) -> {
                     checkUpdate(this);
                     finish();

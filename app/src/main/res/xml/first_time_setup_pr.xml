@@ -109,13 +109,15 @@
             app:singleLineTitle="false"
             app:summary="@string/needL"
             app:title="@string/avoidFreezeNotifyingApplications" />
-        <CheckBoxPreference
-            app:defaultValue="false"
+        <ListPreference
+            app:defaultValue="dialog"
+            app:entries="@array/shortcutClickActionSelection"
+            app:entryValues="@array/shortcutClickActionSelectionValues"
             app:iconSpaceReserved="false"
-            app:key="openAndUFImmediately"
+            app:key="shortcutClickAction"
             app:singleLineTitle="false"
-            app:summary="@string/openAndUFImmediatelyEx"
-            app:title="@string/openAndUFImmediately" />
+            app:title="@string/shortcutClickAction"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory

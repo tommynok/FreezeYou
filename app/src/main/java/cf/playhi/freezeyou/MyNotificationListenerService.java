@@ -53,6 +53,21 @@ public class MyNotificationListenerService extends NotificationListenerService {
     }
 
     /**
+     * Revoking notification access, or stopping the service, only reaches this side as an unbind.
+     * {@code onListenerDisconnected} is the callback that says so, but it does not exist below API
+     * 24, and the last snapshot lives in MMKV rather than in this process, so it would outlive the
+     * listener: every package left on it keeps being refused a freeze with nothing running any more
+     * to correct it.
+     */
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mListenerConnected = false;
+        statusBarNotifications = new StatusBarNotification[]{};
+        publish();
+    }
+
+    /**
      * This service runs in :backgroundService, so the array above is only visible here. The guard
      * that refuses to freeze an application while it is showing a notification runs wherever the
      * freeze was asked for, so the package names have to be put somewhere every process can read.

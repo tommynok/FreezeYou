@@ -42,6 +42,10 @@
         android:title="@string/addToFreezeOnceQuit"
         app:showAsAction="never" />
     <item
+        android:id="@+id/list_menu_addToAppLockList"
+        android:title="@string/addToAppLockList"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/list_menu_removeFromOneKeyFreezeList"
         android:title="@string/removeFromOneKeyList"
         app:showAsAction="never" />
@@ -52,6 +56,10 @@
     <item
         android:id="@+id/list_menu_removeFromFreezeOnceQuit"
         android:title="@string/removeFromFreezeOnceQuit"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/list_menu_removeFromAppLockList"
+        android:title="@string/removeFromAppLockList"
         app:showAsAction="never" />
     <item
         android:id="@+id/list_menu_groupItem_addToUserDefined"

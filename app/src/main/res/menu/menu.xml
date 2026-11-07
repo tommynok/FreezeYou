@@ -56,6 +56,9 @@
                 android:id="@+id/menu_vM_freezeOnceQuit"
                 android:title="@string/freezeOnceQuit" />
             <item
+                android:id="@+id/menu_vM_appLock"
+                android:title="@string/appLock" />
+            <item
                 android:id="@+id/menu_vM_onlySA"
                 android:title="@string/onlySA" />
             <item
@@ -85,53 +88,6 @@
             <item
                 android:id="@+id/menu_vM_all"
                 android:title="@string/displayAll" />
-        </menu>
-    </item>
-
-    <item
-        android:id="@+id/menu_sortBy"
-        android:contentDescription="@string/sortBy"
-        android:icon="@drawable/ic_action_sort"
-        android:orderInCategory="30"
-        android:title="@string/sortBy"
-        app:showAsAction="ifRoom">
-        <menu>
-            <item
-                android:id="@+id/menu_sB_default"
-                android:title="@string/sortBy_default" />
-            <item
-                android:id="@+id/menu_sB_no"
-                android:title="@string/sortBy_no" />
-            <item
-                android:id="@+id/menu_sB_uf_ascending"
-                android:title="@string/uf_ascending" />
-            <item
-                android:id="@+id/menu_sB_uf_descending"
-                android:title="@string/uf_descending" />
-            <item
-                android:id="@+id/menu_sB_ff_ascending"
-                android:title="@string/ff_ascending" />
-            <item
-                android:id="@+id/menu_sB_ff_descending"
-                android:title="@string/ff_descending" />
-            <item
-                android:id="@+id/menu_sB_us_ascending"
-                android:title="@string/us_ascending" />
-            <item
-                android:id="@+id/menu_sB_us_descending"
-                android:title="@string/us_descending" />
-
-            <item
-                android:id="@+id/menu_sB_alphabetical"
-                android:title="@string/alphabetical" />
-
-            <item
-                android:id="@+id/menu_sB_last_install"
-                android:title="@string/lastInstall" />
-
-            <item
-                android:id="@+id/menu_sB_last_update"
-                android:title="@string/lastUpdate" />
         </menu>
     </item>
 

@@ -14,11 +14,14 @@
     <string name="removeFromOneKeyList">Видалити зі списку OneKey-заморожування</string>
     <string name="removeFromOneKeyUFList">Видалити зі списку OneKey-розморожування</string>
     <string name="removeFromFreezeOnceQuit">Видалити з «Заморожування після виходу»</string>
+    <string name="removeFromAppLockList">Видалити з «Блокування застосунків»</string>
     <string name="removed">Видалено</string>
     <string name="removeFailed">Не вдалося видалити</string>
     <string name="addToOneKeyList">Додати в список OneKey-заморожування</string>
     <string name="addToOneKeyUFList">Додати в список OneKey-розморожування</string>
     <string name="addToFreezeOnceQuit">Додати в Заморожування після виходу</string>
+    <string name="addToAppLockList">Додати до «Блокування застосунків»</string>
+    <string name="appLock">Блокування застосунків</string>
     <string name="addFailed">Не вдалося додати</string>
     <string name="caution">УВАГА</string>
     <string name="cautionContent">Забороняється заморожувати важливі для системи додатки. Це може привести до збою системи</string>
@@ -34,9 +37,13 @@
     <string name="mayUnrootedOrOtherEx">Не надані дозволи, цілі були видалені або виникли інші винятки</string>
     <string name="nApplicationsFailedColonList">Не вдалося (%1$d): %2$s</string>
     <string name="andNMoreApplications">, і ще %1$d</string>
+    <string name="andMoreApplications">… та ще %1$d</string>
     <string name="summary_notificationBar_more">Системні налаштування сповіщень FreezeYou — канали та дозвіл на показ сповіщень</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
+    <string name="summary_combineBatchQuickNotification">Показувати одну картку з кнопкою «Заморозити все» замість окремих сповіщень для кожного додатка</string>
     <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) перед відкриттям FreezeYou</string>
+    <string name="summary_lockOnScreenOff">Вимагати розблокування після вимкнення екрана</string>
+    <string name="summary_enableAppLock">Запитувати розблокування при відкритті застосунків зі списку «Блокування застосунків». Використовується системний захист (відбиток пальця, PIN-код або ключ).</string>
     <string name="summary_enableInstallPkgFunc">Дозволяє відкривати та встановлювати сторонні APK-файли через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Видаляє файл APK після успішного встановлення, щоб звільнити місце</string>
     <string name="summary_notAllowWhenIsObsd">Блокує встановлення/видалення, якщо екран перекрито вікном іншого додатку (захист від підміни натискань)</string>
@@ -44,7 +51,7 @@
     <string name="summary_manageIpaAutoAllow">Список додатків, яким дозволено запитувати встановлення без підтвердження щоразу</string>
     <string name="summary_manageMyCustomization">Створюйте, перейменовуйте та видаляйте власні групи додатків</string>
     <string name="clearUninstalledPkgsInAllLists">Прибрати видалені додатки з усіх списків</string>
-    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey, «Заморожування після виходу», «Моя підбірка» та статистику від видалених із пристрою додатків</string>
+    <string name="summary_clearUninstalledPkgsInAllLists">Очищає списки OneKey, «Заморожування після виходу», «Блокування застосунків», «Моя підбірка» та статистику від видалених із пристрою додатків</string>
     <string name="summary_clearIconCache">Звільняє місце, зайняте кешем іконок додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearNameCache">Звільняє місце, зайняте кешем назв додатків; вони будуть завантажені знову за потреби</string>
     <string name="summary_clearAllCache">Очищає одразу обидва кеші — іконок і назв</string>
@@ -96,7 +103,7 @@
     <string name="createActivityShortcut">Створити ярлик активіті</string>
     <string name="cannotFindTheEntrance">У цього додатку не знайшлося точки входу</string>
     <string name="unfreezeAndLaunchActivity">Додаток заморожений — активіті не запуститься. Розморозити? Він залишиться розмороженим. Якщо потрібно заморожувати додаток через ярлик — створіть його через пункт «%1$s».</string>
-    <string name="iconAEntry">Іконки і вхід</string>
+    <string name="iconAEntry">Значок та спосіб входу у FreezeYou</string>
     <string name="dialEntry">Використовуйте клавіатуру для введення</string>
     <string name="dialEntry_Ex">Якщо ярлики на екрані приховано, відкрийте FreezeYou, набравши код *#*#373393968#*#* (*#*#FreezeYou#*#*) у номеронабирачі телефону. Підтримується на більшості Android-пристроїв.</string>
     <string name="ciFinishedToast">Відправлено, будь ласка, дочекайтеся оновлення лаунчера, або перезапустіть його.</string>
@@ -128,6 +135,8 @@
     <string name="notificationBar">Сповіщення</string>
     <string name="disableSlideOut">Не зникати при змахуванні</string>
     <string name="disableClickDisappear">Не зникати після натискання</string>
+    <string name="freezeAll">Заморозити все</string>
+    <string name="quickFUFGroupSummaryContent">Розморожено додатків: %1$d</string>
     <string name="effectNextCreate">Вступить в силу в наступний раз</string>
     <string name="helpTranslate">Допоможіть перекласти цей додаток</string>
     <string name="thanksList">Подяки учасникам проєкту</string>
@@ -151,6 +160,7 @@
     <string name="freezeOnceQuit">Заморожування після виходу</string>
     <string name="freezeOnceQuitSummary">Додатки зі списку «Заморожування після виходу» заморожуються, щойно ви з них вийшли.</string>
     <string name="needActiveAccessibilityService">Потрібно включити службу підтримки спеціальних можливостей</string>
+    <string name="needActiveDeviceAdmin">Потрібно активувати права адміністратора пристрою</string>
     <string name="invalidArguments">Неправильні параметри</string>
     <string name="plsConfirm">Будь ласка, підтвердіть</string>
     <string name="removeNoRootCaution">Ви дійсно хочете скасувати дозвіл для режиму без-root? Щоб уникнути непотрібних проблем, необхідно розморозити всі заморожені додатки перед відключенням цього режиму!</string>
@@ -162,6 +172,8 @@
     <string name="scheduledTasks">Заплановані завдання</string>
     <string name="add">Додати</string>
     <string name="save">Зберегти</string>
+    <string name="doNotSave">Не зберігати</string>
+    <string name="diagnosisRefreshFailed">Діагностику перервано, частину перевірок не виконано</string>
     <string name="time">Час</string>
     <string name="enable">Включити</string>
     <string name="repeat">Повтор</string>
@@ -246,7 +258,7 @@
     <string name="regenerateSomeCache">Оновлення деяких кешів</string>
     <string name="updateSomeData">Оновити деякі дані</string>
     <string name="backupAndRestore">Бекап і відновлення</string>
-    <string name="summary_backupAndRestore">Експорт налаштувань, списків, ярликів і завдань у файл та імпорт назад</string>
+    <string name="summary_backupAndRestore">Експорт налаштувань, списків і завдань у файл та імпорт назад</string>
     <string name="status">Стан</string>
     <string name="debugMode">Режим налагодження</string>
     <string name="debugModeSummary">Записує в журнал внутрішні дії додатку (спроби заморожування/розморожування, виклики Shizuku/root) для діагностики проблем. Може дещо знизити продуктивність.</string>
@@ -345,6 +357,7 @@
     <string name="remove">Видалити</string>
     <string name="newFolder">Нова папка</string>
     <string name="alreadyExist">Вже існує</string>
+    <string name="operationAlreadyInProgress">Операція для цього додатка вже виконується</string>
     <string name="queryStatus">Статус запиту</string>
     <string name="newClassification">Нова категорія</string>
     <string name="displayLanguage">Мова додатку</string>
@@ -376,6 +389,7 @@
     <string name="jumpToSysInstaller">Перейти до системного установника</string>
     <string name="appearance">Зовнішній вигляд</string>
     <string name="createQuickFUFNotiAfterUnfrozen">Створити сповіщення про швидку заморожування після розморожування</string>
+    <string name="combineBatchQuickNotification">Об\'єднувати пакетні сповіщення</string>
     <string name="executionResult_colon_message">Результат виконання: %1$s</string>
     <string name="unknownResult_probablySuccess">Результат невідомий (ймовірно успіх)</string>
     <string name="unknownError">Невідома помилка</string>
@@ -387,6 +401,13 @@
     <string name="unlock">Розблокування</string>
     <string name="security">Безпека</string>
     <string name="enableAuthentication">Ввімкнути автентифікацію</string>
+    <string name="appLockTimeout">Час до блокування</string>
+    <string name="lockOnScreenOff">Блокувати при вимкненні екрана</string>
+    <string name="enableAppLock">Ввімкнути блокування застосунків</string>
+    <string name="appLockReLockPolicy">Повторне блокування</string>
+    <string name="appLockAccessibilityWarningTitle">Потрібні спеціальні можливості</string>
+    <string name="appLockAccessibilityWarningMessage">Для роботи блокування застосунків потрібна служба спеціальних можливостей FreezeYou — вона відстежує відкриття захищених застосунків. Відкрити системні налаштування зараз?</string>
+    <string name="settings">Налаштування</string>
     <string name="authentication">Автентифікація</string>
     <string name="verifyToContinue">Підтвердити для продовження</string>
     <string name="authenticationFailed">Помилка автентифікації</string>
@@ -396,6 +417,9 @@
     <string name="onlyRunning">Активні</string>
     <string name="onlyRunningSys">Активні: системні</string>
     <string name="onlyRunningUser">Активні: користувацькі</string>
+    <string name="runningAppStats">%2$s ОЗП · %1$s ЦП</string>
+    <string name="sortBy_running_memory">За пам\'яттю (ОЗП)</string>
+    <string name="sortBy_running_cpu">За процесором (ЦП)</string>
     <string name="criticalPackagesWarning">Вибрано ключові програми, від яких залежить стабільність роботи системи:\n\n%1$s\n\nЇх заморожування може залишити пристрій без рядка стану, Налаштувань або клавіатури, що ускладнить керування пристроєм. Все одно продовжити?</string>
     <string name="critical_package_freeze_warning_single">Вибрано ключову програму, від якої залежить стабільність роботи системи:\n\n%1$s\n\nЇї заморожування може залишити пристрій без рядка стану, Налаштувань або клавіатури, що ускладнить керування пристроєм. Все одно продовжити?</string>
     <string name="critical_packages_uninstall_warning_batch">Вибрано ключові програми, від яких залежить стабільність роботи системи:\n\n%1$s\n\nЇх видалення може залишити пристрій без рядка стану, Налаштувань або клавіатури, що ускладнить керування пристроєм. Все одно продовжити?</string>
@@ -423,6 +447,10 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операції з FreezeYou заборонені</string>
     <string name="shizukuVersionIsTooLow">Версія Shizuku застаріла</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не встановлено або інші винятки</string>
+    <string name="authorizationStatus_authorized">Дозвіл Shizuku надано</string>
+    <string name="authorizationStatusNotAuthorized">Дозвіл Shizuku не надано</string>
+    <string name="profileOwnerActive">Режим власника профілю активний</string>
+    <string name="systemAppModeActive">Доступний режим системної програми</string>
     <string name="includeFUFActivityInRecents">Включати заморожування та розморожування в меню Нещодавні</string>
     <string name="includeFUFActivityInRecentsSummary">Також показує екран процесу заморожування/розморожування окремим пунктом у списку останніх додатків.</string>
     <string name="playFUFAnimations">Увімкнути анімацію заморожування та розморожування</string>
@@ -436,11 +464,18 @@
         <item>OneKey-заморожування</item>
         <item>OneKey-розморожування</item>
         <item>Заморожування при виході</item>
+        <item>Блокування застосунків</item>
     </string-array>
     <string-array name="shortCutOneKeyFreezeAdditionalOptionsSelection">
         <item>Немає</item>
         <item>Запит блокування екрану</item>
         <item>Блокувати екран відразу</item>
+    </string-array>
+    <string name="shortcutClickAction">Дія при натисканні на ярлик додатка</string>
+    <string-array name="shortcutClickActionSelection">
+        <item>Запитувати дію (за замовчуванням)</item>
+        <item>Завжди відкривати (розморозка та запуск)</item>
+        <item>Перемикач (заморозка / розморозка)</item>
     </string-array>
     <string-array name="mainActivityPatternSelection">
         <item>За замовчуванням</item>
@@ -481,6 +516,22 @@
         <item>Shizuku (режим відключення)</item>
         <item>Shizuku (режим Disable_User)</item>
         <item>Shizuku (режим Disable_Until_Used)</item>
+    </string-array>
+    <string-array name="appLockTimeoutSelection">
+        <item>Відразу при виході</item>
+        <item>1 хвилина</item>
+        <item>2 хвилини</item>
+        <item>5 хвилин</item>
+        <item>10 хвилин</item>
+        <item>15 хвилин</item>
+        <item>Ніколи</item>
+    </string-array>
+    <string-array name="appLockReLockPolicySelection">
+        <item>Одразу при виході</item>
+        <item>Через 1 хвилину</item>
+        <item>Через 2 хвилини</item>
+        <item>Через 5 хвилин</item>
+        <item>При вимкненні екрана</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>За замовчуванням</item>
@@ -541,4 +592,10 @@
     <string name="restore_completed_title">Відновлення завершено</string>
     <string name="restore_completed_single_app">Додаток «%1$s» успішно відновлено</string>
     <string name="batch_restoring">Відновлення…</string>
+    <string name="restoreShortcuts">Відновлення ярликів</string>
+    <string name="restoreShortcutsPromptMessage">Натисніть «ОК», щоб закріпити ярлик на робочому столі. Лаунчер запитає системне підтвердження.</string>
+    <string name="noShortcutsToRestore">Немає збережених ярликів для відновлення</string>
+    <string name="skip">Пропуск</string>
+    <string name="restoreShortcutsProgress">Ярлик %1$d з %2$d</string>
+    <string name="restoreShortcutFailed">Не вдалося додати ярлик «%1$s»</string>
 </resources>

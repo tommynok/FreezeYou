@@ -15,11 +15,13 @@ public class AskLockScreenActivity extends FreezeYouBaseActivity {
         processSetTheme(this, true);
         super.onCreate(savedInstanceState);
         AlertDialogUtils.buildAlertDialog(this, R.mipmap.ic_launcher_new_round, R.string.askIfLockScreen, R.string.notice)
-                .setPositiveButton(R.string.yes, (dialogInterface, i) -> {
-                    doLockScreen(AskLockScreenActivity.this);
-                    finish();
+                .setPositiveButton(R.string.okay, (dialogInterface, i) -> {
+                    new Thread(() -> {
+                        doLockScreen(AskLockScreenActivity.this);
+                        runOnUiThread(AskLockScreenActivity.this::finish);
+                    }, "AskLockScreenThread").start();
                 })
-                .setNegativeButton(R.string.no, (dialogInterface, i) -> finish())
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finish())
                 .setOnCancelListener(dialogInterface -> finish())
                 .create().show();
     }

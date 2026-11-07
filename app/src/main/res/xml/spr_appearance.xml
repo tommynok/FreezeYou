@@ -43,7 +43,7 @@
         app:title="@string/displayLanguage"
         app:useSimpleSummaryProvider="true" />
 
-    <!-- All three answer the same question: how much the application shows of what it just did. -->
+    <!-- How much the application shows of what it just did. -->
     <PreferenceCategory
         app:iconSpaceReserved="false"
         app:title="@string/category_feedback">
@@ -60,12 +60,6 @@
             app:key="playFUFAnimations"
             app:singleLineTitle="false"
             app:title="@string/playFUFAnimations" />
-        <CheckBoxPreference
-            app:defaultValue="false"
-            app:iconSpaceReserved="false"
-            app:key="lesserToast"
-            app:singleLineTitle="false"
-            app:title="@string/lesserToast" />
 
     </PreferenceCategory>
 

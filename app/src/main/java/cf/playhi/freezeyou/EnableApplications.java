@@ -11,7 +11,7 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import static cf.playhi.freezeyou.utils.DebugModeUtils.isDebugModeEnabled;
 import static cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner;
 import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionMRoot;
-import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionRoot;
+import static cf.playhi.freezeyou.utils.FUFUtils.oneKeyActionRootAsync;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -21,31 +21,36 @@ public class EnableApplications extends FreezeYouBaseActivity {
         super.onCreate(savedInstanceState);
 
         Intent intent = getIntent();
-
-        if (intent != null) {
-            String[] packages = intent.getStringArrayExtra("packages");
-
-            if (isDebugModeEnabled()) {
-                Log.e("DebugModeLogcat", "Intent toString:" + intent.toString());
-                for (String pkg : packages) {
-                    Log.e("DebugModeLogcat", "Intent packages:" + pkg);
-                }
-            }
-
-            if (packages != null) {
-                setResult(Activity.RESULT_OK);
-                if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(EnableApplications.this)) {
-                    oneKeyActionMRoot(EnableApplications.this, false, packages);
-                    finish();
-                } else {
-                    oneKeyActionRoot(EnableApplications.this, false, packages);
-                    finish();
-                }
-            }
-        } else {
+        if (intent == null) {
             if (isDebugModeEnabled()) {
                 Log.e("DebugModeLogcat", "Intent: null");
             }
+            finish();
+            return;
+        }
+
+        String[] packages = intent.getStringArrayExtra("packages");
+        if (packages == null || packages.length == 0) {
+            if (isDebugModeEnabled()) {
+                Log.e("DebugModeLogcat", "Intent packages: null or empty");
+            }
+            finish();
+            return;
+        }
+
+        if (isDebugModeEnabled()) {
+            Log.e("DebugModeLogcat", "Intent toString:" + intent.toString());
+            for (String pkg : packages) {
+                Log.e("DebugModeLogcat", "Intent packages:" + pkg);
+            }
+        }
+
+        setResult(Activity.RESULT_OK);
+        if (Build.VERSION.SDK_INT >= 21 && isDeviceOwner(EnableApplications.this)) {
+            oneKeyActionMRoot(EnableApplications.this, false, packages);
+            finish();
+        } else {
+            oneKeyActionRootAsync(EnableApplications.this, false, packages, true, this::finish);
         }
     }
 }

@@ -6,14 +6,22 @@ import android.view.View;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import cf.playhi.freezeyou.R;
 
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.allowFollowSystemAutoSwitchDarkMode;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.shortcutClickAction;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.themeOfAutoSwitchDarkMode;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.uiStyleSelection;
+import static cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageStringKeys.mainActivityPattern;
 import static cf.playhi.freezeyou.utils.MoreUtils.requestOpenWebSite;
 import static cf.playhi.freezeyou.utils.SettingsUtils.checkPreferenceData;
+import static cf.playhi.freezeyou.utils.SettingsUtils.resolveShortcutClickAction;
+import static cf.playhi.freezeyou.utils.ThemeUtils.recreateAllActivities;
 
 public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -21,6 +29,14 @@ public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.first_time_setup_pr);
+
+        // This row used to be a checkbox on a boolean of its own, which the settings screen never
+        // wrote: it showed the opposite of what a shortcut tap did. It is the same single-choice
+        // row as in Настройки now, and it shows the answer the tap itself reads.
+        ListPreference shortcutAction = findPreference(shortcutClickAction.name());
+        if (shortcutAction != null) {
+            shortcutAction.setValue(resolveShortcutClickAction());
+        }
     }
 
     @Override
@@ -51,6 +67,17 @@ public class FirstTimeSetupFragment extends PreferenceFragmentCompat implements
                 getActivity().getApplicationContext(),
                 getActivity(), sharedPreferences, key
         );
+        if (uiStyleSelection.name().equals(key)
+                || themeOfAutoSwitchDarkMode.name().equals(key)
+                || allowFollowSystemAutoSwitchDarkMode.name().equals(key)
+                || mainActivityPattern.name().equals(key)) {
+            // Writing the choice to storage is not enough: this screen and Main behind it keep the
+            // old theme until recreated. The two dark-mode keys are not offered on this screen;
+            // their branch is kept as a safeguard, mirroring the rule of the settings screen.
+            if (getActivity() != null) {
+                recreateAllActivities(getActivity());
+            }
+        }
     }
 
     @Override

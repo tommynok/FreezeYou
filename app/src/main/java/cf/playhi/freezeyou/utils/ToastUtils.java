@@ -1,6 +1,8 @@
 package cf.playhi.freezeyou.utils;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 public final class ToastUtils {
@@ -15,21 +17,29 @@ public final class ToastUtils {
     }
 
     public static void showLongToast(Context context, int id) {
-        Toast.makeText(context, id, Toast.LENGTH_LONG).show();
+        postToMainLooper(() -> Toast.makeText(context, id, Toast.LENGTH_LONG).show());
     }
 
     public static void showLongToast(Context context, String string) {
         if (string != null)
-            Toast.makeText(context, string, Toast.LENGTH_LONG).show();
+            postToMainLooper(() -> Toast.makeText(context, string, Toast.LENGTH_LONG).show());
     }
 
     public static void showShortToast(Context context, int id) {
-        Toast.makeText(context, id, Toast.LENGTH_SHORT).show();
+        postToMainLooper(() -> Toast.makeText(context, id, Toast.LENGTH_SHORT).show());
     }
 
     public static void showShortToast(Context context, String string) {
         if (string != null)
-            Toast.makeText(context, string, Toast.LENGTH_SHORT).show();
+            postToMainLooper(() -> Toast.makeText(context, string, Toast.LENGTH_SHORT).show());
+    }
+
+    private static void postToMainLooper(Runnable runnable) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runnable.run();
+        } else {
+            new Handler(Looper.getMainLooper()).post(runnable);
+        }
     }
 
 }

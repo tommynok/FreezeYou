@@ -21,6 +21,7 @@ import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.fuf.FUFSinglePackage;
 import cf.playhi.freezeyou.utils.ApplicationIconUtils;
+import cf.playhi.freezeyou.utils.FUFUtils;
 
 import rikka.shizuku.Shizuku;
 
@@ -33,6 +34,13 @@ import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabe
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
 public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
+
+    /**
+     * The language-independent key for the "launch the application" row. The row is labelled with
+     * a translated string, and an id built from that label changes with the language, which makes
+     * the launcher treat the same shortcut as a new one.
+     */
+    public static final String LAUNCH_TARGET_KEY = "@launch";
 
     /** Set when the caller is building a shortcut that only starts an activity. */
     private boolean activityShortcutMode;
@@ -126,6 +134,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                         getApplicationInfoFromPkgName(pkgName, this),
                         false));
         hm.put("Name", getString(R.string.launch));
+        hm.put("TargetKey", LAUNCH_TARGET_KEY);
         hm.put("Label",
                 getApplicationLabel(
                         this, getPackageManager(),
@@ -144,6 +153,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                             getApplicationInfoFromPkgName(pkgName, this),
                             false));
             hm2.put("Name", getString(R.string.onlyUnfreeze));
+            hm2.put("TargetKey", FUFUtils.ONLY_UNFREEZE_TARGET);
             hm2.put("Label",
                     getApplicationLabel(
                             this, getPackageManager(),
@@ -198,6 +208,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                     label = activityInfo.loadLabel(pm).toString();
                 }
                 hashMap.put("Name", ais);
+                hashMap.put("TargetKey", ais);
                 hashMap.put("Label", label);
                 arrayList.add(hashMap);
             }
@@ -240,6 +251,7 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
     private void selectAndFinish(
             ArrayList<HashMap<String, Object>> arrayList, int position, String pkgName) {
         String name = (String) arrayList.get(position).get("Name");
+        String targetKey = (String) arrayList.get(position).get("TargetKey");
         String label = (String) arrayList.get(position).get("Label");
         Drawable drawable = (Drawable) arrayList.get(position).get("Img");
         Bitmap icon = drawable == null ?
@@ -250,8 +262,18 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                         .putExtra("name", name)
                         .putExtra("icon", icon)
                         .putExtra("label", label)
-                        .putExtra("id", "FreezeYou!" + pkgName + " " + name));
+                        .putExtra("id", buildShortcutId(pkgName, targetKey, name)));
         finish();
+    }
+
+    /**
+     * The launcher updates a pinned shortcut in place when the id matches, and creates a second
+     * one when it does not. The rows for the two standing choices carry translated labels, so
+     * their ids are built from the stable target key; the display name is only a fallback for a
+     * row that has no key.
+     */
+    public static String buildShortcutId(String pkgName, String targetKey, String displayName) {
+        return "FreezeYou!" + pkgName + " " + (targetKey == null ? displayName : targetKey);
     }
 
     /**

@@ -2,6 +2,8 @@ package cf.playhi.freezeyou.ui;
 
 import android.os.Bundle;
 
+import androidx.appcompat.app.AlertDialog;
+
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
@@ -12,6 +14,8 @@ import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.FUFUtils.checkAndStartApp;
 
 public class AskRunActivity extends FreezeYouBaseActivity {
+    private AlertDialog mAlertDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         processSetTheme(this, true);
@@ -19,7 +23,7 @@ public class AskRunActivity extends FreezeYouBaseActivity {
         final String pkgName = getIntent().getStringExtra("pkgName");
         final String target = getIntent().getStringExtra("target");
         final String tasks = getIntent().getStringExtra("tasks");
-        buildAlertDialog(
+        mAlertDialog = buildAlertDialog(
                 this,
                 getApplicationIcon(
                         this,
@@ -28,8 +32,8 @@ public class AskRunActivity extends FreezeYouBaseActivity {
                         true),
                 getResources().getString(R.string.unfreezedAndAskLaunch),
                 getResources().getString(R.string.notice))
-                .setNegativeButton(R.string.no, (dialogInterface, i) -> finish())
-                .setPositiveButton(R.string.yes, (dialogInterface, ii) -> {
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> finish())
+                .setPositiveButton(R.string.okay, (dialogInterface, ii) -> {
                     checkAndStartApp(
                             AskRunActivity.this,
                             pkgName,
@@ -41,13 +45,24 @@ public class AskRunActivity extends FreezeYouBaseActivity {
                     finish();
                 })
                 .setOnCancelListener(dialog -> finish())
-                .create()
-                .show();
+                .create();
+        mAlertDialog.show();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (mAlertDialog != null && mAlertDialog.isShowing()) {
+            mAlertDialog.dismiss();
+        }
         finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mAlertDialog != null && mAlertDialog.isShowing()) {
+            mAlertDialog.dismiss();
+        }
     }
 }
