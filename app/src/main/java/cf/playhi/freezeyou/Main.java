@@ -147,6 +147,7 @@ import static cf.playhi.freezeyou.utils.VersionUtils.checkUpdate;
 import static cf.playhi.freezeyou.utils.VersionUtils.getVersionCode;
 import static cf.playhi.freezeyou.utils.VersionUtils.isOutdated;
 import cf.playhi.freezeyou.utils.RunningAppsRefreshControl;
+import cf.playhi.freezeyou.utils.RunningAppsSortControl;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
@@ -177,6 +178,8 @@ public class Main extends FreezeYouBaseActivity {
     private final static int SORT_BY_ALPHABETICAL = 8;
     private final static int SORT_BY_LAST_INSTALLED = 9;
     private final static int SORT_BY_LAST_UPDATED = 10;
+    private final static int SORT_BY_RUNNING_RAM = RunningAppsSortControl.SORT_BY_RUNNING_RAM;
+    private final static int SORT_BY_RUNNING_CPU = RunningAppsSortControl.SORT_BY_RUNNING_CPU;
 
     private final ArrayList<String> selectedPackages = new ArrayList<>();
     private ActionMode currentSelectionActionMode;
@@ -197,6 +200,8 @@ public class Main extends FreezeYouBaseActivity {
     // screen when it finishes.
     private volatile String currentCategoryLabel = null;
     private volatile int currentSortRule = SORT_BY_DEFAULT;
+    private volatile int currentGeneralSortRule = SORT_BY_DEFAULT;
+    private volatile int currentRunningSortRule = SORT_BY_RUNNING_RAM;
     private boolean needProcessOnItemCheckedStateChanged = true;
 
     // The launcher's pin dialog pauses this activity between two shortcuts, so a batch has to
@@ -239,6 +244,7 @@ public class Main extends FreezeYouBaseActivity {
     private ImageButton mSelectionActionsImageButton;
     private ImageButton mRefreshButton;
     private ProgressBar mRefreshProgressBar;
+    private ImageButton mSortRunningButton;
     // A popup left open when the activity pauses is restored with the window and then torn down
     // on focus loss, which flashes the dimming layer on the way back into the app.
     private PopupMenu mActivePopupMenu;
@@ -412,10 +418,45 @@ public class Main extends FreezeYouBaseActivity {
     private void setupRefreshControl() {
         mRefreshButton = findViewById(R.id.main_refresh_button);
         mRefreshProgressBar = findViewById(R.id.main_refresh_progressBar);
+        mSortRunningButton = findViewById(R.id.main_sort_running_button);
         if (mRefreshButton != null) {
             mRefreshButton.setOnClickListener(v -> onRefreshButtonClicked());
         }
+        if (mSortRunningButton != null) {
+            mSortRunningButton.setOnClickListener(this::onSortRunningButtonClicked);
+        }
         updateRefreshControlState();
+    }
+
+    private void onSortRunningButtonClicked(View v) {
+        if (!RunningAppsRefreshControl.isRunningFilter(currentFilter)) return;
+        PopupMenu popupMenu = new PopupMenu(getLightPopupContext(this), v);
+        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 1, R.string.sortBy_running_memory);
+        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 2, R.string.sortBy_running_cpu);
+        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 3, R.string.alphabetical);
+        popupMenu.getMenu().add(Menu.NONE, Menu.NONE, 4, R.string.sortBy_default);
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int order = item.getOrder();
+            int newSortRule;
+            if (order == 1) {
+                newSortRule = SORT_BY_RUNNING_RAM;
+            } else if (order == 2) {
+                newSortRule = SORT_BY_RUNNING_CPU;
+            } else if (order == 3) {
+                newSortRule = SORT_BY_ALPHABETICAL;
+            } else {
+                newSortRule = SORT_BY_DEFAULT;
+            }
+            generateList(currentFilter, newSortRule, currentCategoryLabel);
+            return true;
+        });
+        popupMenu.setOnDismissListener(menu -> {
+            if (mActivePopupMenu == popupMenu) {
+                mActivePopupMenu = null;
+            }
+        });
+        mActivePopupMenu = popupMenu;
+        popupMenu.show();
     }
 
     private void onRefreshButtonClicked() {
@@ -451,6 +492,21 @@ public class Main extends FreezeYouBaseActivity {
                     mRefreshButton.setEnabled(true);
                 } else {
                     mRefreshButton.setVisibility(View.GONE);
+                }
+            }
+            if (mSortRunningButton != null) {
+                if (RunningAppsSortControl.isSortButtonVisible(filter)) {
+                    android.util.TypedValue isLightThemeValue = new android.util.TypedValue();
+                    boolean isLightTheme =
+                            getTheme().resolveAttribute(android.R.attr.isLightTheme, isLightThemeValue, true)
+                                    && isLightThemeValue.data != 0;
+                    mSortRunningButton.setImageResource(
+                            isLightTheme ? R.drawable.ic_action_sort_light : R.drawable.ic_action_sort
+                    );
+                    mSortRunningButton.setVisibility(View.VISIBLE);
+                    mSortRunningButton.setEnabled(!isRefreshing);
+                } else {
+                    mSortRunningButton.setVisibility(View.GONE);
                 }
             }
             if (mRefreshProgressBar != null) {
@@ -525,9 +581,7 @@ public class Main extends FreezeYouBaseActivity {
         if (sharedPref.getBoolean(saveOnClickFunctionStatus.name(), saveOnClickFunctionStatus.defaultValue())) {
             appListViewOnClickMode = sharedPref.getInt("onClickFunctionStatus", APPListViewOnClickMode_chooseAction);
         }
-        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
-            currentSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
-        }
+        restoreSortMethodStatus();
     }
 
     @Override
@@ -632,7 +686,9 @@ public class Main extends FreezeYouBaseActivity {
     }
 
     private void generateList(String filter) {
-        generateList(filter, currentSortRule);
+        int targetSortRule = RunningAppsSortControl.resolveSortRuleForFilter(
+                filter, getSortMethodStatus(), getRunningSortMethodStatus());
+        generateList(filter, targetSortRule);
     }
 
     /**
@@ -720,6 +776,17 @@ public class Main extends FreezeYouBaseActivity {
     private void scheduleListGeneration(String filter, int sortRule, String categoryLabel) {
         final boolean startWorker;
         synchronized (listGenerationLock) {
+            boolean runningFilter = RunningAppsRefreshControl.isRunningFilter(filter);
+            if (!runningFilter && RunningAppsSortControl.isRunningSortRule(sortRule)) {
+                sortRule = getSortMethodStatus();
+            }
+            if (runningFilter) {
+                if (currentRunningSortRule != sortRule) saveRunningSortMethodStatus(sortRule);
+                currentRunningSortRule = sortRule;
+            } else {
+                if (currentGeneralSortRule != sortRule) saveSortMethodStatus(sortRule);
+                currentGeneralSortRule = sortRule;
+            }
             currentFilter = filter;
             currentCategoryLabel = categoryLabel;
             currentSortRule = sortRule;
@@ -1026,8 +1093,10 @@ public class Main extends FreezeYouBaseActivity {
                                 saveIconCache
                         );
                         if (keyValuePair != null) {
+                            RunningAppsUtils.ResourceUsage usage = runningUsage.get(packageInfo1.packageName);
                             keyValuePair.put("RunningStats", RunningAppsUtils.formatResourceUsage(
-                                    applicationContext, runningUsage.get(packageInfo1.packageName)));
+                                    applicationContext, usage));
+                            keyValuePair.put("RunningUsage", usage);
                             AppList.add(keyValuePair);
                         }
                     }
@@ -1056,6 +1125,14 @@ public class Main extends FreezeYouBaseActivity {
             switch (sortRule) {
                 case SORT_BY_DEFAULT:
                     setSortByDefault(AppList);
+                    break;
+                case SORT_BY_RUNNING_RAM:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, RunningAppsSortControl.createRamComparator(Collator.getInstance()));
+                    break;
+                case SORT_BY_RUNNING_CPU:
+                    setSortByDefault(AppList);
+                    Collections.sort(AppList, RunningAppsSortControl.createCpuComparator(Collator.getInstance()));
                     break;
                 case SORT_BY_UF_ASCENDING:
                     setSortByDefault(AppList);
@@ -1967,9 +2044,7 @@ public class Main extends FreezeYouBaseActivity {
         if (sharedPref.getBoolean(saveOnClickFunctionStatus.name(), saveOnClickFunctionStatus.defaultValue())) {
             appListViewOnClickMode = sharedPref.getInt("onClickFunctionStatus", APPListViewOnClickMode_chooseAction);
         }
-        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
-            currentSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
-        }
+        restoreSortMethodStatus();
         if (!sharedPref.getBoolean(noCaution.name(), noCaution.defaultValue())) {
             buildAlertDialog(Main.this, R.mipmap.ic_launcher_new_round, R.string.cautionContent, R.string.caution)
                     .setPositiveButton(android.R.string.ok, (dialogInterface, ii) -> {
@@ -2004,7 +2079,7 @@ public class Main extends FreezeYouBaseActivity {
             @Override
             public void run() {
                 if (restoreFilterFromSavedState) {
-                    generateList(currentFilter, currentSortRule, currentCategoryLabel);
+                    generateList(currentFilter);
                     return;
                 }
                 String mode = getIntent().getStringExtra("pkgName");
@@ -3105,10 +3180,45 @@ public class Main extends FreezeYouBaseActivity {
         }
     }
 
+    private void restoreSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        synchronized (listGenerationLock) {
+            if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+                currentGeneralSortRule = sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+                currentRunningSortRule = sharedPref.getInt("runningSortMethodStatus", SORT_BY_RUNNING_RAM);
+            }
+            currentSortRule = RunningAppsSortControl.resolveSortRuleForFilter(
+                    currentFilter, currentGeneralSortRule, currentRunningSortRule);
+        }
+    }
+
+    private int getSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            return sharedPref.getInt("sortMethodStatus", SORT_BY_DEFAULT);
+        }
+        return currentGeneralSortRule;
+    }
+
+    private int getRunningSortMethodStatus() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPref.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            return sharedPref.getInt("runningSortMethodStatus", SORT_BY_RUNNING_RAM);
+        }
+        return currentRunningSortRule;
+    }
+
     private void saveSortMethodStatus(int status) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (sharedPreferences.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
             sharedPreferences.edit().putInt("sortMethodStatus", status).apply();
+        }
+    }
+
+    private void saveRunningSortMethodStatus(int status) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if (sharedPreferences.getBoolean(saveSortMethodStatus.name(), saveSortMethodStatus.defaultValue())) {
+            sharedPreferences.edit().putInt("runningSortMethodStatus", status).apply();
         }
     }
 
@@ -3420,7 +3530,7 @@ public class Main extends FreezeYouBaseActivity {
                 );
         if (cursor.moveToFirst()) {
             generateList(cursor.getString(cursor.getColumnIndex("packages")),
-                    currentSortRule, base64Label);
+                    getSortMethodStatus(), base64Label);
         } else {
             showToast(this, R.string.failed);
         }
@@ -3791,7 +3901,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_DEFAULT);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_DEFAULT);
                         return true;
                     case R.id.menu_sB_no:
                         new Thread(new Runnable() {
@@ -3800,7 +3909,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_NO);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_NO);
                         return true;
                     case R.id.menu_sB_uf_ascending:
                         new Thread(new Runnable() {
@@ -3809,7 +3917,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_UF_ASCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_UF_ASCENDING);
                         return true;
                     case R.id.menu_sB_uf_descending:
                         new Thread(new Runnable() {
@@ -3818,7 +3925,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_UF_DESCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_UF_DESCENDING);
                         return true;
                     case R.id.menu_sB_ff_ascending:
                         new Thread(new Runnable() {
@@ -3827,7 +3933,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_FF_ASCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_FF_ASCENDING);
                         return true;
                     case R.id.menu_sB_ff_descending:
                         new Thread(new Runnable() {
@@ -3836,7 +3941,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_FF_DESCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_FF_DESCENDING);
                         return true;
                     case R.id.menu_sB_us_ascending:
                         AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
@@ -3846,7 +3950,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_US_ASCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_US_ASCENDING);
                         return true;
                     case R.id.menu_sB_us_descending:
                         AccessibilityUtils.checkAndRequestIfAccessibilitySettingsOff(this);
@@ -3856,7 +3959,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_US_DESCENDING);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_US_DESCENDING);
                         return true;
                     case R.id.menu_sB_alphabetical:
                         new Thread(new Runnable() {
@@ -3865,7 +3967,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_ALPHABETICAL);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_ALPHABETICAL);
                         return true;
                     case R.id.menu_sB_last_install:
                         new Thread(new Runnable() {
@@ -3874,7 +3975,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_LAST_INSTALLED);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_LAST_INSTALLED);
                         return true;
                     case R.id.menu_sB_last_update:
                         new Thread(new Runnable() {
@@ -3883,7 +3983,6 @@ public class Main extends FreezeYouBaseActivity {
                                 generateList(currentFilter, SORT_BY_LAST_UPDATED);
                             }
                         }).start();
-                        saveSortMethodStatus(SORT_BY_LAST_UPDATED);
                         return true;
                     default:
                         return super.onOptionsItemSelected(item);

@@ -1,11 +1,13 @@
 package cf.playhi.freezeyou
 
 import android.app.Application
+import android.content.SharedPreferences
 import android.os.Looper
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ProgressBar
+import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.utils.ShadowContractMMKV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -100,6 +102,85 @@ class MainRunningRefreshTest {
         set("currentFilter", "all")
         shadowOf(Looper.getMainLooper()).idle()
         assertControls(View.GONE, View.GONE)
+    }
+
+    @Test
+    fun sortButtonVisibleOnlyForRunningFilters() {
+        val sortButton = activity.findViewById<ImageButton>(R.id.main_sort_running_button)
+        for (filter in listOf("RUN", "RUN_SYS", "RUN_USER")) {
+            set("listGenerationRunning", true)
+            queue(filter)
+            set("listGenerationQueued", false)
+            invoke("runQueuedListGenerations")
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(View.VISIBLE, sortButton.visibility)
+            assertTrue(sortButton.isEnabled)
+        }
+        for (filter in listOf("all", "UF", "OF")) {
+            set("listGenerationRunning", true)
+            queue(filter)
+            set("listGenerationQueued", false)
+            invoke("runQueuedListGenerations")
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(View.GONE, sortButton.visibility)
+        }
+    }
+
+    @Test
+    fun restoreSortMethodStatusUsesActiveFilterWithoutCrossingSettings() {
+        prefs().edit()
+            .putBoolean("saveSortMethodStatus", true)
+            .putInt("sortMethodStatus", 8)
+            .putInt("runningSortMethodStatus", 12)
+            .commit()
+        set("currentFilter", "RUN")
+        invoke("restoreSortMethodStatus")
+        assertEquals(12, get("currentSortRule"))
+        assertEquals(8, get("currentGeneralSortRule"))
+        set("currentFilter", "all")
+        invoke("restoreSortMethodStatus")
+        assertEquals(8, get("currentSortRule"))
+        assertEquals(12, get("currentRunningSortRule"))
+    }
+
+    @Test
+    fun automaticRefreshKeepsUnsavedSortWhenSavingDisabled() {
+        prefs().edit()
+            .putBoolean("saveSortMethodStatus", false)
+            .putInt("sortMethodStatus", 8)
+            .putInt("runningSortMethodStatus", 12)
+            .commit()
+        set("listGenerationRunning", true)
+        queue("RUN", 12)
+        generate("RUN")
+        assertEquals(12, get("queuedSortRule"))
+        queue("all", 8)
+        generate("all")
+        assertEquals(8, get("queuedSortRule"))
+    }
+
+    @Test
+    fun runningSortChangesDoNotOverwriteGeneralSetting() {
+        prefs().edit()
+            .putBoolean("saveSortMethodStatus", true)
+            .putInt("sortMethodStatus", 8)
+            .putInt("runningSortMethodStatus", 11)
+            .commit()
+        set("listGenerationRunning", true)
+        queue("RUN", 12)
+        assertEquals(12, prefs().getInt("runningSortMethodStatus", -1))
+        assertEquals(8, prefs().getInt("sortMethodStatus", -1))
+        queue("all", 12)
+        assertEquals(8, get("queuedSortRule"))
+        assertEquals(8, prefs().getInt("sortMethodStatus", -1))
+        assertEquals(12, prefs().getInt("runningSortMethodStatus", -1))
+    }
+
+    private fun prefs(): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)
+
+    private fun generate(filter: String) {
+        Main::class.java.getDeclaredMethod("generateList", String::class.java)
+            .apply { isAccessible = true }.invoke(activity, filter)
     }
 
     private fun queue(filter: String, sort: Int = 0) {
