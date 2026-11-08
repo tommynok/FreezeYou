@@ -69,6 +69,9 @@ object RunningAppsUtils {
     data class ResourceUsage(val cpuPercent: Double?, val pssBytes: Long?)
 
     private const val RESOURCE_TIMEOUT_MS = 8_000L
+    // Mirrors the root /proc scan budget: a Shizuku shell that stops answering must not wedge the
+    // list worker forever, so the read goes through the deadline overload that can abandon it.
+    private const val SHIZUKU_RUNNING_TIMEOUT_MS = 10_000L
     private const val CPU_MARKER = "__FREEZEYOU_CPU__"
     // No "dumpsys -t": a self-timeout truncates meminfo under load and drops apps' RAM rows.
     internal const val RESOURCE_COMMAND =
@@ -198,7 +201,7 @@ object RunningAppsUtils {
                 arrayOf("sh", "-c", ProcessUtils.RUNNING_PACKAGES_COMMANDS.joinToString("; ")),
                 null, null
             )
-            val packages = ProcessUtils.parseRunningPackages(process.inputStream)
+            val packages = ProcessUtils.parseRunningPackages(process.inputStream, SHIZUKU_RUNNING_TIMEOUT_MS)
             process.waitFor()
             if (debug) {
                 Log.e("DebugModeLogcat", "getShizukuRunningPackages: packages=${packages.size}")

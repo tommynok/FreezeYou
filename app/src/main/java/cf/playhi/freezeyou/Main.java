@@ -1126,8 +1126,9 @@ public class Main extends FreezeYouBaseActivity {
                 // The two privileged calls below are the bulk of the wait on a running tab. A
                 // fresh background preload (or an earlier running-tab pass) already paid for them,
                 // so reuse the snapshot within its window; otherwise scan now and cache the result
-                // for the next opening. An empty scan is a failed source, not "nothing running",
-                // and is never cached.
+                // for the next opening. An empty scan or a failed metric sample is never cached, so
+                // the next opening retries instead of pinning dashes. The generation captured before
+                // the scan keeps a stop/freeze that lands mid-scan from being overwritten by stale data.
                 RunningSnapshot runningSnapshot = mRunningUsageCache.freshPayload(
                         System.currentTimeMillis(), RUNNING_PRELOAD_MAX_AGE_MS);
                 final Set<String> runningPackages;
@@ -1136,11 +1137,13 @@ public class Main extends FreezeYouBaseActivity {
                     runningPackages = runningSnapshot.packages;
                     runningUsage = runningSnapshot.usage;
                 } else {
+                    long cacheGeneration = mRunningUsageCache.generation();
                     runningPackages = RunningAppsUtils.getRunningPackages(applicationContext);
                     runningUsage = RunningAppsUtils.getResourceUsage(applicationContext, runningPackages);
-                    if (!runningPackages.isEmpty()) {
+                    if (!runningPackages.isEmpty() && !runningUsage.isEmpty()) {
                         mRunningUsageCache.store(
-                                new RunningSnapshot(runningPackages, runningUsage), System.currentTimeMillis());
+                                new RunningSnapshot(runningPackages, runningUsage),
+                                System.currentTimeMillis(), cacheGeneration);
                     }
                 }
                 for (int i = 0; i < size; i++) {
@@ -3078,9 +3081,10 @@ public class Main extends FreezeYouBaseActivity {
                 return;
             }
             try {
+                long cacheGeneration = mRunningUsageCache.generation();
                 RunningSnapshot snapshot = computeRunningSnapshot(applicationContext);
-                if (!isFinishing() && !snapshot.packages.isEmpty()) {
-                    mRunningUsageCache.store(snapshot, System.currentTimeMillis());
+                if (!isFinishing() && !snapshot.packages.isEmpty() && !snapshot.usage.isEmpty()) {
+                    mRunningUsageCache.store(snapshot, System.currentTimeMillis(), cacheGeneration);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

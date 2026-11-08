@@ -14,9 +14,19 @@ public final class RunningAppsUsageCache<T> {
     private T payload;
     private long builtAtMs;
     private boolean hasPayload;
+    private long generation;
 
-    public synchronized void store(T payload, long nowMs) {
-        if (payload == null) {
+    /**
+     * The current invalidation epoch. Capture it before a scan starts and pass it back to
+     * {@link #store}: a {@link #clear} that lands while the scan is out bumps the epoch, so the
+     * scan's pre-change result is dropped instead of resurrecting stopped apps as running.
+     */
+    public synchronized long generation() {
+        return generation;
+    }
+
+    public synchronized void store(T payload, long nowMs, long expectedGeneration) {
+        if (payload == null || expectedGeneration != generation) {
             return;
         }
         this.payload = payload;
@@ -47,5 +57,6 @@ public final class RunningAppsUsageCache<T> {
         payload = null;
         hasPayload = false;
         builtAtMs = 0;
+        generation++;
     }
 }
