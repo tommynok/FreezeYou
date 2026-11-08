@@ -73,21 +73,18 @@ object RunningAppsUtils {
     // list worker forever, so the read goes through the deadline overload that can abandon it.
     private const val SHIZUKU_RUNNING_TIMEOUT_MS = 10_000L
     private const val CPU_MARKER = "__FREEZEYOU_CPU__"
-    private const val STATM_MARKER = "__FREEZEYOU_STATM__"
-    private const val PAGE_SIZE_BYTES = 4096L
     // No "dumpsys -t": a self-timeout truncates meminfo under load and drops apps' RAM rows.
-    // statm fallback for service-only PIDs: one grep over /proc, not a per-PID loop that outran the 8s deadline.
+    // Mirrors tinykit: meminfo's "Total PSS by process" section defines the running list, top adds CPU.
     internal const val RESOURCE_COMMAND =
         "dumpsys meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
             "memory_pid=\$!; " +
             "cpu_output=\$(top -b -n 2 -d 1 -o PID,%CPU,ARGS 2>/dev/null); " +
-            "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\"; " +
-            "printf '\\n__FREEZEYOU_STATM__\\n'; " +
-            "grep -H '^' /proc/[0-9]*/statm 2>/dev/null || true"
+            "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\""
     private val memoryRow = Regex("^\\s*([\\d,]+)K:\\s+(\\S+)\\s+\\(pid\\s+(\\d+)(?:\\s|\\)).*")
-    private val cpuRow = Regex("^\\s*(\\d+)\\s+([\\d.]+)\\s+(\\S+)(?:\\s.*)?$")
-    private val cpuHeader = Regex("^\\s*PID\\s+%CPU\\s+ARGS\\s*$")
-    private val statmRow = Regex("^/proc/(\\d+)/statm:\\s*\\d+\\s+(\\d+)(?:\\s.*)?$")
+    // tinykit's CPUINFO: a data row begins with PID then %CPU. Matching it per line (find, not a
+    // header-gated matchEntire) skips top's headers and summary lines on their own, so a header
+    // layout we did not anticipate cannot wipe every CPU value. The later sample overwrites earlier.
+    private val cpuRow = Regex("^\\s*(\\d+)\\s+([\\d.]+)\\s+(\\S+)")
 
     @JvmStatic
     fun getResourceUsage(context: Context, packageNames: Set<String>): Map<String, ResourceUsage> {
@@ -126,61 +123,34 @@ object RunningAppsUtils {
             val pid = match.groupValues[3].toIntOrNull()?.takeIf { it > 0 } ?: continue
             memory[pid] = match.groupValues[2] to kb * 1024
         }
-        val cpuAndStatm = if (sections.size == 2) sections[1].split(STATM_MARKER, limit = 2) else emptyList()
         val cpu = linkedMapOf<Int, Pair<String, Double>>()
-        var samples = 0
-        if (cpuAndStatm.isNotEmpty()) {
-            for (line in cpuAndStatm[0].lineSequence()) {
-                if (cpuHeader.matches(line.replace('[', ' ').replace(']', ' '))) {
-                    samples++
-                    cpu.clear()
-                    continue
-                }
-                // Only the second top sample measures the requested interval.
-                if (samples < 2) continue
-                val match = cpuRow.matchEntire(line) ?: continue
+        if (sections.size == 2) {
+            for (line in sections[1].lineSequence()) {
+                val match = cpuRow.find(line) ?: continue
                 val pid = match.groupValues[1].toIntOrNull()?.takeIf { it > 0 } ?: continue
                 val percent = match.groupValues[2].toDoubleOrNull()?.takeIf { it.isFinite() } ?: continue
                 cpu[pid] = match.groupValues[3] to percent
             }
         }
-        val statm = linkedMapOf<Int, Long>()
-        if (cpuAndStatm.size == 2) {
-            for (line in cpuAndStatm[1].lineSequence()) {
-                val match = statmRow.matchEntire(line) ?: continue
-                val pid = match.groupValues[1].toIntOrNull()?.takeIf { it > 0 } ?: continue
-                val pages = match.groupValues[2].toLongOrNull() ?: continue
-                if (pages > Long.MAX_VALUE / PAGE_SIZE_BYTES) continue
-                statm[pid] = pages * PAGE_SIZE_BYTES
-            }
-        }
         val usage = linkedMapOf<String, ResourceUsage>()
-        for (pid in memory.keys + cpu.keys) {
-            val mem = memory[pid]
-            val load = cpu[pid]
-            if (mem != null && load != null && mem.first != load.first) continue
-            val packageName = (mem?.first ?: load?.first ?: continue).substringBefore(':')
+        // The running list is meminfo's processes, like tinykit: a process with no PSS row (a
+        // service-only PID such as Farvater) is not a running app and contributes nothing here.
+        for ((pid, mem) in memory) {
+            val name = mem.first
+            if (name == "top") continue
+            val packageName = name.substringBefore(':')
             if (packageName !in packageNames) continue
-            val memBytes = mem?.second ?: statm[pid]
+            // A reused PID must not borrow another process' CPU; an absent top sample reads as idle.
+            val load = cpu[pid]?.takeIf { it.first == name }?.second ?: 0.0
+            val bytes = mem.second
             val previous = usage[packageName]
             usage[packageName] = if (previous == null) {
-                ResourceUsage(load?.second, memBytes)
+                ResourceUsage(load, bytes)
             } else {
-                ResourceUsage(
-                    when {
-                        previous.cpuPercent != null && load != null -> previous.cpuPercent + load.second
-                        previous.cpuPercent != null -> previous.cpuPercent
-                        load != null -> load.second
-                        else -> null
-                    },
-                    when {
-                        previous.pssBytes != null && memBytes != null && previous.pssBytes <= Long.MAX_VALUE - memBytes ->
-                            previous.pssBytes + memBytes
-                        previous.pssBytes != null -> previous.pssBytes
-                        memBytes != null -> memBytes
-                        else -> null
-                    }
-                )
+                val cpuSum = (previous.cpuPercent ?: 0.0) + load
+                val pssPrev = previous.pssBytes ?: 0L
+                val pssSum = if (pssPrev <= Long.MAX_VALUE - bytes) pssPrev + bytes else pssPrev
+                ResourceUsage(cpuSum, pssSum)
             }
         }
         return usage

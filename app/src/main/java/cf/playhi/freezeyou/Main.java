@@ -1209,7 +1209,10 @@ public class Main extends FreezeYouBaseActivity {
                     if (("RUN_SYS".equals(filter) && !isSystemApp) || ("RUN_USER".equals(filter) && isSystemApp)) {
                         continue;
                     }
-                    if (runningPackages.contains(packageInfo1.packageName)) {
+                    // A running app is one meminfo reports a PSS row for, like tinykit. A process
+                    // that only shows up in the /proc liveness scan (a service-only PID) has no
+                    // metric row and is not listed, instead of appearing with dashes.
+                    if (runningUsage.containsKey(packageInfo1.packageName)) {
                         Map<String, Object> keyValuePair = processAppStatus(
                                 getApplicationLabel(applicationContext, packageManager, packageInfo1.applicationInfo, packageInfo1.packageName),
                                 packageInfo1.packageName,

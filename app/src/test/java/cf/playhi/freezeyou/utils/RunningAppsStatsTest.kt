@@ -9,7 +9,7 @@ class RunningAppsStatsTest {
     private val packages = setOf("com.example.app", "com.example.other")
 
     @Test
-    fun combinesSubprocessesByPackageAndUsesOnlySecondCpuSample() {
+    fun combinesSubprocessesByPackageAndUsesTheLatestCpuSample() {
         val usage = parse(
             """
                 Total PSS by process:
@@ -32,7 +32,7 @@ class RunningAppsStatsTest {
     }
 
     @Test
-    fun recognizesToyboxSortBracketsInBatchHeaders() {
+    fun cpuParsingDoesNotDependOnTheTopHeaderLayout() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -54,10 +54,20 @@ class RunningAppsStatsTest {
                   101 12.0 com.example.app
             """)
         )
+        assertEquals(
+            usage,
+            parse("""
+                  512K: com.example.app (pid 101)
+                __FREEZEYOU_CPU__
+                Tasks: 2 total, 1 running
+                800%cpu 10%user 0%nice
+                  101 12.0 com.example.app
+            """)
+        )
     }
 
     @Test
-    fun aSingleCpuSampleIsUnavailableRatherThanAnIntervalMeasurement() {
+    fun aSingleCpuSampleIsUsedAsTheLatestReading() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -66,11 +76,11 @@ class RunningAppsStatsTest {
                   101 90.0 com.example.app
             """
         )
-        assertEquals(RunningAppsUtils.ResourceUsage(null, 512L * 1024), usage["com.example.app"])
+        assertEquals(RunningAppsUtils.ResourceUsage(90.0, 512L * 1024), usage["com.example.app"])
     }
 
     @Test
-    fun vanishedProcessDoesNotKeepItsFirstSampleCpu() {
+    fun aProcessThatLeftTopKeepsItsLastCpuReading() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -81,8 +91,8 @@ class RunningAppsStatsTest {
                   103 4.0 com.example.other
             """
         )
-        assertNull(usage["com.example.app"]!!.cpuPercent)
-        assertEquals(RunningAppsUtils.ResourceUsage(4.0, null), usage["com.example.other"])
+        assertEquals(RunningAppsUtils.ResourceUsage(90.0, 512L * 1024), usage["com.example.app"])
+        assertNull(usage["com.example.other"])
     }
 
     @Test
@@ -101,7 +111,7 @@ class RunningAppsStatsTest {
     }
 
     @Test
-    fun subprocessInCpuButNotMeminfoPreservesKnownMemory() {
+    fun subprocessAbsentFromMeminfoIsNotCounted() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -112,38 +122,20 @@ class RunningAppsStatsTest {
                   102 14.0 com.example.app:service
             """
         )
-        assertEquals(RunningAppsUtils.ResourceUsage(16.0, 512L * 1024), usage["com.example.app"])
+        assertEquals(RunningAppsUtils.ResourceUsage(2.0, 512L * 1024), usage["com.example.app"])
     }
 
     @Test
-    fun statmFallbackProvidesRssForServiceOnlyPid() {
+    fun processWithoutMeminfoRowIsNotARunningApp() {
         val usage = parse(
             """
                 __FREEZEYOU_CPU__
                   PID %CPU ARGS
                   PID %CPU ARGS
                   201 14.0 com.example.app:service
-                __FREEZEYOU_STATM__
-                /proc/201/statm:50000 46080 1000 100 0 2000 0
             """
         )
-        assertEquals(RunningAppsUtils.ResourceUsage(14.0, 46080L * 4096), usage["com.example.app"])
-    }
-
-    @Test
-    fun statmDoesNotOverrideMeminfoPss() {
-        val usage = parse(
-            """
-                  512K: com.example.app (pid 101)
-                __FREEZEYOU_CPU__
-                  PID %CPU ARGS
-                  PID %CPU ARGS
-                  101 2.0 com.example.app
-                __FREEZEYOU_STATM__
-                /proc/101/statm:100000 99999 1000 100 0 2000 0
-            """
-        )
-        assertEquals(RunningAppsUtils.ResourceUsage(2.0, 512L * 1024), usage["com.example.app"])
+        assertTrue(usage.isEmpty())
     }
 
     @Test
@@ -164,7 +156,7 @@ class RunningAppsStatsTest {
     }
 
     @Test
-    fun pidReuseDoesNotJoinDifferentProcesses() {
+    fun pidReuseDoesNotBorrowAnotherProcessCpu() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -174,7 +166,8 @@ class RunningAppsStatsTest {
                   101 12.0 com.example.other
             """
         )
-        assertTrue(usage.isEmpty())
+        assertEquals(RunningAppsUtils.ResourceUsage(0.0, 512L * 1024), usage["com.example.app"])
+        assertNull(usage["com.example.other"])
     }
 
     @Test
@@ -196,9 +189,9 @@ class RunningAppsStatsTest {
     }
 
     @Test
-    fun missingCpuOutputStillAllowsMemory() {
+    fun missingCpuOutputReadsAsIdle() {
         assertEquals(
-            RunningAppsUtils.ResourceUsage(null, 512L * 1024),
+            RunningAppsUtils.ResourceUsage(0.0, 512L * 1024),
             parse("512K: com.example.app (pid 101)")["com.example.app"]
         )
     }
