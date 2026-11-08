@@ -8,6 +8,9 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import androidx.preference.PreferenceManager
+import cf.playhi.freezeyou.adapter.MainAppListSimpleAdapter
+import cf.playhi.freezeyou.ui.fragment.MainActivityAppListFragment
+import cf.playhi.freezeyou.utils.RunningAppsUtils
 import cf.playhi.freezeyou.utils.ShadowContractMMKV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -166,6 +169,60 @@ class MainRunningRefreshTest {
         assertEquals(8, get("queuedSortRule"))
         assertEquals(8, prefs().getInt("sortMethodStatus", -1))
         assertEquals(12, prefs().getInt("runningSortMethodStatus", -1))
+    }
+
+    @Test
+    fun runningSortReordersRowsInPlaceWithoutRebuilding() {
+        val rows = arrayListOf(
+            row("com.a", "Alpha", 5.0, 100),
+            row("com.b", "Bravo", 50.0, 10),
+            row("com.c", "Charlie", 20.0, 50)
+        )
+        attachRunningList(rows)
+        val generation = (get("mListGeneration") as AtomicInteger).get()
+        resort(12)
+        assertEquals(listOf("com.b", "com.c", "com.a"), adapterOrder())
+        assertEquals(generation, (get("mListGeneration") as AtomicInteger).get())
+        assertEquals(12, get("currentSortRule"))
+        resort(11)
+        assertEquals(listOf("com.a", "com.c", "com.b"), adapterOrder())
+        assertEquals(generation, (get("mListGeneration") as AtomicInteger).get())
+        assertEquals(11, get("currentSortRule"))
+    }
+
+    @Test
+    fun runningSortRebuildsWhenGenerationInFlight() {
+        attachRunningList(arrayListOf(row("com.a", "Alpha", 5.0, 100)))
+        set("listGenerationRunning", true)
+        val generation = (get("mListGeneration") as AtomicInteger).get()
+        resort(12)
+        assertTrue((get("mListGeneration") as AtomicInteger).get() > generation)
+    }
+
+    private fun row(pkg: String, name: String, cpu: Double, pssMb: Long): Map<String, Any> =
+        mapOf(
+            "PackageName" to pkg,
+            "Name" to name,
+            "RunningUsage" to RunningAppsUtils.ResourceUsage(cpu, pssMb * 1024 * 1024)
+        )
+
+    private fun attachRunningList(rows: ArrayList<Map<String, Any>>) {
+        val fragment = MainActivityAppListFragment()
+        fragment.setAppListAdapter(activity, ArrayList(rows), arrayListOf())
+        set("mMainActivityAppListFragment", fragment)
+        set("mCurrentUnfilteredAppList", rows)
+        set("currentFilter", "RUN")
+    }
+
+    private fun resort(sort: Int) {
+        Main::class.java.getDeclaredMethod("resortRunningListInPlace", Int::class.javaPrimitiveType)
+            .apply { isAccessible = true }.invoke(activity, sort)
+    }
+
+    private fun adapterOrder(): List<Any?> {
+        val fragment = get("mMainActivityAppListFragment") as MainActivityAppListFragment
+        val adapter = fragment.appListAdapter as MainAppListSimpleAdapter
+        return adapter.storedArrayList.map { it["PackageName"] }
     }
 
     private fun prefs(): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)

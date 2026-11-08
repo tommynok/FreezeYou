@@ -495,7 +495,11 @@ public class Main extends FreezeYouBaseActivity {
                     default: newSortRule = SORT_BY_LAST_UPDATED; break;
                 }
             }
-            generateList(currentFilter, newSortRule, currentCategoryLabel);
+            if (runningFilter) {
+                resortRunningListInPlace(newSortRule);
+            } else {
+                generateList(currentFilter, newSortRule, currentCategoryLabel);
+            }
             return true;
         });
         popupMenu.setOnDismissListener(menu -> {
@@ -505,6 +509,58 @@ public class Main extends FreezeYouBaseActivity {
         });
         mActivePopupMenu = popupMenu;
         popupMenu.show();
+    }
+
+    /**
+     * A sort change on a running tab reorders the rows already on screen instead of rebuilding the
+     * list: the metrics behind them are unchanged, so a fresh scan and a progress spinner would only
+     * add lag. Falls back to a full rebuild when nothing is loaded or a selection/generation is in
+     * flight, since reordering rows under an action mode would misalign its checked positions.
+     */
+    private void resortRunningListInPlace(int sortRule) {
+        final List<Map<String, Object>> rows = mCurrentUnfilteredAppList;
+        final boolean mustRebuild;
+        synchronized (listGenerationLock) {
+            mustRebuild = listGenerationRunning || currentSelectionActionMode != null
+                    || rows == null || rows.isEmpty();
+            if (!mustRebuild) {
+                if (currentRunningSortRule != sortRule) saveRunningSortMethodStatus(sortRule);
+                currentRunningSortRule = sortRule;
+                currentSortRule = sortRule;
+            }
+        }
+        if (mustRebuild) {
+            generateList(currentFilter, sortRule, currentCategoryLabel);
+            return;
+        }
+        final Collator collator = Collator.getInstance();
+        Collections.sort(rows, (m0, m1) ->
+                ((String) m0.get("PackageName")).compareTo((String) m1.get("PackageName")));
+        switch (sortRule) {
+            case SORT_BY_RUNNING_RAM:
+                Collections.sort(rows, RunningAppsSortControl.createRamComparator(collator));
+                break;
+            case SORT_BY_RUNNING_CPU:
+                Collections.sort(rows, RunningAppsSortControl.createCpuComparator(collator));
+                break;
+            case SORT_BY_ALPHABETICAL:
+                Collections.sort(rows, (m0, m1) ->
+                        collator.compare((String) m0.get("Name"), (String) m1.get("Name")));
+                break;
+            default:
+                break;
+        }
+        final MainAppListSimpleAdapter adapter =
+                (MainAppListSimpleAdapter) mMainActivityAppListFragment.getAppListAdapter();
+        if (adapter == null) {
+            generateList(currentFilter, sortRule, currentCategoryLabel);
+            return;
+        }
+        final EditText search = findViewById(R.id.search_editText);
+        final CharSequence query = search == null ? null : search.getText();
+        final ArrayList<Map<String, Object>> source = new ArrayList<>(rows);
+        adapter.replaceAllInFormerArrayList(
+                TextUtils.isEmpty(query) ? source : processListFilter(query, source));
     }
 
     private void onRefreshButtonClicked() {
