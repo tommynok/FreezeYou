@@ -73,15 +73,22 @@ object RunningAppsUtils {
     // list worker forever, so the read goes through the deadline overload that can abandon it.
     private const val SHIZUKU_RUNNING_TIMEOUT_MS = 10_000L
     private const val CPU_MARKER = "__FREEZEYOU_CPU__"
+    private const val STATM_MARKER = "__FREEZEYOU_STATM__"
+    private const val PAGE_SIZE_BYTES = 4096L
     // No "dumpsys -t": a self-timeout truncates meminfo under load and drops apps' RAM rows.
+    // statm fallback: service-only PIDs absent from meminfo still get RSS from /proc.
     internal const val RESOURCE_COMMAND =
         "dumpsys meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
             "memory_pid=\$!; " +
             "cpu_output=\$(top -b -n 2 -d 1 -o PID,%CPU,ARGS 2>/dev/null); " +
-            "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\""
+            "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\"; " +
+            "printf '\\n__FREEZEYOU_STATM__\\n'; " +
+            "for f in /proc/[0-9]*/statm; do p=\${f%/statm}; p=\${p#/proc/}; " +
+            "read -r _ rss _ < \"\$f\" 2>/dev/null && printf '%s %s\\n' \"\$p\" \"\$rss\"; done"
     private val memoryRow = Regex("^\\s*([\\d,]+)K:\\s+(\\S+)\\s+\\(pid\\s+(\\d+)(?:\\s|\\)).*")
     private val cpuRow = Regex("^\\s*(\\d+)\\s+([\\d.]+)\\s+(\\S+)(?:\\s.*)?$")
     private val cpuHeader = Regex("^\\s*PID\\s+%CPU\\s+ARGS\\s*$")
+    private val statmRow = Regex("^\\s*(\\d+)\\s+(\\d+)\\s*$")
 
     @JvmStatic
     fun getResourceUsage(context: Context, packageNames: Set<String>): Map<String, ResourceUsage> {
@@ -120,10 +127,11 @@ object RunningAppsUtils {
             val pid = match.groupValues[3].toIntOrNull()?.takeIf { it > 0 } ?: continue
             memory[pid] = match.groupValues[2] to kb * 1024
         }
+        val cpuAndStatm = if (sections.size == 2) sections[1].split(STATM_MARKER, limit = 2) else emptyList()
         val cpu = linkedMapOf<Int, Pair<String, Double>>()
         var samples = 0
-        if (sections.size == 2) {
-            for (line in sections[1].lineSequence()) {
+        if (cpuAndStatm.isNotEmpty()) {
+            for (line in cpuAndStatm[0].lineSequence()) {
                 if (cpuHeader.matches(line.replace('[', ' ').replace(']', ' '))) {
                     samples++
                     cpu.clear()
@@ -137,6 +145,16 @@ object RunningAppsUtils {
                 cpu[pid] = match.groupValues[3] to percent
             }
         }
+        val statm = linkedMapOf<Int, Long>()
+        if (cpuAndStatm.size == 2) {
+            for (line in cpuAndStatm[1].lineSequence()) {
+                val match = statmRow.matchEntire(line) ?: continue
+                val pid = match.groupValues[1].toIntOrNull()?.takeIf { it > 0 } ?: continue
+                val pages = match.groupValues[2].toLongOrNull() ?: continue
+                if (pages > Long.MAX_VALUE / PAGE_SIZE_BYTES) continue
+                statm[pid] = pages * PAGE_SIZE_BYTES
+            }
+        }
         val usage = linkedMapOf<String, ResourceUsage>()
         for (pid in memory.keys + cpu.keys) {
             val mem = memory[pid]
@@ -144,9 +162,10 @@ object RunningAppsUtils {
             if (mem != null && load != null && mem.first != load.first) continue
             val packageName = (mem?.first ?: load?.first ?: continue).substringBefore(':')
             if (packageName !in packageNames) continue
+            val memBytes = mem?.second ?: statm[pid]
             val previous = usage[packageName]
             usage[packageName] = if (previous == null) {
-                ResourceUsage(load?.second, mem?.second)
+                ResourceUsage(load?.second, memBytes)
             } else {
                 ResourceUsage(
                     when {
@@ -156,10 +175,10 @@ object RunningAppsUtils {
                         else -> null
                     },
                     when {
-                        previous.pssBytes != null && mem != null && previous.pssBytes <= Long.MAX_VALUE - mem.second ->
-                            previous.pssBytes + mem.second
+                        previous.pssBytes != null && memBytes != null && previous.pssBytes <= Long.MAX_VALUE - memBytes ->
+                            previous.pssBytes + memBytes
                         previous.pssBytes != null -> previous.pssBytes
-                        mem != null -> mem.second
+                        memBytes != null -> memBytes
                         else -> null
                     }
                 )

@@ -116,6 +116,37 @@ class RunningAppsStatsTest {
     }
 
     @Test
+    fun statmFallbackProvidesRssForServiceOnlyPid() {
+        val usage = parse(
+            """
+                __FREEZEYOU_CPU__
+                  PID %CPU ARGS
+                  PID %CPU ARGS
+                  201 14.0 com.example.app:service
+                __FREEZEYOU_STATM__
+                201 46080
+            """
+        )
+        assertEquals(RunningAppsUtils.ResourceUsage(14.0, 46080L * 4096), usage["com.example.app"])
+    }
+
+    @Test
+    fun statmDoesNotOverrideMeminfoPss() {
+        val usage = parse(
+            """
+                  512K: com.example.app (pid 101)
+                __FREEZEYOU_CPU__
+                  PID %CPU ARGS
+                  PID %CPU ARGS
+                  101 2.0 com.example.app
+                __FREEZEYOU_STATM__
+                101 99999
+            """
+        )
+        assertEquals(RunningAppsUtils.ResourceUsage(2.0, 512L * 1024), usage["com.example.app"])
+    }
+
+    @Test
     fun duplicateNamesWithDifferentPidsAreSummedOnceEach() {
         val usage = parse(
             """
