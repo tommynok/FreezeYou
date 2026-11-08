@@ -259,6 +259,8 @@ public class Main extends FreezeYouBaseActivity {
     private ImageButton mSelectionActionsImageButton;
     private ImageButton mRefreshButton;
     private ProgressBar mRefreshProgressBar;
+    private View mRefreshTouchBlocker;
+    private String mRenderedFilter;
     private ImageButton mSortRunningButton;
     // A popup left open when the activity pauses is restored with the window and then torn down
     // on focus loss, which flashes the dimming layer on the way back into the app.
@@ -434,6 +436,16 @@ public class Main extends FreezeYouBaseActivity {
         mRefreshButton = findViewById(R.id.main_refresh_button);
         mRefreshProgressBar = findViewById(R.id.main_refresh_progressBar);
         mSortRunningButton = findViewById(R.id.main_sort_running_button);
+        // A refresh keeps the old rows visible; this film over the whole content (rows, search,
+        // floating buttons) swallows touches so a stale row cannot be acted on mid-scan.
+        mRefreshTouchBlocker = new View(this);
+        mRefreshTouchBlocker.setBackgroundColor(0x22000000);
+        mRefreshTouchBlocker.setClickable(true);
+        mRefreshTouchBlocker.setVisibility(View.GONE);
+        ((FrameLayout) findViewById(android.R.id.content)).addView(
+                mRefreshTouchBlocker,
+                new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         if (mRefreshButton != null) {
             mRefreshButton.setOnClickListener(v -> onRefreshButtonClicked());
         }
@@ -617,6 +629,13 @@ public class Main extends FreezeYouBaseActivity {
             }
             if (mRefreshProgressBar != null) {
                 mRefreshProgressBar.setVisibility(
+                        RunningAppsRefreshControl.isProgressBarVisible(filter, isRefreshing)
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+            }
+            if (mRefreshTouchBlocker != null) {
+                mRefreshTouchBlocker.setVisibility(
                         RunningAppsRefreshControl.isProgressBarVisible(filter, isRefreshing)
                                 ? View.VISIBLE
                                 : View.GONE
@@ -995,13 +1014,20 @@ public class Main extends FreezeYouBaseActivity {
                 mSelectionActionsImageButton.setBackgroundResource(floatingButtonBackground);
             }
 
-            if (linearLayout != null) linearLayout.setVisibility(View.VISIBLE);
-            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-            if (main_loading_progress_textView != null) {
-                main_loading_progress_textView.setVisibility(View.VISIBLE);
-                main_loading_progress_textView.setText(R.string.loadingPkgList);
+            // A refresh of an already rendered running tab keeps its rows on screen under the
+            // touch blocker; the finished list swaps in atomically instead of a loading pause.
+            final boolean keepRenderedList = RunningAppsRefreshControl.canKeepRenderedList(
+                    filter, mRenderedFilter,
+                    mCurrentUnfilteredAppList != null && !mCurrentUnfilteredAppList.isEmpty());
+            if (!keepRenderedList) {
+                if (linearLayout != null) linearLayout.setVisibility(View.VISIBLE);
+                if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+                if (main_loading_progress_textView != null) {
+                    main_loading_progress_textView.setVisibility(View.VISIBLE);
+                    main_loading_progress_textView.setText(R.string.loadingPkgList);
+                }
+                if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.GONE);
             }
-            if (appListFragmentContainer != null) appListFragmentContainer.setVisibility(View.GONE);
             if (mainCautionTextView != null) {
                 if (noCaution.getValue(applicationContext)) {
                     mainCautionTextView.setVisibility(View.GONE);
@@ -1491,6 +1517,7 @@ public class Main extends FreezeYouBaseActivity {
 
                 updateFilterTitle(filter);
                 mCurrentUnfilteredAppList = AppList;
+                mRenderedFilter = filter;
 
                 final EditText search_editText = findViewById(R.id.search_editText);
                 final FrameLayout appListFragmentContainer = findViewById(R.id.main_appList_fragmentContainer_frameLayout);

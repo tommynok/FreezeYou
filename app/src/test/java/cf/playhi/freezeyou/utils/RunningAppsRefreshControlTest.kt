@@ -30,6 +30,18 @@ class RunningAppsRefreshControlTest {
     }
 
     @Test
+    fun refreshKeepsRenderedListOnlyForTheSameRunningFilterWithRows() {
+        for (filter in listOf("RUN", "RUN_SYS", "RUN_USER")) {
+            assertTrue(RunningAppsRefreshControl.canKeepRenderedList(filter, filter, true))
+            assertFalse(RunningAppsRefreshControl.canKeepRenderedList(filter, filter, false))
+            assertFalse(RunningAppsRefreshControl.canKeepRenderedList(filter, null, true))
+            assertFalse(RunningAppsRefreshControl.canKeepRenderedList(filter, "all", true))
+        }
+        assertFalse(RunningAppsRefreshControl.canKeepRenderedList("all", "all", true))
+        assertFalse(RunningAppsRefreshControl.canKeepRenderedList(null, null, true))
+    }
+
+    @Test
     fun pruneRemovesStoppedPackagesAndKeepsRunningOnesInOrder() {
         val rows = mutableListOf<Map<String, Any?>>(
             mapOf("PackageName" to "com.running.a"),

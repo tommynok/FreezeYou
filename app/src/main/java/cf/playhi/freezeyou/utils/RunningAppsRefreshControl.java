@@ -61,4 +61,13 @@ public final class RunningAppsRefreshControl {
     public static boolean isProgressBarVisible(String filter, boolean generationRunning) {
         return isRunningFilter(filter) && generationRunning;
     }
+
+    /**
+     * A refresh of a running tab that already has rows keeps them on screen under the touch
+     * blocker while the new list is built. Only a re-render of the same running filter qualifies:
+     * a tab switch still shows the loading screen, and an empty list has nothing to keep.
+     */
+    public static boolean canKeepRenderedList(String filter, String renderedFilter, boolean hasRows) {
+        return isRunningFilter(filter) && filter.equals(renderedFilter) && hasRows;
+    }
 }
