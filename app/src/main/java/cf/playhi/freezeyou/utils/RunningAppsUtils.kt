@@ -76,19 +76,18 @@ object RunningAppsUtils {
     private const val STATM_MARKER = "__FREEZEYOU_STATM__"
     private const val PAGE_SIZE_BYTES = 4096L
     // No "dumpsys -t": a self-timeout truncates meminfo under load and drops apps' RAM rows.
-    // statm fallback: service-only PIDs absent from meminfo still get RSS from /proc.
+    // statm fallback for service-only PIDs: one grep over /proc, not a per-PID loop that outran the 8s deadline.
     internal const val RESOURCE_COMMAND =
         "dumpsys meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
             "memory_pid=\$!; " +
             "cpu_output=\$(top -b -n 2 -d 1 -o PID,%CPU,ARGS 2>/dev/null); " +
             "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\"; " +
             "printf '\\n__FREEZEYOU_STATM__\\n'; " +
-            "for f in /proc/[0-9]*/statm; do p=\${f%/statm}; p=\${p#/proc/}; " +
-            "read -r _ rss _ < \"\$f\" 2>/dev/null && printf '%s %s\\n' \"\$p\" \"\$rss\"; done"
+            "grep -H '^' /proc/[0-9]*/statm 2>/dev/null || true"
     private val memoryRow = Regex("^\\s*([\\d,]+)K:\\s+(\\S+)\\s+\\(pid\\s+(\\d+)(?:\\s|\\)).*")
     private val cpuRow = Regex("^\\s*(\\d+)\\s+([\\d.]+)\\s+(\\S+)(?:\\s.*)?$")
     private val cpuHeader = Regex("^\\s*PID\\s+%CPU\\s+ARGS\\s*$")
-    private val statmRow = Regex("^\\s*(\\d+)\\s+(\\d+)\\s*$")
+    private val statmRow = Regex("^/proc/(\\d+)/statm:\\s*\\d+\\s+(\\d+)(?:\\s.*)?$")
 
     @JvmStatic
     fun getResourceUsage(context: Context, packageNames: Set<String>): Map<String, ResourceUsage> {

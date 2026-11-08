@@ -124,7 +124,7 @@ class RunningAppsStatsTest {
                   PID %CPU ARGS
                   201 14.0 com.example.app:service
                 __FREEZEYOU_STATM__
-                201 46080
+                /proc/201/statm:50000 46080 1000 100 0 2000 0
             """
         )
         assertEquals(RunningAppsUtils.ResourceUsage(14.0, 46080L * 4096), usage["com.example.app"])
@@ -140,7 +140,7 @@ class RunningAppsStatsTest {
                   PID %CPU ARGS
                   101 2.0 com.example.app
                 __FREEZEYOU_STATM__
-                101 99999
+                /proc/101/statm:100000 99999 1000 100 0 2000 0
             """
         )
         assertEquals(RunningAppsUtils.ResourceUsage(2.0, 512L * 1024), usage["com.example.app"])
