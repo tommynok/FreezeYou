@@ -86,7 +86,7 @@ class RunningAppsStatsTest {
     }
 
     @Test
-    fun partialProcessCoverageIsNotReportedAsACompletePackageTotal() {
+    fun partialCpuCoveragePreservesKnownMemoryAndCpu() {
         val usage = parse(
             """
                   512K: com.example.app (pid 101)
@@ -97,7 +97,22 @@ class RunningAppsStatsTest {
                   101 12.0 com.example.app
             """
         )
-        assertEquals(RunningAppsUtils.ResourceUsage(null, 640L * 1024), usage["com.example.app"])
+        assertEquals(RunningAppsUtils.ResourceUsage(12.0, 640L * 1024), usage["com.example.app"])
+    }
+
+    @Test
+    fun subprocessInCpuButNotMeminfoPreservesKnownMemory() {
+        val usage = parse(
+            """
+                  512K: com.example.app (pid 101)
+                __FREEZEYOU_CPU__
+                  PID %CPU ARGS
+                  PID %CPU ARGS
+                  101 2.0 com.example.app
+                  102 14.0 com.example.app:service
+            """
+        )
+        assertEquals(RunningAppsUtils.ResourceUsage(16.0, 512L * 1024), usage["com.example.app"])
     }
 
     @Test

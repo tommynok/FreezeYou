@@ -149,10 +149,19 @@ object RunningAppsUtils {
                 ResourceUsage(load?.second, mem?.second)
             } else {
                 ResourceUsage(
-                    if (previous.cpuPercent != null && load != null) previous.cpuPercent + load.second else null,
-                    if (previous.pssBytes != null && mem != null && previous.pssBytes <= Long.MAX_VALUE - mem.second) {
-                        previous.pssBytes + mem.second
-                    } else null
+                    when {
+                        previous.cpuPercent != null && load != null -> previous.cpuPercent + load.second
+                        previous.cpuPercent != null -> previous.cpuPercent
+                        load != null -> load.second
+                        else -> null
+                    },
+                    when {
+                        previous.pssBytes != null && mem != null && previous.pssBytes <= Long.MAX_VALUE - mem.second ->
+                            previous.pssBytes + mem.second
+                        previous.pssBytes != null -> previous.pssBytes
+                        mem != null -> mem.second
+                        else -> null
+                    }
                 )
             }
         }
