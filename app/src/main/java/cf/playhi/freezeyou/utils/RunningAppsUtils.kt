@@ -70,8 +70,9 @@ object RunningAppsUtils {
 
     private const val RESOURCE_TIMEOUT_MS = 8_000L
     private const val CPU_MARKER = "__FREEZEYOU_CPU__"
+    // No "dumpsys -t": a self-timeout truncates meminfo under load and drops apps' RAM rows.
     internal const val RESOURCE_COMMAND =
-        "dumpsys -t 5 meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
+        "dumpsys meminfo 2>/dev/null | sed -n '/Total PSS by process:/,/^$/p' & " +
             "memory_pid=\$!; " +
             "cpu_output=\$(top -b -n 2 -d 1 -o PID,%CPU,ARGS 2>/dev/null); " +
             "wait \"\$memory_pid\"; printf '\\n__FREEZEYOU_CPU__\\n%s\\n' \"\$cpu_output\""
