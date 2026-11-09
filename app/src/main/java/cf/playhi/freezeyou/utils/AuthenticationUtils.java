@@ -29,12 +29,11 @@ public class AuthenticationUtils {
     /**
      * Whether the applications on the App Lock list must be unlocked into.
      *
-     * Kept apart from {@link #isAuthenticationEnabled()}: the lock that guards this application's
-     * own screens and the lock that guards the applications the user listed are two promises, and
-     * turning one on has never been a request for the other.
+     * Subordinate to {@link #isAuthenticationEnabled()}: an installation that kept this switch on
+     * with no protection method chosen must not intercept unprotected after the upgrade.
      */
     public static boolean isAppLockEnabled() {
-        return enableAppLock.getValue(null);
+        return enableAppLock.getValue(null) && isAuthenticationEnabled();
     }
 
     /**

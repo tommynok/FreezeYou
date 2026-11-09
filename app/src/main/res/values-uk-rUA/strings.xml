@@ -41,7 +41,6 @@
     <string name="summary_notificationBar_more">Системні налаштування сповіщень FreezeYou — канали та дозвіл на показ сповіщень</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Потребує дозволу на сповіщення. Набуде чинності при наступному створенні сповіщення</string>
     <string name="summary_combineBatchQuickNotification">Показувати одну картку з кнопкою «Заморозити все» замість окремих сповіщень для кожного додатка</string>
-    <string name="summary_enableAuthentication">Вимагати розблокування пристрою (PIN, відбиток тощо) або вбудований код застосунку перед відкриттям FreezeYou</string>
     <string name="summary_lockOnScreenOff">Вимагати розблокування після вимкнення екрана</string>
     <string name="summary_enableAppLock">Запитувати розблокування при відкритті застосунків зі списку «Блокування застосунків». Використовується блокування пристрою (відбиток пальця, PIN-код або графічний ключ) чи вбудований код застосунку.</string>
     <string name="summary_enableInstallPkgFunc">Дозволяє відкривати та встановлювати сторонні APK-файли через FreezeYou.</string>
@@ -413,7 +412,12 @@
     <string name="authenticationFailed">Помилка автентифікації</string>
     <string name="authenticationError_colon">Помилка автентифікації: %1$s</string>
     <string name="appCode">Код застосунку</string>
-    <string name="summary_appCode">Задати код, вбудований у FreezeYou, як альтернативу блокуванню пристрою</string>
+    <string name="authenticationMethod">Спосіб захисту</string>
+    <string name="authenticationMethodNone">Немає</string>
+    <string name="authenticationMethodDeviceLock">Блокування пристрою</string>
+    <string name="chooseProtectionMethodFirst">Спершу виберіть спосіб захисту</string>
+    <string name="deviceLockNotSet">Блокування пристрою не задано. Спершу задайте PIN-код, графічний ключ або біометрію в налаштуваннях системи</string>
+    <string name="removeAppCodeFirst">Спершу видаліть код застосунку, щоб використовувати блокування пристрою</string>
     <string name="lockOnEntry">Блокування на вході</string>
     <string name="summary_lockOnEntry">Запитувати підтвердження під час відкриття FreezeYou. Ярлики та «Блокування застосунків» залишаються під захистом, навіть коли цей перемикач вимкнено</string>
     <string name="setCode">Задати код</string>

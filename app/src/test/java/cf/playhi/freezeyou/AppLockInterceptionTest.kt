@@ -73,24 +73,22 @@ class AppLockInterceptionTest {
     }
 
     @Test
-    fun `the lock over these screens and the lock over other applications are two switches`() {
-        // An install ships with neither on, so a test that finds one on read it from the other.
+    fun `the app lock requires an active protection method`() {
         assertFalse(AuthenticationUtils.isAuthenticationEnabled())
         assertFalse(AuthenticationUtils.isAppLockEnabled())
 
-        // The complaint this answers: protecting an application meant being asked for this
-        // application's password every time the user opened it to change the list.
+        // A switch left on with no protection method chosen must not intercept unprotected: the
+        // gate answers for the upgrade until a method is chosen.
         enableAppLock.setValue(value = true)
-        assertTrue(AuthenticationUtils.isAppLockEnabled())
-        assertFalse(AuthenticationUtils.isAuthenticationEnabled())
+        assertFalse(AuthenticationUtils.isAppLockEnabled())
 
         enableAuthentication.setValue(value = true)
         assertTrue(AuthenticationUtils.isAuthenticationEnabled())
+        assertTrue(AuthenticationUtils.isAppLockEnabled())
 
-        // And the way back is one switch, not an argument about which of the two was meant.
-        enableAppLock.setValue(value = false)
+        // Turning the protection off takes the app lock with it, even with the switch left on.
+        enableAuthentication.setValue(value = false)
         assertFalse(AuthenticationUtils.isAppLockEnabled())
-        assertTrue(AuthenticationUtils.isAuthenticationEnabled())
     }
 
     @Test
@@ -104,11 +102,14 @@ class AppLockInterceptionTest {
         enableAppLock.setValue(value = false)
         assertFalse(AuthenticationUtils.isLockOnScreenOffApplicable())
 
+        // The app lock switch alone no longer counts: without a protection method it is gated off.
         enableAppLock.setValue(value = true)
+        assertFalse(AuthenticationUtils.isLockOnScreenOffApplicable())
+
+        enableAuthentication.setValue(value = true)
         assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable())
 
         enableAppLock.setValue(value = false)
-        enableAuthentication.setValue(value = true)
         assertTrue(AuthenticationUtils.isLockOnScreenOffApplicable())
     }
 

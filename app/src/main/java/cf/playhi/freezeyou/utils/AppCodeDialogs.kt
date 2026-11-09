@@ -23,9 +23,9 @@ import cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvaila
 object AppCodeDialogs {
 
     @JvmStatic
-    fun showManageDialog(activity: FragmentActivity) {
+    fun showManageDialog(activity: FragmentActivity, onCodeStateChanged: (() -> Unit)? = null) {
         if (!AppCodeUtils.hasCode()) {
-            showSetDialog(activity)
+            showSetDialog(activity, onCodeStateChanged)
             return
         }
         FreezeYouAlertDialogBuilder(activity)
@@ -36,13 +36,14 @@ object AppCodeDialogs {
                     activity.getString(R.string.removeCode)
                 )
             ) { _, which ->
-                if (which == 0) showChangeDialog(activity) else showRemoveDialog(activity)
+                if (which == 0) showChangeDialog(activity)
+                else showRemoveDialog(activity, onCodeStateChanged)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
-    private fun showSetDialog(activity: FragmentActivity) {
+    private fun showSetDialog(activity: FragmentActivity, onCodeStateChanged: (() -> Unit)? = null) {
         val newBox = passwordBox(activity, R.string.newCode)
         val confirmBox = passwordBox(activity, R.string.confirmCode)
         val builder = FreezeYouAlertDialogBuilder(activity)
@@ -69,6 +70,7 @@ object AppCodeDialogs {
                         if (dialog.isShowing && !activity.isFinishing) {
                             dialog.dismiss()
                             ToastUtils.showToast(activity, R.string.codeSetDone)
+                            onCodeStateChanged?.invoke()
                         }
                     }
                 }
@@ -125,7 +127,7 @@ object AppCodeDialogs {
         }
     }
 
-    private fun showRemoveDialog(activity: FragmentActivity) {
+    private fun showRemoveDialog(activity: FragmentActivity, onCodeStateChanged: (() -> Unit)? = null) {
         val currentBox = passwordBox(activity, R.string.currentCode)
         val builder = FreezeYouAlertDialogBuilder(activity)
             .setTitle(R.string.removeCode)
@@ -137,6 +139,7 @@ object AppCodeDialogs {
                 recoverWithPhoneLock(activity) {
                     AppCodeUtils.clearCode()
                     ToastUtils.showToast(activity, R.string.codeRemovedDone)
+                    onCodeStateChanged?.invoke()
                 }
             }
         }
@@ -151,6 +154,7 @@ object AppCodeDialogs {
                     AppCodeUtils.clearCode()
                     dialog.dismiss()
                     ToastUtils.showToast(activity, R.string.codeRemovedDone)
+                    onCodeStateChanged?.invoke()
                 } else {
                     positive.isEnabled = true
                     ToastUtils.showToast(activity, R.string.wrongCode)

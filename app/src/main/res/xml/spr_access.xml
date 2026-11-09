@@ -9,19 +9,18 @@
         app:iconSpaceReserved="false"
         app:title="@string/security">
 
+        <!-- Hidden on purpose: the visible selector below writes this key, and the lock rows
+             keep their XML dependency on it. -->
         <CheckBoxPreference
             app:defaultValue="false"
             app:iconSpaceReserved="false"
-            app:key="enableAuthentication"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_enableAuthentication"
-            app:title="@string/enableAuthentication" />
+            app:isPreferenceVisible="false"
+            app:key="enableAuthentication" />
         <Preference
             app:iconSpaceReserved="false"
-            app:key="appCode"
+            app:key="authenticationMethod"
             app:singleLineTitle="false"
-            app:summary="@string/summary_appCode"
-            app:title="@string/appCode" />
+            app:title="@string/authenticationMethod" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:dependency="enableAuthentication"

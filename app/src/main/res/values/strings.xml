@@ -41,7 +41,6 @@
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
-    <string name="summary_enableAuthentication">Require the phone lock (PIN, fingerprint, etc.) or the built-in app code before opening FreezeYou</string>
     <string name="summary_lockOnScreenOff">Require unlock after the device screen turns off</string>
     <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. The phone lock (fingerprint, PIN, or pattern) or the built-in app code is used.</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
@@ -414,7 +413,12 @@
     <string name="authenticationFailed">Authentication failed</string>
     <string name="authenticationError_colon">Authentication error: %1$s</string>
     <string name="appCode">App code</string>
-    <string name="summary_appCode">Set a code built into FreezeYou as an alternative to the phone lock</string>
+    <string name="authenticationMethod">Protection method</string>
+    <string name="authenticationMethodNone">None</string>
+    <string name="authenticationMethodDeviceLock">Device lock</string>
+    <string name="chooseProtectionMethodFirst">Choose a protection method first</string>
+    <string name="deviceLockNotSet">No device lock is set. Set a PIN, pattern or biometric in the system settings first</string>
+    <string name="removeAppCodeFirst">Remove the app code first to use the device lock</string>
     <string name="lockOnEntry">Lock on entry</string>
     <string name="summary_lockOnEntry">Ask for authentication when opening FreezeYou. Shortcuts and App Lock stay protected even with this off</string>
     <string name="setCode">Set code</string>
