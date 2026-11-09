@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -189,29 +191,39 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         switch (type) {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
 
-                if (!accessibilityEvent.isFullScreen()) return;
-
                 CharSequence pkgName = accessibilityEvent.getPackageName();
                 if (pkgName == null) return;
                 String pkgNameString = pkgName.toString();
-
-                if ("".equals(pkgNameString)
-                        || "android".equals(pkgNameString)
-                        || "com.android.systemui".equals(pkgNameString)
-                        || "com.android.packageinstaller".equals(pkgNameString) // Grant permissions, etc.
-                        || "miui.systemui.plugin".equals(pkgNameString) // MIUI System UI plugin (popups, volume dialogs, etc.)
-                ) {
-                    return;
-                }
+                if ("".equals(pkgNameString)) return;
 
                 CharSequence className = accessibilityEvent.getClassName();
-                if (className != null) {
-                    String classNameString = className.toString();
+                String classNameString = className != null ? className.toString() : null;
+
+                if (classNameString != null) {
                     if ("android.inputmethodservice.SoftInputWindow".equals(classNameString)
                             || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(classNameString) // MIUI volume panel
                     ) {
                         return;
                     }
+                }
+
+                boolean isOverviewOrLauncher = isLauncherOrRecents(this, pkgNameString, classNameString);
+
+                // Non-fullscreen events are dropped unless they represent the Recents/Overview screen or Launcher
+                // (e.g. MIUI/OEM recents where task cards are drawn in non-fullscreen accessibility windows).
+                if (!accessibilityEvent.isFullScreen() && !isOverviewOrLauncher) {
+                    return;
+                }
+
+                // System packages and overlays are filtered out to avoid false departures during permission dialogs
+                // or status bar interactions, UNLESS this transition is entering Recents/Overview or Launcher.
+                if (!isOverviewOrLauncher && (
+                        "android".equals(pkgNameString)
+                        || "com.android.systemui".equals(pkgNameString)
+                        || "com.android.packageinstaller".equals(pkgNameString) // Grant permissions, etc.
+                        || "miui.systemui.plugin".equals(pkgNameString) // MIUI System UI plugin (popups, volume dialogs, etc.)
+                )) {
+                    return;
                 }
 
                 PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
@@ -221,7 +233,16 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 String previousPkg = MainApplication.getCurrentPackage();
 
                 if (pkgNameString.equals(previousPkg)) {
-                    return;
+                    if (shouldSkipSamePackageTransition(
+                            isOnAppLockList(pkgNameString),
+                            ProcessSharedState.isPackageUnlocked(pkgNameString),
+                            appLockShouldIntercept(
+                                    isAppLockEnabled(), isAuthenticatorAvailable(this),
+                                    ProcessSharedState.isPackageUnlocked(pkgNameString)
+                            )
+                    )) {
+                        return;
+                    }
                 }
 
                 MainApplication.setCurrentPackage(pkgNameString);
@@ -507,6 +528,77 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * the application; if they cancelled or backed out, they are refusing entry and must be sent home
      * without re-triggering the lock in a loop.
      */
+    /**
+     * Identifies whether a window change event represents entering a launcher (home screen)
+     * or the system recents / multitasking overview.
+     *
+     * <p>On many Android variants and OEM skins (e.g. MIUI/HyperOS, Samsung OneUI, Pixel Quickstep),
+     * the overview screen is either rendered within the launcher process, hosted under [com.android.systemui],
+     * or reported with [AccessibilityEvent#isFullScreen] as false. Treating overview/launcher transitions
+     * as genuine departures is essential for re-locking protected applications immediately upon exit.
+     */
+    public static boolean isLauncherOrRecents(Context context, String pkgNameString, String classNameString) {
+        if (pkgNameString == null || "".equals(pkgNameString)) {
+            return false;
+        }
+
+        if (classNameString != null) {
+            String lowerClass = classNameString.toLowerCase(Locale.ROOT);
+            if (lowerClass.contains("recents")
+                    || lowerClass.contains("overview")
+                    || lowerClass.contains("taskswitcher")
+                    || lowerClass.contains("taskstack")
+                    || lowerClass.contains("fsgesture")) {
+                return true;
+            }
+        }
+
+        if ("com.android.launcher3".equals(pkgNameString)
+                || "com.google.android.apps.nexuslauncher".equals(pkgNameString)
+                || "com.miui.home".equals(pkgNameString)
+                || "com.sec.android.app.launcher".equals(pkgNameString)
+                || "com.huawei.android.launcher".equals(pkgNameString)
+                || "com.oppo.launcher".equals(pkgNameString)
+                || "com.oneplus.launcher".equals(pkgNameString)
+                || "com.motorola.launcher3".equals(pkgNameString)
+                || "com.teslacoilsw.launcher".equals(pkgNameString)
+                || "app.lawnchair".equals(pkgNameString)
+                || "ch.deletescape.lawnchair".equals(pkgNameString)) {
+            return true;
+        }
+
+        if (context != null) {
+            try {
+                PackageManager pm = context.getPackageManager();
+                if (pm != null) {
+                    Intent homeIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
+                    ResolveInfo resolveInfo = pm.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY);
+                    if (resolveInfo != null && resolveInfo.activityInfo != null) {
+                        return pkgNameString.equals(resolveInfo.activityInfo.packageName);
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether an in-app window transition (where previous and current package match)
+     * can safely bypass application lock verification.
+     *
+     * <p>Normal applications or protected applications already authenticated for this session
+     * can transition freely between activities. If a protected application is currently locked
+     * (e.g. after process termination or unhandled departure), the transition must fall through
+     * to raise the lock screen rather than allowing unauthenticated access.
+     */
+    public static boolean shouldSkipSamePackageTransition(
+            boolean isProtectedApp, boolean isUnlocked, boolean shouldIntercept) {
+        if (!isProtectedApp) return true;
+        if (isUnlocked) return true;
+        return !shouldIntercept;
+    }
+
     public static boolean isReturningFromAppLock(
             boolean appLockIsUp, String previousPkg, String currentPkg, String pendingLockPkg, String ourPkg) {
         if (appLockIsUp) return true;

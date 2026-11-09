@@ -489,4 +489,86 @@ class AppLockInterceptionTest {
             )
         )
     }
+
+    @Test
+    fun `isLauncherOrRecents detects overview and launcher windows across OEMs`() {
+        // AOSP / Pixel Quickstep & Launcher3
+        assertTrue(AccessibilityService.isLauncherOrRecents(context, "com.android.launcher3", null))
+        assertTrue(AccessibilityService.isLauncherOrRecents(context, "com.google.android.apps.nexuslauncher", null))
+        assertTrue(
+            AccessibilityService.isLauncherOrRecents(
+                context, "com.android.systemui", "com.android.systemui.recents.RecentsActivity"
+            )
+        )
+        assertTrue(
+            AccessibilityService.isLauncherOrRecents(
+                context, "com.android.systemui", "com.android.quickstep.RecentsActivity"
+            )
+        )
+
+        // Xiaomi MIUI / HyperOS
+        assertTrue(AccessibilityService.isLauncherOrRecents(context, "com.miui.home", "com.miui.home.launcher.Launcher"))
+        assertTrue(
+            AccessibilityService.isLauncherOrRecents(
+                context, "com.android.systemui", "com.android.systemui.fsgesture.FsGestureService"
+            )
+        )
+
+        // Samsung OneUI
+        assertTrue(AccessibilityService.isLauncherOrRecents(context, "com.sec.android.app.launcher", null))
+
+        // Non-overview SystemUI windows must NOT be mistaken for recents
+        assertFalse(
+            AccessibilityService.isLauncherOrRecents(
+                context, "com.android.systemui", "com.android.systemui.statusbar.phone.NotificationShadeWindowView"
+            )
+        )
+        assertFalse(
+            AccessibilityService.isLauncherOrRecents(
+                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog"
+            )
+        )
+
+        // Regular third-party application
+        assertFalse(
+            AccessibilityService.isLauncherOrRecents(
+                context, "com.example.bank", "com.example.bank.MainActivity"
+            )
+        )
+
+        // Null and blank checks
+        assertFalse(AccessibilityService.isLauncherOrRecents(context, null, null))
+        assertFalse(AccessibilityService.isLauncherOrRecents(context, "", null))
+    }
+
+    @Test
+    fun `shouldSkipSamePackageTransition protects locked apps while allowing free navigation inside unlocked apps`() {
+        // Non-protected apps always skip (standard activity transitions)
+        assertTrue(
+            AccessibilityService.shouldSkipSamePackageTransition(
+                isProtectedApp = false, isUnlocked = false, shouldIntercept = false
+            )
+        )
+
+        // Protected app that is already unlocked for this session skips
+        assertTrue(
+            AccessibilityService.shouldSkipSamePackageTransition(
+                isProtectedApp = true, isUnlocked = true, shouldIntercept = true
+            )
+        )
+
+        // Protected app that is currently locked MUST NOT skip: interception must run
+        assertFalse(
+            AccessibilityService.shouldSkipSamePackageTransition(
+                isProtectedApp = true, isUnlocked = false, shouldIntercept = true
+            )
+        )
+
+        // Protected app when lock is disabled in settings skips
+        assertTrue(
+            AccessibilityService.shouldSkipSamePackageTransition(
+                isProtectedApp = true, isUnlocked = false, shouldIntercept = false
+            )
+        )
+    }
 }
