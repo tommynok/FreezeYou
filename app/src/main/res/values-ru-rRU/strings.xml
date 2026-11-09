@@ -41,9 +41,9 @@
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
-    <string name="summary_enableAuthentication">Требовать замок телефона (PIN, отпечаток и т.д.) или встроенный код приложения перед открытием FreezeYou</string>
+    <string name="summary_enableAuthentication">Требовать разблокировку устройства (PIN, отпечаток и т.д.) или встроенный код приложения перед открытием FreezeYou</string>
     <string name="summary_lockOnScreenOff">Требовать разблокировку после выключения экрана устройства</string>
-    <string name="summary_enableAppLock">Запрашивать разблокировку при открытии приложений из списка «Блокировка приложений». Используется замок телефона (отпечаток пальца, PIN-код или ключ) либо встроенный код приложения.</string>
+    <string name="summary_enableAppLock">Запрашивать разблокировку при открытии приложений из списка «Блокировка приложений». Используется блокировка устройства (отпечаток пальца, PIN-код или графический ключ) либо встроенный код приложения.</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
     <string name="summary_notAllowWhenIsObsd">Блокирует установку/удаление, если экран перекрыт окном другого приложения (защита от подмены нажатий)</string>
@@ -413,8 +413,8 @@
     <string name="authenticationFailed">Сбой аутентификации</string>
     <string name="authenticationError_colon">Ошибка аутентификации: %1$s</string>
     <string name="appCode">Код приложения</string>
-    <string name="summary_appCode">Задать код, встроенный во FreezeYou, как альтернативу замку телефона</string>
-    <string name="lockOnEntry">Блокировка на вход</string>
+    <string name="summary_appCode">Задать код, встроенный во FreezeYou, как альтернативу блокировке устройства</string>
+    <string name="lockOnEntry">Блокировка при входе</string>
     <string name="summary_lockOnEntry">Спрашивать подтверждение при открытии FreezeYou. Ярлыки и «Блокировка приложений» остаются под защитой даже при выключенном тумблере</string>
     <string name="setCode">Задать код</string>
     <string name="changeCode">Изменить код</string>
@@ -430,8 +430,8 @@
     <string name="codeSetDone">Код задан</string>
     <string name="codeChangedDone">Код изменен</string>
     <string name="codeRemovedDone">Код удален</string>
-    <string name="usePhoneLock">Замок телефона</string>
-    <string name="noPhoneLockWarning">Замок телефона не задан. Если вы забудете этот код, единственный путь назад — очистка данных FreezeYou, которая удалит настройки, ярлыки и задачи.</string>
+    <string name="usePhoneLock">Блокировка устройства</string>
+    <string name="noPhoneLockWarning">Блокировка устройства не задана. Если вы забудете этот код, единственный путь назад — очистка данных FreezeYou, которая удалит настройки, ярлыки и задачи.</string>
     <string name="correspondingAndAvailableWebsiteUrlLanguageCode">ru-RU</string>
     <string name="forceStop">Принудительная остановка</string>
     <string name="unfrozenUA">Незамороженные пользовательские</string>
