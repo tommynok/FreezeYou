@@ -525,7 +525,7 @@ class AppLockInterceptionTest {
         )
         assertFalse(
             AccessibilityService.isLauncherOrRecents(
-                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog"
+                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl\$CustomDialog"
             )
         )
 
@@ -546,28 +546,28 @@ class AppLockInterceptionTest {
         // Non-protected apps always skip (standard activity transitions)
         assertTrue(
             AccessibilityService.shouldSkipSamePackageTransition(
-                isProtectedApp = false, isUnlocked = false, shouldIntercept = false
+                false, false, false
             )
         )
 
         // Protected app that is already unlocked for this session skips
         assertTrue(
             AccessibilityService.shouldSkipSamePackageTransition(
-                isProtectedApp = true, isUnlocked = true, shouldIntercept = true
+                true, true, true
             )
         )
 
         // Protected app that is currently locked MUST NOT skip: interception must run
         assertFalse(
             AccessibilityService.shouldSkipSamePackageTransition(
-                isProtectedApp = true, isUnlocked = false, shouldIntercept = true
+                true, false, true
             )
         )
 
         // Protected app when lock is disabled in settings skips
         assertTrue(
             AccessibilityService.shouldSkipSamePackageTransition(
-                isProtectedApp = true, isUnlocked = false, shouldIntercept = false
+                true, false, false
             )
         )
     }
