@@ -35,7 +35,7 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockReLockPolicy;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled;
-import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable;
 import static cf.playhi.freezeyou.utils.FUFUtils.processFreezeAction;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
 import static cf.playhi.freezeyou.utils.Support.checkLanguage;
@@ -289,7 +289,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                         }
 
                         if (appLockShouldIntercept(
-                                isAppLockEnabled(), isBiometricPromptPartAvailable(this),
+                                isAppLockEnabled(), isAuthenticatorAvailable(this),
                                 ProcessSharedState.isPackageUnlocked(pkgNameString))) {
                             // From here this service answers for the way out of that application, whether
                             // the screen comes up over it or not.
@@ -467,8 +467,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     /**
      * The gate an application on the protected list still passes through before a lock screen is
-     * thrown over it: the app lock has to be switched on, the device has to be able to ask for
-     * it, and the application must not already be open for this session.
+     * thrown over it: the app lock has to be switched on, there has to be something to ask with
+     * (the phone's own lock or the code built into FreezeYou), and the application must not already
+     * be open for this session.
      *
      * The last of the three is what keeps the screen from coming back over the application the
      * user has just proved themselves inside - and, with it, the service from answering its own
@@ -477,8 +478,8 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * Kept over plain booleans, so the order it refuses in can be read without a device.
      */
     public static boolean appLockShouldIntercept(
-            boolean appLockEnabled, boolean promptAvailable, boolean unlockedForSession) {
-        return appLockEnabled && promptAvailable && !unlockedForSession;
+            boolean appLockEnabled, boolean authenticatorAvailable, boolean unlockedForSession) {
+        return appLockEnabled && authenticatorAvailable && !unlockedForSession;
     }
 
     /**

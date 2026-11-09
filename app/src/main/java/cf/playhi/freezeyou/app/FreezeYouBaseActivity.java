@@ -24,7 +24,8 @@ import cf.playhi.freezeyou.utils.ProcessUtils;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
-import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isLockOnEntryEnabled;
 import static cf.playhi.freezeyou.utils.Support.checkLanguage;
 import static cf.playhi.freezeyou.utils.Support.getLocalString;
 
@@ -105,8 +106,8 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     }
 
     protected boolean checkAppLock() {
-        if (activityNeedCheckAppLock() && isAuthenticationEnabled()
-                && isBiometricPromptPartAvailable(this)) {
+        if (activityNeedCheckAppLock() && screenLockEnabled()
+                && isAuthenticatorAvailable(this)) {
             if (isLocked()) {
                 mHadBeenUnlocked = false;
                 startActivityForResult(
@@ -184,9 +185,19 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Whether this screen is one the lock guards. By default it is guarded while authentication is
+     * on and the entry has not been opted out. The shortcuts and the lock screen override this to
+     * answer to authentication alone: turning the entry question off must not open the shortcuts or
+     * the applications on the App Lock list with it.
+     */
+    protected boolean screenLockEnabled() {
+        return isAuthenticationEnabled() && isLockOnEntryEnabled();
+    }
+
     protected boolean isLocked() {
-        if (!isAuthenticationEnabled()) return false;
-        if (!isBiometricPromptPartAvailable(this)) return false;
+        if (!screenLockEnabled()) return false;
+        if (!isAuthenticatorAvailable(this)) return false;
 
         MMKV mmkv = getLockStore(this);
         long unlockTime = mmkv.decodeLong(UNLOCK_TIME_KEY, 0);

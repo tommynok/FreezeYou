@@ -3,13 +3,17 @@ package cf.playhi.freezeyou.ui;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
@@ -17,12 +21,16 @@ import java.util.concurrent.Executor;
 
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
+import cf.playhi.freezeyou.utils.AppCodeUtils;
 import cf.playhi.freezeyou.utils.ProcessSharedState;
 
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG;
 import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
 import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
+import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
@@ -41,6 +49,8 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     private long mPromptedSessionEpoch = ProcessSharedState.NO_APP_LOCK_SESSION;
     /** Whether this screen is the window the user is looking at right now. */
     private boolean mHasWindowFocus = false;
+    /** The code question, when a code is set; kept so a second focus does not stack another on top. */
+    private AlertDialog mCodeDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,12 +93,12 @@ public class AppLockActivity extends FreezeYouBaseActivity {
 
         Button unlockButton = findViewById(R.id.app_lock_main_unlock_button);
         ImageView logoImageView = findViewById(R.id.app_lock_main_logo_imageView);
-        unlockButton.setOnClickListener(v -> showBiometricPrompt());
-        logoImageView.setOnClickListener(v -> showBiometricPrompt());
+        unlockButton.setOnClickListener(v -> showAuthenticator());
+        logoImageView.setOnClickListener(v -> showAuthenticator());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ImageButton fingerprintImageButton = findViewById(R.id.app_lock_main_fingerprint_imageButton);
             if (fingerprintImageButton != null) {
-                fingerprintImageButton.setOnClickListener(v -> showBiometricPrompt());
+                fingerprintImageButton.setOnClickListener(v -> showAuthenticator());
             }
         }
         applyUnlockLogo();
@@ -118,7 +128,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         mHasWindowFocus = hasFocus;
         if (hasFocus && !mPromptHasBeenShown) {
             mPromptHasBeenShown = true;
-            getWindow().getDecorView().post(this::showBiometricPrompt);
+            getWindow().getDecorView().post(this::showAuthenticator);
         }
     }
 
@@ -236,7 +246,107 @@ public class AppLockActivity extends FreezeYouBaseActivity {
      */
     private void askAgainIfStillTheScreenInTheFront() {
         if (!mHasWindowFocus || isFinishing()) return;
-        showBiometricPrompt();
+        showAuthenticator();
+    }
+
+    /**
+     * The question this screen asks: the code built into FreezeYou when one is set, else the phone's
+     * own lock. The code is what lets the screen ask on a device that has no screen lock at all.
+     */
+    private void showAuthenticator() {
+        if (AppCodeUtils.hasCode()) {
+            showCodeDialog();
+        } else {
+            showBiometricPrompt();
+        }
+    }
+
+    /**
+     * The code question, asked over the same screen the biometric uses. A wrong code keeps the
+     * screen up and pays the persistent attempt counter; a refusal leaves towards the home screen
+     * when this is an interception, exactly as a cancelled biometric does. The phone's own lock is
+     * offered as the way back for whoever forgot the code, but only when the device has one set.
+     */
+    private void showCodeDialog() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        if (mCodeDialog != null && mCodeDialog.isShowing()) return;
+
+        // Recorded when the question goes out, like the biometric stamp: the answer is checked
+        // against the application and the session this screen is asking about now.
+        mPromptedTargetPkg = targetPkgName();
+        mPromptedSessionEpoch = getIntent().getLongExtra(
+                "appLockSessionEpoch", ProcessSharedState.NO_APP_LOCK_SESSION
+        );
+
+        EditText codeBox = new EditText(this);
+        codeBox.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        codeBox.setHint(R.string.enterCode);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            codeBox.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        }
+        LinearLayout holder = new LinearLayout(this);
+        int pad = (int) (24 * getResources().getDisplayMetrics().density);
+        holder.setPadding(pad, pad / 3, pad, 0);
+        holder.addView(codeBox, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        AlertDialog.Builder builder = FreezeYouAlertDialogBuilder(this)
+                .setTitle(R.string.authentication)
+                .setView(holder)
+                .setPositiveButton(R.string.okay, null)
+                .setNegativeButton(R.string.cancel, (d, w) -> refuseCode())
+                .setOnCancelListener(d -> refuseCode());
+        if (isBiometricPromptPartAvailable(this)) {
+            builder.setNeutralButton(R.string.usePhoneLock, (d, w) -> {
+                dismissCodeDialog();
+                showBiometricPrompt();
+            });
+        }
+        mCodeDialog = builder.create();
+        mCodeDialog.show();
+        mCodeDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (AppCodeUtils.cooldownRemainingMs() > 0) {
+                showShortToast(getApplicationContext(), R.string.codeCooldown);
+                return;
+            }
+            String entered = codeBox.getText().toString();
+            if (AppCodeUtils.verifyCode(entered)) {
+                AppCodeUtils.noteSuccess();
+                if (!answerIsForCurrentQuestion()) {
+                    dismissCodeDialog();
+                    askAgainIfStillTheScreenInTheFront();
+                    return;
+                }
+                ProcessSharedState.setPackageUnlocked(mPromptedTargetPkg);
+                resetLockState(AppLockActivity.this);
+                dismissCodeDialog();
+                finishImmediately(RESULT_OK);
+            } else {
+                AppCodeUtils.noteFailure();
+                codeBox.setText("");
+                showShortToast(getApplicationContext(),
+                        AppCodeUtils.cooldownRemainingMs() > 0
+                                ? R.string.codeCooldown : R.string.wrongCode);
+            }
+        });
+    }
+
+    private void dismissCodeDialog() {
+        if (mCodeDialog != null) {
+            mCodeDialog.dismiss();
+            mCodeDialog = null;
+        }
+    }
+
+    /** A refusal of the code question: home for an interception, a cancelled result for own lock. */
+    private void refuseCode() {
+        dismissCodeDialog();
+        setResult(RESULT_CANCELED);
+        if (!dismissWithoutRevealingTarget()) {
+            finishImmediately(RESULT_CANCELED);
+        }
     }
 
     /**
@@ -277,6 +387,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
 
     @Override
     protected void onDestroy() {
+        dismissCodeDialog();
         super.onDestroy();
         if (mBiometricPrompt != null) {
             try {
@@ -356,5 +467,13 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     @Override
     protected boolean activityNeedCheckAppLock() {
         return false;
+    }
+
+    @Override
+    protected boolean screenLockEnabled() {
+        // This screen is raised by the entry, by a shortcut and by the interception alike. It reads
+        // its own timeout against authentication alone, so an entry opted out does not let the
+        // shortcut or the application behind it slip through the re-check on resume.
+        return isAuthenticationEnabled();
     }
 }

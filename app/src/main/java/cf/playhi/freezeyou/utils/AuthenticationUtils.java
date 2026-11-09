@@ -9,11 +9,21 @@ import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
 import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnEntry;
 
 public class AuthenticationUtils {
 
     public static boolean isAuthenticationEnabled() {
         return enableAuthentication.getValue(null);
+    }
+
+    /**
+     * Whether opening FreezeYou itself asks for authentication. Subordinate to
+     * {@link #isAuthenticationEnabled()}: with this off the entry is left open while the shortcuts
+     * and the App Lock still ask, which is the point of keeping the two promises apart.
+     */
+    public static boolean isLockOnEntryEnabled() {
+        return lockOnEntry.getValue(null);
     }
 
     /**
@@ -56,5 +66,18 @@ public class AuthenticationUtils {
             default:
                 return false;
         }
+    }
+
+    /** Whether a code built into FreezeYou has been set. */
+    public static boolean isCodeSet() {
+        return AppCodeUtils.hasCode();
+    }
+
+    /**
+     * Whether there is anything to ask the user with: the phone's own lock, or the code built into
+     * FreezeYou. The code is what lets the lock work on a device that has no screen lock set at all.
+     */
+    public static boolean isAuthenticatorAvailable(Context context) {
+        return isBiometricPromptPartAvailable(context) || isCodeSet();
     }
 }

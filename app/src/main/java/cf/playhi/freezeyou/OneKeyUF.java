@@ -7,15 +7,18 @@ import androidx.appcompat.app.AlertDialog;
 
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.service.OneKeyUFService;
+import cf.playhi.freezeyou.ui.AppLockActivity;
 import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 
 // Needs to be retained for compatibility
 // with old FreezeYou structures and settings.
 public class OneKeyUF extends FreezeYouBaseActivity {
+    private static final int REQUEST_UNLOCK = 1;
     private AlertDialog confirmationDialog;
 
     @Override
@@ -46,7 +49,38 @@ public class OneKeyUF extends FreezeYouBaseActivity {
             finish();
             return;
         }
+        if (isLocked()) {
+            startActivityForResult(
+                    new Intent(this, AppLockActivity.class)
+                            .putExtra("ignoreCurrentUnlockStatus", true),
+                    REQUEST_UNLOCK);
+            return;
+        }
         executeAction();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_UNLOCK) {
+            if (resultCode == RESULT_OK) {
+                executeAction();
+            } else {
+                finish();
+            }
+        }
+    }
+
+    @Override
+    protected boolean activityNeedCheckAppLock() {
+        // The shortcut asks for the code itself before acting, so the resume gate must not raise a
+        // second lock screen over the one handleIntent already put up.
+        return false;
+    }
+
+    @Override
+    protected boolean screenLockEnabled() {
+        return isAuthenticationEnabled();
     }
 
     @Override

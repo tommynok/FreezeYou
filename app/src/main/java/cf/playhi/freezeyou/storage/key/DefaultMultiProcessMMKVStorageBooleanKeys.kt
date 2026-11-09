@@ -189,6 +189,15 @@ enum class DefaultMultiProcessMMKVStorageBooleanKeys : AbstractMMKVKey<Boolean> 
         override fun defaultValue(): Boolean = false
         override fun titleTextStringId(): Int = R.string.lockOnScreenOff
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
+    },
+
+    lockOnEntry {
+        // Subordinate to enableAuthentication: turning it off skips the question when FreezeYou is
+        // opened, while the shortcuts and the App Lock keep asking. A code set with this off still
+        // guards everything except the entry itself.
+        override fun defaultValue(): Boolean = true
+        override fun titleTextStringId(): Int = R.string.lockOnEntry
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     };
 
     abstract override fun defaultValue(): Boolean

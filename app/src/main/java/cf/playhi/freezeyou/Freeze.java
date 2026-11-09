@@ -42,6 +42,7 @@ import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawable;
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.FUFUtils.getFUFRelatedToastString;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
@@ -266,6 +267,13 @@ public class Freeze extends FreezeYouBaseActivity {
         // this application's own lock.
         if (isPlainLaunchOfAnUnprotectedApplication()) return false;
         return super.checkAppLock();
+    }
+
+    @Override
+    protected boolean screenLockEnabled() {
+        // A shortcut answers to authentication alone: opting the entry out must not open the
+        // freeze/unfreeze actions with it.
+        return isAuthenticationEnabled();
     }
 
     /**

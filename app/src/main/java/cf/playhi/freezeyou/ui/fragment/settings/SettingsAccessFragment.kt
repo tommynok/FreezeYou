@@ -18,7 +18,8 @@ import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
 import cf.playhi.freezeyou.ui.AppLockActivity
 import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
-import cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable
+import cf.playhi.freezeyou.utils.AppCodeDialogs
+import cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable
 import cf.playhi.freezeyou.utils.SettingsUtils.changeIconEntryComponentState
 import cf.playhi.freezeyou.utils.Support.showAppLockAccessibilityWarningIfOff
 import cf.playhi.freezeyou.utils.ToastUtils
@@ -75,7 +76,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 val activity: Activity? = activity
                 if (activity != null) {
                     if (true == newValue) {
-                        if (isBiometricPromptPartAvailable(activity)) {
+                        if (isAuthenticatorAvailable(activity)) {
                             enableAuthenticationActivityResultLauncher?.launch(
                                 Intent(activity, AppLockActivity::class.java)
                                     .putExtra("ignoreCurrentUnlockStatus", true)
@@ -99,7 +100,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 if (activity != null && true == newValue) {
                     if (!isAccessibilitySettingsOn(activity)) {
                         showAppLockAccessibilityWarningIfOff(activity)
-                    } else if (isBiometricPromptPartAvailable(activity)) {
+                    } else if (isAuthenticatorAvailable(activity)) {
                         enableAppLockActivityResultLauncher?.launch(
                             Intent(activity, AppLockActivity::class.java)
                                 .putExtra("ignoreCurrentUnlockStatus", true)
@@ -112,6 +113,11 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                     true
                 }
             }
+
+        findPreference<Preference>("appCode")?.setOnPreferenceClickListener {
+            AppCodeDialogs.showManageDialog(requireActivity())
+            true
+        }
 
         bindIconEntry(firstIconEnabled.name, "cf.playhi.freezeyou.FirstIcon")
         bindIconEntry(secondIconEnabled.name, "cf.playhi.freezeyou.SecondIcon")

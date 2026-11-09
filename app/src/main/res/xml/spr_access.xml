@@ -16,6 +16,20 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_enableAuthentication"
             app:title="@string/enableAuthentication" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="appCode"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_appCode"
+            app:title="@string/appCode" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:dependency="enableAuthentication"
+            app:iconSpaceReserved="false"
+            app:key="lockOnEntry"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_lockOnEntry"
+            app:title="@string/lockOnEntry" />
         <ListPreference
             app:defaultValue="900000"
             app:dependency="enableAuthentication"
