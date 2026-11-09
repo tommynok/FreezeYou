@@ -176,7 +176,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
 
     private fun setAuthenticationEnabled(enabled: Boolean) {
         val context = context ?: return
-        enableAuthentication.setValue(enabled)
+        enableAuthentication.setValue(value = enabled)
         PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
             .putBoolean(enableAuthentication.name, enabled)
@@ -190,7 +190,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
 
     private fun setAppLockEnabled(enabled: Boolean) {
         val context = context ?: return
-        enableAppLock.setValue(enabled)
+        enableAppLock.setValue(value = enabled)
         PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
             .putBoolean(enableAppLock.name, enabled)
