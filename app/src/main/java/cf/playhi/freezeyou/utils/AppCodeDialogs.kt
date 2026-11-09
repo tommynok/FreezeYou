@@ -63,9 +63,14 @@ object AppCodeDialogs {
                 code != confirmBox.text.toString() ->
                     ToastUtils.showToast(activity, R.string.codeMismatch)
                 else -> {
-                    AppCodeUtils.setCode(code)
-                    dialog.dismiss()
-                    ToastUtils.showToast(activity, R.string.codeSetDone)
+                    val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    positive.isEnabled = false
+                    AppCodeUtils.setCodeAsync(code) {
+                        if (dialog.isShowing && !activity.isFinishing) {
+                            dialog.dismiss()
+                            ToastUtils.showToast(activity, R.string.codeSetDone)
+                        }
+                    }
                 }
             }
         }
@@ -92,17 +97,29 @@ object AppCodeDialogs {
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val code = newBox.text.toString()
-            when {
-                !AppCodeUtils.verifyCode(currentBox.text.toString()) ->
+            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positive.isEnabled = false
+            AppCodeUtils.verifyCodeAsync(currentBox.text.toString()) { ok ->
+                if (!dialog.isShowing || activity.isFinishing) return@verifyCodeAsync
+                positive.isEnabled = true
+                if (!ok) {
                     ToastUtils.showToast(activity, R.string.wrongCode)
-                code.length < AppCodeUtils.MIN_CODE_LENGTH ->
-                    ToastUtils.showToast(activity, R.string.codeTooShort)
-                code != confirmBox.text.toString() ->
-                    ToastUtils.showToast(activity, R.string.codeMismatch)
-                else -> {
-                    AppCodeUtils.setCode(code)
-                    dialog.dismiss()
-                    ToastUtils.showToast(activity, R.string.codeChangedDone)
+                    return@verifyCodeAsync
+                }
+                when {
+                    code.length < AppCodeUtils.MIN_CODE_LENGTH ->
+                        ToastUtils.showToast(activity, R.string.codeTooShort)
+                    code != confirmBox.text.toString() ->
+                        ToastUtils.showToast(activity, R.string.codeMismatch)
+                    else -> {
+                        positive.isEnabled = false
+                        AppCodeUtils.setCodeAsync(code) {
+                            if (dialog.isShowing && !activity.isFinishing) {
+                                dialog.dismiss()
+                                ToastUtils.showToast(activity, R.string.codeChangedDone)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -126,12 +143,18 @@ object AppCodeDialogs {
         val dialog = builder.create()
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            if (AppCodeUtils.verifyCode(currentBox.text.toString())) {
-                AppCodeUtils.clearCode()
-                dialog.dismiss()
-                ToastUtils.showToast(activity, R.string.codeRemovedDone)
-            } else {
-                ToastUtils.showToast(activity, R.string.wrongCode)
+            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positive.isEnabled = false
+            AppCodeUtils.verifyCodeAsync(currentBox.text.toString()) { ok ->
+                if (!dialog.isShowing || activity.isFinishing) return@verifyCodeAsync
+                if (ok) {
+                    AppCodeUtils.clearCode()
+                    dialog.dismiss()
+                    ToastUtils.showToast(activity, R.string.codeRemovedDone)
+                } else {
+                    positive.isEnabled = true
+                    ToastUtils.showToast(activity, R.string.wrongCode)
+                }
             }
         }
     }

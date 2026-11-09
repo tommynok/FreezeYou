@@ -312,24 +312,36 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                 return;
             }
             String entered = codeBox.getText().toString();
-            if (AppCodeUtils.verifyCode(entered)) {
-                AppCodeUtils.noteSuccess();
-                if (!answerIsForCurrentQuestion()) {
-                    dismissCodeDialog();
-                    askAgainIfStillTheScreenInTheFront();
+            Button positive = mCodeDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            // The rounds run off the main thread so the button keeps drawing while they grind; the
+            // answer comes back on the main thread, where the counters and the screen are touched.
+            positive.setEnabled(false);
+            AppCodeUtils.verifyCodeAsync(entered, ok -> {
+                if (isFinishing()
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())
+                        || mCodeDialog == null || !mCodeDialog.isShowing()) {
                     return;
                 }
-                ProcessSharedState.setPackageUnlocked(mPromptedTargetPkg);
-                resetLockState(AppLockActivity.this);
-                dismissCodeDialog();
-                finishImmediately(RESULT_OK);
-            } else {
-                AppCodeUtils.noteFailure();
-                codeBox.setText("");
-                showShortToast(getApplicationContext(),
-                        AppCodeUtils.cooldownRemainingMs() > 0
-                                ? R.string.codeCooldown : R.string.wrongCode);
-            }
+                positive.setEnabled(true);
+                if (ok) {
+                    AppCodeUtils.noteSuccess();
+                    if (!answerIsForCurrentQuestion()) {
+                        dismissCodeDialog();
+                        askAgainIfStillTheScreenInTheFront();
+                        return;
+                    }
+                    ProcessSharedState.setPackageUnlocked(mPromptedTargetPkg);
+                    resetLockState(AppLockActivity.this);
+                    dismissCodeDialog();
+                    finishImmediately(RESULT_OK);
+                } else {
+                    AppCodeUtils.noteFailure();
+                    codeBox.setText("");
+                    showShortToast(getApplicationContext(),
+                            AppCodeUtils.cooldownRemainingMs() > 0
+                                    ? R.string.codeCooldown : R.string.wrongCode);
+                }
+            });
         });
     }
 

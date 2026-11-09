@@ -1,9 +1,12 @@
 package cf.playhi.freezeyou.utils
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.concurrent.Executors
 
 /**
  * The code built into FreezeYou, an alternative to the phone's own lock for the screens this
@@ -26,6 +29,24 @@ object AppCodeUtils {
     private const val KEY_WRONG_ATTEMPTS = "appCodeWrongAttempts"
     private const val KEY_LOCKED_UNTIL = "appCodeLockedUntil"
 
+    /**
+     * One worker for the slow part - the fifty thousand rounds - so tapping OK never blocks the
+     * thread that draws the button. The answer is handed back on the main thread, where the dialog
+     * is dismissed and the screen navigates; the counters are still read and written there too.
+     */
+    private val worker = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** A verification answer, delivered on the main thread. A SAM so Java callers pass a lambda. */
+    fun interface VerifyCallback {
+        fun onResult(ok: Boolean)
+    }
+
+    /** A setting completed, delivered on the main thread. */
+    fun interface DoneCallback {
+        fun onDone()
+    }
+
     @JvmStatic
     fun hasCode(): Boolean {
         val stored = DefaultMultiProcessMMKVStorage().getString(KEY_HASH, null)
@@ -42,6 +63,15 @@ object AppCodeUtils {
         storage.putLong(KEY_WRONG_ATTEMPTS, 0)
         storage.putLong(KEY_LOCKED_UNTIL, 0)
         storage.sync()
+    }
+
+    /** Sets the code off the main thread; [callback] runs on the main thread once it is stored. */
+    @JvmStatic
+    fun setCodeAsync(code: String, callback: DoneCallback) {
+        worker.execute {
+            setCode(code)
+            mainHandler.post { callback.onDone() }
+        }
     }
 
     @JvmStatic
@@ -68,6 +98,15 @@ object AppCodeUtils {
             )
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /** Verifies off the main thread; [callback] runs on the main thread with the answer. */
+    @JvmStatic
+    fun verifyCodeAsync(code: String, callback: VerifyCallback) {
+        worker.execute {
+            val ok = verifyCode(code)
+            mainHandler.post { callback.onResult(ok) }
         }
     }
 
@@ -110,17 +149,20 @@ object AppCodeUtils {
 
     private fun hash(salt: ByteArray, code: String): String {
         val sha = MessageDigest.getInstance("SHA-256")
-        var out = sha.digest(concat(salt, code.toByteArray(Charsets.UTF_8)))
+        val digestSize = sha.digestLength
+        // One buffer for the whole run: the running digest followed by the salt. The salt half is
+        // written once and never moves; each round feeds the buffer back in and overwrites only the
+        // digest half with the result, so fifty thousand rounds allocate nothing. The bytes fed in
+        // are the same salt||code then out||salt as before, so a stored code still verifies.
+        val buffer = ByteArray(digestSize + salt.size)
+        System.arraycopy(salt, 0, buffer, digestSize, salt.size)
+        sha.update(salt)
+        sha.update(code.toByteArray(Charsets.UTF_8))
+        sha.digest(buffer, 0, digestSize)
         for (i in 0 until ROUNDS) {
-            out = sha.digest(concat(out, salt))
+            sha.update(buffer)
+            sha.digest(buffer, 0, digestSize)
         }
-        return Base64.encodeToString(out, Base64.NO_WRAP)
-    }
-
-    private fun concat(a: ByteArray, b: ByteArray): ByteArray {
-        val out = ByteArray(a.size + b.size)
-        System.arraycopy(a, 0, out, 0, a.size)
-        System.arraycopy(b, 0, out, a.size, b.size)
-        return out
+        return Base64.encodeToString(buffer, 0, digestSize, Base64.NO_WRAP)
     }
 }

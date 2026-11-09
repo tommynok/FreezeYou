@@ -75,6 +75,19 @@ class AppCodeUtilsTest {
     }
 
     @Test
+    fun `the hash matches the algorithm shipped codes were stored with`() {
+        // A fixed salt and code walked through the original fifty thousand SHA-256 rounds. Reusing
+        // one buffer must not move a single byte, or a code set on an earlier build stops verifying.
+        DefaultMultiProcessMMKVStorage().putString(
+            "appCodeHash",
+            "AAECAwQFBgcICQoLDA0ODw==:3rokXaD8p6Bb5GsgCEZN2Lo5xgkrkuCSILi2ntIdVts="
+        )
+        assertTrue(AppCodeUtils.hasCode())
+        assertTrue(AppCodeUtils.verifyCode("1234"))
+        assertFalse(AppCodeUtils.verifyCode("1235"))
+    }
+
+    @Test
     fun `clearing the code takes the protection with it`() {
         AppCodeUtils.setCode("1234")
         AppCodeUtils.clearCode()
