@@ -60,8 +60,8 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
 
     appLockTimeout {
         // Milliseconds, as the settings list stores them. "0" locks as soon as the app leaves the
-        // foreground and "-1" never locks by itself, so the readers must not treat these as times.
-        // "900000" is the timeout the lock had hardcoded before it became a setting.
+        // foreground, so the readers must not treat it as a time. "900000" is the timeout the lock
+        // had hardcoded before it became a setting, and what a stored legacy "-1" reads as.
         override fun defaultValue() = "900000"
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.appLockTimeout

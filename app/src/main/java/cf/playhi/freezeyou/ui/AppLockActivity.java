@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -288,6 +289,8 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         codeBox.setHint(R.string.enterCode);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             codeBox.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+            // Some IMEs ignore the no-suggestions input type and still learn from what is typed.
+            codeBox.setImeOptions(codeBox.getImeOptions() | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
         }
         LinearLayout holder = new LinearLayout(this);
         int pad = (int) (24 * getResources().getDisplayMetrics().density);

@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.utils
 import android.text.InputType
 import android.text.method.PasswordTransformationMethod
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
@@ -203,6 +204,8 @@ object AppCodeDialogs {
             setHint(hintRes)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+                // Some IMEs ignore the no-suggestions input type and still learn from what is typed.
+                imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
             }
         }
     }
