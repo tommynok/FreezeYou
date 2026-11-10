@@ -47,7 +47,8 @@
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
     <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
-    <string name="summary_lockOnScreenOff">设备息屏后需要重新解锁</string>
+    <string name="summary_lockOnScreenOff">息屏后，进入 FreezeYou 和启动快捷方式时须再次验证</string>
+    <string name="summary_appLockTimeout">适用于进入 FreezeYou 和启动快捷方式</string>
     <string name="summary_enableAppLock">打开应用锁列表中的应用时要求解锁。使用手机锁（指纹、PIN 码或图案）或内置应用代码。</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
@@ -426,7 +427,7 @@
     <string name="deviceLockNotSet">未设置手机锁。请先在系统设置中设置 PIN 码、图案或生物识别</string>
     <string name="removeAppCodeFirst">请先移除应用代码，才能使用手机锁</string>
     <string name="lockOnEntry">进入时锁定</string>
-    <string name="summary_lockOnEntry">打开 FreezeYou 时要求验证。即使关闭此项，快捷方式和应用锁仍受保护</string>
+    <string name="summary_lockOnEntry">打开 FreezeYou 时要求验证</string>
     <string name="setCode">设置代码</string>
     <string name="changeCode">更改代码</string>
     <string name="removeCode">移除代码</string>

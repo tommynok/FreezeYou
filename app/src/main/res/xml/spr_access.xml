@@ -37,8 +37,7 @@
             app:iconSpaceReserved="false"
             app:key="appLockTimeout"
             app:singleLineTitle="false"
-            app:title="@string/appLockTimeout"
-            app:useSimpleSummaryProvider="true" />
+            app:title="@string/appLockTimeout" />
         <CheckBoxPreference
             app:defaultValue="false"
             app:dependency="enableAuthentication"

@@ -41,7 +41,8 @@
     <string name="summary_notificationBar_more">Системные настройки уведомлений FreezeYou — каналы и разрешение на показ уведомлений</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
-    <string name="summary_lockOnScreenOff">Требовать разблокировку после выключения экрана устройства</string>
+    <string name="summary_lockOnScreenOff">После выключения экрана подтверждение запрашивается заново для входа в FreezeYou и запуска ярлыков</string>
+    <string name="summary_appLockTimeout">Действует для входа в FreezeYou и запуска ярлыков</string>
     <string name="summary_enableAppLock">Запрашивать разблокировку при открытии приложений из списка «Блокировка приложений». Используется блокировка устройства (отпечаток пальца, PIN-код или графический ключ) либо встроенный код приложения.</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
@@ -420,7 +421,7 @@
     <string name="deviceLockNotSet">Блокировка устройства не задана. Сначала задайте PIN-код, графический ключ или биометрию в настройках системы</string>
     <string name="removeAppCodeFirst">Сначала удалите код приложения, чтобы использовать блокировку устройства</string>
     <string name="lockOnEntry">Блокировка при входе</string>
-    <string name="summary_lockOnEntry">Спрашивать подтверждение при открытии FreezeYou. Ярлыки и «Блокировка приложений» остаются под защитой даже при выключенном тумблере</string>
+    <string name="summary_lockOnEntry">Спрашивать подтверждение при открытии FreezeYou</string>
     <string name="setCode">Задать код</string>
     <string name="changeCode">Изменить код</string>
     <string name="removeCode">Удалить код</string>

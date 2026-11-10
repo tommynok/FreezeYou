@@ -41,7 +41,8 @@
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
-    <string name="summary_lockOnScreenOff">Require unlock after the device screen turns off</string>
+    <string name="summary_lockOnScreenOff">After the screen turns off, authentication is asked again to enter FreezeYou and to launch shortcuts</string>
+    <string name="summary_appLockTimeout">Applies to entering FreezeYou and launching shortcuts</string>
     <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. The phone lock (fingerprint, PIN, or pattern) or the built-in app code is used.</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
@@ -421,7 +422,7 @@
     <string name="deviceLockNotSet">No device lock is set. Set a PIN, pattern or biometric in the system settings first</string>
     <string name="removeAppCodeFirst">Remove the app code first to use the device lock</string>
     <string name="lockOnEntry">Lock on entry</string>
-    <string name="summary_lockOnEntry">Ask for authentication when opening FreezeYou. Shortcuts and App Lock stay protected even with this off</string>
+    <string name="summary_lockOnEntry">Ask for authentication when opening FreezeYou</string>
     <string name="setCode">Set code</string>
     <string name="changeCode">Change code</string>
     <string name="removeCode">Remove code</string>
