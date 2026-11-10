@@ -42,7 +42,6 @@
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
     <string name="summary_lockOnScreenOff">After the screen turns off, authentication is asked again to enter FreezeYou and to launch shortcuts</string>
-    <string name="summary_appLockTimeout">Applies to entering FreezeYou and launching shortcuts</string>
     <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. The phone lock (fingerprint, PIN, or pattern) or the built-in app code is used.</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
@@ -402,7 +401,7 @@
     <string name="unlock">Unlock</string>
     <string name="security">Security</string>
     <string name="enableAuthentication">Enable authentication</string>
-    <string name="appLockTimeout">Lock timeout</string>
+    <string name="appLockTimeout">Time to lock FreezeYou entry and shortcuts</string>
     <string name="lockOnScreenOff">Lock on screen off</string>
     <string name="enableAppLock">Enable App Lock</string>
     <string name="appLockReLockPolicy">Re-lock policy</string>

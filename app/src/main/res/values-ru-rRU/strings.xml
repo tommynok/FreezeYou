@@ -42,7 +42,6 @@
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Требует разрешения на уведомления. Вступит в силу при следующем создании уведомления</string>
     <string name="summary_combineBatchQuickNotification">Показывать одну карточку с кнопкой «Заморозить все» вместо отдельных уведомлений для каждого приложения</string>
     <string name="summary_lockOnScreenOff">После выключения экрана подтверждение запрашивается заново для входа в FreezeYou и запуска ярлыков</string>
-    <string name="summary_appLockTimeout">Для входа в FreezeYou и запуска ярлыков</string>
     <string name="summary_enableAppLock">Запрашивать разблокировку при открытии приложений из списка «Блокировка приложений». Используется блокировка устройства (отпечаток пальца, PIN-код или графический ключ) либо встроенный код приложения.</string>
     <string name="summary_enableInstallPkgFunc">Позволяет открывать и устанавливать сторонние APK-файлы через FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Удаляет файл APK после успешной установки, чтобы освободить место</string>
@@ -401,7 +400,7 @@
     <string name="unlock">Разблокировать</string>
     <string name="security">Безопасность</string>
     <string name="enableAuthentication">Включить аутентификацию</string>
-    <string name="appLockTimeout">Время до блокировки</string>
+    <string name="appLockTimeout">Время до блокировки входа в FreezeYou и запуска ярлыков</string>
     <string name="lockOnScreenOff">Блокировать при выключении экрана</string>
     <string name="enableAppLock">Включить блокировку приложений</string>
     <string name="appLockReLockPolicy">Повторная блокировка</string>
