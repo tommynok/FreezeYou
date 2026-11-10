@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -281,7 +282,9 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         );
 
         EditText codeBox = new EditText(this);
-        codeBox.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        // Mask via transformation: a password inputType makes the IME offer password generation.
+        codeBox.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        codeBox.setTransformationMethod(PasswordTransformationMethod.getInstance());
         codeBox.setHint(R.string.enterCode);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             codeBox.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);

@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.utils
 
 import android.text.InputType
+import android.text.method.PasswordTransformationMethod
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -196,7 +197,9 @@ object AppCodeDialogs {
 
     private fun passwordBox(activity: FragmentActivity, hintRes: Int): EditText {
         return EditText(activity).apply {
-            setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+            // Mask via transformation: a password inputType makes the IME offer password generation.
+            setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+            transformationMethod = PasswordTransformationMethod.getInstance()
             setHint(hintRes)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
