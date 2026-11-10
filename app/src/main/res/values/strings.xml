@@ -407,6 +407,7 @@
     <string name="appLockReLockPolicy">Re-lock policy</string>
     <string name="appLockAccessibilityWarningTitle">Accessibility Service Required</string>
     <string name="appLockAccessibilityWarningMessage">Application lock requires the FreezeYou Accessibility Service to detect when protected apps are opened. Open system settings to enable it now?</string>
+    <string name="appLockAccessibilityOffSummary">Accessibility is not enabled, App Lock will not work.</string>
     <string name="settings">Settings</string>
     <string name="authentication">Authentication</string>
     <string name="verifyToContinue">Verify to continue</string>

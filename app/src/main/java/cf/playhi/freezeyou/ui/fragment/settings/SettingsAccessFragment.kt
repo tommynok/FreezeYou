@@ -53,12 +53,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 StartActivityForResult()
             ) { result: ActivityResult ->
                 if (result.resultCode == Activity.RESULT_OK) {
-                    enableAppLock.setValue(value = true)
-                    PreferenceManager.getDefaultSharedPreferences(activity)
-                        .edit()
-                        .putBoolean(enableAppLock.name, true)
-                        .apply()
-                    findPreference<CheckBoxPreference>(enableAppLock.name)?.isChecked = true
+                    setAppLockEnabled(true)
                 }
             }
         }
@@ -98,7 +93,8 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                     }
                     false
                 } else {
-                    true
+                    if (false == newValue) setAppLockEnabled(false)
+                    false
                 }
             }
 
@@ -109,6 +105,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
         }
 
         refreshProtectionSummary()
+        refreshAppLockSummary()
 
         bindIconEntry(firstIconEnabled.name, "cf.playhi.freezeyou.FirstIcon")
         bindIconEntry(secondIconEnabled.name, "cf.playhi.freezeyou.SecondIcon")
@@ -196,6 +193,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
             .putBoolean(enableAppLock.name, enabled)
             .apply()
         findPreference<CheckBoxPreference>(enableAppLock.name)?.isChecked = enabled
+        refreshAppLockSummary()
     }
 
     private fun refreshProtectionSummary() {
@@ -205,6 +203,18 @@ class SettingsAccessFragment : CardPreferenceFragment() {
             else -> R.string.authenticationMethodDeviceLock
         }
         findPreference<Preference>("authenticationMethod")?.setSummary(summary)
+    }
+
+    // With the accessibility service off the checked row would claim a protection that never answers.
+    private fun refreshAppLockSummary() {
+        val activity = activity ?: return
+        findPreference<CheckBoxPreference>(enableAppLock.name)?.setSummary(
+            if (enableAppLock.getValue() && !isAccessibilitySettingsOn(activity)) {
+                R.string.appLockAccessibilityOffSummary
+            } else {
+                R.string.summary_enableAppLock
+            }
+        )
     }
 
     /** Each launcher icon is an activity-alias, shown or hidden by enabling its component. */
@@ -221,6 +231,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
         super.onResume()
         activity?.setTitle(R.string.accessAndSecurity)
         refreshProtectionSummary()
+        refreshAppLockSummary()
     }
 
 }

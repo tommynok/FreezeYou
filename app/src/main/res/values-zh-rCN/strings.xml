@@ -412,6 +412,7 @@
     <string name="appLockReLockPolicy">重新锁定</string>
     <string name="appLockAccessibilityWarningTitle">需要无障碍服务</string>
     <string name="appLockAccessibilityWarningMessage">应用锁定需要 FreezeYou 的无障碍服务来检测受保护应用的打开。现在前往系统设置开启吗？</string>
+    <string name="appLockAccessibilityOffSummary">无障碍服务未启用，应用锁定无法工作</string>
     <string name="settings">设置</string>
     <string name="authentication">身份验证</string>
     <string name="verifyToContinue">验证以继续</string>

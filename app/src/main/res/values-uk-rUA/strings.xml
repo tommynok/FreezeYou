@@ -406,6 +406,7 @@
     <string name="appLockReLockPolicy">Повторне блокування</string>
     <string name="appLockAccessibilityWarningTitle">Потрібні спеціальні можливості</string>
     <string name="appLockAccessibilityWarningMessage">Для роботи блокування застосунків потрібна служба спеціальних можливостей FreezeYou — вона відстежує відкриття захищених застосунків. Відкрити системні налаштування зараз?</string>
+    <string name="appLockAccessibilityOffSummary">Спеціальні можливості не активовано — блокування застосунків не працює</string>
     <string name="settings">Налаштування</string>
     <string name="authentication">Автентифікація</string>
     <string name="verifyToContinue">Підтвердити для продовження</string>
