@@ -550,7 +550,6 @@
         <item>5 минут</item>
         <item>10 минут</item>
         <item>15 минут</item>
-        <item>Никогда</item>
     </string-array>
     <string-array name="appLockReLockPolicySelection">
         <item>Сразу при выходе</item>

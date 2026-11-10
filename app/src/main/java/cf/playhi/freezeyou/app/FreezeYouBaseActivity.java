@@ -39,7 +39,6 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     private static final String BACKGROUND_TIME_KEY = "backgroundTime";
     private static final String SCREEN_OFF_LOCK_KEY = "screenOffLock";
 
-    private static final long TIMEOUT_NEVER = -1L;
     private static final long TIMEOUT_IMMEDIATELY = 0L;
     private static final long TIMEOUT_DEFAULT_MS = 900000L;
 
@@ -201,8 +200,8 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
         MMKV mmkv = getLockStore(this);
         long unlockTime = mmkv.decodeLong(UNLOCK_TIME_KEY, 0);
-        // An install that has never been unlocked has no timestamp to age. The lock screen comes
-        // first whatever the timeout says — "never" means "not again after the first opening".
+        // An install that has never been unlocked has no timestamp to age; the lock screen comes
+        // first whatever the timeout says.
         if (unlockTime == 0) return true;
 
         long timeoutMs = readAppLockTimeoutMs();
@@ -211,9 +210,6 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
             if (!sProcessUnlocked || mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
                 return true;
             }
-        }
-        if (timeoutMs == TIMEOUT_NEVER) {
-            return false;
         }
         if (timeoutMs == TIMEOUT_IMMEDIATELY) {
             return mmkv.decodeLong(BACKGROUND_TIME_KEY, 0) > 0;
@@ -325,7 +321,10 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
     private static long readAppLockTimeoutMs() {
         try {
-            return Long.parseLong(appLockTimeout.getValue(null).trim());
+            long timeout = Long.parseLong(appLockTimeout.getValue(null).trim());
+            // A stored "Never" (-1) left the lock asking nothing with the screen-off trigger off;
+            // the option is gone, and the stored value reads as the default.
+            return timeout == -1L ? TIMEOUT_DEFAULT_MS : timeout;
         } catch (Exception e) {
             // A store that holds no readable timeout keeps the one the lock had hardcoded before
             // it became a setting, rather than an unlocked app or a permanent lock screen.
