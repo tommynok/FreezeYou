@@ -15,10 +15,13 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.inputmethod.InputMethodInfo;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.CallSuper;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -199,30 +202,14 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 CharSequence className = accessibilityEvent.getClassName();
                 String classNameString = className != null ? className.toString() : null;
 
-                if (classNameString != null) {
-                    if ("android.inputmethodservice.SoftInputWindow".equals(classNameString)
-                            || "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog".equals(classNameString) // MIUI volume panel
-                    ) {
-                        return;
-                    }
-                }
-
-                boolean isOverviewOrLauncher = isLauncherOrRecents(this, pkgNameString, classNameString);
-
-                // Non-fullscreen events are dropped unless they represent the Recents/Overview screen or Launcher
-                // (e.g. MIUI/OEM recents where task cards are drawn in non-fullscreen accessibility windows).
-                if (!accessibilityEvent.isFullScreen() && !isOverviewOrLauncher) {
+                // Soft keyboards and volume sliders are in-app transient overlays:
+                if (isTransientInputOverlay(this, pkgNameString, classNameString)) {
                     return;
                 }
 
-                // System packages and overlays are filtered out to avoid false departures during permission dialogs
-                // or status bar interactions, UNLESS this transition is entering Recents/Overview or Launcher.
-                if (!isOverviewOrLauncher && (
-                        "android".equals(pkgNameString)
-                        || "com.android.systemui".equals(pkgNameString)
-                        || "com.android.packageinstaller".equals(pkgNameString) // Grant permissions, etc.
-                        || "miui.systemui.plugin".equals(pkgNameString) // MIUI System UI plugin (popups, volume dialogs, etc.)
-                )) {
+                // System runtime permission prompts (e.g. camera, contacts permission dialogs)
+                // belong to the foreground workflow and must not count as exiting the app:
+                if (isPermissionDialog(pkgNameString)) {
                     return;
                 }
 
@@ -332,7 +319,8 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
                 addUpUseTimes(pkgNameString);
 
-                if (freezeOnceQuit.getValue(null)
+                if (!isSystemUiOverlay(this, pkgNameString, classNameString)
+                        && freezeOnceQuit.getValue(null)
                         && existsInOneKeyList(getApplicationContext(), getString(R.string.sFreezeOnceQuit), previousPkg)) {
                     processFreezeAction(
                             getApplicationContext(), previousPkg, null, null,
@@ -537,6 +525,62 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * or reported with [AccessibilityEvent#isFullScreen] as false. Treating overview/launcher transitions
      * as genuine departures is essential for re-locking protected applications immediately upon exit.
      */
+    /**
+     * Determines whether an incoming window change represents a transient input overlay
+     * (soft keyboard or OEM volume panel) that should not count as leaving the foreground app.
+     */
+    public static boolean isTransientInputOverlay(Context context, String pkgNameString, String classNameString) {
+        if (classNameString != null) {
+            if ("android.inputmethodservice.SoftInputWindow".equals(classNameString)
+                    || classNameString.contains("MiuiVolumeDialogImpl")) {
+                return true;
+            }
+        }
+        if (context != null && pkgNameString != null) {
+            try {
+                InputMethodManager imm =
+                        (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    List<InputMethodInfo> enabledImes = imm.getEnabledInputMethodList();
+                    if (enabledImes != null) {
+                        for (InputMethodInfo info : enabledImes) {
+                            if (pkgNameString.equals(info.getPackageName())) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether an incoming window change represents a system runtime permission request.
+     */
+    public static boolean isPermissionDialog(String pkgNameString) {
+        return "com.android.permissioncontroller".equals(pkgNameString)
+                || "com.google.android.permissioncontroller".equals(pkgNameString)
+                || "com.android.packageinstaller".equals(pkgNameString);
+    }
+
+    /**
+     * Identifies transient System UI overlay surfaces (status bar shade, notifications)
+     * as opposed to full application switches or launcher / recents multitasking views.
+     */
+    public static boolean isSystemUiOverlay(Context context, String pkgNameString, String classNameString) {
+        if (pkgNameString == null || "".equals(pkgNameString)) {
+            return false;
+        }
+        if (isLauncherOrRecents(context, pkgNameString, classNameString)) {
+            return false;
+        }
+        return "android".equals(pkgNameString)
+                || "com.android.systemui".equals(pkgNameString)
+                || "miui.systemui.plugin".equals(pkgNameString);
+    }
+
     public static boolean isLauncherOrRecents(Context context, String pkgNameString, String classNameString) {
         if (pkgNameString == null || "".equals(pkgNameString)) {
             return false;

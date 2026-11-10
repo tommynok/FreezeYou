@@ -571,4 +571,76 @@ class AppLockInterceptionTest {
             )
         )
     }
+
+    @Test
+    fun `isTransientInputOverlay identifies soft keyboards and OEM volume dialogs`() {
+        assertTrue(
+            AccessibilityService.isTransientInputOverlay(
+                context, "com.google.android.inputmethod.latin", "android.inputmethodservice.SoftInputWindow"
+            )
+        )
+        assertTrue(
+            AccessibilityService.isTransientInputOverlay(
+                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog"
+            )
+        )
+        assertFalse(
+            AccessibilityService.isTransientInputOverlay(
+                context, "com.example.bank", "com.example.bank.MainActivity"
+            )
+        )
+        assertFalse(
+            AccessibilityService.isTransientInputOverlay(
+                context, null, null
+            )
+        )
+    }
+
+    @Test
+    fun `isPermissionDialog recognizes runtime permission dialog packages`() {
+        assertTrue(AccessibilityService.isPermissionDialog("com.android.permissioncontroller"))
+        assertTrue(AccessibilityService.isPermissionDialog("com.google.android.permissioncontroller"))
+        assertTrue(AccessibilityService.isPermissionDialog("com.android.packageinstaller"))
+        assertFalse(AccessibilityService.isPermissionDialog("com.example.bank"))
+        assertFalse(AccessibilityService.isPermissionDialog(null))
+        assertFalse(AccessibilityService.isPermissionDialog(""))
+    }
+
+    @Test
+    fun `isSystemUiOverlay distinguishes status bar shades from multitasking recents and launchers`() {
+        // Notification shade is an overlay
+        assertTrue(
+            AccessibilityService.isSystemUiOverlay(
+                context, "com.android.systemui", "com.android.systemui.statusbar.phone.NotificationShadeWindowView"
+            )
+        )
+        assertTrue(
+            AccessibilityService.isSystemUiOverlay(
+                context, "android", null
+            )
+        )
+
+        // Recents overview is NOT a transient shade overlay
+        assertFalse(
+            AccessibilityService.isSystemUiOverlay(
+                context, "com.android.systemui", "com.android.systemui.recents.RecentsActivity"
+            )
+        )
+
+        // Launchers are NOT overlays
+        assertFalse(
+            AccessibilityService.isSystemUiOverlay(
+                context, "com.miui.home", "com.miui.home.launcher.Launcher"
+            )
+        )
+
+        // Standard user applications are NOT overlays
+        assertFalse(
+            AccessibilityService.isSystemUiOverlay(
+                context, "com.example.bank", "com.example.bank.MainActivity"
+            )
+        )
+        assertFalse(AccessibilityService.isSystemUiOverlay(context, null, null))
+        assertFalse(AccessibilityService.isSystemUiOverlay(context, "", null))
+    }
 }
