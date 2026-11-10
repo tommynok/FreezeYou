@@ -581,7 +581,7 @@ class AppLockInterceptionTest {
         )
         assertTrue(
             AccessibilityService.isTransientInputOverlay(
-                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl$CustomDialog"
+                context, "miui.systemui.plugin", "com.miui.misound.playervolume.MiuiVolumeDialogImpl\$CustomDialog"
             )
         )
         assertFalse(
