@@ -8,14 +8,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.Keep
 import androidx.preference.CheckBoxPreference
-import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
-import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
@@ -105,13 +103,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
         if (!enableAuthentication.getValue() && enableAppLock.getValue()) {
             setAppLockEnabled(false)
         }
-
-        // The row sits among the entry settings, but the timeout also governs the shortcuts; the
-        // caption under the chosen value says so.
-        findPreference<ListPreference>(appLockTimeout.name)?.summaryProvider =
-            Preference.SummaryProvider<ListPreference> { pref ->
-                "${pref.entry ?: ""}\n${getString(R.string.summary_appLockTimeout)}"
-            }
 
         refreshProtectionSummary()
         refreshAppLockSummary()
