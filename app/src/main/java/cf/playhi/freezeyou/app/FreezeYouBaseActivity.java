@@ -7,6 +7,9 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.WindowManager;
+
+import java.util.List;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.Nullable;
@@ -22,6 +25,7 @@ import cf.playhi.freezeyou.ui.AppLockActivity;
 import cf.playhi.freezeyou.utils.ProcessUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable;
@@ -71,6 +75,7 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
             checkLanguage(this);
         }
         super.onCreate(savedInstanceState);
+        applyRecentsVisibility();
         reapplyLocalizedTitle();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // The app already picks its own light/dark theme manually (see ThemeUtils).
@@ -131,7 +136,35 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
     @CallSuper
     protected void onResume() {
         super.onResume();
+        applyRecentsVisibility();
         checkAppLock();
+    }
+
+    public void applyRecentsVisibility() {
+        boolean show = showInRecents.getValue(null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                if (am != null) {
+                    List<ActivityManager.AppTask> tasks = am.getAppTasks();
+                    if (tasks != null) {
+                        int taskId = getTaskId();
+                        for (ActivityManager.AppTask task : tasks) {
+                            if (task.getTaskInfo() != null && task.getTaskInfo().id == taskId) {
+                                task.setExcludeFromRecents(!show);
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+        if (!show) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        }
     }
 
     @Override

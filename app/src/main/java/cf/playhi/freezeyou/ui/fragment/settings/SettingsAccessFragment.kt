@@ -12,8 +12,10 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
+import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
@@ -71,6 +73,15 @@ class SettingsAccessFragment : CardPreferenceFragment() {
             showProtectionMethodDialog()
             true
         }
+
+        findPreference<CheckBoxPreference>(showInRecents.name)?.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _, newValue ->
+                if (newValue is Boolean) {
+                    showInRecents.setValue(value = newValue)
+                    (activity as? FreezeYouBaseActivity)?.applyRecentsVisibility()
+                }
+                true
+            }
 
         // The app lock answers for other applications, so it asks the questions that row has:
         // whether a protection method is active, whether anything is there to intercept with,

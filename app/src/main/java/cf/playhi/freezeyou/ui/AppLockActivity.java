@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -63,6 +64,7 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         } else {
             overridePendingTransition(0, 0);
         }
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         setContentView(R.layout.app_lock_main);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.hide();
@@ -493,5 +495,11 @@ public class AppLockActivity extends FreezeYouBaseActivity {
         // its own timeout against authentication alone, so an entry opted out does not let the
         // shortcut or the application behind it slip through the re-check on resume.
         return isAuthenticationEnabled();
+    }
+
+    @Override
+    public void applyRecentsVisibility() {
+        super.applyRecentsVisibility();
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }
 }
