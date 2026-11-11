@@ -26,6 +26,16 @@ public final class DevicePolicyManagerUtils {
         new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
             showToast(context, R.string.needActiveDeviceAdmin);
 
+            // 0. Explicit: Device Admin settings list (standard Android settings component)
+            try {
+                Intent adminExplicitIntent = new Intent();
+                adminExplicitIntent.setComponent(new ComponentName("com.android.settings", "com.android.settings.DeviceAdminSettings"));
+                adminExplicitIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(adminExplicitIntent);
+                return;
+            } catch (Exception ignored) {
+            }
+
             // 1. Primary: Device Admin settings list (standard Android settings screen)
             try {
                 Intent adminListIntent = new Intent("android.settings.DEVICE_ADMIN_SETTINGS");

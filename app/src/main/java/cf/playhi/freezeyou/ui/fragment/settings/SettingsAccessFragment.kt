@@ -94,8 +94,16 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 FreezeYouAlertDialogBuilder(act)
                     .setTitle(R.string.deviceAdminProtection)
                     .setMessage(R.string.deviceAdminActiveDialogMessage)
-                    .setPositiveButton(R.string.settings) { _, _ ->
-                        DevicePolicyManagerUtils.openDevicePolicyManager(act)
+                    .setPositiveButton(R.string.disableProtection) { _, _ ->
+                        try {
+                            dpm.removeActiveAdmin(component)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        findPreference<Preference>("deviceAdminProtection")?.setSummary(R.string.summary_deviceAdminProtection)
+                        act.window?.decorView?.postDelayed({
+                            refreshDeviceAdminSummary()
+                        }, 500)
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()

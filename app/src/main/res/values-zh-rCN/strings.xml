@@ -632,6 +632,7 @@
     <string name="deviceAdminProtection">防卸载保护</string>
     <string name="summary_deviceAdminProtection">在 Android 系统层级阻止卸载 FreezeYou。</string>
     <string name="deviceAdminActiveSummary">已激活。系统阻止卸载此应用。</string>
-    <string name="deviceAdminActiveDialogMessage">FreezeYou 已受防卸载保护。如需解除保护或卸载应用，请前往系统设备管理器设置。</string>
+    <string name="deviceAdminActiveDialogMessage">是否关闭防卸载保护？关闭后允许从设备卸载 FreezeYou。</string>
+    <string name="disableProtection">关闭</string>
     <string name="deviceAdminExplanation">在 Android 系统层级阻止卸载 FreezeYou。</string>
 </resources>

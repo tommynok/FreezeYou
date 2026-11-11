@@ -734,6 +734,7 @@
     <string name="deviceAdminProtection">Uninstall protection</string>
     <string name="summary_deviceAdminProtection">Blocks uninstallation of FreezeYou at the Android system level.</string>
     <string name="deviceAdminActiveSummary">Active. The system blocks uninstallation of the app.</string>
-    <string name="deviceAdminActiveDialogMessage">FreezeYou is protected from uninstallation. To remove protection or uninstall the app, open the system Device Admin settings.</string>
+    <string name="deviceAdminActiveDialogMessage">Disable uninstallation protection? After disabling, FreezeYou can be uninstalled from the device.</string>
+    <string name="disableProtection">Disable</string>
     <string name="deviceAdminExplanation">Blocks uninstallation of FreezeYou at the Android system level.</string>
 </resources>

@@ -627,6 +627,7 @@
     <string name="deviceAdminProtection">Захист від видалення</string>
     <string name="summary_deviceAdminProtection">Блокує видалення FreezeYou на рівні системи Android.</string>
     <string name="deviceAdminActiveSummary">Увімкнено. Система блокує видалення додатку.</string>
-    <string name="deviceAdminActiveDialogMessage">FreezeYou захищено від видалення. Щоб зняти захист або видалити додаток, перейдіть до системного списку адміністраторів пристрою.</string>
+    <string name="deviceAdminActiveDialogMessage">Вимкнути захист від видалення? Після вимкнення FreezeYou можна буде видалити з пристрою.</string>
+    <string name="disableProtection">Вимкнути</string>
     <string name="deviceAdminExplanation">Блокує видалення FreezeYou на рівні системи Android.</string>
 </resources>
