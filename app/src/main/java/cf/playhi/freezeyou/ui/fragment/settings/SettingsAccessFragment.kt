@@ -1,6 +1,7 @@
 package cf.playhi.freezeyou.ui.fragment.settings
 
 import android.app.Activity
+import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.ActivityResult
@@ -12,10 +13,12 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilder
+import cf.playhi.freezeyou.DeviceAdminReceiver
 import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
+import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled
@@ -83,6 +86,35 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 true
             }
 
+        findPreference<Preference>("deviceAdminProtection")?.setOnPreferenceClickListener {
+            val act = activity ?: return@setOnPreferenceClickListener true
+            val dpm = DevicePolicyManagerUtils.getDevicePolicyManager(act)
+            val component = DeviceAdminReceiver.getComponentName(act)
+            if (dpm != null && dpm.isAdminActive(component)) {
+                FreezeYouAlertDialogBuilder(act)
+                    .setTitle(R.string.deviceAdminProtection)
+                    .setMessage(R.string.deviceAdminActiveDialogMessage)
+                    .setPositiveButton(R.string.settings) { _, _ ->
+                        DevicePolicyManagerUtils.openDevicePolicyManager(act)
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            } else {
+                try {
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, component)
+                    intent.putExtra(
+                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        getString(R.string.deviceAdminExplanation)
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    DevicePolicyManagerUtils.openDevicePolicyManager(act)
+                }
+            }
+            true
+        }
+
         // The app lock answers for other applications, so it asks the questions that row has:
         // whether a protection method is active, whether anything is there to intercept with,
         // and whether the device can be made to ask.
@@ -117,6 +149,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
 
         refreshProtectionSummary()
         refreshAppLockSummary()
+        refreshDeviceAdminSummary()
 
         bindIconEntry(firstIconEnabled.name, "cf.playhi.freezeyou.FirstIcon")
         bindIconEntry(secondIconEnabled.name, "cf.playhi.freezeyou.SecondIcon")
@@ -238,11 +271,21 @@ class SettingsAccessFragment : CardPreferenceFragment() {
         }
     }
 
+    private fun refreshDeviceAdminSummary() {
+        val act = activity ?: return
+        val dpm = DevicePolicyManagerUtils.getDevicePolicyManager(act)
+        val active = dpm != null && dpm.isAdminActive(DeviceAdminReceiver.getComponentName(act))
+        findPreference<Preference>("deviceAdminProtection")?.setSummary(
+            if (active) R.string.deviceAdminActiveSummary else R.string.summary_deviceAdminProtection
+        )
+    }
+
     override fun onResume() {
         super.onResume()
         activity?.setTitle(R.string.accessAndSecurity)
         refreshProtectionSummary()
         refreshAppLockSummary()
+        refreshDeviceAdminSummary()
     }
 
 }

@@ -57,7 +57,8 @@ public final class BackupUtils {
             DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled.name(),
             DefaultSharedPreferenceStorageBooleanKeys.thirdIconEnabled.name(),
             DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication.name(),
-            DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock.name()
+            DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock.name(),
+            DefaultMultiProcessMMKVStorageBooleanKeys.protectSystemSettings.name()
     };
 
     /**

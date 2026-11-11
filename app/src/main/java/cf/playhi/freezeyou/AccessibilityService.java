@@ -38,6 +38,7 @@ import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.protectSystemSettings;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockReLockPolicy;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable;
@@ -470,8 +471,16 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * window change without a device noticing it.
      */
     private boolean isOnAppLockList(String pkgNameString) {
+        if (protectSystemSettings.getValue(null) && isSystemSettingsPackage(pkgNameString)) {
+            return true;
+        }
         return existsInOneKeyList(
                 getApplicationContext(), getString(R.string.sAppLockList), pkgNameString);
+    }
+
+    public static boolean isSystemSettingsPackage(String pkgNameString) {
+        return "com.android.settings".equals(pkgNameString)
+                || "com.google.android.settings".equals(pkgNameString);
     }
 
     /**

@@ -47,6 +47,12 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_lockOnScreenOff"
             app:title="@string/lockOnScreenOff" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="deviceAdminProtection"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_deviceAdminProtection"
+            app:title="@string/deviceAdminProtection" />
         <CheckBoxPreference
             app:defaultValue="true"
             app:disableDependentsState="false"
@@ -87,6 +93,14 @@
             app:singleLineTitle="false"
             app:title="@string/appLockReLockPolicy"
             app:useSimpleSummaryProvider="true" />
+        <CheckBoxPreference
+            app:defaultValue="false"
+            app:dependency="enableAppLock"
+            app:iconSpaceReserved="false"
+            app:key="protectSystemSettings"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_protectSystemSettings"
+            app:title="@string/protectSystemSettings" />
 
     </PreferenceCategory>
 

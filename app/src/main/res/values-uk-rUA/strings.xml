@@ -622,4 +622,11 @@
     <string name="skip">Пропуск</string>
     <string name="restoreShortcutsProgress">Ярлик %1$d з %2$d</string>
     <string name="restoreShortcutFailed">Не вдалося додати ярлик «%1$s»</string>
+    <string name="protectSystemSettings">Захищати налаштування системи</string>
+    <string name="summary_protectSystemSettings">Блокує додаток «Налаштування», щоб сторонні не могли вимкнути службу FreezeYou або змінити дозволи</string>
+    <string name="deviceAdminProtection">Захист від видалення (Адміністратор пристрою)</string>
+    <string name="summary_deviceAdminProtection">Захищає FreezeYou від швидкого видалення з робочого столу. Для видалення знадобиться спочатку вимкнути адміністратора пристрою</string>
+    <string name="deviceAdminActiveSummary">Увімкнено. FreezeYou захищено від видалення, доки активні права адміністратора пристрою</string>
+    <string name="deviceAdminActiveDialogMessage">Захист від видалення наразі активний. Щоб вимкнути його або керувати адміністраторами, відкрийте системні налаштування.</string>
+    <string name="deviceAdminExplanation">Захищає FreezeYou від видалення сторонніми особами</string>
 </resources>

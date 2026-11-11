@@ -627,4 +627,11 @@
     <string name="skip">跳过</string>
     <string name="restoreShortcutsProgress">快捷方式 %1$d / %2$d</string>
     <string name="restoreShortcutFailed">无法添加快捷方式“%1$s”</string>
+    <string name="protectSystemSettings">保护系统设置</string>
+    <string name="summary_protectSystemSettings">锁定系统“设置”应用，防止未授权人员停用 FreezeYou 的无障碍服务或更改权限</string>
+    <string name="deviceAdminProtection">防卸载保护（设备管理器）</string>
+    <string name="summary_deviceAdminProtection">防止在启动器中快速卸载 FreezeYou。卸载前必须先在系统设置中取消激活设备管理器</string>
+    <string name="deviceAdminActiveSummary">已激活。在系统设置中取消设备管理器之前，无法卸载 FreezeYou</string>
+    <string name="deviceAdminActiveDialogMessage">防卸载保护当前处于激活状态。如需停用或管理设备管理器，请打开系统设置。</string>
+    <string name="deviceAdminExplanation">防止未授权人员卸载 FreezeYou</string>
 </resources>

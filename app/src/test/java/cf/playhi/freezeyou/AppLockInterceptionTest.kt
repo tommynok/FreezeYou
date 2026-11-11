@@ -643,4 +643,14 @@ class AppLockInterceptionTest {
         assertFalse(AccessibilityService.isSystemUiOverlay(context, null, null))
         assertFalse(AccessibilityService.isSystemUiOverlay(context, "", null))
     }
+
+    @Test
+    fun `isSystemSettingsPackage identifies android settings packages`() {
+        assertTrue(AccessibilityService.isSystemSettingsPackage("com.android.settings"))
+        assertTrue(AccessibilityService.isSystemSettingsPackage("com.google.android.settings"))
+        assertFalse(AccessibilityService.isSystemSettingsPackage("com.android.settings.intelligence"))
+        assertFalse(AccessibilityService.isSystemSettingsPackage("cf.playhi.freezeyou"))
+        assertFalse(AccessibilityService.isSystemSettingsPackage(null))
+        assertFalse(AccessibilityService.isSystemSettingsPackage(""))
+    }
 }
