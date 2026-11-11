@@ -626,7 +626,7 @@
     <string name="summary_protectSystemSettings">Блокирует приложение «Настройки», чтобы посторонние не могли отключить службу FreezeYou или изменить разрешения</string>
     <string name="deviceAdminProtection">Защита от удаления (Администратор устройства)</string>
     <string name="summary_deviceAdminProtection">Защищает FreezeYou от быстрого удаления с рабочего стола. Для удаления потребуется сначала отключить администратора устройства</string>
-    <string name="deviceAdminActiveSummary">Включено. FreezeYou защищён от удаления, пока включены права администратора устройства</string>
-    <string name="deviceAdminActiveDialogMessage">Защита от удаления сейчас включена. Чтобы отключить её или управлять администраторами, откройте системные настройки.</string>
+    <string name="deviceAdminActiveSummary">Включено. FreezeYou защищен от удаления, пока включены права администратора устройства</string>
+    <string name="deviceAdminActiveDialogMessage">Защита от удаления сейчас включена. Чтобы отключить ее или управлять администраторами, откройте системные настройки.</string>
     <string name="deviceAdminExplanation">Защищает FreezeYou от удаления посторонними лицами</string>
 </resources>
