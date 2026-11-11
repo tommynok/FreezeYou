@@ -729,11 +729,11 @@
     <string name="skip">Skip</string>
     <string name="restoreShortcutsProgress">Shortcut %1$d of %2$d</string>
     <string name="restoreShortcutFailed">Could not add the shortcut \"%1$s\"</string>
-    <string name="protectSystemSettings">Protect system Settings</string>
-    <string name="summary_protectSystemSettings">Locks the Android Settings app so unauthorized users cannot disable FreezeYou or alter permissions</string>
-    <string name="deviceAdminProtection">Uninstall protection (Device Admin)</string>
-    <string name="summary_deviceAdminProtection">Prevent quick uninstallation of FreezeYou from the launcher. Requires deactivating Device Administrator to uninstall</string>
-    <string name="deviceAdminActiveSummary">Active. FreezeYou cannot be uninstalled without deactivating Device Administrator in system settings</string>
-    <string name="deviceAdminActiveDialogMessage">Uninstall protection is currently active. To deactivate it or manage device administrators, open system settings.</string>
-    <string name="deviceAdminExplanation">Prevent FreezeYou from being uninstalled by unauthorized users</string>
+    <string name="protectSystemSettings">Block access to system Settings</string>
+    <string name="summary_protectSystemSettings">Prevents bypassing protection and force-stopping FreezeYou.</string>
+    <string name="deviceAdminProtection">Uninstall protection</string>
+    <string name="summary_deviceAdminProtection">Blocks uninstallation of FreezeYou at the Android system level.</string>
+    <string name="deviceAdminActiveSummary">Active. The system blocks uninstallation of the app.</string>
+    <string name="deviceAdminActiveDialogMessage">FreezeYou is protected from uninstallation. To remove protection or uninstall the app, open the system Device Admin settings.</string>
+    <string name="deviceAdminExplanation">Blocks uninstallation of FreezeYou at the Android system level.</string>
 </resources>

@@ -622,11 +622,11 @@
     <string name="skip">Пропуск</string>
     <string name="restoreShortcutsProgress">Ярлык %1$d из %2$d</string>
     <string name="restoreShortcutFailed">Не удалось добавить ярлык «%1$s»</string>
-    <string name="protectSystemSettings">Защищать настройки системы</string>
-    <string name="summary_protectSystemSettings">Блокирует приложение «Настройки», чтобы посторонние не могли отключить службу FreezeYou или изменить разрешения</string>
-    <string name="deviceAdminProtection">Защита от удаления (Администратор устройства)</string>
-    <string name="summary_deviceAdminProtection">Защищает FreezeYou от быстрого удаления с рабочего стола. Для удаления потребуется сначала отключить администратора устройства</string>
-    <string name="deviceAdminActiveSummary">Включено. FreezeYou защищен от удаления, пока включены права администратора устройства</string>
-    <string name="deviceAdminActiveDialogMessage">Защита от удаления сейчас включена. Чтобы отключить ее или управлять администраторами, откройте системные настройки.</string>
-    <string name="deviceAdminExplanation">Защищает FreezeYou от удаления посторонними лицами</string>
+    <string name="protectSystemSettings">Блокировать доступ к настройкам системы</string>
+    <string name="summary_protectSystemSettings">Предотвращает обход защиты и принудительную остановку FreezeYou.</string>
+    <string name="deviceAdminProtection">Защита от удаления</string>
+    <string name="summary_deviceAdminProtection">Блокирует удаление FreezeYou на уровне системы Android.</string>
+    <string name="deviceAdminActiveSummary">Включено. Система блокирует удаление приложения.</string>
+    <string name="deviceAdminActiveDialogMessage">FreezeYou защищен от удаления. Чтобы снять защиту или удалить приложение, перейдите в системный список администраторов устройства.</string>
+    <string name="deviceAdminExplanation">Блокирует удаление FreezeYou на уровне системы Android.</string>
 </resources>
