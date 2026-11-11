@@ -763,6 +763,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
      * let into: it is a window of its own rather than one this service would have to close.
      */
     private void leaveTowardsHome() {
+        if (performGlobalAction(GLOBAL_ACTION_HOME)) {
+            return;
+        }
         try {
             startActivity(new Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_HOME)
