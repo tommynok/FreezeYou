@@ -15,7 +15,7 @@ import cf.playhi.freezeyou.utils.ServiceUtils;
 import cf.playhi.freezeyou.utils.ShortcutTokenUtils;
 
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
-import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isShortcutProtectionEnabled;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
 import static cf.playhi.freezeyou.utils.ToastUtils.showToast;
 
@@ -85,7 +85,7 @@ public class ForceStop extends FreezeYouBaseActivity {
 
     @Override
     protected boolean screenLockEnabled() {
-        return isAuthenticationEnabled();
+        return isShortcutProtectionEnabled();
     }
 
     @Override

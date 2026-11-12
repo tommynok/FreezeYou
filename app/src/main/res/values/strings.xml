@@ -422,6 +422,8 @@
     <string name="removeAppCodeFirst">Remove the app code first to use the device lock</string>
     <string name="lockOnEntry">Lock on entry</string>
     <string name="summary_lockOnEntry">Ask for authentication when opening FreezeYou</string>
+    <string name="protectShortcuts">Protect shortcuts</string>
+    <string name="summary_protectShortcuts">Ask for authentication when using freeze, unfreeze, and force-stop shortcuts</string>
     <string name="setCode">Set code</string>
     <string name="changeCode">Change code</string>
     <string name="removeCode">Remove code</string>

@@ -10,6 +10,7 @@ import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTI
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnEntry;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.protectShortcuts;
 
 public class AuthenticationUtils {
 
@@ -24,6 +25,15 @@ public class AuthenticationUtils {
      */
     public static boolean isLockOnEntryEnabled() {
         return lockOnEntry.getValue(null);
+    }
+
+    /**
+     * Whether launcher shortcuts (freeze/unfreeze/force-stop/one-key) ask for authentication
+     * before acting. Subordinate to {@link #isAuthenticationEnabled()}: the master switch must
+     * be on for this to have any effect.
+     */
+    public static boolean isShortcutProtectionEnabled() {
+        return protectShortcuts.getValue(null) && isAuthenticationEnabled();
     }
 
     /**

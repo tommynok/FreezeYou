@@ -179,6 +179,15 @@ enum class DefaultMultiProcessMMKVStorageBooleanKeys : AbstractMMKVKey<Boolean> 
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     },
 
+    protectShortcuts {
+        // Subordinate to enableAuthentication: the master switch must be on for this to have
+        // any effect. Default true so that existing installations that had enableAuthentication
+        // on keep their shortcut protection after the upgrade.
+        override fun defaultValue(): Boolean = true
+        override fun titleTextStringId(): Int = R.string.protectShortcuts
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
+    },
+
     enableAppLock {
         override fun defaultValue(): Boolean = false
         override fun titleTextStringId(): Int = R.string.enableAppLock

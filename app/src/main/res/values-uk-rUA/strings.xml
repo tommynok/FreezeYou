@@ -421,6 +421,8 @@
     <string name="removeAppCodeFirst">Спершу видаліть код застосунку, щоб використовувати блокування пристрою</string>
     <string name="lockOnEntry">Блокування на вході</string>
     <string name="summary_lockOnEntry">Запитувати підтвердження під час відкриття FreezeYou</string>
+    <string name="protectShortcuts">Захист ярликів</string>
+    <string name="summary_protectShortcuts">Запитувати код під час використання ярликів заморожування, розморожування та примусової зупинки</string>
     <string name="setCode">Задати код</string>
     <string name="changeCode">Змінити код</string>
     <string name="removeCode">Видалити код</string>

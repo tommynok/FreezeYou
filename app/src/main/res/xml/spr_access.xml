@@ -29,6 +29,14 @@
             app:singleLineTitle="false"
             app:summary="@string/summary_lockOnEntry"
             app:title="@string/lockOnEntry" />
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:dependency="enableAuthentication"
+            app:iconSpaceReserved="false"
+            app:key="protectShortcuts"
+            app:singleLineTitle="false"
+            app:summary="@string/summary_protectShortcuts"
+            app:title="@string/protectShortcuts" />
         <ListPreference
             app:defaultValue="900000"
             app:dependency="enableAuthentication"

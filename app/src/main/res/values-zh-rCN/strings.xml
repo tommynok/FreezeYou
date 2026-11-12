@@ -427,6 +427,8 @@
     <string name="removeAppCodeFirst">请先移除应用代码，才能使用手机锁</string>
     <string name="lockOnEntry">进入时锁定</string>
     <string name="summary_lockOnEntry">打开 FreezeYou 时要求验证</string>
+    <string name="protectShortcuts">保护快捷方式</string>
+    <string name="summary_protectShortcuts">使用冻结、解冻和强制停止快捷方式时要求验证</string>
     <string name="setCode">设置代码</string>
     <string name="changeCode">更改代码</string>
     <string name="removeCode">移除代码</string>

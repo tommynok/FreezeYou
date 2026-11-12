@@ -421,6 +421,8 @@
     <string name="removeAppCodeFirst">Сначала удалите код приложения, чтобы использовать блокировку устройства</string>
     <string name="lockOnEntry">Блокировка при входе</string>
     <string name="summary_lockOnEntry">Спрашивать подтверждение при открытии FreezeYou</string>
+    <string name="protectShortcuts">Защита ярлыков</string>
+    <string name="summary_protectShortcuts">Запрашивать код при использовании ярлыков заморозки, разморозки и принудительной остановки</string>
     <string name="setCode">Задать код</string>
     <string name="changeCode">Изменить код</string>
     <string name="removeCode">Удалить код</string>

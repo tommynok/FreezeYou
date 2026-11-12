@@ -43,6 +43,7 @@ import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getBitmapFromDrawab
 import static cf.playhi.freezeyou.utils.ApplicationInfoUtils.getApplicationInfoFromPkgName;
 import static cf.playhi.freezeyou.utils.ApplicationLabelUtils.getApplicationLabel;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.isShortcutProtectionEnabled;
 import static cf.playhi.freezeyou.utils.FUFUtils.getFUFRelatedToastString;
 import static cf.playhi.freezeyou.utils.OneKeyListUtils.existsInOneKeyList;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
@@ -280,7 +281,7 @@ public class Freeze extends FreezeYouBaseActivity {
         boolean fromShortcut = getIntent() == null
                 || getIntent().getBooleanExtra("fromShortcut", true);
         if (fromShortcut) {
-            return isAuthenticationEnabled();
+            return isShortcutProtectionEnabled();
         }
         return super.screenLockEnabled(); // isAuthenticationEnabled() && isLockOnEntryEnabled()
     }
