@@ -47,8 +47,8 @@
     <string name="summary_notificationBar_more">打开 FreezeYou 的系统通知设置——管理通知渠道和通知权限</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">需要通知权限。下次创建通知时生效</string>
     <string name="summary_combineBatchQuickNotification">显示带有“全部冻结”按钮的单个卡片，而不是每个应用的单独通知</string>
-    <string name="summary_lockOnScreenOff">息屏后，进入 FreezeYou 和启动快捷方式时须再次验证</string>
-    <string name="summary_enableAppLock">打开应用锁列表中的应用时要求解锁。使用手机锁（指纹、PIN 码或图案）或内置应用代码。</string>
+    <string name="summary_lockOnScreenOff">每次息屏后重新要求解锁</string>
+    <string name="summary_enableAppLock">打开“应用锁”列表中的应用时要求解锁。使用设备锁或内置代码。</string>
     <string name="summary_enableInstallPkgFunc">允许通过 FreezeYou 打开和安装 APK 文件。</string>
     <string name="summary_tryDelApkAfterInstalled">安装成功后删除 APK 文件以释放空间</string>
     <string name="summary_notAllowWhenIsObsd">当屏幕被其他应用窗口遮挡时阻止安装/卸载确认（防点击劫持）</string>
@@ -109,7 +109,7 @@
     <string name="cannotFindTheEntrance">未找到该应用的入口</string>
     <string name="unfreezeAndLaunchActivity">应用已冻结，其界面无法启动。要解冻吗？解冻后将保持未冻结状态。如需通过快捷方式冻结应用——请通过“%1$s”项创建。</string>
     <string name="iconAEntry">FreezeYou 图标与入口</string>
-    <string name="dialEntry">拨号盘进入</string>
+    <string name="dialEntry">拨号盘入口</string>
     <string name="dialEntry_Ex">*#*#373393968#*#*(*#*#FreezeYou#*#*)(大部分安卓设备支持)</string>
     <string name="ciFinishedToast">已提交，请等待桌面刷新或重启桌面。</string>
     <string name="ifUploadCrashLog">检测到存在发生过但并未提交的异常日志，是否上传日志？</string>
@@ -194,8 +194,8 @@
     <string name="triggers_extra_parameters">触发器附加参数</string>
     <string name="delete">删除</string>
     <string name="copyAfterBeingFormatted">格式化后复制</string>
-    <string name="showInRecents">显示在最近任务列表</string>
-    <string name="showInRecentsSummary">让 FreezeYou 保持在最近任务（多任务）列表中可见。</string>
+    <string name="showInRecents">在最近任务中显示</string>
+    <string name="showInRecentsSummary">在最近任务列表中显示 FreezeYou。关闭后将隐藏窗口并禁止屏幕截图</string>
     <string name="mayHaveNoEffectsL">在 Android 4.4 及以下系统无效</string>
     <string name="lesserToast">更少的 Toast 提示</string>
     <string name="avoidFreezeForegroundApplications">避免冻结前台应用程序</string>
@@ -406,9 +406,9 @@
     <string name="unlock">解锁</string>
     <string name="security">安全</string>
     <string name="enableAuthentication">启用身份验证</string>
-    <string name="appLockTimeout">进入 FreezeYou 和启动快捷方式的锁定时间</string>
-    <string name="lockOnScreenOff">息屏时立即锁定</string>
-    <string name="enableAppLock">启用应用锁定</string>
+    <string name="appLockTimeout">锁定超时</string>
+    <string name="lockOnScreenOff">息屏时锁定</string>
+    <string name="enableAppLock">应用锁</string>
     <string name="appLockReLockPolicy">重新锁定</string>
     <string name="appLockAccessibilityWarningTitle">需要无障碍服务</string>
     <string name="appLockAccessibilityWarningMessage">应用锁定需要 FreezeYou 的无障碍服务来检测受保护应用的打开。现在前往系统设置开启吗？</string>
@@ -426,9 +426,9 @@
     <string name="deviceLockNotSet">未设置手机锁。请先在系统设置中设置 PIN 码、图案或生物识别</string>
     <string name="removeAppCodeFirst">请先移除应用代码，才能使用手机锁</string>
     <string name="lockOnEntry">进入时锁定</string>
-    <string name="summary_lockOnEntry">打开 FreezeYou 时要求验证</string>
+    <string name="summary_lockOnEntry">打开 FreezeYou 时要求解锁</string>
     <string name="protectShortcuts">保护快捷方式</string>
-    <string name="summary_protectShortcuts">使用冻结、解冻和强制停止快捷方式时要求验证</string>
+    <string name="summary_protectShortcuts">使用冻结、解冻和强制停止快捷方式时要求解锁</string>
     <string name="setCode">设置代码</string>
     <string name="changeCode">更改代码</string>
     <string name="removeCode">移除代码</string>
@@ -483,8 +483,8 @@
     <string name="authorizationStatusNotAuthorized">Shizuku 权限未授予</string>
     <string name="profileOwnerActive">配置文件所有者模式已激活</string>
     <string name="systemAppModeActive">系统应用模式可用</string>
-    <string name="includeFUFActivityInRecents">在最近任务中包括冻结与解冻活动</string>
-    <string name="includeFUFActivityInRecentsSummary">同时在最近任务列表中单独显示冻结/解冻进度界面。</string>
+    <string name="includeFUFActivityInRecents">在最近任务中保留操作历史</string>
+    <string name="includeFUFActivityInRecentsSummary">在最近任务列表中保留冻结和解冻任务卡片</string>
     <string name="playFUFAnimations">播放冻结与解冻动画</string>
     <string name="toggleGridListMode">切换列表/网格视图</string>
     <string-array name="launchModeSelection">
@@ -629,8 +629,8 @@
     <string name="skip">跳过</string>
     <string name="restoreShortcutsProgress">快捷方式 %1$d / %2$d</string>
     <string name="restoreShortcutFailed">无法添加快捷方式“%1$s”</string>
-    <string name="protectSystemSettings">阻止访问系统设置</string>
-    <string name="summary_protectSystemSettings">防止绕过保护及强行停止 FreezeYou。</string>
+    <string name="protectSystemSettings">锁定系统设置</string>
+    <string name="summary_protectSystemSettings">阻止访问手机设置以防止停用 FreezeYou</string>
     <string name="deviceAdminProtection">防卸载保护</string>
     <string name="summary_deviceAdminProtection">在 Android 系统层级阻止卸载 FreezeYou。</string>
     <string name="deviceAdminActiveSummary">已激活。系统阻止卸载此应用。</string>

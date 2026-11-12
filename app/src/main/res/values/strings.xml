@@ -41,8 +41,8 @@
     <string name="summary_notificationBar_more">Open system notification settings for FreezeYou — manage channels and the notification permission</string>
     <string name="summary_createQuickFUFNotiAfterUnfrozen">Requires notification permission. Takes effect the next time the notification is created</string>
     <string name="summary_combineBatchQuickNotification">Show a single notification card with a \"Freeze all\" button instead of separate notifications for each application</string>
-    <string name="summary_lockOnScreenOff">After the screen turns off, authentication is asked again to enter FreezeYou and to launch shortcuts</string>
-    <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. The phone lock (fingerprint, PIN, or pattern) or the built-in app code is used.</string>
+    <string name="summary_lockOnScreenOff">Require unlock each time the screen turns off</string>
+    <string name="summary_enableAppLock">Require unlock when opening applications from the App Lock list. The device lock or built-in code is used.</string>
     <string name="summary_enableInstallPkgFunc">Allows opening and installing APK files through FreezeYou.</string>
     <string name="summary_tryDelApkAfterInstalled">Deletes the APK file after a successful install to free up space</string>
     <string name="summary_notAllowWhenIsObsd">Blocks install/uninstall confirmation while another app\'s window is covering the screen (protects against tapjacking)</string>
@@ -103,7 +103,7 @@
     <string name="cannotFindTheEntrance">Cannot find an entrance to this application</string>
     <string name="unfreezeAndLaunchActivity">The application is frozen, so the activity cannot start. Unfreeze it? It will stay unfrozen. If you need to freeze the application from a shortcut — create one with «%1$s».</string>
     <string name="iconAEntry">FreezeYou icons and entry</string>
-    <string name="dialEntry">Use the dial pad to enter</string>
+    <string name="dialEntry">Dial pad entry</string>
     <string name="dialEntry_Ex">If launcher icons above are hidden, open FreezeYou by dialing *#*#373393968#*#* (*#*#FreezeYou#*#*) in the phone dialer. Supported on most Android devices.</string>
     <string name="ciFinishedToast">Submitted, please wait for the launcher to refresh or restart the launcher.</string>
     <string name="ifUploadCrashLog">A crash log from an earlier run was found. Share it?</string>
@@ -188,8 +188,8 @@
     <string name="triggers_extra_parameters">Additional parameters</string>
     <string name="delete">Delete</string>
     <string name="copyAfterBeingFormatted">Copy After Being Formatted</string>
-    <string name="showInRecents">Show in recents</string>
-    <string name="showInRecentsSummary">Keeps FreezeYou visible in the recent apps (multitasking) list.</string>
+    <string name="showInRecents">Show in recent tasks</string>
+    <string name="showInRecentsSummary">Keep FreezeYou visible in recent tasks. When disabled, hides the window and blocks screenshots</string>
     <string name="mayHaveNoEffectsL">May have no effects on Android 4.4 and below</string>
     <string name="lesserToast">Fewer Toast Tips</string>
     <string name="avoidFreezeForegroundApplications">Avoid Freezing Foreground Applications</string>
@@ -401,9 +401,9 @@
     <string name="unlock">Unlock</string>
     <string name="security">Security</string>
     <string name="enableAuthentication">Enable authentication</string>
-    <string name="appLockTimeout">Time to lock FreezeYou entry and shortcuts</string>
+    <string name="appLockTimeout">Lock timeout</string>
     <string name="lockOnScreenOff">Lock on screen off</string>
-    <string name="enableAppLock">Enable App Lock</string>
+    <string name="enableAppLock">App Lock</string>
     <string name="appLockReLockPolicy">Re-lock policy</string>
     <string name="appLockAccessibilityWarningTitle">Accessibility Service Required</string>
     <string name="appLockAccessibilityWarningMessage">Application lock requires the FreezeYou Accessibility Service to detect when protected apps are opened. Open system settings to enable it now?</string>
@@ -421,9 +421,9 @@
     <string name="deviceLockNotSet">No device lock is set. Set a PIN, pattern or biometric in the system settings first</string>
     <string name="removeAppCodeFirst">Remove the app code first to use the device lock</string>
     <string name="lockOnEntry">Lock on entry</string>
-    <string name="summary_lockOnEntry">Ask for authentication when opening FreezeYou</string>
+    <string name="summary_lockOnEntry">Require unlock when opening FreezeYou</string>
     <string name="protectShortcuts">Protect shortcuts</string>
-    <string name="summary_protectShortcuts">Ask for authentication when using freeze, unfreeze, and force-stop shortcuts</string>
+    <string name="summary_protectShortcuts">Require unlock for freeze, unfreeze, and force-stop shortcuts</string>
     <string name="setCode">Set code</string>
     <string name="changeCode">Change code</string>
     <string name="removeCode">Remove code</string>
@@ -485,8 +485,8 @@
     <string name="authorizationStatusNotAuthorized">Shizuku permission not granted</string>
     <string name="profileOwnerActive">Profile owner mode active</string>
     <string name="systemAppModeActive">System app mode available</string>
-    <string name="includeFUFActivityInRecents">Include freeze and unfreeze activity in recents</string>
-    <string name="includeFUFActivityInRecentsSummary">Also shows the freeze/unfreeze progress screen as a separate entry in recent apps.</string>
+    <string name="includeFUFActivityInRecents">Operation history in recent tasks</string>
+    <string name="includeFUFActivityInRecentsSummary">Keep freeze and unfreeze cards in the recent tasks list</string>
     <string name="playFUFAnimations">Play freeze and unfreeze animations</string>
     <string name="toggleGridListMode">Switch list/grid view</string>
     <string name="sFreezeOnceQuit" translatable="false">New_FreezeOnceQuit</string>
@@ -731,8 +731,8 @@
     <string name="skip">Skip</string>
     <string name="restoreShortcutsProgress">Shortcut %1$d of %2$d</string>
     <string name="restoreShortcutFailed">Could not add the shortcut \"%1$s\"</string>
-    <string name="protectSystemSettings">Block access to system Settings</string>
-    <string name="summary_protectSystemSettings">Prevents bypassing protection and force-stopping FreezeYou.</string>
+    <string name="protectSystemSettings">Lock system settings</string>
+    <string name="summary_protectSystemSettings">Block access to phone settings to prevent disabling FreezeYou</string>
     <string name="deviceAdminProtection">Uninstall protection</string>
     <string name="summary_deviceAdminProtection">Blocks uninstallation of FreezeYou at the Android system level.</string>
     <string name="deviceAdminActiveSummary">Active. The system blocks uninstallation of the app.</string>
