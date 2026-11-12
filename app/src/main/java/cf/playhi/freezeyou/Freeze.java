@@ -271,9 +271,18 @@ public class Freeze extends FreezeYouBaseActivity {
 
     @Override
     protected boolean screenLockEnabled() {
-        // A shortcut answers to authentication alone: opting the entry out must not open the
-        // freeze/unfreeze actions with it.
-        return isAuthenticationEnabled();
+        // A launcher shortcut answers to authentication alone: if entry lock is off that must
+        // not expose freeze/unfreeze shortcuts to whoever picks up the phone.
+        //
+        // When called from within FreezeYou (fromShortcut=false, e.g. a tap on the main list)
+        // the user is already inside the app, so the full entry-lock setting applies:
+        // if entry protection is off, no prompt should appear.
+        boolean fromShortcut = getIntent() == null
+                || getIntent().getBooleanExtra("fromShortcut", true);
+        if (fromShortcut) {
+            return isAuthenticationEnabled();
+        }
+        return super.screenLockEnabled(); // isAuthenticationEnabled() && isLockOnEntryEnabled()
     }
 
     /**
