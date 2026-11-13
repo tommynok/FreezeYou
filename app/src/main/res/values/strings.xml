@@ -189,7 +189,7 @@
     <string name="delete">Delete</string>
     <string name="copyAfterBeingFormatted">Copy After Being Formatted</string>
     <string name="showInRecents">Show in recent tasks</string>
-    <string name="showInRecentsSummary">Keep FreezeYou visible in recent tasks. When disabled, hides the window and blocks screenshots</string>
+    <string name="showInRecentsSummary">Show FreezeYou in recent tasks. If disabled, the window is hidden from recents and screenshots are blocked</string>
     <string name="mayHaveNoEffectsL">May have no effects on Android 4.4 and below</string>
     <string name="lesserToast">Fewer Toast Tips</string>
     <string name="avoidFreezeForegroundApplications">Avoid Freezing Foreground Applications</string>

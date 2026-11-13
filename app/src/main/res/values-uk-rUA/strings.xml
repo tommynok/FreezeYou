@@ -189,7 +189,7 @@
     <string name="delete">Видалити</string>
     <string name="copyAfterBeingFormatted">Копіювати імена пакетів</string>
     <string name="showInRecents">Відображення в недавніх</string>
-    <string name="showInRecentsSummary">Показувати FreezeYou у списку завдань. При вимкненні приховує вікно та забороняє знімки екрана</string>
+    <string name="showInRecentsSummary">Показувати FreezeYou у списку завдань. Якщо опція вимкнена — вікно приховується зі списку та забороняються знімки екрана</string>
     <string name="mayHaveNoEffectsL">Може не мати ніякого ефекту на Android 4.4 і нижче</string>
     <string name="lesserToast">Рідше показувати спливаючі повідомлення</string>
     <string name="avoidFreezeForegroundApplications">Запобігання заморожуванню додатків переднього плану</string>

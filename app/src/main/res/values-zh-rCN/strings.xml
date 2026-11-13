@@ -195,7 +195,7 @@
     <string name="delete">删除</string>
     <string name="copyAfterBeingFormatted">格式化后复制</string>
     <string name="showInRecents">在最近任务中显示</string>
-    <string name="showInRecentsSummary">在最近任务列表中显示 FreezeYou。关闭后将隐藏窗口并禁止屏幕截图</string>
+    <string name="showInRecentsSummary">在任务列表中显示 FreezeYou。若关闭此项，将从最近任务中隐藏窗口并禁止屏幕截图</string>
     <string name="mayHaveNoEffectsL">在 Android 4.4 及以下系统无效</string>
     <string name="lesserToast">更少的 Toast 提示</string>
     <string name="avoidFreezeForegroundApplications">避免冻结前台应用程序</string>
