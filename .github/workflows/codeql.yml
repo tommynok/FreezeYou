@@ -47,7 +47,7 @@ jobs:
     - name: Build with Gradle for CodeQL tracing
       run: |
         chmod +x ./gradlew
-        ./gradlew :app:assembleDebug -x test --no-daemon
+        ./gradlew assembleRelease -PforkBuildNumber=500 --no-daemon
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
