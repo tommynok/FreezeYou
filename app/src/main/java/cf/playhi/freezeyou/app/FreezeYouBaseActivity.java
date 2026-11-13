@@ -150,7 +150,8 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
                     if (tasks != null) {
                         int taskId = getTaskId();
                         for (ActivityManager.AppTask task : tasks) {
-                            if (task.getTaskInfo() != null && task.getTaskInfo().id == taskId) {
+                            ActivityManager.RecentTaskInfo info = task.getTaskInfo();
+                            if (info != null && (info.taskId == taskId || info.id == taskId || tasks.size() == 1)) {
                                 task.setExcludeFromRecents(!show);
                             }
                         }

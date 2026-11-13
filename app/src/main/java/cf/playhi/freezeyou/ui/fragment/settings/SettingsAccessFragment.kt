@@ -18,6 +18,7 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAppLock
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication
 import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents
+import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.includeFUFActivityInRecents
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.firstIconEnabled
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.secondIconEnabled
@@ -77,11 +78,32 @@ class SettingsAccessFragment : CardPreferenceFragment() {
             true
         }
 
-        findPreference<CheckBoxPreference>(showInRecents.name)?.onPreferenceChangeListener =
+        val showInRecentsPref = findPreference<CheckBoxPreference>(showInRecents.name)
+        val includeFUFPref = findPreference<CheckBoxPreference>(includeFUFActivityInRecents.name)
+
+        showInRecentsPref?.isChecked = showInRecents.getValue()
+        includeFUFPref?.isChecked = includeFUFActivityInRecents.getValue()
+
+        showInRecentsPref?.onPreferenceChangeListener =
             Preference.OnPreferenceChangeListener { _, newValue ->
                 if (newValue is Boolean) {
                     showInRecents.setValue(value = newValue)
+                    showInRecents.sync()
+                    if (!newValue) {
+                        includeFUFActivityInRecents.setValue(value = false)
+                        includeFUFActivityInRecents.sync()
+                        includeFUFPref?.isChecked = false
+                    }
                     (activity as? FreezeYouBaseActivity)?.applyRecentsVisibility()
+                }
+                true
+            }
+
+        includeFUFPref?.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _, newValue ->
+                if (newValue is Boolean) {
+                    includeFUFActivityInRecents.setValue(value = newValue)
+                    includeFUFActivityInRecents.sync()
                 }
                 true
             }
