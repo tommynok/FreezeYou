@@ -7,6 +7,7 @@ import android.content.Intent;
 import java.io.File;
 
 import cf.playhi.freezeyou.R;
+import cf.playhi.freezeyou.utils.ApplicationIconUtils;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
 
 import static cf.playhi.freezeyou.utils.DataStatisticsUtils.deletePackageTimes;

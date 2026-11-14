@@ -28,6 +28,7 @@ import java.util.Date;
 import cf.playhi.freezeyou.MainApplication;
 import cf.playhi.freezeyou.R;
 import cf.playhi.freezeyou.app.FreezeYouBaseService;
+import cf.playhi.freezeyou.utils.ApplicationIconUtils;
 import cf.playhi.freezeyou.receiver.InstallPackagesFinishedReceiver;
 import cf.playhi.freezeyou.utils.AndroidUserUtils;
 import cf.playhi.freezeyou.utils.ApplicationInfoUtils;
