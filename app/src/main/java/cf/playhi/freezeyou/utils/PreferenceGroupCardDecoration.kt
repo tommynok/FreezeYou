@@ -8,6 +8,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroupAdapter
 import androidx.recyclerview.widget.RecyclerView
+import cf.playhi.freezeyou.R
 import kotlin.math.min
 
 /**
@@ -30,9 +31,11 @@ class PreferenceGroupCardDecoration(private val cardColor: Int) : RecyclerView.I
         for (pos in 0 until count) {
             val item = adapter.getItem(pos)
             val isHeader = item is PreferenceCategory
-            if (isHeader) {
+            val isFooter = item.layoutResource == R.layout.preference_footer_note
+                    || item.key?.endsWith("Footer") == true
+            if (isHeader || isFooter) {
                 if (spanStart != -1) {
-                    // close the previous span: it ends before this header
+                    // close the previous span: it ends before this header or footer
                     for (p in spanStart until pos) spans[p] = Pair(spanStart, pos - 1)
                     spanStart = -1
                 }

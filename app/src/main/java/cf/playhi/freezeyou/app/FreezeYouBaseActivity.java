@@ -24,7 +24,6 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys;
 import cf.playhi.freezeyou.ui.AppLockActivity;
 import cf.playhi.freezeyou.utils.ProcessUtils;
 
-import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.showInRecents;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockTimeout;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
@@ -240,10 +239,8 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
         long timeoutMs = readAppLockTimeoutMs();
 
-        if (lockOnScreenOff.getValue(null)) {
-            if (!sProcessUnlocked || mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
-                return true;
-            }
+        if (!sProcessUnlocked || mmkv.decodeBool(SCREEN_OFF_LOCK_KEY, false)) {
+            return true;
         }
         if (timeoutMs == TIMEOUT_IMMEDIATELY) {
             return mmkv.decodeLong(BACKGROUND_TIME_KEY, 0) > 0;
@@ -355,7 +352,11 @@ public class FreezeYouBaseActivity extends AppCompatActivity {
 
     private static long readAppLockTimeoutMs() {
         try {
-            long timeout = Long.parseLong(appLockTimeout.getValue(null).trim());
+            String val = appLockTimeout.getValue(null).trim();
+            if ("screen_off".equals(val)) {
+                return Long.MAX_VALUE;
+            }
+            long timeout = Long.parseLong(val);
             // A stored "Never" (-1) left the lock asking nothing with the screen-off trigger off;
             // the option is gone, and the stored value reads as the default.
             return timeout == -1L ? TIMEOUT_DEFAULT_MS : timeout;

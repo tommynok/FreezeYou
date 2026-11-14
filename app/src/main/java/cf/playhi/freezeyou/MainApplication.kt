@@ -83,7 +83,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         if (screenOffReceiver != null) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (Intent.ACTION_SCREEN_OFF == intent.action && lockOnScreenOff.getValue(null)) {
+                if (Intent.ACTION_SCREEN_OFF == intent.action) {
                     FreezeYouBaseActivity.markLockedByScreenOff(context)
                 }
             }

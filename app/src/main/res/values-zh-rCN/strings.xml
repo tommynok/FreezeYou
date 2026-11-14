@@ -413,6 +413,7 @@
     <string name="appLockAccessibilityWarningTitle">需要无障碍服务</string>
     <string name="appLockAccessibilityWarningMessage">应用锁定需要 FreezeYou 的无障碍服务来检测受保护应用的打开。现在前往系统设置开启吗？</string>
     <string name="appLockAccessibilityOffSummary">无障碍服务未启用，应用锁定无法工作</string>
+    <string name="screenOffTimeoutInvariantSummary">屏幕关闭时将立即锁定访问 — 无论选择何种超时设置</string>
     <string name="settings">设置</string>
     <string name="authentication">身份验证</string>
     <string name="verifyToContinue">验证以继续</string>
@@ -562,7 +563,7 @@
         <item>1 分钟后</item>
         <item>2 分钟后</item>
         <item>5 分钟后</item>
-        <item>设备息屏时</item>
+        <item>直到设备息屏</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>默认</item>

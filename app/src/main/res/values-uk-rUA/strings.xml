@@ -407,6 +407,7 @@
     <string name="appLockAccessibilityWarningTitle">Потрібні спеціальні можливості</string>
     <string name="appLockAccessibilityWarningMessage">Для роботи блокування застосунків потрібна служба спеціальних можливостей FreezeYou — вона відстежує відкриття захищених застосунків. Відкрити системні налаштування зараз?</string>
     <string name="appLockAccessibilityOffSummary">Спеціальні можливості не активовано — блокування застосунків не працює</string>
+    <string name="screenOffTimeoutInvariantSummary">При вимкненні екрана доступ блокується миттєво — незалежно від вибраного таймауту</string>
     <string name="settings">Налаштування</string>
     <string name="authentication">Автентифікація</string>
     <string name="verifyToContinue">Підтвердити для продовження</string>
@@ -557,7 +558,7 @@
         <item>Через 1 хвилину</item>
         <item>Через 2 хвилини</item>
         <item>Через 5 хвилин</item>
-        <item>При вимкненні екрана</item>
+        <item>До вимкнення екрана</item>
     </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>За замовчуванням</item>

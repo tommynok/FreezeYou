@@ -47,14 +47,6 @@
             app:singleLineTitle="false"
             app:title="@string/appLockTimeout"
             app:useSimpleSummaryProvider="true" />
-        <CheckBoxPreference
-            app:defaultValue="false"
-            app:dependency="enableAuthentication"
-            app:iconSpaceReserved="false"
-            app:key="lockOnScreenOff"
-            app:singleLineTitle="false"
-            app:summary="@string/summary_lockOnScreenOff"
-            app:title="@string/lockOnScreenOff" />
         <Preference
             app:iconSpaceReserved="false"
             app:key="deviceAdminProtection"
@@ -111,6 +103,13 @@
             app:title="@string/protectSystemSettings" />
 
     </PreferenceCategory>
+
+    <Preference
+        app:icon="@drawable/ic_outline_info"
+        app:key="screenOffTimeoutInvariantFooter"
+        app:layout="@layout/preference_footer_note"
+        app:selectable="false"
+        app:summary="@string/screenOffTimeoutInvariantSummary" />
 
     <PreferenceCategory
         app:iconSpaceReserved="false"

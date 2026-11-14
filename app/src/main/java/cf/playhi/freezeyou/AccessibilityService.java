@@ -37,7 +37,6 @@ import cf.playhi.freezeyou.utils.ProcessSharedState;
 import cf.playhi.freezeyou.utils.TasksUtils;
 
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.freezeOnceQuit;
-import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnScreenOff;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.protectSystemSettings;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.appLockReLockPolicy;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAppLockEnabled;
@@ -149,7 +148,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         mScreenOffReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (isAppLockEnabled() || lockOnScreenOff.getValue(null)) {
+                if (isAppLockEnabled()) {
                     endUnlockedSession();
                 }
             }
