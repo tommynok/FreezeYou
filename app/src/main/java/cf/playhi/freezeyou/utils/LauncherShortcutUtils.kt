@@ -197,6 +197,24 @@ object LauncherShortcutUtils {
                         .setLongLabel(title.ifEmpty { " " })
 
                     val pinShortcutInfo = shortcutInfoBuilder.build()
+                    val pinnedShortcuts = try {
+                        mShortcutManager.pinnedShortcuts
+                    } catch (e: Exception) {
+                        emptyList<ShortcutInfo>()
+                    }
+                    val existingPinned = pinnedShortcuts.firstOrNull { it.id == shortcutId }
+                    if (existingPinned != null) {
+                        try {
+                            if (!existingPinned.isEnabled) {
+                                mShortcutManager.enableShortcuts(listOf(shortcutId))
+                            }
+                            mShortcutManager.updateShortcuts(listOf(pinShortcutInfo))
+                            showToast(context, R.string.requested)
+                            return true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                     return try {
                         mShortcutManager.requestPinShortcut(pinShortcutInfo, null)
                     } catch (e: Exception) {
@@ -475,5 +493,18 @@ object LauncherShortcutUtils {
             e.printStackTrace()
             false
         }
+    }
+
+    @JvmStatic
+    fun isShortcutPinned(context: Context, shortcutId: String): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val sm = context.getSystemService(ShortcutManager::class.java) ?: return false
+            return try {
+                sm.pinnedShortcuts.any { it.id == shortcutId }
+            } catch (_: Exception) {
+                false
+            }
+        }
+        return false
     }
 }

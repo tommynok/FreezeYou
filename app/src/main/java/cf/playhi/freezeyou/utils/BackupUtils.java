@@ -945,6 +945,12 @@ public final class BackupUtils {
                         importedAny |= importLauncherShortcuts(context, jsonObject);
                         break;
                     // Launcher shortcuts end
+                    // Shortcut tokens start
+                    case "shortcutTokens":
+                        ShortcutTokenUtils.importTokensFromJson(jsonObject.optJSONObject("shortcutTokens"));
+                        importedAny = true;
+                        break;
+                    // Shortcut tokens end
                     default:
                         break;
                 }
@@ -1085,6 +1091,11 @@ public final class BackupUtils {
             finalOutputJsonObject.put("launcherShortcuts",
                     LauncherShortcutUtils.exportShortcutsToJson(context));
             // Launcher shortcuts end
+
+            // Shortcut tokens start
+            finalOutputJsonObject.put("shortcutTokens",
+                    ShortcutTokenUtils.exportTokensToJson());
+            // Shortcut tokens end
 
         } catch (JSONException e) {
             e.printStackTrace();

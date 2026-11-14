@@ -16,6 +16,7 @@ import cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
 import cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity
 import cf.playhi.freezeyou.ui.ScheduledTasksManageActivity
+import org.json.JSONObject
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.UUID
@@ -38,6 +39,14 @@ object ShortcutTokenUtils {
     const val ACTION_ONE_KEY_FREEZE = "one_key_freeze"
     const val ACTION_ONE_KEY_UF = "one_key_uf"
     const val ACTION_LOCK_SCREEN = "lock_screen"
+
+    val ALL_ACTIONS: List<String> = listOf(
+        ACTION_FREEZE,
+        ACTION_FORCE_STOP,
+        ACTION_ONE_KEY_FREEZE,
+        ACTION_ONE_KEY_UF,
+        ACTION_LOCK_SCREEN
+    )
 
     /**
      * Ids the launcher knows the dynamic shortcuts by. They are literals on purpose: an id
@@ -65,6 +74,40 @@ object ShortcutTokenUtils {
                 storage.putString(key, token).sync()
             }
             return token
+        } finally {
+            storage.unlock()
+        }
+    }
+
+    @JvmStatic
+    fun exportTokensToJson(): JSONObject {
+        val storage = DefaultMultiProcessMMKVStorage()
+        val json = JSONObject()
+        for (action in ALL_ACTIONS) {
+            val key = KEY_AUTH_TOKEN_PREFIX + action
+            val token = storage.getString(key, null)
+            if (!token.isNullOrEmpty()) {
+                json.put(action, token)
+            }
+        }
+        return json
+    }
+
+    @JvmStatic
+    fun importTokensFromJson(json: JSONObject?) {
+        if (json == null) return
+        val storage = DefaultMultiProcessMMKVStorage()
+        storage.lock()
+        try {
+            for (action in ALL_ACTIONS) {
+                if (json.has(action) && !json.isNull(action)) {
+                    val token = json.optString(action, "")
+                    if (token.isNotEmpty()) {
+                        storage.putString(KEY_AUTH_TOKEN_PREFIX + action, token)
+                    }
+                }
+            }
+            storage.sync()
         } finally {
             storage.unlock()
         }
@@ -189,8 +232,12 @@ object ShortcutTokenUtils {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     val pinned = shortcutManager.pinnedShortcuts
+                    val toEnable = mutableListOf<String>()
                     val toUpdate = mutableListOf<ShortcutInfo>()
                     for (shortcut in pinned) {
+                        if (!shortcut.isEnabled) {
+                            toEnable.add(shortcut.id)
+                        }
                         val sIntent = shortcut.intent ?: continue
                         val component = sIntent.component ?: continue
                         if (component.packageName == context.packageName) {
@@ -206,16 +253,30 @@ object ShortcutTokenUtils {
                             if (actionType != null && !verifyToken(sIntent, actionType)) {
                                 val updatedIntent = Intent(sIntent)
                                 attachToken(updatedIntent, actionType)
-                                toUpdate.add(
-                                    ShortcutInfo.Builder(context, shortcut.id)
-                                        .setIntent(updatedIntent)
-                                        .build()
-                                )
+                                val label = shortcut.shortLabel?.takeIf { it.isNotBlank() }
+                                    ?: shortcut.longLabel?.takeIf { it.isNotBlank() }
+                                    ?: "FreezeYou"
+                                val builder = ShortcutInfo.Builder(context, shortcut.id)
+                                    .setShortLabel(label)
+                                    .setIntent(updatedIntent)
+                                shortcut.activity?.let { builder.setActivity(it) }
+                                toUpdate.add(builder.build())
                             }
                         }
                     }
+                    if (toEnable.isNotEmpty()) {
+                        try {
+                            shortcutManager.enableShortcuts(toEnable)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                     if (toUpdate.isNotEmpty()) {
-                        shortcutManager.updateShortcuts(toUpdate)
+                        try {
+                            shortcutManager.updateShortcuts(toUpdate)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
                 }
             } catch (e: Exception) {

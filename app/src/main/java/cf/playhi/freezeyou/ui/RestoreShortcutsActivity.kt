@@ -53,7 +53,12 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
             val shortcutManager = getSystemService(ShortcutManager::class.java)
             if (shortcutManager != null) {
                 try {
-                    shortcutManager.pinnedShortcuts.map { it.id }.toSet()
+                    val pinned = shortcutManager.pinnedShortcuts
+                    val disabledIds = pinned.filter { !it.isEnabled }.map { it.id }
+                    if (disabledIds.isNotEmpty()) {
+                        shortcutManager.enableShortcuts(disabledIds)
+                    }
+                    pinned.filter { it.isEnabled }.map { it.id }.toSet()
                 } catch (e: Exception) {
                     null
                 }
@@ -76,9 +81,10 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
         mAddButton.setOnClickListener {
             if (mCurrentIndex in mShortcuts.indices) {
                 val record = mShortcuts[mCurrentIndex]
+                val wasPinned = LauncherShortcutUtils.isShortcutPinned(this, record.id)
                 val success = LauncherShortcutUtils.restoreShortcut(this, record)
                 if (success) {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || wasPinned) {
                         advanceToNext()
                     } else {
                         mPinRequested = true

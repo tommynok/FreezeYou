@@ -150,6 +150,27 @@ class ShortcutTokenUtilsTest {
         intent.putExtra("pkgName", "com.example.second")
         assertTrue(ShortcutTokenUtils.verifyToken(intent, ShortcutTokenUtils.ACTION_FREEZE))
     }
+
+    @Test
+    fun `export and import tokens round trip preserves all tokens`() {
+        for (action in actions) {
+            ShortcutTokenUtils.getOrCreateAuthToken(action)
+        }
+        val exported = ShortcutTokenUtils.exportTokensToJson()
+        for (action in actions) {
+            assertTrue(exported.has(action))
+        }
+
+        ShadowContractMMKV.reset()
+        assertTrue(ShadowContractMMKV.strings.isEmpty())
+
+        ShortcutTokenUtils.importTokensFromJson(exported)
+        for (action in actions) {
+            val key = ShortcutTokenUtils.KEY_AUTH_TOKEN_PREFIX + action
+            val restored = DefaultMultiProcessMMKVStorage().getString(key, null)
+            assertEquals(exported.getString(action), restored)
+        }
+    }
 }
 
 // Shadow MMKV itself so the storage interface's default sync method cannot reach native code.
