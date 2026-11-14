@@ -399,14 +399,7 @@ public class InstallPackagesService extends FreezeYouBaseService {
                         : R.string.app_uninstallFinished), willBeUninstalledName),
                 null,
                 true);
-        File cacheIcon = new File(getCacheDir() + "/icon/" + packageName + ".png");
-        if (cacheIcon.exists()) {
-            cacheIcon.delete();
-        }
-        File filesIcon = new File(getFilesDir() + "/icon/" + packageName + ".png");
-        if (filesIcon.exists()) {
-            filesIcon.delete();
-        }
+        ApplicationIconUtils.deleteIconCache(this, packageName);
 
         sendBroadcast(new Intent("cf.playhi.freezeyou.action.packageStatusChanged")
                 .putExtra("pkgName", packageName)

@@ -101,6 +101,51 @@ class ApplicationIconUtilsTest {
         assertEquals(48, cached.intrinsicHeight)
     }
 
+    @Test
+    fun `isValidPackageName accepts valid package names`() {
+        assertTrue(ApplicationIconUtils.isValidPackageName("com.example.app"))
+        assertTrue(ApplicationIconUtils.isValidPackageName("cf.playhi.freezeyou"))
+        assertTrue(ApplicationIconUtils.isValidPackageName("org.test_app.pkg1"))
+        assertTrue(ApplicationIconUtils.isValidPackageName("a.b"))
+    }
+
+    @Test
+    fun `isValidPackageName rejects invalid or traversal package names`() {
+        assertFalse(ApplicationIconUtils.isValidPackageName(null))
+        assertFalse(ApplicationIconUtils.isValidPackageName(""))
+        assertFalse(ApplicationIconUtils.isValidPackageName("   "))
+        assertFalse(ApplicationIconUtils.isValidPackageName("../evil"))
+        assertFalse(ApplicationIconUtils.isValidPackageName("evil/app"))
+        assertFalse(ApplicationIconUtils.isValidPackageName("evil\\app"))
+        assertFalse(ApplicationIconUtils.isValidPackageName("com..pkg"))
+        assertFalse(ApplicationIconUtils.isValidPackageName("com.example.app with spaces"))
+        assertFalse(ApplicationIconUtils.isValidPackageName("a".repeat(257)))
+    }
+
+    @Test
+    fun `getIconCacheFile returns null for path traversal attempt`() {
+        org.junit.Assert.assertNull(ApplicationIconUtils.getIconCacheFile(context, "../evil"))
+        org.junit.Assert.assertNull(ApplicationIconUtils.getIconCacheFile(context, "evil/pkg"))
+        val safeFile = ApplicationIconUtils.getIconCacheFile(context, "com.example.app")
+        org.junit.Assert.assertNotNull(safeFile)
+        assertEquals(File(context.cacheDir, "icon/com.example.app.png"), safeFile)
+    }
+
+    @Test
+    fun `deleteIconCache deletes cached files and ignores invalid names safely`() {
+        val testPkg = "com.test.icon.delete"
+        saveToCache(testPkg, bitmapOf(48, Color.BLUE))
+        val cacheFile = iconCacheFile(testPkg)
+        assertTrue(cacheFile.exists())
+
+        ApplicationIconUtils.deleteIconCache(context, testPkg)
+        assertFalse(cacheFile.exists())
+
+        // Should not throw or crash on null or traversal
+        ApplicationIconUtils.deleteIconCache(context, null)
+        ApplicationIconUtils.deleteIconCache(context, "../invalid")
+    }
+
     private fun iconFor(pkgName: String, applicationInfo: ApplicationInfo?): Drawable =
         ApplicationIconUtils.getApplicationIcon(context, pkgName, applicationInfo, false, true)
 

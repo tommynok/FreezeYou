@@ -24,19 +24,15 @@ public class PackageReplacedReceiver extends BroadcastReceiver {
             String pkgName = intent.getDataString();
             if (pkgName != null) {
                 pkgName = pkgName.replace("package:", "");
+                if (!ApplicationIconUtils.isValidPackageName(pkgName)) {
+                    return;
+                }
                 ApplicationInfo applicationInfo =
                         ApplicationInfoUtils.getApplicationInfoFromPkgName(pkgName, context);
                 if (applicationInfo != null) {
                     // Check settings and update application icon cache
                     if (cacheApplicationsIcons.getValue(context)) {
-                        File file2 = new File(context.getCacheDir() + "/icon/" + pkgName + ".png");
-                        if (file2.exists() && file2.isFile()) {
-                            file2.delete();
-                        }
-                        File file = new File(context.getFilesDir() + "/icon/" + pkgName + ".png");
-                        if (file.exists() && file.isFile()) {
-                            file.delete();
-                        }
+                        ApplicationIconUtils.deleteIconCache(context, pkgName);
                         ApplicationIconUtils
                                 .getApplicationIcon(
                                         context, pkgName,

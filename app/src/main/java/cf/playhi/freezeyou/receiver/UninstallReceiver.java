@@ -67,14 +67,7 @@ public class UninstallReceiver extends BroadcastReceiver {
             // So does the statistics: a counter row outlived the app it counted
             deletePackageTimes(context, pkgName);
             // Clean up icon cache for uninstalled application
-            File file = new File(context.getFilesDir() + "/icon/" + pkgName + ".png");
-            if (file.exists() && file.isFile()) {
-                file.delete();
-            }
-            File file2 = new File(context.getCacheDir() + "/icon/" + pkgName + ".png");
-            if (file2.exists() && file2.isFile()) {
-                file2.delete();
-            }
+            ApplicationIconUtils.deleteIconCache(context, pkgName);
             // Clean up cached name for uninstalled application
             context.getSharedPreferences("NameOfPackages", Context.MODE_PRIVATE)
                     .edit().remove(pkgName).apply();

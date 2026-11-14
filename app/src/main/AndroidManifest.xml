@@ -445,6 +445,7 @@
             android:name=".ui.AskLockScreenActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:excludeFromRecents="true"
+            android:exported="false"
             android:label="@string/askIfLockScreen"
             android:launchMode="singleInstance"
             android:theme="@style/AppTheme.Dark.Dialog.Default" />
@@ -452,12 +453,14 @@
             android:name=".ui.AskRunActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:excludeFromRecents="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:theme="@style/AppTheme.Dark.Dialog.Default" />
         <activity
             android:name=".ui.ShowSimpleDialogActivity"
             android:configChanges="orientation|screenLayout|smallestScreenSize|screenSize|keyboard|keyboardHidden|mcc|mnc|navigation"
             android:excludeFromRecents="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:theme="@style/AppTheme.Dark.Dialog.Default" />
         <activity

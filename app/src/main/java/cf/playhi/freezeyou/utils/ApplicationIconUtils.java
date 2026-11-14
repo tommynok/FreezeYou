@@ -76,6 +76,69 @@ public final class ApplicationIconUtils {
         }
     }
 
+    /**
+     * Checks if a package name is well-formed according to Android conventions.
+     * Package names must consist solely of ASCII letters, digits, underscores, and dots,
+     * cannot be empty or exceed 256 characters, and must not contain directory traversal sequences.
+     */
+    public static boolean isValidPackageName(@Nullable String pkgName) {
+        if (pkgName == null || pkgName.isEmpty() || pkgName.length() > 256) {
+            return false;
+        }
+        if (pkgName.contains("..") || pkgName.contains("/") || pkgName.contains("\\")) {
+            return false;
+        }
+        for (int i = 0; i < pkgName.length(); i++) {
+            char c = pkgName.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Nullable
+    public static File getIconCacheFile(@NonNull Context context, @Nullable String pkgName) {
+        return getSafeIconFile(new File(context.getCacheDir(), "icon"), pkgName);
+    }
+
+    @Nullable
+    public static File getLegacyIconFilesDirFile(@NonNull Context context, @Nullable String pkgName) {
+        return getSafeIconFile(new File(context.getFilesDir(), "icon"), pkgName);
+    }
+
+    @Nullable
+    private static File getSafeIconFile(@NonNull File iconDir, @Nullable String pkgName) {
+        if (!isValidPackageName(pkgName)) {
+            return null;
+        }
+        File targetFile = new File(iconDir, pkgName + ".png");
+        try {
+            String canonicalDest = targetFile.getCanonicalPath();
+            String canonicalDir = iconDir.getCanonicalPath();
+            if (!canonicalDest.startsWith(canonicalDir + File.separator)) {
+                return null;
+            }
+            return targetFile;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static void deleteIconCache(@NonNull Context context, @Nullable String pkgName) {
+        if (!isValidPackageName(pkgName)) {
+            return;
+        }
+        File cacheFile = getIconCacheFile(context, pkgName);
+        if (cacheFile != null && cacheFile.exists() && cacheFile.isFile()) {
+            cacheFile.delete();
+        }
+        File filesFile = getLegacyIconFilesDirFile(context, pkgName);
+        if (filesFile != null && filesFile.exists() && filesFile.isFile()) {
+            filesFile.delete();
+        }
+    }
+
     public static Drawable getApplicationIcon(
             @NonNull Context context, @NonNull String pkgName,
             @Nullable ApplicationInfo applicationInfo, boolean resize
@@ -91,10 +154,9 @@ public final class ApplicationIconUtils {
             @Nullable ApplicationInfo applicationInfo, boolean resize, boolean saveIconCache
     ) {
         Drawable drawable = null;
-        String path = context.getCacheDir() + "/icon/" + pkgName + ".png";
-        File cacheFile = new File(path);
-        if (saveIconCache && cacheFile.exists()) {
-            drawable = BitmapDrawable.createFromPath(path);
+        File cacheFile = (saveIconCache && isValidPackageName(pkgName)) ? getIconCacheFile(context, pkgName) : null;
+        if (cacheFile != null && cacheFile.exists()) {
+            drawable = BitmapDrawable.createFromPath(cacheFile.getAbsolutePath());
             if (drawable == null || !hasIconSize(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())) {
                 cacheFile.delete();
                 drawable = null;
@@ -104,8 +166,8 @@ public final class ApplicationIconUtils {
             if (applicationInfo != null) {
                 try {
                     drawable = applicationInfo.loadIcon(context.getPackageManager());
-                    if (saveIconCache) {
-                        writeIconToCache(path, drawable);
+                    if (cacheFile != null) {
+                        writeIconToCache(cacheFile, drawable);
                     }
                 } catch (Throwable t) {
                     android.util.Log.w("ApplicationIconUtils", "Failed to load icon from applicationInfo for " + pkgName, t);
@@ -114,8 +176,8 @@ public final class ApplicationIconUtils {
             } else if (!"".equals(pkgName)) {
                 try {
                     drawable = context.getPackageManager().getApplicationIcon(pkgName);
-                    if (saveIconCache) {
-                        writeIconToCache(path, drawable);
+                    if (cacheFile != null) {
+                        writeIconToCache(cacheFile, drawable);
                     }
                 } catch (PackageManager.NameNotFoundException e) {
                     drawable = context.getResources().getDrawable(android.R.drawable.ic_menu_delete);
@@ -147,7 +209,7 @@ public final class ApplicationIconUtils {
      * placeholder; a placeholder written to disk would be read back as that app's icon on every
      * later launch, so it stays out of the cache and is loaded again next time instead.
      */
-    private static void writeIconToCache(String path, @Nullable Drawable drawable) {
+    private static void writeIconToCache(@NonNull File cacheFile, @Nullable Drawable drawable) {
         if (drawable == null
                 || !hasIconSize(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())) {
             return;
@@ -156,19 +218,28 @@ public final class ApplicationIconUtils {
         if (bitmap == null || !hasIconSize(bitmap.getWidth(), bitmap.getHeight())) {
             return;
         }
-        folderCheck(new File(path).getParent());
-        writeBitmapToFile(path, bitmap);
+        File parentDir = cacheFile.getParentFile();
+        if (parentDir != null) {
+            folderCheck(parentDir);
+        }
+        writeBitmapToFile(cacheFile, bitmap);
     }
 
     private static boolean hasIconSize(int width, int height) {
         return width >= MIN_ICON_SIZE && height >= MIN_ICON_SIZE;
     }
 
-    private static void writeBitmapToFile(String filePath, Bitmap b) {
+    private static void writeBitmapToFile(@NonNull File targetFile, @Nullable Bitmap b) {
         if (b == null) return;
-        File targetFile = new File(filePath);
-        File tempFile = new File(filePath + ".tmp." + System.nanoTime());
+        File parentDir = targetFile.getParentFile();
+        if (parentDir == null) return;
+        File tempFile = new File(parentDir, targetFile.getName() + ".tmp." + System.nanoTime());
         try {
+            String canonicalTemp = tempFile.getCanonicalPath();
+            String canonicalParent = parentDir.getCanonicalPath();
+            if (!canonicalTemp.startsWith(canonicalParent + File.separator)) {
+                return;
+            }
             try (FileOutputStream fos = new FileOutputStream(tempFile);
                  BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                 b.compress(Bitmap.CompressFormat.PNG, 100, bos);
@@ -188,14 +259,13 @@ public final class ApplicationIconUtils {
         }
     }
 
-    private static void folderCheck(String path) {
+    private static void folderCheck(@NonNull File dir) {
         try {
-            File file = new File(path);
-            if (!file.isDirectory()) {
-                file.delete();
+            if (dir.exists() && !dir.isDirectory()) {
+                dir.delete();
             }
-            if (!file.exists()) {
-                file.mkdirs();
+            if (!dir.exists()) {
+                dir.mkdirs();
             }
         } catch (Exception e) {
             e.printStackTrace();
