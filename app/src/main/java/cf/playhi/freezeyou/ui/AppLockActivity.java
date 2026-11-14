@@ -444,32 +444,22 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                             return;
                         }
 
-                        if (getIntent().getBooleanExtra("forceBiometricPrompt", false)) {
-                            if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
-                                    && errorCode != BiometricPrompt.ERROR_CANCELED
-                                    && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
-                                showShortToast(
-                                        getApplicationContext(),
-                                        String.format(
-                                                getString(R.string.authenticationError_colon), errString
-                                        )
-                                );
-                            }
+                        if (errorCode == BiometricPrompt.ERROR_USER_CANCELED
+                                || errorCode == BiometricPrompt.ERROR_CANCELED
+                                || errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
                             setResult(RESULT_CANCELED);
-                            finishImmediately(RESULT_CANCELED);
+                            if (!dismissWithoutRevealingTarget()) {
+                                finishImmediately(RESULT_CANCELED);
+                            }
                             return;
                         }
 
-                        if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
-                                && errorCode != BiometricPrompt.ERROR_CANCELED
-                                && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
-                            showShortToast(
-                                    getApplicationContext(),
-                                    String.format(
-                                            getString(R.string.authenticationError_colon), errString
-                                    )
-                            );
-                        }
+                        showShortToast(
+                                getApplicationContext(),
+                                String.format(
+                                        getString(R.string.authenticationError_colon), errString
+                                )
+                        );
 
                         if (AppCodeUtils.hasCode()) {
                             showCodeDialog();
@@ -479,7 +469,9 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                         setResult(RESULT_CANCELED);
                         // A prompt that was cancelled, timed out or locked out is a refusal, and a
                         // refusal is not allowed to leave the application it was raised over visible.
-                        dismissWithoutRevealingTarget();
+                        if (!dismissWithoutRevealingTarget()) {
+                            finishImmediately(RESULT_CANCELED);
+                        }
                     }
 
                     @Override

@@ -44,7 +44,6 @@ import cf.playhi.freezeyou.utils.ToastUtils
 @Keep
 class SettingsAccessFragment : CardPreferenceFragment() {
 
-    private var enableAuthenticationActivityResultLauncher: ActivityResultLauncher<Intent>? = null
     private var enableAppLockActivityResultLauncher: ActivityResultLauncher<Intent>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,14 +51,6 @@ class SettingsAccessFragment : CardPreferenceFragment() {
 
         val activity: Activity? = activity
         if (activity != null) {
-            enableAuthenticationActivityResultLauncher = registerForActivityResult(
-                StartActivityForResult()
-            ) { result: ActivityResult ->
-                if (result.resultCode == Activity.RESULT_OK) {
-                    setPrimaryAuthenticationMethod(AUTH_METHOD_BIOMETRIC)
-                    setAuthenticationEnabled(true)
-                }
-            }
             enableAppLockActivityResultLauncher = registerForActivityResult(
                 StartActivityForResult()
             ) { result: ActivityResult ->
@@ -198,17 +189,27 @@ class SettingsAccessFragment : CardPreferenceFragment() {
      */
     private fun showProtectionMethodDialog() {
         val activity = activity ?: return
+        val current = when {
+            !enableAuthentication.getValue() -> 0
+            AUTH_METHOD_APP_CODE == getPrimaryAuthenticationMethod() && AppCodeUtils.hasCode() -> 2
+            else -> 1
+        }
         FreezeYouAlertDialogBuilder(activity)
             .setTitle(R.string.authenticationMethod)
-            .setItems(
+            .setSingleChoiceItems(
                 arrayOf(
                     getString(R.string.authenticationMethodNone),
                     getString(R.string.authenticationMethodDeviceLock),
                     getString(R.string.appCode)
-                )
-            ) { _, which ->
+                ),
+                current
+            ) { dialog, which ->
+                dialog.dismiss()
                 when (which) {
-                    0 -> setAuthenticationEnabled(false)
+                    0 -> {
+                        setAuthenticationEnabled(false)
+                        refreshProtectionSummary()
+                    }
                     1 -> selectDeviceLock()
                     2 -> selectAppCode()
                 }
@@ -223,13 +224,9 @@ class SettingsAccessFragment : CardPreferenceFragment() {
             ToastUtils.showToast(activity, R.string.deviceLockNotSet)
             return
         }
-        // Turning the lock on is only allowed once it has been proved it can be opened again.
-        // In cooperative mode, app code can coexist: device lock is verified directly.
-        enableAuthenticationActivityResultLauncher?.launch(
-            Intent(activity, AppLockActivity::class.java)
-                .putExtra("ignoreCurrentUnlockStatus", true)
-                .putExtra("forceBiometricPrompt", true)
-        )
+        setPrimaryAuthenticationMethod(AUTH_METHOD_BIOMETRIC)
+        setAuthenticationEnabled(true)
+        refreshProtectionSummary()
     }
 
     private fun selectAppCode() {
@@ -237,6 +234,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
         if (AppCodeUtils.hasCode()) {
             setPrimaryAuthenticationMethod(AUTH_METHOD_APP_CODE)
             setAuthenticationEnabled(true)
+            refreshProtectionSummary()
         }
         AppCodeDialogs.showManageDialog(activity) {
             if (AppCodeUtils.hasCode()) {
@@ -248,8 +246,8 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 setAuthenticationEnabled(false)
             } else {
                 setPrimaryAuthenticationMethod(AUTH_METHOD_BIOMETRIC)
-                refreshProtectionSummary()
             }
+            refreshProtectionSummary()
         }
     }
 
