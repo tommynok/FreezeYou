@@ -32,7 +32,7 @@ object ShortcutTokenUtils {
     private val publishExecutor = Executors.newSingleThreadExecutor()
 
     const val EXTRA_AUTH_TOKEN = "shortcutToken"
-    private const val KEY_AUTH_TOKEN_PREFIX = "shortcutAuthToken_"
+    internal const val KEY_AUTH_TOKEN_PREFIX = "shortcutAuthToken_"
 
     const val ACTION_FREEZE = "freeze"
     const val ACTION_FORCE_STOP = "force_stop"
