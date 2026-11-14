@@ -28,7 +28,11 @@ import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
 import cf.playhi.freezeyou.utils.AppCodeDialogs
 import cf.playhi.freezeyou.utils.AppCodeUtils
 import cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticatorAvailable
+import cf.playhi.freezeyou.utils.AuthenticationUtils.AUTH_METHOD_APP_CODE
+import cf.playhi.freezeyou.utils.AuthenticationUtils.AUTH_METHOD_BIOMETRIC
+import cf.playhi.freezeyou.utils.AuthenticationUtils.getPrimaryAuthenticationMethod
 import cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable
+import cf.playhi.freezeyou.utils.AuthenticationUtils.setPrimaryAuthenticationMethod
 import cf.playhi.freezeyou.utils.SettingsUtils.changeIconEntryComponentState
 import cf.playhi.freezeyou.utils.Support.showAppLockAccessibilityWarningIfOff
 import cf.playhi.freezeyou.utils.ToastUtils
@@ -52,6 +56,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
                 StartActivityForResult()
             ) { result: ActivityResult ->
                 if (result.resultCode == Activity.RESULT_OK) {
+                    setPrimaryAuthenticationMethod(AUTH_METHOD_BIOMETRIC)
                     setAuthenticationEnabled(true)
                 }
             }
@@ -214,32 +219,35 @@ class SettingsAccessFragment : CardPreferenceFragment() {
 
     private fun selectDeviceLock() {
         val activity = activity ?: return
-        // A set code would still be asked first, so it must be removed before the switch.
-        if (AppCodeUtils.hasCode()) {
-            ToastUtils.showToast(activity, R.string.removeAppCodeFirst)
-            return
-        }
         if (!isBiometricPromptPartAvailable(activity)) {
             ToastUtils.showToast(activity, R.string.deviceLockNotSet)
             return
         }
         // Turning the lock on is only allowed once it has been proved it can be opened again.
+        // In cooperative mode, app code can coexist: device lock is verified directly.
         enableAuthenticationActivityResultLauncher?.launch(
             Intent(activity, AppLockActivity::class.java)
                 .putExtra("ignoreCurrentUnlockStatus", true)
+                .putExtra("forceBiometricPrompt", true)
         )
     }
 
     private fun selectAppCode() {
         val activity = activity ?: return
+        if (AppCodeUtils.hasCode()) {
+            setPrimaryAuthenticationMethod(AUTH_METHOD_APP_CODE)
+            setAuthenticationEnabled(true)
+        }
         AppCodeDialogs.showManageDialog(activity) {
             if (AppCodeUtils.hasCode()) {
+                setPrimaryAuthenticationMethod(AUTH_METHOD_APP_CODE)
                 setAuthenticationEnabled(true)
             } else if (!isBiometricPromptPartAvailable(activity)) {
                 // The code was the only thing to ask with; without it and without a device lock
                 // the protection and the App Lock go off together.
                 setAuthenticationEnabled(false)
             } else {
+                setPrimaryAuthenticationMethod(AUTH_METHOD_BIOMETRIC)
                 refreshProtectionSummary()
             }
         }
@@ -273,7 +281,7 @@ class SettingsAccessFragment : CardPreferenceFragment() {
     private fun refreshProtectionSummary() {
         val summary = when {
             !enableAuthentication.getValue() -> R.string.authenticationMethodNone
-            AppCodeUtils.hasCode() -> R.string.appCode
+            AUTH_METHOD_APP_CODE == getPrimaryAuthenticationMethod() && AppCodeUtils.hasCode() -> R.string.appCode
             else -> R.string.authenticationMethodDeviceLock
         }
         findPreference<Preference>("authenticationMethod")?.setSummary(summary)

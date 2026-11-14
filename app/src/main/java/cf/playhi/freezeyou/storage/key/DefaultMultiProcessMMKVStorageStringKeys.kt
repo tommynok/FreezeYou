@@ -75,6 +75,15 @@ enum class DefaultMultiProcessMMKVStorageStringKeys : AbstractMMKVKey<String?> {
         override fun valueStringId(): Int = -1
         override fun titleTextStringId(): Int = R.string.appLockReLockPolicy
         override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
+    },
+
+    primaryAuthMethod {
+        // "biometric" uses system biometrics / screen lock as primary.
+        // "app_code" uses FreezeYou built-in passcode as primary.
+        override fun defaultValue() = "biometric"
+        override fun valueStringId(): Int = -1
+        override fun titleTextStringId(): Int = R.string.authenticationMethod
+        override fun category(): Int = CATEGORY_SETTINGS or CATEGORY_SETTINGS_SECURITY
     };
 
     /**

@@ -22,6 +22,8 @@ release-keystore.jks
 app/release/
 app/debug/
 /build/
+/build_artifacts/
+/build_artifacts_latest/
 
 # Private agent workspace (local + mirrored to freezeyou-docs/audit)
 /.agents/

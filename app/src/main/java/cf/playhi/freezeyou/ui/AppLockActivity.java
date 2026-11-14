@@ -32,6 +32,8 @@ import static androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK;
 import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
 import static cf.playhi.freezeyou.app.FreezeYouAlertDialogBuilderKt.FreezeYouAlertDialogBuilder;
 import static cf.playhi.freezeyou.utils.ThemeUtils.processSetTheme;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.AUTH_METHOD_APP_CODE;
+import static cf.playhi.freezeyou.utils.AuthenticationUtils.getPrimaryAuthenticationMethod;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isAuthenticationEnabled;
 import static cf.playhi.freezeyou.utils.AuthenticationUtils.isBiometricPromptPartAvailable;
 import static cf.playhi.freezeyou.utils.ApplicationIconUtils.getApplicationIcon;
@@ -254,14 +256,27 @@ public class AppLockActivity extends FreezeYouBaseActivity {
     }
 
     /**
-     * The question this screen asks: the code built into FreezeYou when one is set, else the phone's
-     * own lock. The code is what lets the screen ask on a device that has no screen lock at all.
+     * The question this screen asks:
+     * - If {@code forceBiometricPrompt} is requested (e.g. settings testing device lock), biometric prompt.
+     * - If user selected App Code as primary and code is set, the code dialog.
+     * - If device lock is available, the biometric prompt.
+     * - If code is set, the code dialog.
+     * In cooperative mode, both methods can coexist and either one can fall back or switch to the other.
      */
     private void showAuthenticator() {
-        if (AppCodeUtils.hasCode()) {
+        if (getIntent().getBooleanExtra("forceBiometricPrompt", false)) {
+            showBiometricPrompt();
+            return;
+        }
+        String primary = getPrimaryAuthenticationMethod();
+        if (AUTH_METHOD_APP_CODE.equals(primary) && AppCodeUtils.hasCode()) {
+            showCodeDialog();
+        } else if (isBiometricPromptPartAvailable(this)) {
+            showBiometricPrompt();
+        } else if (AppCodeUtils.hasCode()) {
             showCodeDialog();
         } else {
-            showBiometricPrompt();
+            finishImmediately(RESULT_CANCELED);
         }
     }
 
@@ -425,6 +440,26 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                     public void onAuthenticationError(
                             int errorCode, @NonNull CharSequence errString) {
                         super.onAuthenticationError(errorCode, errString);
+                        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                            return;
+                        }
+
+                        if (getIntent().getBooleanExtra("forceBiometricPrompt", false)) {
+                            if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
+                                    && errorCode != BiometricPrompt.ERROR_CANCELED
+                                    && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                                showShortToast(
+                                        getApplicationContext(),
+                                        String.format(
+                                                getString(R.string.authenticationError_colon), errString
+                                        )
+                                );
+                            }
+                            setResult(RESULT_CANCELED);
+                            finishImmediately(RESULT_CANCELED);
+                            return;
+                        }
+
                         if (errorCode != BiometricPrompt.ERROR_USER_CANCELED
                                 && errorCode != BiometricPrompt.ERROR_CANCELED
                                 && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
@@ -435,6 +470,12 @@ public class AppLockActivity extends FreezeYouBaseActivity {
                                     )
                             );
                         }
+
+                        if (AppCodeUtils.hasCode()) {
+                            showCodeDialog();
+                            return;
+                        }
+
                         setResult(RESULT_CANCELED);
                         // A prompt that was cancelled, timed out or locked out is a refusal, and a
                         // refusal is not allowed to leave the application it was raised over visible.

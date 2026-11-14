@@ -11,6 +11,9 @@ import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBool
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.enableAuthentication;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.lockOnEntry;
 import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageBooleanKeys.protectShortcuts;
+import static cf.playhi.freezeyou.storage.key.DefaultMultiProcessMMKVStorageStringKeys.primaryAuthMethod;
+
+import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage;
 
 public class AuthenticationUtils {
 
@@ -88,5 +91,38 @@ public class AuthenticationUtils {
      */
     public static boolean isAuthenticatorAvailable(Context context) {
         return isBiometricPromptPartAvailable(context) || isCodeSet();
+    }
+
+    public static final String AUTH_METHOD_BIOMETRIC = "biometric";
+    public static final String AUTH_METHOD_APP_CODE = "app_code";
+
+    /**
+     * The primary authentication method chosen by the user.
+     *
+     * In cooperative mode, both the device lock and the FreezeYou app code can coexist.
+     * The primary method is what {@link cf.playhi.freezeyou.ui.AppLockActivity} presents first;
+     * the other remains available as fallback or alternative.
+     *
+     * Backward-compatibility: if the key has never been written, an installation that already
+     * has an App Code set preserves App Code as primary; otherwise it defaults to device lock.
+     */
+    public static String getPrimaryAuthenticationMethod() {
+        String method = new DefaultMultiProcessMMKVStorage().getString(
+                primaryAuthMethod.name(), null);
+        if (AUTH_METHOD_APP_CODE.equals(method) && !isCodeSet()) {
+            return AUTH_METHOD_BIOMETRIC;
+        }
+        if (method != null) {
+            return method;
+        }
+        if (isCodeSet()) {
+            return AUTH_METHOD_APP_CODE;
+        }
+        return AUTH_METHOD_BIOMETRIC;
+    }
+
+    public static void setPrimaryAuthenticationMethod(String method) {
+        primaryAuthMethod.setValue(null, method);
+        primaryAuthMethod.sync();
     }
 }

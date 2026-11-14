@@ -661,6 +661,10 @@
         <item>300000</item>
         <item>screen_off</item>
     </string-array>
+    <string-array name="primaryAuthMethodSelectionValues" translatable="false">
+        <item>biometric</item>
+        <item>app_code</item>
+    </string-array>
     <string-array name="themeOfAutoSwitchDarkModeEntries">
         <item>Default</item>
         <item>Dark</item>
