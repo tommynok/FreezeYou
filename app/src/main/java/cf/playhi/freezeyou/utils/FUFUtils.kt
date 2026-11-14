@@ -304,30 +304,10 @@ object FUFUtils {
     ) {
         if (target != null) {
             if (!isOnlyUnfreezeTarget(target)) {
-                val component = ComponentName(pkgName, target)
-                val intent = Intent(Intent.ACTION_MAIN).apply {
-                    this.component = component
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                val destinationComponent = intent.resolveActivity(context.packageManager)
-                if (destinationComponent != null && destinationComponent.packageName == pkgName) {
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: SecurityException) {
-                        e.printStackTrace()
-                        // Refused because the target is not exported. Root, or the shell UID Shizuku
-                        // runs as, may still be allowed to start it.
-                        ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
-                    } catch (e: ActivityNotFoundException) {
-                        e.printStackTrace()
-                        // The target vanished (an application update removed or renamed the
-                        // activity): crashing the process over a stale shortcut target is
-                        // worse than reporting it. The elevated path can still start some.
-                        ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
-                    }
-                } else {
-                    ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
-                }
+                // To prevent Intent Redirection risks with arbitrary component targets,
+                // specific activity targets are launched via privileged shell execution
+                // (Shizuku / Root shell).
+                ElevatedLaunchUtils.startActivityElevatedAsync(context, pkgName, target)
             }
         } else if (context.packageManager.getLaunchIntentForPackage(pkgName) != null) {
             val intent = Intent(
