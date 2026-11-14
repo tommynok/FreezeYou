@@ -31,8 +31,8 @@ class PreferenceGroupCardDecoration(private val cardColor: Int) : RecyclerView.I
         for (pos in 0 until count) {
             val item = adapter.getItem(pos)
             val isHeader = item is PreferenceCategory
-            val isFooter = item.layoutResource == R.layout.preference_footer_note
-                    || item.key?.endsWith("Footer") == true
+            val isFooter = item?.layoutResource == R.layout.preference_footer_note
+                    || item?.key?.endsWith("Footer") == true
             if (isHeader || isFooter) {
                 if (spanStart != -1) {
                     // close the previous span: it ends before this header or footer
