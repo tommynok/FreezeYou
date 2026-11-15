@@ -7,6 +7,7 @@ import android.content.pm.ShortcutManager
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.util.Log
 import cf.playhi.freezeyou.ForceStop
 import cf.playhi.freezeyou.Freeze
 import cf.playhi.freezeyou.OneKeyFreeze
@@ -103,7 +104,11 @@ object ShortcutTokenUtils {
                 if (json.has(action) && !json.isNull(action)) {
                     val token = json.optString(action, "")
                     if (token.isNotEmpty()) {
-                        storage.putString(KEY_AUTH_TOKEN_PREFIX + action, token)
+                        val key = KEY_AUTH_TOKEN_PREFIX + action
+                        // Import-if-absent: do not overwrite live valid tokens for existing home screen shortcuts
+                        if (storage.getString(key, null).isNullOrEmpty()) {
+                            storage.putString(key, token)
+                        }
                     }
                 }
             }
@@ -111,6 +116,22 @@ object ShortcutTokenUtils {
         } finally {
             storage.unlock()
         }
+    }
+
+    @JvmStatic
+    fun resolveAction(className: String?): String? = when (className) {
+        "cf.playhi.freezeyou.Freeze",
+        Freeze::class.java.name -> ACTION_FREEZE
+        "cf.playhi.freezeyou.ForceStop",
+        ForceStop::class.java.name -> ACTION_FORCE_STOP
+        "cf.playhi.freezeyou.OneKeyFreeze",
+        OneKeyFreeze::class.java.name -> ACTION_ONE_KEY_FREEZE
+        "cf.playhi.freezeyou.OneKeyUF",
+        OneKeyUF::class.java.name -> ACTION_ONE_KEY_UF
+        "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
+        "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity",
+        OneKeyScreenLockImmediatelyActivity::class.java.name -> ACTION_LOCK_SCREEN
+        else -> null
     }
 
     @JvmStatic
@@ -227,29 +248,25 @@ object ShortcutTokenUtils {
                     .setIntent(scheduledTasksIntent)
                     .build()
 
-                shortcutManager.dynamicShortcuts =
+                val dynamicSet = shortcutManager.setDynamicShortcuts(
                     listOf(freezeShortcut, ufShortcut, scheduledTasksShortcut)
+                )
+                if (!dynamicSet) {
+                    Log.w("ShortcutTokenUtils", "setDynamicShortcuts returned false (possible rate limit)")
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     val pinned = shortcutManager.pinnedShortcuts
                     val toEnable = mutableListOf<String>()
                     val toUpdate = mutableListOf<ShortcutInfo>()
                     for (shortcut in pinned) {
-                        if (!shortcut.isEnabled) {
+                        if (!shortcut.isEnabled && !shortcut.isImmutable) {
                             toEnable.add(shortcut.id)
                         }
                         val sIntent = shortcut.intent ?: continue
                         val component = sIntent.component ?: continue
                         if (component.packageName == context.packageName) {
-                            val actionType = when (component.className) {
-                                Freeze::class.java.name -> ACTION_FREEZE
-                                OneKeyFreeze::class.java.name -> ACTION_ONE_KEY_FREEZE
-                                OneKeyUF::class.java.name -> ACTION_ONE_KEY_UF
-                                ForceStop::class.java.name -> ACTION_FORCE_STOP
-                                OneKeyScreenLockImmediatelyActivity::class.java.name,
-                                cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity::class.java.name -> ACTION_LOCK_SCREEN
-                                else -> null
-                            }
+                            val actionType = resolveAction(component.className)
                             if (actionType != null && !verifyToken(sIntent, actionType)) {
                                 val updatedIntent = Intent(sIntent)
                                 attachToken(updatedIntent, actionType)
@@ -259,28 +276,35 @@ object ShortcutTokenUtils {
                                 val builder = ShortcutInfo.Builder(context, shortcut.id)
                                     .setShortLabel(label)
                                     .setIntent(updatedIntent)
-                                shortcut.activity?.let { builder.setActivity(it) }
+                                // F1 fix: do NOT call builder.setActivity(). Omitting it preserves
+                                // the existing activity and skips the main-activity assertion that
+                                // throws if an old icon alias was disabled.
                                 toUpdate.add(builder.build())
                             }
                         }
                     }
                     if (toEnable.isNotEmpty()) {
-                        try {
-                            shortcutManager.enableShortcuts(toEnable)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                        for (id in toEnable) {
+                            try {
+                                shortcutManager.enableShortcuts(listOf(id))
+                            } catch (e: Exception) {
+                                Log.w("ShortcutTokenUtils", "Failed to enable pinned shortcut $id", e)
+                            }
                         }
                     }
                     if (toUpdate.isNotEmpty()) {
                         try {
-                            shortcutManager.updateShortcuts(toUpdate)
+                            val updated = shortcutManager.updateShortcuts(toUpdate)
+                            if (!updated) {
+                                Log.w("ShortcutTokenUtils", "updateShortcuts returned false (possible rate limit)")
+                            }
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            Log.w("ShortcutTokenUtils", "Failed to update pinned shortcuts", e)
                         }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.w("ShortcutTokenUtils", "Failed to publish or update shortcuts", e)
             }
         }
     }

@@ -961,6 +961,10 @@ public final class BackupUtils {
             }
         }
 
+        if (importedAny) {
+            ShortcutTokenUtils.initDynamicShortcutsAsync(context);
+        }
+
         return importedAny;
     }
 

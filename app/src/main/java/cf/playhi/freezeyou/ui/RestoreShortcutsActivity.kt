@@ -3,6 +3,7 @@ package cf.playhi.freezeyou.ui
 import android.content.pm.ShortcutManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
@@ -54,12 +55,20 @@ class RestoreShortcutsActivity : FreezeYouBaseActivity() {
             if (shortcutManager != null) {
                 try {
                     val pinned = shortcutManager.pinnedShortcuts
-                    val disabledIds = pinned.filter { !it.isEnabled }.map { it.id }
+                    val disabledIds = pinned.filter { !it.isEnabled && !it.isImmutable }.map { it.id }
                     if (disabledIds.isNotEmpty()) {
-                        shortcutManager.enableShortcuts(disabledIds)
+                        for (id in disabledIds) {
+                            try {
+                                shortcutManager.enableShortcuts(listOf(id))
+                            } catch (e: Exception) {
+                                Log.w("RestoreShortcuts", "Failed to enable pinned shortcut $id", e)
+                            }
+                        }
                     }
-                    pinned.filter { it.isEnabled }.map { it.id }.toSet()
+                    val updatedPinned = shortcutManager.pinnedShortcuts
+                    updatedPinned.filter { it.isEnabled }.map { it.id }.toSet()
                 } catch (e: Exception) {
+                    Log.w("RestoreShortcuts", "Failed to query or enable pinned shortcuts", e)
                     null
                 }
             } else {

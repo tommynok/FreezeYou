@@ -170,6 +170,30 @@ class ShortcutTokenUtilsTest {
             val restored = DefaultMultiProcessMMKVStorage().getString(key, null)
             assertEquals(exported.getString(action), restored)
         }
+
+        // Import-if-absent: live tokens on device are preserved
+        val customToken = "custom-live-token"
+        val primaryAction = actions[0]
+        DefaultMultiProcessMMKVStorage().putString(
+            ShortcutTokenUtils.KEY_AUTH_TOKEN_PREFIX + primaryAction,
+            customToken
+        )
+        ShortcutTokenUtils.importTokensFromJson(exported)
+        assertEquals(
+            customToken,
+            DefaultMultiProcessMMKVStorage().getString(ShortcutTokenUtils.KEY_AUTH_TOKEN_PREFIX + primaryAction, null)
+        )
+    }
+
+    @Test
+    fun `resolveAction maps expected activity class names correctly`() {
+        assertEquals(ShortcutTokenUtils.ACTION_FREEZE, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.Freeze"))
+        assertEquals(ShortcutTokenUtils.ACTION_FORCE_STOP, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.ForceStop"))
+        assertEquals(ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.OneKeyFreeze"))
+        assertEquals(ShortcutTokenUtils.ACTION_ONE_KEY_UF, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.OneKeyUF"))
+        assertEquals(ShortcutTokenUtils.ACTION_LOCK_SCREEN, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity"))
+        assertEquals(null, ShortcutTokenUtils.resolveAction("cf.playhi.freezeyou.Main"))
+        assertEquals(null, ShortcutTokenUtils.resolveAction(null))
     }
 }
 

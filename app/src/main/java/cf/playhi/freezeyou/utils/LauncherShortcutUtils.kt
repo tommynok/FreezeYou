@@ -9,6 +9,7 @@ import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.util.Log
 import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.storage.key.DefaultSharedPreferenceStorageBooleanKeys.allowEditWhenCreateShortcut
 import cf.playhi.freezeyou.storage.mmkv.DefaultMultiProcessMMKVStorage
@@ -110,15 +111,7 @@ object LauncherShortcutUtils {
             .putExtra("target", target)
             .putExtra("tasks", tasks)
             .putExtra("justLaunch", justLaunch)
-        val action = when (cls.name) {
-            "cf.playhi.freezeyou.Freeze" -> ShortcutTokenUtils.ACTION_FREEZE
-            "cf.playhi.freezeyou.ForceStop" -> ShortcutTokenUtils.ACTION_FORCE_STOP
-            "cf.playhi.freezeyou.OneKeyFreeze" -> ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE
-            "cf.playhi.freezeyou.OneKeyUF" -> ShortcutTokenUtils.ACTION_ONE_KEY_UF
-            "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
-            "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity" -> ShortcutTokenUtils.ACTION_LOCK_SCREEN
-            else -> ShortcutTokenUtils.ACTION_FREEZE
-        }
+        val action = ShortcutTokenUtils.resolveAction(cls.name) ?: ShortcutTokenUtils.ACTION_FREEZE
         ShortcutTokenUtils.attachToken(intent, action)
         val shortcutId = id.ifBlank { "FreezeYou! ${pkgName}_${System.currentTimeMillis()}" }
         val requested = requestCreateShortCut(
@@ -166,15 +159,8 @@ object LauncherShortcutUtils {
     ): Boolean {
         if (!intent.hasExtra(ShortcutTokenUtils.EXTRA_AUTH_TOKEN)) {
             val component = intent.component
-            val action = when (component?.className) {
-                "cf.playhi.freezeyou.Freeze" -> ShortcutTokenUtils.ACTION_FREEZE
-                "cf.playhi.freezeyou.ForceStop" -> ShortcutTokenUtils.ACTION_FORCE_STOP
-                "cf.playhi.freezeyou.OneKeyFreeze" -> ShortcutTokenUtils.ACTION_ONE_KEY_FREEZE
-                "cf.playhi.freezeyou.OneKeyUF" -> ShortcutTokenUtils.ACTION_ONE_KEY_UF
-                "cf.playhi.freezeyou.ui.OneKeyScreenLockImmediatelyActivity",
-                "cf.playhi.freezeyou.OneKeyScreenLockImmediatelyActivity" -> ShortcutTokenUtils.ACTION_LOCK_SCREEN
-                else -> ShortcutTokenUtils.ACTION_FREEZE
-            }
+            val action = ShortcutTokenUtils.resolveAction(component?.className)
+                ?: ShortcutTokenUtils.ACTION_FREEZE
             ShortcutTokenUtils.attachToken(intent, action)
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -205,14 +191,17 @@ object LauncherShortcutUtils {
                     val existingPinned = pinnedShortcuts.firstOrNull { it.id == shortcutId }
                     if (existingPinned != null) {
                         try {
-                            if (!existingPinned.isEnabled) {
+                            if (!existingPinned.isEnabled && !existingPinned.isImmutable) {
                                 mShortcutManager.enableShortcuts(listOf(shortcutId))
                             }
-                            mShortcutManager.updateShortcuts(listOf(pinShortcutInfo))
+                            val updated = mShortcutManager.updateShortcuts(listOf(pinShortcutInfo))
+                            if (!updated) {
+                                Log.w("LauncherShortcutUtils", "updateShortcuts returned false for $shortcutId")
+                            }
                             showToast(context, R.string.requested)
                             return true
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            Log.w("LauncherShortcutUtils", "Failed to update pinned shortcut $shortcutId", e)
                         }
                     }
                     return try {
