@@ -7,7 +7,10 @@
         rikka.shizuku.api,
         rikka.shizuku.provider,
         rikka.shizuku.shared,
-        org.lsposed.hiddenapibypass" />
+        org.lsposed.hiddenapibypass,
+        eu.darken.porter.sdk,
+        eu.darken.porter.sdk.extras,
+        eu.darken.porter.protocol" />
 
     <uses-feature
         android:name="android.hardware.bluetooth"

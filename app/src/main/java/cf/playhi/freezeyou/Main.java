@@ -2657,9 +2657,10 @@ public class Main extends FreezeYouBaseActivity {
 
         final List<String> selectedSnapshot = new ArrayList<>(selectedPackages);
 
+        final boolean porterAvailable = PrivilegedShellUtils.isPorterAvailable();
         final boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable();
-        if (shizukuAvailable) {
-            showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false);
+        if (porterAvailable || shizukuAvailable) {
+            showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, true, false, porterAvailable);
         } else {
             mIsBatchUninstallChecking = true;
             new Thread(() -> {
@@ -2682,7 +2683,7 @@ public class Main extends FreezeYouBaseActivity {
                                 || !selectedPackages.equals(selectedSnapshot)) {
                             return;
                         }
-                        showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable);
+                        showBatchUninstallDialog(userApps, systemAppsWithUpdates, systemApps, totalFound, false, rootAvailable, false);
                     });
                 }
             }, "BatchUninstallRootCheck").start();
@@ -2695,7 +2696,8 @@ public class Main extends FreezeYouBaseActivity {
             List<String> systemApps,
             int totalFound,
             boolean shizukuAvailable,
-            boolean rootAvailable) {
+            boolean rootAvailable,
+            boolean porterAvailable) {
 
         boolean hasPrivilegedShell = shizukuAvailable || rootAvailable;
         int skippedSystemCount = systemAppsWithUpdates.size() + systemApps.size();
@@ -2724,7 +2726,7 @@ public class Main extends FreezeYouBaseActivity {
                             if (currentSelectionActionMode != null) {
                                 currentSelectionActionMode.finish();
                             }
-                            executeBatchUninstall(userApps, Collections.emptyList(), Collections.emptyList(), false, false, false);
+                            executeBatchUninstall(userApps, Collections.emptyList(), Collections.emptyList(), false, false, false, false);
                         });
                     })
                     .setNegativeButton(R.string.cancel, null)
@@ -2783,7 +2785,7 @@ public class Main extends FreezeYouBaseActivity {
                     if (currentSelectionActionMode != null) {
                         currentSelectionActionMode.finish();
                     }
-                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, uninstallUpdatesOnly, true, shizukuAvailable);
+                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, uninstallUpdatesOnly, true, shizukuAvailable, porterAvailable);
                 });
             });
         } else {
@@ -2793,7 +2795,7 @@ public class Main extends FreezeYouBaseActivity {
                     if (currentSelectionActionMode != null) {
                         currentSelectionActionMode.finish();
                     }
-                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, false, true, shizukuAvailable);
+                    executeBatchUninstall(userApps, systemAppsWithUpdates, systemApps, false, true, shizukuAvailable, porterAvailable);
                 });
             });
         }
@@ -2807,7 +2809,8 @@ public class Main extends FreezeYouBaseActivity {
             List<String> systemApps,
             boolean uninstallUpdatesOnly,
             boolean hasPrivilegedShell,
-            boolean shizukuAvailable) {
+            boolean shizukuAvailable,
+            boolean porterAvailable) {
 
         if (hasPrivilegedShell) {
             mIsBatchUninstallRunning = true;
@@ -2871,7 +2874,9 @@ public class Main extends FreezeYouBaseActivity {
                             );
                             boolean cmdSuccess = true;
                             for (String cmd : commands) {
-                                PrivilegedShellUtils.CommandResult result = shizukuAvailable
+                                PrivilegedShellUtils.CommandResult result = porterAvailable
+                                        ? PrivilegedShellUtils.runPorterCommand(cmd)
+                                        : shizukuAvailable
                                         ? PrivilegedShellUtils.runShizukuCommand(cmd)
                                         : PrivilegedShellUtils.runRootCommand(cmd);
                                 if (!result.isSuccessful()) {

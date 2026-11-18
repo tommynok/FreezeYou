@@ -31,39 +31,58 @@ object RunningAppsUtils {
         API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
     )
 
+    private const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 11
+    private const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER = 12
+    private const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE = 13
+    private val PORTER_API_MODES = setOf(
+        API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
+        API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER,
+        API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE
+    )
+
     @JvmStatic
     fun isRunningFilterAvailable(): Boolean {
         val apiMode = selectFUFMode.getValue()?.toIntOrNull() ?: return false
-        return apiMode in ROOT_API_MODES || apiMode in SHIZUKU_API_MODES
+        return apiMode in ROOT_API_MODES || apiMode in SHIZUKU_API_MODES || apiMode in PORTER_API_MODES
     }
 
     /**
-     * The freeze mode only decides which source to *try first*. Both sources are independent of
-     * it — a device can have root granted while running in a Shizuku freeze mode, and either
-     * path can come back empty (no su binary, Shizuku not granted). Falling back to the other
-     * source turns that into a populated list instead of a silently empty one.
+     * The freeze mode only decides which source to *try first*. All sources are independent of
+     * it — a device can have root granted while running in a Shizuku or Porter freeze mode, and
+     * any path can come back empty (no su binary, server not granted). Falling back to the
+     * other sources turns that into a populated list instead of a silently empty one.
      */
     @JvmStatic
     fun getRunningPackages(context: Context): Set<String> {
         val apiMode = selectFUFMode.getValue()?.toIntOrNull()
-        val shizukuFirst = apiMode in SHIZUKU_API_MODES
-
-        val primary =
-            if (shizukuFirst) getShizukuRunningPackages(context)
-            else ProcessUtils.getRootRunningPackages()
-        if (primary.isNotEmpty()) return primary
-
-        val fallback =
-            if (shizukuFirst) ProcessUtils.getRootRunningPackages()
-            else getShizukuRunningPackages(context)
-        if (isDebugModeEnabled()) {
-            Log.e(
-                "DebugModeLogcat",
-                "getRunningPackages: primary(${if (shizukuFirst) "shizuku" else "root"}) empty, " +
-                        "fallback returned ${fallback.size}"
+        val sources: List<Pair<String, () -> Set<String>>> = when {
+            apiMode in PORTER_API_MODES -> listOf(
+                "porter" to { getPorterRunningPackages(context) },
+                "shizuku" to { getShizukuRunningPackages(context) },
+                "root" to { ProcessUtils.getRootRunningPackages() }
+            )
+            apiMode in SHIZUKU_API_MODES -> listOf(
+                "shizuku" to { getShizukuRunningPackages(context) },
+                "porter" to { getPorterRunningPackages(context) },
+                "root" to { ProcessUtils.getRootRunningPackages() }
+            )
+            else -> listOf(
+                "root" to { ProcessUtils.getRootRunningPackages() },
+                "shizuku" to { getShizukuRunningPackages(context) },
+                "porter" to { getPorterRunningPackages(context) }
             )
         }
-        return fallback
+        for ((index, source) in sources.withIndex()) {
+            val packages = source.second()
+            if (packages.isNotEmpty()) return packages
+            if (isDebugModeEnabled() && index < sources.size - 1) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "getRunningPackages: ${source.first} empty, trying ${sources[index + 1].first}"
+                )
+            }
+        }
+        return emptySet()
     }
 
     data class ResourceUsage(val cpuPercent: Double?, val pssBytes: Long?)
@@ -89,15 +108,41 @@ object RunningAppsUtils {
     @JvmStatic
     fun getResourceUsage(context: Context, packageNames: Set<String>): Map<String, ResourceUsage> {
         if (packageNames.isEmpty()) return emptyMap()
-        val shizukuFirst = selectFUFMode.getValue()?.toIntOrNull() in SHIZUKU_API_MODES
-        for (useShizuku in listOf(shizukuFirst, !shizukuFirst)) {
+        val apiMode = selectFUFMode.getValue()?.toIntOrNull()
+        val backends = when {
+            apiMode in PORTER_API_MODES -> listOf(
+                PrivilegedShellUtils.Backend.PORTER,
+                PrivilegedShellUtils.Backend.SHIZUKU,
+                PrivilegedShellUtils.Backend.ROOT
+            )
+            apiMode in SHIZUKU_API_MODES -> listOf(
+                PrivilegedShellUtils.Backend.SHIZUKU,
+                PrivilegedShellUtils.Backend.PORTER,
+                PrivilegedShellUtils.Backend.ROOT
+            )
+            else -> listOf(
+                PrivilegedShellUtils.Backend.ROOT,
+                PrivilegedShellUtils.Backend.SHIZUKU,
+                PrivilegedShellUtils.Backend.PORTER
+            )
+        }
+        for (backend in backends) {
             if (Thread.currentThread().isInterrupted) return emptyMap()
             try {
-                if (useShizuku && !PrivilegedShellUtils.isShizukuAvailable(context)) continue
-                val result = if (useShizuku) {
-                    PrivilegedShellUtils.runShizukuCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
-                } else {
-                    PrivilegedShellUtils.runRootCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
+                when (backend) {
+                    PrivilegedShellUtils.Backend.PORTER ->
+                        if (!PrivilegedShellUtils.isPorterAvailable(context)) continue
+                    PrivilegedShellUtils.Backend.SHIZUKU ->
+                        if (!PrivilegedShellUtils.isShizukuAvailable(context)) continue
+                    else -> Unit
+                }
+                val result = when (backend) {
+                    PrivilegedShellUtils.Backend.PORTER ->
+                        PrivilegedShellUtils.runPorterCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
+                    PrivilegedShellUtils.Backend.SHIZUKU ->
+                        PrivilegedShellUtils.runShizukuCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
+                    else ->
+                        PrivilegedShellUtils.runRootCommand(RESOURCE_COMMAND, RESOURCE_TIMEOUT_MS)
                 }
                 if (result.exitCode != 0) continue
                 val usage = parseResourceUsage(result.output, packageNames)
@@ -207,6 +252,34 @@ object RunningAppsUtils {
         } catch (e: Exception) {
             e.printStackTrace()
             if (debug) Log.e("DebugModeLogcat", "getShizukuRunningPackages failed: $e")
+            return emptySet()
+        } finally {
+            process?.destroy()
+        }
+    }
+
+    /** Same /proc scan as the Shizuku path, run at Porter's identity; see its comment for why shell. */
+    private fun getPorterRunningPackages(context: Context): Set<String> {
+        val debug = isDebugModeEnabled()
+        var process: java.lang.Process? = null
+        try {
+            if (!PorterShellUtils.isSupported()) return emptySet()
+            if (PorterShellUtils.awaitConnectionBlocking(context) == null) {
+                if (debug) Log.e("DebugModeLogcat", "getPorterRunningPackages: no connection")
+                return emptySet()
+            }
+            process = PorterShellUtils.startCommandProcess(
+                ProcessUtils.RUNNING_PACKAGES_COMMANDS.joinToString("; ")
+            )
+            val packages = ProcessUtils.parseRunningPackages(process.inputStream, SHIZUKU_RUNNING_TIMEOUT_MS)
+            process.waitFor()
+            if (debug) {
+                Log.e("DebugModeLogcat", "getPorterRunningPackages: packages=${packages.size}")
+            }
+            return packages
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (debug) Log.e("DebugModeLogcat", "getPorterRunningPackages failed: $e")
             return emptySet()
         } finally {
             process?.destroy()

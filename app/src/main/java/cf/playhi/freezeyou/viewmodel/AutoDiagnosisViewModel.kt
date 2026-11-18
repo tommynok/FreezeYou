@@ -19,6 +19,9 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_LEGACY_AUTO
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_DPM
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_PROFILE_OWNER
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_DISABLE_ENABLE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_UNHIDE_HIDE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
@@ -32,7 +35,9 @@ import cf.playhi.freezeyou.utils.AccessibilityUtils.isAccessibilitySettingsOn
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isDeviceOwner
 import cf.playhi.freezeyou.utils.DevicePolicyManagerUtils.isProfileOwner
 import cf.playhi.freezeyou.utils.FUFUtils
+import cf.playhi.freezeyou.utils.PorterShellUtils
 import cf.playhi.freezeyou.utils.RootUtils
+import eu.darken.porter.sdk.PorterAvailability
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
 import kotlinx.coroutines.CancellationException
@@ -113,6 +118,9 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         val shizukuRequired = fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
                 || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
                 || fufMode == API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER
+        val porterRequired = fufMode == API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE
+                || fufMode == API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+                || fufMode == API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER
         val systemAppRequired = fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE
                 || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
                 || fufMode == API_FREEZEYOU_SYSTEM_APP_ENABLE_DISABLE_USER
@@ -123,6 +131,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     + " profileOwnerRequired=" + profileOwnerRequired
                     + " rootRequired=" + rootRequired
                     + " shizukuRequired=" + shizukuRequired
+                    + " porterRequired=" + porterRequired
                     + " systemAppRequired=" + systemAppRequired
         )
 
@@ -163,6 +172,7 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
         checkProfileOwner(localList, profileOwnerRequired)
         checkSystemAppMode(localList, systemAppRequired, fufMode)
         checkShizuku(localList, shizukuRequired)
+        checkPorter(localList, porterRequired)
 
         checkIsPowerSaveMode(localList)
         publishSnapshot(92)
@@ -511,6 +521,72 @@ class AutoDiagnosisViewModel(application: Application) : AndroidViewModel(applic
                     app.getString(R.string.shizukuIsNotInstalledOrOtherExceptions),
                     "",
                     "-8",
+                    R.drawable.ic_warning
+                )
+            )
+        }
+    }
+
+    private fun checkPorter(
+        localList: MutableList<Map<String, Any>>, porterRequired: Boolean
+    ) {
+        if (!porterRequired) return
+        val app = getApplication<Application>()
+        if (!PorterShellUtils.isSupported()) {
+            localList.add(
+                generateHashMap(
+                    app.getString(R.string.sysVerLow), "", "-13", R.drawable.ic_warning
+                )
+            )
+            return
+        }
+        try {
+            PorterShellUtils.init(app)
+            val connection = PorterShellUtils.awaitConnectionBlocking(app, 3000L)
+            when {
+                connection != null && PorterShellUtils.isPorterAvailable() ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.porterAuthorizationGranted),
+                            "",
+                            "-13",
+                            R.drawable.ic_done
+                        )
+                    )
+                connection != null ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.porterAuthorizationNotGranted),
+                            "",
+                            "-13",
+                            R.drawable.ic_warning
+                        )
+                    )
+                PorterShellUtils.availabilityBlocking(app) is PorterAvailability.NotInstalled ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.porterIsNotInstalled),
+                            "",
+                            "-13",
+                            R.drawable.ic_warning
+                        )
+                    )
+                else ->
+                    localList.add(
+                        generateHashMap(
+                            app.getString(R.string.porterIsNotRunning),
+                            "",
+                            "-13",
+                            R.drawable.ic_warning
+                        )
+                    )
+            }
+        } catch (e: Exception) {
+            localList.add(
+                generateHashMap(
+                    app.getString(R.string.porterIsNotInstalledOrOtherExceptions),
+                    "",
+                    "-13",
                     R.drawable.ic_warning
                 )
             )

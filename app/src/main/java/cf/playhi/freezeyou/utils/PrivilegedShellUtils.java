@@ -55,6 +55,8 @@ public final class PrivilegedShellUtils {
 
     /** Which privileged shell runs a batch. */
     public enum Backend {
+        /** Porter's shell: Shizuku's continuation, same binder-held session, API 24+ only. */
+        PORTER,
         /** Shizuku's shell: the binder is already held, no privilege escalation per session. */
         SHIZUKU,
         /** {@code su}: a process per session, and the approval prompt that comes with it. */
@@ -152,6 +154,22 @@ public final class PrivilegedShellUtils {
         return RootUtils.checkRootPermission();
     }
 
+    public static boolean isPorterAvailable() {
+        return PorterShellUtils.isPorterAvailable();
+    }
+
+    public static boolean isPorterAvailable(Context context) {
+        return PorterShellUtils.isPorterAvailable(context);
+    }
+
+    public static CommandResult runPorterCommand(String command) throws Exception {
+        return PorterShellUtils.runPorterCommand(command);
+    }
+
+    public static CommandResult runPorterCommand(String command, long timeoutMs) throws Exception {
+        return PorterShellUtils.runPorterCommand(command, timeoutMs);
+    }
+
     public static CommandResult runRootCommand(String command) throws Exception {
         return runRootCommand(command, DEFAULT_COMMAND_TIMEOUT_MS);
     }
@@ -224,7 +242,8 @@ public final class PrivilegedShellUtils {
      */
     public static BatchResult executeBatchPrivilegedCommand(List<String> commands, Context context) {
         return executeBatchPrivilegedCommand(commands, context,
-                isShizukuAvailable(context) ? Backend.SHIZUKU : Backend.ROOT);
+                isPorterAvailable(context) ? Backend.PORTER
+                        : isShizukuAvailable(context) ? Backend.SHIZUKU : Backend.ROOT);
     }
 
     /**
@@ -251,9 +270,13 @@ public final class PrivilegedShellUtils {
             List<String> chunk = commands.subList(from, to);
             Map<Integer, CommandResult> reported = new java.util.concurrent.ConcurrentHashMap<>();
             try {
-                // Shizuku can be gone by the time a chunk runs, even when the caller asked for it
-                // because it was there a moment ago. Root is the shell left over, and the batch
-                // still runs rather than reporting packages it never touched.
+                // Porter or Shizuku can be gone by the time a chunk runs, even when the caller
+                // asked for it because it was there a moment ago. The next binder shell is the
+                // fallback, root is the shell left over, and the batch still runs rather than
+                // reporting packages it never touched.
+                if (used == Backend.PORTER && !isPorterAvailable(context)) {
+                    used = isShizukuAvailable(context) ? Backend.SHIZUKU : Backend.ROOT;
+                }
                 if (used == Backend.SHIZUKU && !isShizukuAvailable(context)) {
                     used = Backend.ROOT;
                 }
@@ -413,6 +436,9 @@ public final class PrivilegedShellUtils {
         }
     }
     private static Process startSession(Backend backend, Context context) throws Exception {
+        if (backend == Backend.PORTER) {
+            return PorterShellUtils.startShellSession();
+        }
         if (backend == Backend.SHIZUKU) {
             // "-s" reads the commands from this stream. Without an argument sh would take the first
             // line of the batch as a script file and run nothing at all.

@@ -475,6 +475,12 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операции с FreezeYou запрещены</string>
     <string name="shizukuVersionIsTooLow">Версия Shizuku устарела</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не установлен или другие исключения</string>
+    <string name="porterIsNotInstalled">Porter не установлен</string>
+    <string name="porterIsNotRunning">Porter установлен, но не запущен. Запустите его и повторите</string>
+    <string name="porterVersionIncompatible">Версия Porter несовместима. Обновите Porter или приложение</string>
+    <string name="porterIsNotInstalledOrOtherExceptions">Porter не установлен, не запущен или другие исключения</string>
+    <string name="porterAuthorizationGranted">Разрешение Porter предоставлено</string>
+    <string name="porterAuthorizationNotGranted">Разрешение Porter не предоставлено</string>
     <string name="authorizationStatus_authorized">Разрешение Shizuku предоставлено</string>
     <string name="authorizationStatusNotAuthorized">Разрешение Shizuku не предоставлено</string>
     <string name="profileOwnerActive">Режим владельца профиля активен</string>
@@ -544,6 +550,9 @@
         <item>Shizuku (режим отключения)</item>
         <item>Shizuku (режим Disable_User)</item>
         <item>Shizuku (режим Disable_Until_Used)</item>
+        <item>Porter (режим отключения)</item>
+        <item>Porter (режим Disable_User)</item>
+        <item>Porter (режим Disable_Until_Used)</item>
     </string-array>
     <string-array name="appLockTimeoutSelection">
         <item>Сразу при выходе</item>

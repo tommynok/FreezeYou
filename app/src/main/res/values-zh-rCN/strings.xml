@@ -480,6 +480,12 @@
     <string name="operationOnFreezeYouIsNotAllowed">不允许对自冻执行此操作</string>
     <string name="shizukuVersionIsTooLow">Shizuku 的版本过低</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku 尚未安装或其他异常</string>
+    <string name="porterIsNotInstalled">Porter 尚未安装</string>
+    <string name="porterIsNotRunning">Porter 已安装但未运行，请启动后重试</string>
+    <string name="porterVersionIncompatible">Porter 版本不兼容，请更新 Porter 或本应用</string>
+    <string name="porterIsNotInstalledOrOtherExceptions">Porter 尚未安装、未运行或其他异常</string>
+    <string name="porterAuthorizationGranted">Porter 权限已授予</string>
+    <string name="porterAuthorizationNotGranted">Porter 权限未授予</string>
     <string name="authorizationStatus_authorized">Shizuku 授权已获取</string>
     <string name="authorizationStatusNotAuthorized">Shizuku 权限未授予</string>
     <string name="profileOwnerActive">配置文件所有者模式已激活</string>
@@ -549,6 +555,9 @@
         <item>Shizuku（停用模式）</item>
         <item>Shizuku（Disable_User 模式）</item>
         <item>Shizuku（Disable_Until_Used 模式）</item>
+        <item>Porter（停用模式）</item>
+        <item>Porter（Disable_User 模式）</item>
+        <item>Porter（Disable_Until_Used 模式）</item>
     </string-array>
     <string-array name="appLockTimeoutSelection">
         <item>退出时立即</item>

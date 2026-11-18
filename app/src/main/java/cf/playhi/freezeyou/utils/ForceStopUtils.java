@@ -34,12 +34,29 @@ public final class ForceStopUtils {
 
     public static PrivilegedShellUtils.Backend resolveBackend(
             boolean shizukuMode, boolean shizukuAvailable, boolean rootAvailable) {
-        if (shizukuMode) {
+        return resolveBackend(shizukuMode, shizukuAvailable, rootAvailable, false, false);
+    }
+
+    /**
+     * The mode the user configured picks the backend tried first; the others follow as
+     * fallbacks. Binder shells (Porter, Shizuku) come before {@code su} in the fallback order
+     * because they need no per-session escalation.
+     */
+    public static PrivilegedShellUtils.Backend resolveBackend(
+            boolean shizukuMode, boolean shizukuAvailable, boolean rootAvailable,
+            boolean porterMode, boolean porterAvailable) {
+        if (porterMode) {
+            if (porterAvailable) return PrivilegedShellUtils.Backend.PORTER;
             if (shizukuAvailable) return PrivilegedShellUtils.Backend.SHIZUKU;
+            if (rootAvailable) return PrivilegedShellUtils.Backend.ROOT;
+        } else if (shizukuMode) {
+            if (shizukuAvailable) return PrivilegedShellUtils.Backend.SHIZUKU;
+            if (porterAvailable) return PrivilegedShellUtils.Backend.PORTER;
             if (rootAvailable) return PrivilegedShellUtils.Backend.ROOT;
         } else {
             if (rootAvailable) return PrivilegedShellUtils.Backend.ROOT;
             if (shizukuAvailable) return PrivilegedShellUtils.Backend.SHIZUKU;
+            if (porterAvailable) return PrivilegedShellUtils.Backend.PORTER;
         }
         return null;
     }
@@ -110,6 +127,7 @@ public final class ForceStopUtils {
         }
 
         boolean shizukuMode = apiMode >= 8 && apiMode <= 10;
+        boolean porterMode = apiMode >= 11 && apiMode <= 13;
         boolean shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
         if (shizukuMode && !shizukuAvailable) {
             int waited = 0;
@@ -122,13 +140,21 @@ public final class ForceStopUtils {
             }
             shizukuAvailable = PrivilegedShellUtils.isShizukuAvailable(context);
         }
+        boolean porterAvailable = PrivilegedShellUtils.isPorterAvailable(context);
+        if (porterMode && !porterAvailable) {
+            PorterShellUtils.awaitConnectionBlocking(context, 3000);
+            porterAvailable = PrivilegedShellUtils.isPorterAvailable(context);
+        }
 
         PrivilegedShellUtils.Backend backend;
-        if (shizukuMode && shizukuAvailable) {
+        if (porterMode && porterAvailable) {
+            backend = PrivilegedShellUtils.Backend.PORTER;
+        } else if (shizukuMode && shizukuAvailable) {
             backend = PrivilegedShellUtils.Backend.SHIZUKU;
         } else {
             boolean rootAvailable = RootUtils.checkRootPermission();
-            backend = resolveBackend(shizukuMode, shizukuAvailable, rootAvailable);
+            backend = resolveBackend(shizukuMode, shizukuAvailable, rootAvailable,
+                    porterMode, porterAvailable);
         }
         if (backend == null) {
             showToast(context, R.string.mayUnrootedOrOtherEx);

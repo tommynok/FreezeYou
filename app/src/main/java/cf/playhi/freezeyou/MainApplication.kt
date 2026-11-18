@@ -142,6 +142,9 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
             com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
         }
         checkAndEnableShizukuMultiProcessSupport(this)
+        // Every process asks for the Porter connection; the SDK provider delivers it to one
+        // process and the rest fetch it here. Guarded inside for devices below API 24.
+        cf.playhi.freezeyou.utils.PorterShellUtils.init(this)
         if (packageName == ProcessUtils.getProcessName(this)) {
             ShortcutTokenUtils.initDynamicShortcutsAsync(this)
         }

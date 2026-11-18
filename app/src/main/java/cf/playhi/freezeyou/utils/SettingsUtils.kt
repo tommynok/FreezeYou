@@ -13,6 +13,9 @@ import cf.playhi.freezeyou.R
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_LEGACY_AUTO
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_DPM
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_MROOT_PROFILE_OWNER
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED
+import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_DISABLE_ENABLE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_ROOT_UNHIDE_HIDE
 import cf.playhi.freezeyou.fuf.FUFSinglePackage.Companion.API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE
@@ -212,6 +215,32 @@ object SettingsUtils {
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 showToast(context, R.string.shizukuIsNotInstalledOrOtherExceptions)
+                            }
+                        }
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER,
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE ->
+                        if (Build.VERSION.SDK_INT < 24) {
+                            showToast(context, context.getString(R.string.sysVerLow))
+                        } else {
+                            // Asynchronous: Porter's permission dialog suspends until the user
+                            // answers, and blocking this thread that long would ANR.
+                            PorterShellUtils.requestPermissionAsync(context) { result ->
+                                when (result) {
+                                    PorterShellUtils.PERMISSION_RESULT_GRANTED ->
+                                        PorterShellUtils.init(context)
+                                    PorterShellUtils.PERMISSION_RESULT_NOT_INSTALLED ->
+                                        showToast(context, R.string.porterIsNotInstalled)
+                                    PorterShellUtils.PERMISSION_RESULT_NOT_CONNECTED ->
+                                        showToast(context, R.string.porterIsNotRunning)
+                                    PorterShellUtils.PERMISSION_RESULT_INCOMPATIBLE ->
+                                        showToast(context, R.string.porterVersionIncompatible)
+                                    PorterShellUtils.PERMISSION_RESULT_DENIED,
+                                    PorterShellUtils.PERMISSION_RESULT_PERMANENTLY_DENIED ->
+                                        showToast(context, R.string.insufficientPermission)
+                                    else ->
+                                        showToast(context, R.string.porterIsNotInstalledOrOtherExceptions)
+                                }
                             }
                         }
                     else -> showToast(context, R.string.unknown)

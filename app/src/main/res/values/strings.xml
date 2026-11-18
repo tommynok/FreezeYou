@@ -482,6 +482,12 @@
     <string name="operationOnFreezeYouIsNotAllowed">Operation on FreezeYou is not allowed</string>
     <string name="shizukuVersionIsTooLow">Shizuku version is too low</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku is not installed or other exceptions</string>
+    <string name="porterIsNotInstalled">Porter is not installed</string>
+    <string name="porterIsNotRunning">Porter is installed but not running. Start it and try again</string>
+    <string name="porterVersionIncompatible">Porter version is incompatible. Update Porter or this app</string>
+    <string name="porterIsNotInstalledOrOtherExceptions">Porter is not installed, not running, or other exceptions</string>
+    <string name="porterAuthorizationGranted">Porter permission granted</string>
+    <string name="porterAuthorizationNotGranted">Porter permission not granted</string>
     <string name="authorizationStatus_authorized">Shizuku authorization granted</string>
     <string name="authorizationStatusNotAuthorized">Shizuku permission not granted</string>
     <string name="profileOwnerActive">Profile owner mode active</string>
@@ -618,6 +624,9 @@
         <item>Shizuku (Disable Mode)</item>
         <item>Shizuku (Disable_User Mode)</item>
         <item>Shizuku (Disable_Until_Used Mode)</item>
+        <item>Porter (Disable Mode)</item>
+        <item>Porter (Disable_User Mode)</item>
+        <item>Porter (Disable_Until_Used Mode)</item>
     </string-array>
     <string-array name="selectFUFModeSelectionValues" translatable="false">
         <item>1</item>
@@ -631,6 +640,9 @@
         <item>10</item>
         <item>9</item>
         <item>8</item>
+        <item>13</item>
+        <item>12</item>
+        <item>11</item>
     </string-array>
     <string-array name="appLockTimeoutSelection">
         <item>Immediately on exit</item>

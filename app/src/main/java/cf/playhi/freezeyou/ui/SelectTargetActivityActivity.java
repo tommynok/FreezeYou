@@ -22,6 +22,7 @@ import cf.playhi.freezeyou.app.FreezeYouBaseActivity;
 import cf.playhi.freezeyou.fuf.FUFSinglePackage;
 import cf.playhi.freezeyou.utils.ApplicationIconUtils;
 import cf.playhi.freezeyou.utils.FUFUtils;
+import cf.playhi.freezeyou.utils.PorterShellUtils;
 
 import rikka.shizuku.Shizuku;
 
@@ -67,6 +68,10 @@ public class SelectTargetActivityActivity extends FreezeYouBaseActivity {
                 // Cheap and silent, unlike spawning su, and it catches "Shizuku is selected but
                 // not running" before the user builds a shortcut that could never fire.
                 return Shizuku.pingBinder();
+            case FUFSinglePackage.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE:
+            case FUFSinglePackage.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER:
+            case FUFSinglePackage.API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED:
+                return PorterShellUtils.isPorterAvailable(this);
             default:
                 return false;
         }

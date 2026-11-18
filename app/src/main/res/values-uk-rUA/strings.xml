@@ -475,6 +475,12 @@
     <string name="operationOnFreezeYouIsNotAllowed">Операції з FreezeYou заборонені</string>
     <string name="shizukuVersionIsTooLow">Версія Shizuku застаріла</string>
     <string name="shizukuIsNotInstalledOrOtherExceptions">Shizuku не встановлено або інші винятки</string>
+    <string name="porterIsNotInstalled">Porter не встановлено</string>
+    <string name="porterIsNotRunning">Porter встановлено, але не запущено. Запустіть його і повторіть</string>
+    <string name="porterVersionIncompatible">Версія Porter несумісна. Оновіть Porter або застосунок</string>
+    <string name="porterIsNotInstalledOrOtherExceptions">Porter не встановлено, не запущено або інші винятки</string>
+    <string name="porterAuthorizationGranted">Дозвіл Porter надано</string>
+    <string name="porterAuthorizationNotGranted">Дозвіл Porter не надано</string>
     <string name="authorizationStatus_authorized">Дозвіл Shizuku надано</string>
     <string name="authorizationStatusNotAuthorized">Дозвіл Shizuku не надано</string>
     <string name="profileOwnerActive">Режим власника профілю активний</string>
@@ -544,6 +550,9 @@
         <item>Shizuku (режим відключення)</item>
         <item>Shizuku (режим Disable_User)</item>
         <item>Shizuku (режим Disable_Until_Used)</item>
+        <item>Porter (режим відключення)</item>
+        <item>Porter (режим Disable_User)</item>
+        <item>Porter (режим Disable_Until_Used)</item>
     </string-array>
     <string-array name="appLockTimeoutSelection">
         <item>Відразу при виході</item>

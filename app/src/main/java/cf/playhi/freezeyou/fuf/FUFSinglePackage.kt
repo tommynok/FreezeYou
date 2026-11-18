@@ -15,7 +15,12 @@ import cf.playhi.freezeyou.utils.FUFUtils.checkRootFrozen
 import cf.playhi.freezeyou.utils.FUFUtils.checkRootPermission
 import cf.playhi.freezeyou.utils.FUFUtils.isSystemApp
 import cf.playhi.freezeyou.utils.PrivilegedShellUtils
+import cf.playhi.freezeyou.utils.PorterShellUtils
 import cf.playhi.freezeyou.utils.ProcessUtils.fAURoot
+import eu.darken.porter.sdk.PermissionState
+import eu.darken.porter.sdk.PorterConnection
+import eu.darken.porter.sdk.PorterSecurityException
+import eu.darken.porter.sdk.extras.PorterSystemServices
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.ShizukuProvider
 import rikka.shizuku.SystemServiceHelper
@@ -41,12 +46,14 @@ import java.lang.reflect.InvocationTargetException
  *   <li><b>Shizuku / Sui Binder IPC Modes (8, 9, 10):</b> Uses Shizuku to invoke hidden
  *       {@code IPackageManager.setApplicationEnabledSetting} directly over Binder IPC without spawning
  *       slow shell processes. Handles Android 14+ UID 2000 permission constraints automatically.</li>
+ *   <li><b>Porter Binder IPC Modes (11, 12, 13):</b> The same direct Binder IPC through Porter,
+ *       Shizuku's independent continuation (API 24+). Same UID 2000 remapping as the Shizuku modes.</li>
  * </ul>
  *
  * @property context Application or Activity context
  * @property singlePackageName Target package identifier
  * @property actionMode Operation target: [ACTION_MODE_FREEZE] (0) or [ACTION_MODE_UNFREEZE] (1)
- * @property apiMode Specific API implementation to execute (0 through 10)
+ * @property apiMode Specific API implementation to execute (0 through 13)
  */
 open class FUFSinglePackage(
     open val context: Context,
@@ -94,6 +101,10 @@ open class FUFSinglePackage(
             API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
             API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
                 pureExecuteAPIShizukuAction()
+            API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE,
+            API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
+            API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                pureExecuteAPIPorterAction()
             else ->
                 ERROR_NO_SUCH_API_MODE
         }
@@ -547,6 +558,126 @@ open class FUFSinglePackage(
         return uid
     }
 
+    /**
+     * Executes freeze/unfreeze using direct Binder IPC via Porter (Modes 11, 12, 13).
+     *
+     * Mirrors [pureExecuteAPIShizukuAction]: the same hidden
+     * {@code IPackageManager.setApplicationEnabledSetting} call, the same Android 14 UID 2000
+     * remapping through [resolveFreezeState], and the same read-back verification. Porter reports
+     * its server uid on the connection itself, so no "id -u" shell probe is needed. The proxy is
+     * cached per connection: a Porter restart delivers a new connection and a new proxy.
+     */
+    private suspend fun pureExecuteAPIPorterAction(): Int {
+        if (Build.VERSION.SDK_INT < 24) return ERROR_DEVICE_ANDROID_VERSION_TOO_LOW
+        val debug = isDebugModeEnabled()
+        val startedAt = System.currentTimeMillis()
+        try {
+            val connection = PorterShellUtils.awaitConnectionBlocking(context)
+                ?: return ERROR_INSUFFICIENT_PERMISSION
+            if (connection.checkPermission() != PermissionState.Granted) {
+                return ERROR_INSUFFICIENT_PERMISSION
+            }
+
+            val freeze = actionMode == ACTION_MODE_FREEZE
+
+            try {
+                invokePorterSetApplicationEnabledSetting(
+                    connection, resolvePorterTargetState(connection, freeze)
+                )
+            } catch (e: InvocationTargetException) {
+                if (e.cause !is android.os.DeadObjectException) throw e
+                // The cached proxy pointed at a Porter service that has since restarted.
+                invalidateCachedPorterPackageManagerProxy()
+                val fresh = PorterShellUtils.awaitConnectionBlocking(context)
+                    ?: return ERROR_INSUFFICIENT_PERMISSION
+                invokePorterSetApplicationEnabledSetting(
+                    fresh, resolvePorterTargetState(fresh, freeze)
+                )
+            }
+            val settled = verifyFrozenStateSettled(freeze)
+            if (debug) {
+                Log.e(
+                    "DebugModeLogcat",
+                    "porter $singlePackageName freeze=$freeze settled=$settled " +
+                            "total=${System.currentTimeMillis() - startedAt}ms"
+                )
+            }
+            return if (settled) ERROR_NO_ERROR_SUCCESS else ERROR_STATE_DID_NOT_CHANGE
+        } catch (e: InvocationTargetException) {
+            e.printStackTrace()
+            if (e.cause is SecurityException) {
+                return ERROR_INSUFFICIENT_PERMISSION
+            }
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            return ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: PorterSecurityException) {
+            e.printStackTrace()
+            return ERROR_INSUFFICIENT_PERMISSION
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return ERROR_OTHER
+    }
+
+    private fun resolvePorterTargetState(connection: PorterConnection, freeze: Boolean): Int =
+        if (!freeze) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        } else {
+            resolveFreezeState(apiMode, connection.uid)
+        }
+
+    private fun invokePorterSetApplicationEnabledSetting(
+        connection: PorterConnection, newState: Int
+    ) {
+        val (pm, method) = obtainCachedPorterPackageManagerProxyAndMethod(connection)
+        method.invoke(
+            pm,
+            singlePackageName,
+            newState,
+            0,
+            Os.getuid() / 100000,
+            context.packageName
+        )
+    }
+
+    @SuppressLint("PrivateApi")
+    private fun obtainCachedPorterPackageManagerProxyAndMethod(
+        connection: PorterConnection
+    ): Pair<Any, java.lang.reflect.Method> {
+        if (cachedPorterConnection === connection) {
+            cachedPorterPackageManagerProxy?.let { pm ->
+                cachedPorterSetApplicationEnabledSettingMethod?.let { method ->
+                    return pm to method
+                }
+            }
+        }
+
+        val binder = PorterSystemServices.getSystemService("package")?.let { connection.wrap(it) }
+            ?: throw IllegalStateException("Porter could not reach the package service")
+        val pm = Class.forName("android.content.pm.IPackageManager\$Stub")
+            .getMethod("asInterface", IBinder::class.java)
+            .invoke(null, binder)
+        val method = pm::class.java.getMethod(
+            "setApplicationEnabledSetting",
+            String::class.java, // packageName
+            Int::class.java, // newState
+            Int::class.java, // flags
+            Int::class.java, // userId
+            String::class.java // callingPackage
+        )
+        cachedPorterConnection = connection
+        cachedPorterPackageManagerProxy = pm
+        cachedPorterSetApplicationEnabledSettingMethod = method
+        return pm to method
+    }
+
+    private fun invalidateCachedPorterPackageManagerProxy() {
+        cachedPorterConnection = null
+        cachedPorterPackageManagerProxy = null
+        cachedPorterSetApplicationEnabledSettingMethod = null
+    }
+
     companion object {
         private const val BINDER_ALIVE_CACHE_MS = 5000L
 
@@ -563,6 +694,15 @@ open class FUFSinglePackage(
 
         @Volatile
         private var cachedSetApplicationEnabledSettingMethod: java.lang.reflect.Method? = null
+
+        @Volatile
+        private var cachedPorterConnection: PorterConnection? = null
+
+        @Volatile
+        private var cachedPorterPackageManagerProxy: Any? = null
+
+        @Volatile
+        private var cachedPorterSetApplicationEnabledSettingMethod: java.lang.reflect.Method? = null
 
         const val ACTION_MODE_FREEZE = 0
         const val ACTION_MODE_UNFREEZE = 1
@@ -687,6 +827,32 @@ open class FUFSinglePackage(
         const val API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE = 10
 
         /**
+         * Mode 11: Porter Binder IPC (DISABLE_UNTIL_USED) mode.
+         *
+         * <p>Porter (Shizuku's independent continuation, API 24+) counterpart of mode 8.
+         * Remapped to [API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER] on Android 14+
+         * ADB-backed Porter (UID 2000); preserved natively under root-backed Porter (UID 0).
+         */
+        const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED = 11
+
+        /**
+         * Mode 12: Porter Binder IPC (DISABLE_USER) mode.
+         *
+         * <p>Porter counterpart of mode 9: the standard non-root freezing state, universally
+         * supported by the shell UID (2000) across all Android versions Porter runs on.
+         */
+        const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER = 12
+
+        /**
+         * Mode 13: Porter Binder IPC (DISABLE) mode.
+         *
+         * <p>Porter counterpart of mode 10. Remapped to
+         * [API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER] on Android 14+ ADB-backed
+         * Porter (UID 2000); preserved natively under root-backed Porter (UID 0).
+         */
+        const val API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE = 13
+
+        /**
          * Classifies the raw shell outcome of a single-package root freeze/unfreeze command.
          *
          * <p>A non-zero exit code with empty output means the su binary or daemon refused the
@@ -707,22 +873,26 @@ open class FUFSinglePackage(
         }
 
         /**
-         * Maps an API mode and Shizuku backend UID to the target frozen component state.
+         * Maps an API mode and Shizuku/Porter backend UID to the target frozen component state.
          *
-         * <p>Android 14 PackageManagerService: shell uid (plain Shizuku, UID 2000) may only
-         * toggle a whole package between ENABLED, DISABLED_USER and DEFAULT; DISABLED and
-         * DISABLED_UNTIL_USED from shell are rejected with SecurityException. Root Shizuku (Sui,
-         * UID 0) has no such limit, preserving the exact upstream mode states.
+         * <p>Android 14 PackageManagerService: shell uid (plain Shizuku or ADB-backed Porter,
+         * UID 2000) may only toggle a whole package between ENABLED, DISABLED_USER and DEFAULT;
+         * DISABLED and DISABLED_UNTIL_USED from shell are rejected with SecurityException.
+         * Root-backed servers (Sui or root Porter, UID 0) have no such limit, preserving the
+         * exact upstream mode states.
          */
         @JvmStatic
         fun resolveFreezeState(apiMode: Int, shizukuUid: Int): Int =
             if (shizukuUid == 0) {
                 when (apiMode) {
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED,
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_UNTIL_USED ->
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER ->
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE_USER,
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE_USER ->
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE ->
+                    API_FREEZEYOU_SHIZUKU_SYSTEM_APP_ENABLE_DISABLE,
+                    API_FREEZEYOU_PORTER_SYSTEM_APP_ENABLE_DISABLE ->
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED
                     else -> PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
                 }
